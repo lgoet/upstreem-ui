@@ -751,16 +751,6 @@
         return;
       }
       elTeamLogo.innerHTML = logoHtml(t.name, t.favicon_url);
-      /* Das Logo des Teams fuer andere Bausteine (18.10., Branded-Zeile der Filterleiste): kein eigener Abruf, dieselbe Quelle wie das
-         Zeichen oben. Nur melden, wenn sich etwas aendert. */
-      try {
-        var tl = { name: String(t.name || ""), url: url(t.favicon_url) || "" };
-        var alt = window.__upTeamLogo;
-        if (!alt || alt.url !== tl.url || alt.name !== tl.name) {
-          window.__upTeamLogo = tl;
-          window.dispatchEvent(new CustomEvent("up-team-logo", { detail: tl }));
-        }
-      } catch (e) {}
       elTeamName.textContent = t.name || "";
       elTeamBtn.setAttribute("data-tiplabel", t.name || "");
       elTeamBtn.setAttribute("data-tip-place", "right");

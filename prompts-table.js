@@ -4376,7 +4376,7 @@
     function markenId(b){ return String(b.company_id != null ? b.company_id : (b.id != null ? b.id : (b.brand_id != null ? b.brand_id : b.name))); }
     var FF_ARTEN = {
       ptype: {
-        label: function(){ return ffT("Prompt type"); }, chip: function(){ return ffT("Prompt type"); }, leer: "All",
+        label: function(){ return ffT("Branded"); }, chip: function(){ return ffT("Branded"); }, leer: "All",   /* hiess "Prompt type" (18.10. umbenannt) */
         optionen: function(){ return [{ key: "yes", name: ffT("Branded") }, { key: "no", name: ffT("Non-branded") }]; },
         auswahl: function(){ return state.branded ? [state.branded] : []; },
         /* Wie der alte Knopf: erst mit Intent-/Branded-Feldern in den Zeilen, nie in Inactive. */

@@ -299,7 +299,7 @@
     { key: "models",    params: ["p_models"],           icon: "layers",      name: "Model" },
     { key: "markets",   params: ["p_markets"],          icon: "mapPin",      name: "Market" },
     { key: "intents",   params: ["p_intents"],          icon: "signpost",    name: "Intent" },
-    { key: "branded",   params: ["p_branded"],          icon: "flag",        name: "Branded",
+    { key: "branded",   params: ["p_branded"],          icon: "bubbleChatUser", name: "Branded",
       aktiv: function(v, art){ return art === "prompts" ? (v === "branded" || v === "non_branded") : (voll(v) && v !== "non_branded"); },
       vorgabe: function(art){ return art === "prompts" ? undefined : "non_branded"; } },
     /* Kein Chip fuer Status (17.10., Regel des Nutzers: "Inaktive Prompts und Brands = kein Export
@@ -852,7 +852,7 @@
         /* Der erste gesetzte Parameter traegt den Wert (Brands: p_company_ids ODER p_mentioned_brands). */
         var cc = { key: c.key, params: haupt.concat(c.params.filter(function(n){ return haupt.indexOf(n) < 0; })) };
         var w = chipWert(cc, x, art);
-        var name = tr(c.key === "branded" && art === "prompts" ? "Prompt type" : c.name);
+        var name = tr(c.name);
         out.push({ feld: c.key, icon: c.icon, label: name + ": " + w.kurz, title: name + ": " + w.lang, weg: !!state.weg[c.key] });
       });
       return out;

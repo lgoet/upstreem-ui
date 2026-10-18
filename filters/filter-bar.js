@@ -125,9 +125,8 @@
        (brandedBereitstellen) ueber UC.makeLeistenFilter. */
     { key: "branded", label: "Branded", attr: "data-branded-instance", visAttr: "data-branded-visible", rootSel: ".up-ff-branded",
       ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
-      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Branded", icon: "flag",
-      /* bildGrau: das Zeichen ist das Logo des Teams, entsaettigt (18.10.); ohne Logo oder wenn es nicht laedt das Flaggen-Zeichen. */
-      bildGrau: true, behalten: true, fnAttrs: [], fnMarke: "ufb" },
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Branded", icon: "bubbleChatUser",
+      behalten: true, fnAttrs: [], fnMarke: "ufb" },
     /* DIE FILTER DER PROMPT-TABELLE (15.10.): Prompt type, "<Marke> mentioned" und Mentioned brands.
        Sie standen bisher als eigene Knoepfe in der Werkzeugleiste der Tabelle -- dort, wo nur
        Ansicht stehen soll. Jetzt ziehen sie wie die vier oben in dieses Menue. Gebaut werden sie
@@ -140,9 +139,9 @@
                    Responses aus, wo sie nicht gelten, und beim Zurueckwechseln muss die Auswahl
                    noch stehen. Topics dagegen wird beim Ausblenden geleert (Gruppierung, siehe
                    verstecktGeleert). */
-    { key: "ptype", label: "Prompt type", attr: "data-ptype-instance", visAttr: "data-ptype-visible", rootSel: ".up-ff-ptype",
+    { key: "ptype", label: "Branded", attr: "data-ptype-instance", visAttr: "data-ptype-visible", rootSel: ".up-ff-ptype",
       ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
-      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Prompt type", icon: "flag",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Branded", icon: "bubbleChatUser",
       behalten: true, fnAttrs: [], fnMarke: "upt" },
     { key: "mention", label: "Brand mentioned", attr: "data-mention-instance", visAttr: "data-mention-visible", rootSel: ".up-ff-mention",
       ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
@@ -451,7 +450,6 @@
         branded: {
           label: function () { return tx("Branded"); }, chip: function () { return tx("Branded"); }, leer: "Off",
           optionen: function () { return [{ key: "all", name: tx("Include Branded") }, { key: "branded", name: tx("Only Branded") }]; },
-          bild: function () { var l = window.__upTeamLogo; return l && l.url ? String(l.url) : ""; },
           auswahl: function () { var b = UC.intentFilterGet().branded; return b === "all" || b === "branded" ? [b] : []; },
           setzen: function (l) { UC.intentFilterSet({ branded: l.length ? l[l.length - 1] : "non_branded" }); },
           einzeln: true
@@ -459,7 +457,6 @@
       } });
       kit.sync();
       window.addEventListener("up-intentfilter", function () { if (document.contains(host)) kit.sync(); });
-      window.addEventListener("up-team-logo", function () { if (document.contains(host)) kit.sync(); });
     }
 
     function initRoot(root) {
@@ -514,13 +511,6 @@
          feste Zeichen des Filters. Faellt das Bild aus, bleibt die Kachel leer statt zu zerbrechen. */
       function zeichenVon(f) {
         var bild = attrVon(f, "data-ufb-bild");
-        if (bild && f.bildGrau && /^(https?:\/\/|\/)/i.test(bild)) {
-          /* Das Zeichen des Filters liegt UNTER dem Bild: laedt es, deckt es das Zeichen ab (onload), sonst faellt es weg (onerror)
-             und das Zeichen steht da -- nie eine leere Kachel. */
-          return '<span class="ufb-bild is-grau"><span class="ufb-bild-ersatz">' + UC.icon(f.icon, 2) + '</span>' +
-            '<img src="' + esc(bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
-            ' onload="this.parentNode.classList.add(\'ist-da\')" onerror="this.remove()"/></span>';
-        }
         if (bild && /^(https?:\/\/|\/)/i.test(bild)) {
           return '<span class="ufb-bild"><img src="' + esc(bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
             ' onerror="this.remove()"/></span>';

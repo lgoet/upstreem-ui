@@ -525,14 +525,6 @@
   background: var(--vt-logo-bg); flex: 0 0 auto; }
 .ufb-bild img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ufb-chip-ic .ufb-bild { width: 14px; height: 14px; }
-/* Das Team-Logo der Branded-Zeile (18.10.): entsaettigt UND im Kontrast zusammengezogen, damit auch ein weisses Logo als Grau zu sehen ist
-   (reines grayscale liesse es auf dem hellen Grund verschwinden, brightness allein ein schwarzes im Dunkeln). Weiss wird so ein
-   mittleres Grau, Schwarz ein dunkles. Unter dem Bild liegt das Zeichen des Filters: laedt das Bild nicht, steht es da. */
-.ufb-bild.is-grau { position: relative; background: transparent; }
-.ufb-bild.is-grau img { position: relative; z-index: 1; object-fit: contain; filter: grayscale(1) contrast(.45) brightness(.85); }
-.ufb-bild.is-grau .ufb-bild-ersatz { position: absolute; inset: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--vc-muted); }
-.ufb-bild.is-grau .ufb-bild-ersatz svg { width: 100%; height: 100%; display: block; }
-.ufb-bild.is-grau.ist-da .ufb-bild-ersatz { display: none; }
 
 /* Die Werte im dreiteiligen Chip mit ihrem Bild davor (wertHtml, 15.10.): der farbige Strich eines
    Topics in der Form der Tabelle (3x12, rund), Logo, Flagge und Intent-Zeichen auf 14 wie das
