@@ -78,6 +78,17 @@
     top: { modus: "domain", erwaehnt: "all", citationTypen: null, urlTypen: null },
     resp: null, eigene: null, kopfSpeicher: {}
   };
+  /* DATENSTAND BEIM BLAETTERN GEWECHSELT (18.10., Versionsbindung der DB): die Responses springen einmal
+     auf Seite 1 (Tabelle ohne Ereignis zuruecksetzen, Hinweis, neu laden). Der Lader hat den neuen Stand
+     schon gemerkt, Seite 1 trifft auf denselben Wert: keine Schleife. */
+  B.lader.versionMit(function (a) {
+    if (!a || a.art !== "responses" || !B.resp) return false;
+    B.resp.offset = 0;
+    try { setter("renderResponsesTable")({ instanceId: IDS.urt, seiteEins: true }); } catch (e) {}
+    if (UC.listeAktualisiert) UC.listeAktualisiert();
+    teilLaden("resp");
+    return true;
+  });
   function respStart() {
     return { order: "run_at_desc", limit: 15, offset: 0, suche: "", requestId: null, erwaehnt: "all",
              firmen: null, sentMin: null, sentMax: null, rankMin: null, rankMax: null };
@@ -94,7 +105,9 @@
     var p = {}, k;
     for (k in a.params) p[k] = a.params[k];
     for (k in zusatz) p[k] = zusatz[k];
-    return { art: a.art, fn: a.fn, params: p, sig: a.fn + "|" + JSON.stringify(p) };
+    var neu = { art: a.art, fn: a.fn, params: p, sig: a.fn + "|" + JSON.stringify(p) };
+    if (a.bindung && window.UpstreemCitationsDaten && window.UpstreemCitationsDaten.bindung) neu.bindung = window.UpstreemCitationsDaten.bindung(neu.fn, p);   /* mit p_brand: eine andere Marke ist ein anderer Stand */
+    return neu;
   }
   function marke() { return eigeneMarke() || B.eigene || null; }
 

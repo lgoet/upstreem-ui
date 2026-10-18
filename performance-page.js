@@ -120,6 +120,17 @@
         }
       };
     }
+    /* DATENSTAND BEIM BLAETTERN GEWECHSELT (18.10., Versionsbindung der DB): die URL-Tabelle des Details
+       springt einmal auf Seite 1 (Tabelle ohne Ereignis zuruecksetzen, Hinweis, neu laden). Der Lader hat
+       den neuen Stand schon gemerkt, Seite 1 trifft auf denselben Wert: keine Schleife. */
+    lader.versionMit(function (a) {
+      if (!a || a.art !== "urls") return false;
+      state.url.offset = 0; persist();
+      try { window.renderUrlsTable({ instanceId: ids.uut, seiteEins: true }); } catch (e) {}
+      if (UC.listeAktualisiert) UC.listeAktualisiert();
+      urlsLaden();
+      return true;
+    });
     lader.bereinigenMit(function (erg) {
       if (!UC.filterBereinigen) return false;
       return UC.filterBereinigen(erg, {
