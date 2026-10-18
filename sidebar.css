@@ -654,7 +654,7 @@ html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
    gleich bleiben; wer einen aendert, aendert beide. */
 /* 24px UEBER Quick Actions (08.09. angefordert: "die Gaps ueber und unter Quick Actions auf
    24px statt 16"). Der Abstand unter der Linie darueber bleibt bei 16 -- er war nicht gemeint. */
-.usn-qa:not(:empty) { margin-top: 24px; }
+.usn-qa:not(:empty) { margin-top: 10px; }  /* 10 wie bei Vercel (Teamumschalter zu Suche, 18.10.), vorher 24 */
 /* Der Knopf traegt die Werte eines Menuepunktes: 36 hoch, Radius 9, gedaempfte Schrift, und
    auf dieser Flaeche KEINEN eigenen Hintergrund -- sein weisses --am-trigger-bg stach als
    Kachel heraus. Sichtbar bleibt der Rahmen; beim Hover geht Text und Icon auf die
@@ -750,7 +750,7 @@ html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
    auch zum offsetParent jeder Zeile, deren Lage die Marke uebernimmt. Beides gehoert zusammen:
    offsetTop wird dadurch unabhaengig von der Scrollposition, und die Marke scrollt mit dem
    Inhalt, weil sie in derselben Flaeche liegt. */
-.usn-nav { position: relative; margin-top: 24px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.usn-nav { position: relative; margin-top: 10px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
 /* 33 UND NICHT 24, wenn Quick Actions dasteht -- gemeldet am 07.09.: "das Gap zwischen Quick
    Actions und DATENBANK ist kleiner als das nach oben". In der Datei standen beide auf 24, und
    zwischen den KAESTEN sind es auch beide 24. Verschieden ist, was dazwischen liegt:
@@ -776,10 +776,10 @@ html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
    zwischen Quick Actions und Datenbank ist kleiner als das nach oben" ist genau so entstanden
    und kommt genau so zurueck. Gemessen wird das in _h_usn_kopfgaps.html an den SICHTBAREN
    Kanten. */
-.usn-qa:not(:empty) + .usn-nav { margin-top: 28px; }
+.usn-qa:not(:empty) + .usn-nav { margin-top: 10px; }  /* 10 wie bei Vercel (Suche zur ersten Zeile, 18.10.), vorher 28: die Rechnung darueber gilt fuer die alten Werte */
 /* Derselbe Abstand wie zwischen Kopf, Quick Actions und Menue: alle groesseren Gruppen
    stehen gleich weit auseinander. */
-.usn-block + .usn-block { margin-top: 32px; }
+.usn-block + .usn-block { margin-top: 11px; }  /* 11 wie bei Vercel (zwischen den Gruppen, 18.10.), vorher 32 */
 /* Schrift und Farbe kommen jetzt aus .up-blockhead in core.css (12.09. dorthin gezogen, damit
    das Power Dashboard dieselbe Ueberschrift benutzen kann statt sie nachzubauen) -- hier bleibt
    nur, was .up-blockhead nicht selbst ist: ein KNOPF, volle Breite, mit Chevron rechts.
