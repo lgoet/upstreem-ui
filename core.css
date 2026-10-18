@@ -4578,6 +4578,9 @@
        nicht das Bedienelement. */
     .up-th-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     :is(.up-th, .vt-th, .tct-th) > .up-thsort, :is(.up-th, .vt-th, .tct-th) > .up-th-info { flex: 0 0 auto; }
+    /* Abstand zwischen Wort, "Trend", Sortierzeichen und Info-Zeichen (18.10.): in Top Brands und Top Citations klebten sie, weil
+       .vt-th und .tct-th keinen Spaltenabstand haben. Dieselben 6 wie in jeder .up-th (Domains, URLs, Prompts). */
+    :is(.vt-th, .tct-th).is-sortable { gap: 6px; }
     /* ---------- column resizing ---------- */
     .up-th { position: relative; }
     .up-grip {

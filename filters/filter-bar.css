@@ -443,9 +443,6 @@
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--vc-text); color: var(--up-menu-bg);
   font-size: 10px; font-weight: var(--up-fw-m); line-height: 1; font-variant-numeric: tabular-nums; }
-/* Der Branded-Schalter im Panel: eine Zeile wie in jedem Menue aus core (.up-pop-row). */
-.ufb-branded { cursor: pointer; }
-.ufb-branded:hover { background: var(--up-sel-bg); }
 
 /* ---------- Die grosse Form (15.10., Seite Prompt Insights) ----------
    Eingeschaltet ueber data-form="gross" an der Wurzel; jede andere Leiste der App bleibt, wie sie
@@ -492,10 +489,6 @@
 .up-root[data-theme="dark"] .up-entchip.ufb-chip.is-klick.is-open { background: var(--vc-heading-bg); }
 .ufb-chip-auf:focus-visible { box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); border-radius: var(--up-r-s); }
 
-/* Ohne den Branded-Schalter des Intent-Filters (data-branded-visible="no"): auf All Prompts gilt
-   er nicht, dort hat die Tabelle ihren eigenen (Prompt type). */
-.ufb-root.ohne-branded .ufb-branded,
-.ufb-root.ohne-branded .ufb-branded-div { display: none; }
 /* Im Untermenue EINES Filters (vom Chip geoeffnet, oder auf dem Telefon hineingegangen) gehoert
    "Reset Filters" nicht zwischen "Back" und die Optionen -- es leert ALLE Filter, und dort steht
    man in einem. Auf der Liste aller Filter (nach "Back") steht es wieder da. */
@@ -505,8 +498,6 @@
    filters" ueber den Typen, auf dem Telefon zwischen "Back" und den Models). Beide gehoeren zur
    Liste aller Filter, nicht in einen einzelnen. Ohne die grosse Form gibt es keine gespeicherten
    Filter, der Branded-Schalter steht dort aber genauso im Weg. */
-.ufb-root .ufb-menu.is-inside .ufb-branded,
-.ufb-root .ufb-menu.is-inside .ufb-branded-div,
 .ufb-root[data-form="gross"] .ufb-menu.is-inside .ufb-gesp { display: none; }
 
 /* DER CHIP IN DREI TEILEN (15.10., Entwurf B): Name mit Zeichen, Bedingung, Wert, dann das X --

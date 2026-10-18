@@ -301,7 +301,12 @@
       var body = rows.map(function(r, i){
         var pos = (r.position != null) ? Number(r.position) : null;
         var isLast = (i === rows.length - 1);
-        var gap = (isLast && pos != null && pos > (UC.MAX_LINE_SERIES || 8)) ? " vt-gap" : "";
+        /* DIE SPALTE "#" (18.10.): nach Visibility sortiert ist sie die Position in der Rangliste (absteigend 1 bis 7, dann die der
+           eigenen Marke, z. B. 11; aufsteigend rueckwaerts). Bei jeder anderen Sortierung (Rang, Sentiment, Trend) zaehlt sie die
+           Zeilen, 1 bis 8: die Position der Visibility waere dort eine Zahl ohne Bezug zur Reihenfolge. Die Luecke vor der
+           eigenen Marke gibt es nur im einen Fall, in dem die Zahl springt. */
+        var nachPosition = sortField === "visibility";
+        var gap = (nachPosition && sortDir === "desc" && isLast && pos != null && pos > (UC.MAX_LINE_SERIES || 8)) ? " vt-gap" : "";
         var logo = r.logo_url
           ? '<span class="up-logo-box has-img"><img src="' + esc(r.logo_url) + '"/></span>'
           : '<span class="up-logo-box"></span>';
@@ -310,7 +315,7 @@
         var rank = '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(r.avg_rank) + '</span></span>' + trendChip(r.avg_rank_delta, true, true);
         var sent = UC.sentHtml(r.sentiment) + trendChip(r.sentiment_delta, true, false);
         return '<div class="vt-row' + gap + '" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
-          '<div class="vt-td vt-td-idx">' + (pos != null ? pos : "") + '</div>' +
+          '<div class="vt-td vt-td-idx">' + (nachPosition ? (pos != null ? pos : "") : (i + 1)) + '</div>' +
           '<div class="vt-td vt-td-brand">' + logo + '<span class="vt-brand-name">' + esc(r.name == null ? "" : r.name) + '</span></div>' +
           '<div class="vt-td vt-td-visibility">' + vis + '</div>' +
           '<div class="vt-td vt-td-ranking">' + rank + '</div>' +

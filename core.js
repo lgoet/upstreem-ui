@@ -2036,6 +2036,7 @@
     "Auto-detect": "Automatisch erkennen",
     "Set intent": "Intent setzen",
     "Branded": "Branded",
+    "Include Branded": "Branded einbeziehen", "Only Branded": "Nur Branded",
     "Names {names}": "Nennt {names}",
     "Names a tracked brand": "Nennt eine getrackte Marke",
     "Marked as branded by you": "Von dir als branded markiert",
@@ -6679,14 +6680,14 @@
     v = v && typeof v === "object" ? v : {};
     var l = (Array.isArray(v.intents) ? v.intents : []).map(function(k){ return String(k); })
       .filter(function(k){ return !!intentArt(k); });
-    return { intents: l, branded: v.branded === "all" ? "all" : "non_branded" };
+    return { intents: l, branded: v.branded === "all" || v.branded === "branded" ? v.branded : "non_branded" };
   }
   function intentFilterSet(v){
     var alt = intentFilterGet();
     v = v || {};
     var neu = {
       intents: Array.isArray(v.intents) ? v.intents.map(String).filter(function(k){ return !!intentArt(k); }) : alt.intents,
-      branded: v.branded === "all" || v.branded === "non_branded" ? v.branded : alt.branded
+      branded: v.branded === "all" || v.branded === "branded" || v.branded === "non_branded" ? v.branded : alt.branded
     };
     /* In der Reihenfolge der Buyer Journey, damit derselbe Stand immer dieselbe Signatur ergibt
        (die Lader cachen ueber die Parameter). */

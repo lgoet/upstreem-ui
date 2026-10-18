@@ -119,6 +119,14 @@
       ctrl: "__uifCtrl", selKey: "intent_keys", opt: ".uif-opt", keyAttr: "data-key",
       nameSel: ".uif-opt-name", clearSel: ".uif-chev-x", evt: "uif-intents", chip: "Intent", icon: "signpost",
       fnAttrs: [], fnMarke: "uif" },
+    /* Branded (18.10.): eine Zeile wie die anderen statt des Schalters im Panel. Zwei Wahlen -- "Include Branded" (Prompts mit
+       Marke zaehlen mit, p_branded "all") und "Only Branded" (nur diese, "branded") --, keine Wahl heisst die Vorgabe "non_branded".
+       Der Stand liegt wie der des Intent-Filters in core (UC.intentFilterGet/Set); gebaut wird die Wurzel von der Leiste selbst
+       (brandedBereitstellen) ueber UC.makeLeistenFilter. */
+    { key: "branded", label: "Branded", attr: "data-branded-instance", visAttr: "data-branded-visible", rootSel: ".up-ff-branded",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Branded", icon: "flag",
+      behalten: true, fnAttrs: [], fnMarke: "ufb" },
     /* DIE FILTER DER PROMPT-TABELLE (15.10.): Prompt type, "<Marke> mentioned" und Mentioned brands.
        Sie standen bisher als eigene Knoepfe in der Werkzeugleiste der Tabelle -- dort, wo nur
        Ansicht stehen soll. Jetzt ziehen sie wie die vier oben in dieses Menue. Gebaut werden sie
@@ -421,9 +429,40 @@
       uifEinrichten(w);
     }
 
+    /* Die Branded-Zeile (18.10.): Wurzel in der Form der Leistenfilter (UC.makeLeistenFilter), von der Leiste selbst gebaut wie der
+       Intent-Filter. Gibt es nur mit freigegebenen Intents; ob sie sichtbar ist, entscheidet data-branded-visible wie fuer jeden Filter. */
+    function brandedBereitstellen(root) {
+      if (!intentsHier(root) || !UC.intentFilterGet || !UC.makeLeistenFilter) return;
+      var basis = String(root.getAttribute("data-instance") || "ufb");
+      var iid = basis + "_branded";
+      root.setAttribute("data-branded-instance", iid);
+      var da = Array.prototype.some.call(document.querySelectorAll(".up-ff-branded"), function (x) {
+        return String(x.getAttribute("data-instance") || "") === iid;
+      });
+      if (da) return;
+      var host = document.createElement("div");
+      host.className = "up-root ufb-brandedhost";
+      host.hidden = true;
+      if (root.getAttribute("data-theme") != null) host.setAttribute("data-theme", root.getAttribute("data-theme"));
+      (root.parentNode || document.body).insertBefore(host, root.nextSibling);
+      function tx(x) { return UC.t ? UC.t(x) : x; }
+      var kit = UC.makeLeistenFilter(host, { instanceId: basis, arten: {
+        branded: {
+          label: function () { return tx("Branded"); }, chip: function () { return tx("Branded"); }, leer: "Off",
+          optionen: function () { return [{ key: "all", name: tx("Include Branded") }, { key: "branded", name: tx("Only Branded") }]; },
+          auswahl: function () { var b = UC.intentFilterGet().branded; return b === "all" || b === "branded" ? [b] : []; },
+          setzen: function (l) { UC.intentFilterSet({ branded: l.length ? l[l.length - 1] : "non_branded" }); },
+          einzeln: true
+        }
+      } });
+      kit.sync();
+      window.addEventListener("up-intentfilter", function () { if (document.contains(host)) kit.sync(); });
+    }
+
     function initRoot(root) {
       if (root.__ufbCtrl) return root.__ufbCtrl;
       uifBereitstellen(root);
+      brandedBereitstellen(root);
       root.classList.add("ufb-root");
       var instanceId = String(root.getAttribute("data-instance") || "").trim() || "default";
 
@@ -482,12 +521,6 @@
          Tabelle tut das fuer Prompt type und die Markenfilter in der Inactive-Ansicht, wo sie
          keine Spalte haben. Keine Zeile, kein Chip -- und die Auswahl bleibt stehen. */
       function ausGemeldet(f) { return attrVon(f, "data-ufb-aus") === "yes"; }
-      /* Der Branded-Schalter des Intent-Filters gilt fuer die Liste der Prompt-Tabelle nicht (sie
-         hat ihren eigenen, Prompt type). Die Seite blendet ihn dort aus. */
-      function brandedHier() {
-        var v = String(root.getAttribute("data-branded-visible") || "").trim().toLowerCase();
-        return !(v === "no" || v === "false" || v === "0");
-      }
       /* Was schon geklagt bzw. gemeldet wurde -- je Filter einmal, damit die Konsole nicht bei
          jedem Lauf dasselbe wiederholt. */
       var gemeldet = {};
@@ -669,18 +702,6 @@
                 UC.icon("chevronLeft", 2) + '<span class="ufb-back-lbl">Back</span>' +
               '</button>' +
               '<div class="ufb-rows"></div>' +
-              /* Branded (13.10.): ein Schalter direkt im Panel, kein Untermenue -- es gibt nur
-                 an/aus. Vorgabe aus: Prompts, die eine Marke nennen, zaehlen nicht mit (sie
-                 bringen die Marke fast sicher in die Antwort). Nur mit freigegebenen Intents. */
-              (intentsHier(root)
-                ? '<div class="ufb-div ufb-branded-div"></div>' +
-                  '<div class="up-pop-row ufb-branded" role="menuitemcheckbox" tabindex="0" aria-checked="false" data-ufb-branded>' +
-                    /* "Branded prompts" -- so heisst die Achse bei Peec/Scrunch ("Branding",
-                       "Branded Query"); kurz genug fuer eine Zeile. */
-                    '<span class="up-pop-label">Branded prompts</span>' +
-                    '<span class="up-switch"></span>' +
-                  '</div>'
-                : '') +
               /* Reset in einer Huelle, die von 0 auf ihre Hoehe faehrt (200ms). Vorher stand hier
                  display: none -- und daran gibt es nichts zu animieren, die Zeile war einfach
                  ploetzlich da. */
@@ -1035,20 +1056,6 @@
         return t.replace(/["\\]/g, "\\$&");
       }
       function aktiv() { return liste.filter(function (f) { return !ausGemeldet(f) && auswahl(f).length > 0; }); }
-      /* Branded mitgezaehlt (13.10.)? Das ist die Abweichung von der Vorgabe und damit ein Filter,
-         der sichtbar sein muss: als Chip und fuer Reset/Clear All. */
-      function brandedAn() {
-        return !!(intentsHier(root) && brandedHier() && UC.intentFilterGet && UC.intentFilterGet().branded === "all");
-      }
-      function brandedSyncen() {
-        var z = root.querySelector("[data-ufb-branded]");
-        if (!z) return;
-        var an = brandedAn();
-        z.setAttribute("aria-checked", an ? "true" : "false");
-        var sw = z.querySelector(".up-switch");
-        if (sw) sw.classList.toggle("is-on", an);
-      }
-
       /* ---------------- Chips ---------------- */
       function chipText(f) {
         var ids = auswahl(f);
@@ -1154,16 +1161,6 @@
               UC.icon("x", 2.6) + '</button>' +
           '</span>');
         });
-        if (brandedAn()) {
-          var bn = tr("Branded"), btip = tr("Clear {filter}").split("{filter}").join(bn);
-          teile.push('<span class="up-entchip is-static ufb-chip" data-chip="branded">' +
-            '<span class="ufb-chip-ic">' + UC.icon("flag", 2) + '</span>' +
-            '<span class="ufb-chip-lbl"><span class="ufb-chip-key">' + esc(bn) + ': </span>' + esc(tr("Included")) + '</span>' +
-            '<button class="ufb-chip-x" type="button" data-chip-clear="branded" aria-label="' +
-              esc(tr("Clear {filter} filter").split("{filter}").join(bn)) + '" data-tip="' + esc(btip) + '">' +
-              UC.icon("x", 2.6) + '</button>' +
-          '</span>');
-        }
         /* NUR SCHREIBEN, WENN SICH ETWAS AENDERT (17.10., FLT-08). Ein Klick im Filter laesst den
            Trigger mehrfach mutieren (Beschriftung, Punkt, Zaehler, Klasse) und feuert dazu das
            Ereignis des Filters; jedes Mal lief render() und schrieb die Chips neu (gemessen: 7
@@ -1365,12 +1362,10 @@
 
       /* ---------------- render ---------------- */
       function render() {
-        var an = aktiv().length > 0 || brandedAn();
+        var an = aktiv().length > 0;
         root.classList.toggle("has-filters", an);
-        root.classList.toggle("ohne-branded", !brandedHier());
         zeilenStand();
         gespZeichnen();
-        brandedSyncen();
         renderChips();
         /* Umbrechen haengt NUR an der Seitenbreite; das Hineingehen auch am Oeffnen vom Chip. Beides
            an einem Wert liess die Leiste beim Klick auf einen Chip umbrechen -- der Chip sprang eine
@@ -1619,7 +1614,6 @@
          has-sel wird mitgeprueft, weil der Filter selbst darauf prueft -- ohne die Klasse waere
          der Klick ein Klick auf den Trigger und wuerde sein Panel umschalten. */
       function einenLeeren(key) {
-        if (key === "branded") { if (UC.intentFilterSet) UC.intentFilterSet({ branded: "non_branded" }); render(); return; }
         var f = byKey(key);
         if (!f) return;
         var w = eingezogen[f.key];
@@ -1648,7 +1642,6 @@
          Eine Warnung fuer eine Sache, die niemand bestellt hat, ist Laerm. */
       function alleLeeren() {
         liste.forEach(function (f) { einenLeeren(f.key); });
-        if (brandedAn()) einenLeeren("branded");
         spiegelnAlle();
         render();
       }
@@ -1662,12 +1655,6 @@
         if (!e.target.closest) return;
         if (e.target.closest("[data-ufb-reset]")) { e.stopPropagation(); alleLeeren(); pop.close(true); return; }
         if (e.target.closest("[data-ufb-clear]")) { alleLeeren(); return; }
-        if (e.target.closest("[data-ufb-branded]")) {
-          e.stopPropagation();
-          if (UC.intentFilterSet) UC.intentFilterSet({ branded: brandedAn() ? "non_branded" : "all" });
-          render();
-          return;
-        }
         var cx = e.target.closest("[data-chip-clear]");
         if (cx) { einenLeeren(cx.getAttribute("data-chip-clear")); return; }
         if (e.target.closest("[data-gesp-neu]")) { e.stopPropagation(); gespFeld(true); return; }
@@ -1710,10 +1697,6 @@
         if (e.key === "Enter" && e.target && e.target.classList && e.target.classList.contains("ufb-gesp-name")) {
           e.preventDefault(); gespSichern(); return;
         }
-        if (e.key !== "Enter" && e.key !== " ") return;
-        var z = e.target.closest && e.target.closest("[data-ufb-branded]");
-        if (!z) return;
-        e.preventDefault(); z.click();
       });
 
       /* ---------------- Ausblenden zur Laufzeit ----------------
