@@ -874,11 +874,14 @@ html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
   transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease),
               padding-left var(--usn-fahrt) var(--usn-fahrt-kurve);
 }
-.usn-item + .usn-item { margin-top: 2px; }
+/* 1 statt 2 (18.10.): Zeilenabstand der Vercel-Leiste (gemessen im Dashboard, 1px zwischen den 36er Zeilen). */
+.usn-item + .usn-item { margin-top: 1px; }
 /* 5px statt 7 zwischen Icon und Wort -- und ausdruecklich NUR in den Menuepunkten (20.09.).
    Die angehefteten Marken tragen dieselbe Klasse, haben aber ein 22px-Logo statt eines
    16px-Icons: derselbe Zwischenraum sieht dort nicht gleich aus, und sie waren nicht gemeint. */
-.usn-item:not(.usn-pin) { gap: 5px; }
+/* 7 statt 5 (18.10.): mit dem 16er Zeichen in der 22er Spalte (3px Luft) ergibt das die 10px zwischen Zeichen und Wort
+   der Vercel-Leiste. Die angehefteten Marken tragen dieselben 7 -- der Wortanfang aller Zeilen liegt damit auf einer Kante. */
+.usn-item:not(.usn-pin) { gap: 7px; }
 /* Hier stand eine gleitende Marke: ein heller Balken, der beim Wechsel des Menuepunktes an die
    neue Zeile fuhr, waehrend die Zeilen ihre eigene Flaeche abgaben. Sie ist entfallen -- die
    aktive Zeile traegt ihre Flaeche wieder selbst. Was bleibt, ist die Positionierung der Zeilen:
@@ -908,7 +911,8 @@ html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
    als der alte Satz bei gleicher Kantenlaenge. Die SPALTE bleibt bei 22px: an ihr haengen die
    Markenlogos der angehefteten Zeilen und der Textanfang aller Zeilen, das Zeichen sitzt nur
    mittig darin. 18 in 22 laesst je 2px Luft. */
-.usn-ic svg { width: 18px; height: 18px; display: block; }
+/* 16 seit 18.10. (Vercel: 16x16); die Spalte bleibt 22, das Zeichen sitzt mittig darin (3px Luft je Seite). */
+.usn-ic svg { width: 16px; height: 16px; display: block; }
 /* Mira traegt jetzt dasselbe Zeichen wie jeder andere Punkt (blend aus UC.icon). Hier standen
    davor rund 25 Zeilen fuer einen Sonderweg: eine Bilddatei von Bubbles CDN ueber dem Symbol, dazu
    zwei gerechnete Helligkeitsfilter (3.58 hell, 0.714 dunkel) und eine Groessenkorrektur von
@@ -922,11 +926,13 @@ html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
    Was den aktiven Punkt auszeichnet, bleibt seine Flaeche -- und die ist von Farbsehen
    unabhaengig, anders als eine Farbe allein. */
 .usn-item.is-active .usn-ic { color: var(--vc-text); }
-/* Eine Spur mehr Laufweite -- angefordert am 07.09., ausdruecklich subtil. .012em sind bei
+/* -0.02em seit 18.10. (Vercel misst -0,28px bei 14px); vorher +.012em, am 07.09. als "eine Spur mehr Laufweite" verlangt.
+   Der folgende Absatz beschreibt diese alte Fassung.
+   Eine Spur mehr Laufweite -- angefordert am 07.09., ausdruecklich subtil. .012em sind bei
    13px rund 0,16px je Zeichen: genug, damit die Liste ruhiger wirkt, zu wenig, um die Breite
    einer Zeile spuerbar zu aendern (bei "Prompt Insights" sind es 2,4px). */
 .usn-txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  line-height: 20px; letter-spacing: .012em; }
+  line-height: 20px; letter-spacing: -0.02em; }
 /* Hier stand eine optische Korrektur von 1px nach unten. Sie galt fuer die Feather-Icons; mit
    den Lucide-Formen ist die Zeile damit zu tief, also wieder auf die geometrische Mitte. Der
    Wert bleibt als Stellschraube stehen -- er ist Augenmass, keine Messung. */
@@ -1059,7 +1065,7 @@ html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
    jene. Die Farbe kommt aus den Daten (Feld color), nicht aus der Palette. */
 .usn-pin-ev { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
   color: var(--usn-ev-ton, var(--vc-muted)); }
-.usn-pin-ev svg { width: 18px; height: 18px; display: block; }
+.usn-pin-ev svg { width: 16px; height: 16px; display: block; }
 /* Dasselbe Bauteil noch eine Stufe kleiner: im Konto-Menue sind die Icons 15px (siehe
    .usn-menu .up-pop-opt svg weiter unten), nicht 17. Faktor 15/24 auf ALLE Werte:
    Radius 8 -> 5, Bild 22 -> 13.75, Bildradius 7 -> 4.4, Buchstabe 11 -> 7. */
