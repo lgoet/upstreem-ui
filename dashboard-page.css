@@ -31,12 +31,12 @@
 .uds-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; }
 .uds-filterzeile > .udr-root { flex: 0 0 auto; }
 .uds-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
-/* 48 zwischen den drei Bloecken: drei eigene Auswertungen, also "zwischen Gruppen" nach dem
+/* 32 (seit 20.10.; vorher 48) zwischen den drei Bloecken: drei eigene Auswertungen, also "zwischen Gruppen" nach dem
    Entwurf von Shopping (shopping.css, .ush-seite). Als --up-stapel-luft: unter dem Band von Top
    Citations gleicht core das auf --up-band-luft aus, die Ueberschriftzeile der Responses steht 16
    unter seiner Linie wie die Leiste in Prompt Insights (core.css "DIE ZEILE UNTER DEM BAND");
-   zwischen den zwei Baendern bleiben die 48. */
+   zwischen den zwei Baendern bleiben die 32. */
 /* Die Luft ueber und unter .uds-main steht in core ("DIE LUFT UNTER DEM SEITENKOPF"): 16 unter der
    Filterzeile wie ueber ihr, 64 unten. */
-.uds-main { display: flex; flex-direction: column; --up-stapel-luft: 48px; gap: var(--up-stapel-luft); min-width: 0; }
+.uds-main { display: flex; flex-direction: column; --up-stapel-luft: 32px; gap: var(--up-stapel-luft); min-width: 0; }
 .uds-teil { min-width: 0; }

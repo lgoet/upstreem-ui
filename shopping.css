@@ -28,12 +28,12 @@
 /* Die Luft ueber und unter .ush-main steht in core ("DIE LUFT UNTER DEM SEITENKOPF"): 16 unter der
    Filterzeile wie ueber ihr, 64 unten. */
 
-/* 48 zwischen Bloecken als --up-stapel-luft: unter einem Band (oder einer Gruppe, die mit einem
+/* 32 (seit 20.10., Nutzer: zwischen Komponenten ueberall 32) zwischen Bloecken als --up-stapel-luft: unter einem Band (oder einer Gruppe, die mit einem
    endet) gleicht core das auf --up-band-luft aus, die Zeile darunter steht 16 unter der Linie wie
    in Prompt Insights (core.css "DIE ZEILE UNTER DEM BAND"). Die Gruppe setzt die Variable nicht --
-   sie liest so die 48 ihres Stapels. */
-.ush-seite { display: flex; flex-direction: column; --up-stapel-luft: 48px; gap: var(--up-stapel-luft); min-width: 0; }
-.ush-gruppe { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+   sie liest so die 32 ihres Stapels. */
+.ush-seite { display: flex; flex-direction: column; --up-stapel-luft: 32px; gap: var(--up-stapel-luft); min-width: 0; }
+.ush-gruppe { display: flex; flex-direction: column; gap: var(--up-stapel-luft, 32px); min-width: 0; }
 .ush-sek { display: flex; flex-direction: column; min-width: 0; }
 /* hidden muss gegen die eigenen display-Regeln gewinnen: .ush-sek, .ush-scope und .up-foot setzen
    display, und jede Autorenregel schlaegt das hidden des Browsers. Ohne das blieb der Pager bei

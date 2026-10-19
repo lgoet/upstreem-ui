@@ -18,7 +18,7 @@
    DEM BAND"). */
 /* Die Luft ueber und unter .ucs-main steht in core ("DIE LUFT UNTER DEM SEITENKOPF"): 16 unter der
    Filterzeile wie ueber ihr, 64 unten. */
-.ucs-main { display: flex; flex-direction: column; --up-stapel-luft: 24px; gap: var(--up-stapel-luft); min-width: 0; }
+.ucs-main { display: flex; flex-direction: column; --up-stapel-luft: 32px; gap: var(--up-stapel-luft); min-width: 0; }
 .ucs-chart, .ucs-tab { min-width: 0; }
 /* hidden gegen das display der eigenen Regel: der Reiter, der nicht offen ist, steht nicht da. */
 .ucs-root .ucs-tab[hidden] { display: none; }

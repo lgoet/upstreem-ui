@@ -69,7 +69,7 @@
      Zeichenflaeche bleibt mit 385 so hoch wie bisher (427 - 2 Rahmen - 24 - 16 = 409 - 8 - 16);
      schmal (is-narrow) aus demselben Grund 18 weniger als die 380 im Kasten.
    Spezifitaet (0,3,0) und mehr: schlaegt die Kastenregeln oben ohne die Ladereihenfolge. */
-.up-root.ubo-root[data-flach="yes"] { --up-stapel-luft: 24px; gap: var(--up-stapel-luft); }
+.up-root.ubo-root[data-flach="yes"] { --up-stapel-luft: 32px; gap: var(--up-stapel-luft); }
 .up-root.ubo-root[data-flach="yes"] .ubo-box-chart { height: 409px; }
 .up-root.ubo-root[data-flach="yes"].is-narrow .ubo-box-chart { height: 362px; }
 

@@ -19,7 +19,7 @@
    URL-Tabelle naeher an den Variations als die Abschnitte darueber aneinander. Die Luft oben (16
    unter der Filterzeile; bis 15.10. 24 unter der Kopflinie, die Seite hatte keine Filterzeile)
    und unten (64) steht in core, "DIE LUFT UNTER DEM SEITENKOPF". */
-.upf-main { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
+.upf-main { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
 .upf-radar, .upf-detail, .upf-urls { min-width: 0; }
 .upf-detail { display: flex; flex-direction: column; gap: 48px; }
 /* hidden gegen das display der eigenen Regel: ohne Zelle steht der Bereich nicht da. */

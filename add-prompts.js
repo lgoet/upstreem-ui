@@ -897,8 +897,8 @@
     autosize(M.input);
     M.enter.hidden = true;
     renderList();
-    /* Die Liste rollt nicht mehr selbst, die Karte tut es: die neue Zeile bleibt sichtbar, indem die Karte ans Ende rollt, wenn sie ueberlaeuft. */
-    if (M.card.scrollHeight > M.card.clientHeight) M.card.scrollTop = M.card.scrollHeight;
+    /* Die Karte bleibt oben gerollt (20.10., Nutzer): das Eingabefeld bleibt im Bild, die neuen Zeilen wachsen darunter. */
+    M.card.scrollTop = 0;
   }
 
   /* Uebernimmt den Text eines Bearbeitungsfelds in seine Zeile und beendet das Bearbeiten. Gibt
