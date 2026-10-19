@@ -88,7 +88,7 @@
 .uca-modal {
   position: relative; width: min(600px, 100%); max-height: min(92vh, 900px);
   display: flex; flex-direction: column;
-  background: var(--vc-bg); color: var(--vc-text);
+  background: var(--up-popup-bg, var(--vc-bg)); color: var(--vc-text);
   border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); box-shadow: var(--up-e-4); overflow: hidden;
   transform: translateY(8px) scale(.985); opacity: 0;
   transition: transform .24s cubic-bezier(.22,1,.36,1), opacity .2s ease;

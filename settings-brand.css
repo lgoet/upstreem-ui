@@ -311,14 +311,14 @@
 .usb-dlg-backdrop.is-shown { opacity: 1; pointer-events: auto; }
 .usb-dlg {
   --vc-text: var(--vc-schicht-text); --vc-muted: var(--vc-schicht-muted); --vc-third: var(--vc-schicht-third); --vc-border: var(--vc-schicht-border);
-  --vc-heading-bg: var(--vc-schicht-leise); --vc-hover-border: var(--vc-schicht-hover-rand); --up-surface: var(--vc-schicht-flaeche);
+  --vc-heading-bg: var(--vc-schicht-leise); --vc-hover-border: var(--vc-schicht-hover-rand); --up-surface: var(--up-popup-bg, var(--vc-schicht-flaeche));
   /* --vt-down stand hier als eigene Kopie (hell #b0200c, dunkel #c8321c). Seit dem 15.10. kommt es
      von :root bzw. vom dunklen Schleier ([data-theme="dark"]) aus core -- Geist Red 900. */
   /* Ohne diese drei traegt das Feld im Dialog keinen Fokusring: die Karte haengt am body, also
      ausserhalb von .up-root, wo die Tokens definiert sind, und var(--up-focus) waere leer. */
   --up-focus: var(--vc-schicht-fokus); --up-focus-ring: var(--vc-schicht-fokus-ring); --up-focus-w: 2px;
   width: 100%; max-width: 440px; max-height: calc(100vh - 48px); overflow: hidden auto;
-  border-radius: var(--up-r-2xl); background: var(--up-surface); border: 1px solid var(--vc-border);
+  border-radius: var(--up-r-2xl); background: var(--up-popup-bg, var(--up-surface)); border: 1px solid var(--vc-border);
   color: var(--vc-text); font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   box-shadow: var(--up-e-4);
   transform: translateY(6px) scale(.985); transition: transform 160ms ease;

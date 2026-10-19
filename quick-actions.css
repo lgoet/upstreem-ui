@@ -160,7 +160,7 @@
 @keyframes mqaFade { from { opacity: 0; } to { opacity: 1; } }
 .mqa-modal {
   width: min(640px, 94vw); max-height: 82vh; display: flex; flex-direction: column; overflow: hidden;
-  background: var(--am-card); border: 1px solid var(--am-border); border-radius: var(--up-r-2xl, 12px); box-shadow: var(--am-shadow);
+  background: var(--up-popup-bg, var(--am-card)); border: 1px solid var(--am-border); border-radius: var(--up-r-2xl, 12px); box-shadow: var(--am-shadow);
   /* Geists Kurve (cubic-bezier(.175,.885,.32,1.1), ein Hauch Ueberschwingen) aus scale(.96); die
      Dauer ist die Flaechenstufe aus core (260 statt Geists 300). */
   animation: mqaPop var(--up-t-3, 260ms) cubic-bezier(.175,.885,.32,1.1) both; touch-action: none;

@@ -1595,6 +1595,8 @@
          Schliessen-Hover stand bis zum 16.10. auf dem alten #f9f8f9, 6 Stufen unter dem Weiss der
          Karte statt 13. */
       --up-leise-grau: #f2f2f2;
+      /* Der Grund eines Popups auch fuer Fenster ohne .up-root darueber (am <body>): der Seitengrund (19.10.). */
+      --up-popup-bg: var(--up-seite-grau);
       /* DER GEWAEHLTE ZUSTAND DER NAVIGATION (15.10. abends angefordert: "rgba(0, 0, 0, 0.05) ist die
          Farbe fuer selected states -- Sidebar-selektierte Menues, in den Nav-/Subpage-Navigationen
          die Backgrounds der Container. Und da auch bitte weiterhin eine Border!").
@@ -1633,6 +1635,7 @@
     html[data-up-hell="grau"]:not([data-up-pagetheme="dark"]),
     html[data-up-hell="grau"]:not([data-up-pagetheme="dark"]) body { background-color: var(--up-seite-grau); }
     html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) {
+      --up-popup-bg: var(--up-seite-grau);   /* der Grund eines Popups ist der Seitengrund (19.10.) */
       --up-surface: var(--up-seite-grau);
       --vc-border: var(--up-kante-grau);
       --vc-switch-border: var(--up-kante-grau);
@@ -7454,7 +7457,7 @@
 
 .up-topicmodal-card {
   --vc-text: #171717; --vc-muted: #4d4d4d; --vc-third: #7d7d7d; --vc-fourth: #8f8f8f; --vc-border: #dcdbdd;
-  --vc-heading-bg: #f9f8f9; --vc-hover-border: #6f6f6f; --up-surface: #ffffff; --vc-sk: #eeedef;
+  --vc-heading-bg: #f9f8f9; --vc-hover-border: #6f6f6f; --up-surface: var(--up-popup-bg, #ffffff); --vc-sk: #eeedef;
   /* Die Fokus-Tokens MUESSEN hier mit rein. Diese Karte haengt am body, nicht unter .up-root, wo
      die Tokens definiert sind -- ohne sie ist var(--up-focus) leer, und eine Deklaration mit einer
      leeren Variablen ist ungueltig. Die :focus-Regel des Namensfeldes weiter unten stand damit
@@ -7462,7 +7465,7 @@
      Wer hier eine Palette neu aufmacht, muss sie VOLLSTAENDIG aufmachen. */
   --up-focus: #4A9EFF; --up-focus-ring: rgba(74,158,255,0.20); --up-focus-w: 2px;
   width: 100%; max-width: 420px; max-height: calc(100vh - 48px); overflow-y: auto;
-  background: var(--up-surface); border: 1px solid var(--vc-border);
+  background: var(--up-popup-bg, var(--up-surface)); border: 1px solid var(--vc-border);
   border-radius: var(--up-r-2xl);
   /* Ohne Rueckfall (28.09.): die Tiefen stehen jetzt an :root, das Token loest auch hier am body
      auf. Bis dahin galt hier der Rueckfall (0 20px 48px .22) statt e-4, dunkel wie hell. */
@@ -7489,7 +7492,7 @@
      Miras Einstellungen) traegt seit dem 16.10. nicht mehr die leise Flaeche, sondern den
      Seitengrund wie die Seitenleiste der App (preferences.css, .ums-aside). */
   --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-third: #a1a1a1; --vc-fourth: #7d7d7d; --vc-border: #333333;
-  --vc-heading-bg: #1f1f1f; --vc-hover-border: #707070; --up-surface: #0f0f0f; --vc-sk: #1e1e1e; --up-switch-off: #454545;
+  --vc-heading-bg: #1f1f1f; --vc-hover-border: #707070; --up-surface: var(--up-popup-bg, #0a0a0a); --vc-sk: #1e1e1e; --up-switch-off: #454545;
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
 }
 /* IM GRAUEN HELL DIE LEISE FLAECHE DER APP (16.10.). Die helle Grundregel oben steht noch auf dem
@@ -9365,11 +9368,15 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up
   --vc-inverse-glanz: rgba(255,255,255,.09);
   /* Die umgekehrte Auswahlkarte (events.js, "Track an Event", 19.10.): Seitengrund, Feld und Schrift des ANDEREN Themas. Im Hellen also die des Dunkels. */
   --up-wk-invers-bg: #0a0a0a; --up-wk-invers-feld: #1f1f1f; --up-wk-invers-ink: #ededed;
+  /* DER GRUND EINES POPUPS (19.10., Nutzer): der Seitengrund, nicht die Flaeche einer Karte. Im Hellen Weiss, im grauen Hell der Seitengrund (unten, an
+     .up-root im grauen Hell), im Dunkeln #0a0a0a (--up-seite-dunkel). Dialogkarte, Palette und die anderen Fenster lesen nur dieses Token. */
+  --up-popup-bg: #ffffff;
 }
 [data-theme="dark"], .up-root[data-theme="dark"] {
   --vc-inverse-sub: #5f636b;
   --vc-inverse-glanz: rgba(255,255,255,.75);
   --up-wk-invers-bg: #f2f2f2; --up-wk-invers-feld: #ffffff; --up-wk-invers-ink: #171717;
+  --up-popup-bg: #0a0a0a;
 }
 
 /* DIE KLEINEN UMSCHALTER AM TELEFON 32 HOCH (18.10., Nutzer): unter 500 (is-vnarrow) sind sie mit 24 bis 26 zu klein fuer
