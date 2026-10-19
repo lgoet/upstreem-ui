@@ -6063,6 +6063,19 @@
 
   /* ---------- Daten hineingeben ----------------------------------------------------------- */
 
+  /* STUFE 2 DER DATEIEN (landing-boot.js): die Seiten ausser dem Dashboard kommen nach dem Fenster.
+     mitRest laeuft sofort, wenn sie da sind, sonst mit dem Ereignis ulh-rest. Ohne landing-boot.js
+     (ein aelterer Lader) gibt es kein window.__ulhRest, und alles ist wie frueher von Anfang an da. */
+  function restDa(){ return !window.__ulhRest || window.__ulhRest.fertig === true; }
+  function mitRest(fn){
+    if (restDa()){ fn(); return; }
+    var lauf = function(){ window.removeEventListener("ulh-rest", lauf); fn(); };
+    window.addEventListener("ulh-rest", lauf);
+  }
+  function restAnstossen(){
+    if (window.__ulhRest && window.__ulhRest.start) window.__ulhRest.start();
+  }
+
   /* Arbeit, die das erste Bild nicht braucht: wartet auf is-inhalt (das Fenster zeigt Chart und
      Zitate), gibt dem Hauptstrang danach einen Atemzug und laeuft im Leerlauf. Nach 9 s geht es in
      jedem Fall los, damit nichts darunter leer bleibt, wenn der Inhalt nie fertig meldet. */
@@ -6222,10 +6235,12 @@
     /* Die zwei Nebenfenster, die eigene Daten brauchen. Der Doughnut kommt aus core und braucht
        nur einen Koerper; die Antwortkarte ist eine echte Komponente mit eigenem Setter. */
     donutFuellenSpaeter();
-    antwortFuellen(0);
-    /* fuellen() bekommt keine Wurzel mit -- die Sektion ist ein Singleton, und der Lauf braucht
-       sie nur, um Tooltips nachzuraeumen. */
-    antwortLauf(document.querySelector(WURZEL));
+    mitRest(function(){
+      antwortFuellen(0);
+      /* fuellen() bekommt keine Wurzel mit -- die Sektion ist ein Singleton, und der Lauf braucht
+         sie nur, um Tooltips nachzuraeumen. */
+      antwortLauf(document.querySelector(WURZEL));
+    });
     /* Die Kurven im Abschnitt darunter. Die drei anderen Vorschauen sind statisch. */
     (function(){ var w = document.querySelector(WURZEL);
       if (!w) return;
@@ -6247,7 +6262,7 @@
         visEventKurveFuellen(w);
         visReiseFuellen(w);
         ulhTakt(w);
-        quellFuellen();
+        mitRest(quellFuellen);
       };
       if (w.__ulhUntenDa) unten();
       else { w.__ulhUntenDa = true; nachDemFenster(w, unten); }
@@ -8508,7 +8523,7 @@
       if (!w || w.__ulhShopFrei) { shopLiefern(); return; }
       if (w.__ulhShopWartet) return;
       w.__ulhShopWartet = true;
-      nachDemFenster(w, function(){ setTimeout(function(){ w.__ulhShopFrei = true; shopLiefern(); }, 1500); });
+      nachDemFenster(w, function(){ setTimeout(function(){ w.__ulhShopFrei = true; mitRest(shopLiefern); }, 1500); });
     };
     window.shopProductDetail = function(){
       if (!window.setShoppingProductDetail) return;
@@ -9185,6 +9200,8 @@
       if (fertig) return;
       fertig = true;
       root.classList.add("is-inhalt");
+      /* Die uebrigen Seiten des Fensters jetzt holen (Stufe 2), mit einem Atemzug Abstand. */
+      setTimeout(restAnstossen, 300);
       try { performance.mark("ulh-inhalt"); } catch (e){}
       miraAnsetzen(root, INHALT_MS + MIRA_WARTEN);
     }
@@ -9210,7 +9227,7 @@
     /* Beim ersten Mal ab dem Ende des Erscheinens, im Kreislauf ab dem Auftritt der Seite -- die
        Ruhe VOR dem Wechsel soll beide Male gleich lang sein, und sie faengt an, wenn das Dashboard
        fertig dasteht. */
-    setTimeout(function(){ miraSzene(root); },
+    setTimeout(function(){ mitRest(function(){ miraSzene(root); }); },
                verzug == null ? (ERSCHEINEN_MS + MIRA_WARTEN) : verzug);
   }
 
@@ -9229,7 +9246,8 @@
         setTimeout(function(){ szene(root); }, SZENE_WARTEN);
         return;
       }
-      if (k < 80) setTimeout(function(){ warten(k + 1); }, 125);
+      /* Das Warten auf Stufe 2 zaehlt nicht als Versuch: die Szenen danach brauchen ihre Seiten. */
+      if (k < 80 || !restDa()) setTimeout(function(){ warten(k < 80 ? k + 1 : k); }, 125);
     })(0);
   }
 

@@ -50,8 +50,9 @@
   var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
   function once(url, make){
     var name = url.slice(url.lastIndexOf("/") + 1);
-    if (L[name]) return;
+    if (L[name]) return false;
     L[name] = url; make(url);
+    return true;
   }
   /* ZWEITER WEG BEI EINEM FEHLER (01.10.). Gemeldet: "die Landingpage ist komplett kaputt,
      unformatierte Icons". Sechs Dateien des Pins kamen als 404 "Couldn't find the requested file":
@@ -81,17 +82,20 @@
   /* Ein Skript, das ueber den zweiten Weg nachkommt, laeuft nach den anderen -- die Reihenfolge ist
      dann nicht mehr zu halten. Das tragen die Komponenten: jede wartet beim Start auf core, und
      landing-hero.js wartet bis zu zehn Sekunden, bis alles da ist (bereit()). */
-  function js(f){
-    once(base + f, function(u){
+  function js(f, fertig){
+    if (!once(base + f, function(u){
       var s = document.createElement("script"); s.src = u; s.async = false;
+      s.onload = function(){ if (fertig) fertig(); };
       s.onerror = function(){
-        var u2 = zweiterWeg(u); if (!u2) return;
+        var u2 = zweiterWeg(u);
+        if (!u2){ if (fertig) fertig(); return; }
         var r = document.createElement("script"); r.src = u2; r.async = false;
+        r.onload = r.onerror = function(){ if (fertig) fertig(); };
         document.head.appendChild(r);
         if (s.parentNode) s.parentNode.removeChild(s);
       };
       document.head.appendChild(s);
-    });
+    }) && fertig) fertig();
   }
 
   /* ══ DER RIEGEL GEGEN DEN FREMDEN RAHMEN (21.09.) ═══════════════════════════════════════════
@@ -270,6 +274,16 @@
   css("events.css");
   css("landing-hero.css");
 
+  /* ZWEI STUFEN (19.10., Trace und Meldung: "auf langsamen Systemen laedt alles extrem lange"). Vorher
+     wurden alle 30 Skripte (rund 1,6 MB, dazu das Aufbauen jeder Seite im Fenster) VOR dem ersten
+     Inhalt geholt und ausgefuehrt, obwohl das Fenster zuerst nur das Dashboard zeigt.
+       Stufe 1: was das Dashboard braucht (core, Seitenleiste, Filter, Visibility Chart, Top Citations,
+                Dashboard-Seite) und landing-hero.js. Damit ist das Fenster bereit.
+       Stufe 2: alle anderen Seiten (Mira, Prompts, Chancen, Performance, Shopping, Domain Detail und
+                die Antwortkarte). landing-hero.js stoesst sie an, sobald das Fenster seinen Inhalt zeigt
+                (window.__ulhRest.start); die Szenen und die Karten darunter warten auf ihr Ende
+                (Ereignis ulh-rest, window.__ulhRest.fertig). Kommt der Anstoss nie, geht es nach 8 s
+                von selbst los. Die Dateien selbst sind unveraendert, nur die Reihenfolge. */
   js("core.js");
   js("sidebar.js");
   js("filters/date-range.js");
@@ -283,28 +297,30 @@
   js("dashboard-data.js");
   js("visibility-chart.js");
   js("topcitations-dashboard.js");
-  js("quick-actions.js");
-  js("ask-mira.js");
-  js("prompts-data.js");
-  js("prompts-table.js");
-  js("topics-manager.js");
-  js("opportunities-data.js");
-  js("opportunities.js");
-  js("responses-table.js");
-  js("performance-data.js");
-  js("performance-radar.js");
-  js("performance-detail.js");
-  js("urls-table.js");
-  js("domain-detail.js");
-  js("shopping.js");
   js("dashboard-page.js");
-  js("prompts-page.js");
-  js("opportunities-page.js");
-  js("performance-page.js");
   /* Das Verhalten von Leiste und Fuss (13.10.): dieselbe Datei laden die eigenen Komponenten
      UpstreemTopbar.tsx und UpstreemFooter.tsx auf den anderen Seiten. VOR landing-hero.js, das
      sie ruft. */
   js("landing-teile.js");
-  /* Zuletzt: diese Datei ruft die Setter der anderen. */
+  /* Zuletzt in Stufe 1: diese Datei ruft die Setter der anderen. */
   js("landing-hero.js");
+
+  var REST = ["quick-actions.js", "ask-mira.js", "prompts-data.js", "prompts-table.js", "topics-manager.js",
+              "opportunities-data.js", "opportunities.js", "responses-table.js", "performance-data.js",
+              "performance-radar.js", "performance-detail.js", "urls-table.js", "domain-detail.js",
+              "shopping.js", "prompts-page.js", "opportunities-page.js", "performance-page.js"];
+  var rest = window.__ulhRest || (window.__ulhRest = { fertig: false, gestartet: false });
+  rest.start = function(){
+    if (rest.gestartet) return;
+    rest.gestartet = true;
+    var offen = REST.length;
+    REST.forEach(function(f){
+      js(f, function(){
+        if (--offen > 0) return;
+        rest.fertig = true;
+        try { window.dispatchEvent(new CustomEvent("ulh-rest")); } catch (e){}
+      });
+    });
+  };
+  setTimeout(rest.start, 8000);
 })();
