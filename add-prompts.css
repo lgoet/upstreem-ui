@@ -196,7 +196,7 @@
   list-style: none; margin: 0 -8px; padding: 0;
   display: flex; flex-direction: column;
   border-top: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border);
-  max-height: 232px; overflow-y: auto;
+  /* Kein eigener Rollbereich (20.10., Nutzer): die Liste waechst, und die Karte rollt. */
 }
 
 .uap-capnote {
@@ -421,5 +421,4 @@
      eine Klasse, die das Markup nicht (mehr) traegt. */
   .uap-pickwrap { position: static; }
   .uap-menu { width: min(296px, 100%); max-width: none; }
-  .uap-list { max-height: 180px; }
 }
