@@ -1958,9 +1958,9 @@
        wieder einer gesetzt wird. */
     display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 9px 0 10px;
     border: 1px solid transparent; border-radius: var(--up-r-l); background: transparent;
-    color: var(--am-muted); font-family: inherit; font-size: 13px; font-weight: 400;
+    color: var(--am-muted); font-family: inherit; font-size: var(--up-fs-m); font-weight: var(--up-fw-n);
     cursor: pointer; max-width: 100%;
-    transition: background 200ms ease, color 200ms ease;
+    transition: background var(--up-t-2) var(--up-ease), color var(--up-t-2) var(--up-ease);
   }
   .am-eff-btn:hover, .am-eff.is-open .am-eff-btn {
     background: var(--am-soft); color: var(--am-text);
@@ -1987,8 +1987,8 @@
   .am-eff-menu {
     /* right und nicht left: die Schaltflaeche sitzt jetzt am rechten Ende der Zeile, und ein
        links verankertes Menue waere aus der Komponente gelaufen. */
-    position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 60;
-    width: 264px; max-width: 78vw; box-sizing: border-box; padding: 8px;
+    position: absolute; bottom: calc(100% + var(--up-dd-gap)); right: 0; z-index: 60;
+    width: 264px; max-width: 78vw; box-sizing: border-box; padding: var(--up-dd-pad);
     /* 14px wie .am-model-menu dieser Datei und wie --up-dd-radius in core. Ein drittes Mass
        in derselben Knopfzeile waere genau die Drift, die die Farbleiter in core beendet hat.
        Der Schatten ist seit dem 28.09. --up-e-2 wie bei .am-model-menu -- hier stand, ein
@@ -1996,7 +1996,7 @@
     border: 1px solid var(--up-menu-border, var(--am-border)); border-radius: var(--up-dd-radius);
     background: var(--up-menu-bg, var(--am-card)); box-shadow: var(--up-e-2);
     opacity: 0; transform: translateY(6px) scale(0.98); transform-origin: bottom right;
-    pointer-events: none; transition: opacity 200ms ease, transform 200ms ease;
+    pointer-events: none; transition: opacity var(--up-t-2) var(--up-ease), transform var(--up-t-2) var(--up-ease);
   }
   .am-eff.is-open .am-eff-menu { opacity: 1; transform: none; pointer-events: auto; }
   /* Die Kopfzeile des Menues: Modell, Stufe, Chevron. Der Klick darauf klappt die Modellliste
@@ -2004,10 +2004,10 @@
      Dieselbe Zeile eine Ebene tiefer: sie nimmt Radius und Uebergang vom Knopf darueber, damit
      die Schaltflaeche und ihr Kopf als EIN Stueck lesbar bleiben. */
   .am-eff-head {
-    display: flex; align-items: center; gap: 8px; width: 100%; height: 30px; padding: 0 4px;
-    border: 0; border-radius: var(--up-r-m); background: transparent; color: var(--am-text);
-    font-family: inherit; font-size: 14px; font-weight: 600;
-    cursor: pointer; transition: background 200ms ease;
+    display: flex; align-items: center; gap: 8px; width: 100%; height: 30px; padding: 0 8px;
+    border: 0; border-radius: var(--up-r-s); background: transparent; color: var(--am-text);
+    font-family: inherit; font-size: var(--up-fs-l); font-weight: var(--up-fw-h);
+    cursor: pointer; transition: background var(--up-t-2) var(--up-ease);
   }
   .am-eff-head:hover { background: var(--up-sel-bg, var(--am-soft)); }
   .am-eff-head .am-eff-ic { color: var(--am-text); }
@@ -2180,7 +2180,7 @@
   .am-eff-opt {
     display: flex; align-items: center; gap: 10px; width: 100%; min-height: 42px; padding: 6px 8px;
     border: 0; border-radius: var(--up-r-s); background: transparent; color: var(--am-text);
-    font-family: inherit; text-align: left; cursor: pointer; transition: background 200ms ease;
+    font-family: inherit; text-align: left; cursor: pointer; transition: background var(--up-t-2) var(--up-ease);
   }
   .am-eff-opt + .am-eff-opt { margin-top: 4px; }
   .am-eff-opt:hover { background: var(--up-sel-bg, var(--am-soft)); }
@@ -2196,10 +2196,10 @@
      man liest und anklickt.
      Die Gewichte bleiben, wie sie sind: der Knopf traegt 400 auf ausdruecklichen Wunsch
      (13.09.), Kopf und Modellnamen 600, die Stufen 500 und die aktive 600. */
-  .am-eff-opt-name { font-size: 13px; font-weight: 600; }
-  .am-eff-opt-desc { font-size: 12px; line-height: 1.4; color: var(--am-muted);
+  .am-eff-opt-name { font-size: var(--up-fs-m); font-weight: var(--up-fw-h); }
+  .am-eff-opt-desc { font-size: var(--up-fs-s); line-height: 1.4; color: var(--am-muted);
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .am-eff-check { width: 15px; height: 15px; flex: 0 0 auto; fill: none; stroke: var(--am-text);
+  .am-eff-check { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: var(--am-text);
     stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
   .am-eff-opt.is-active .am-eff-check { opacity: 1; }
 
