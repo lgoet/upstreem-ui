@@ -1137,7 +1137,7 @@
          weil sich der Ton mit dem Grund mitbewegte. Das ist der Preis des festen Werts und war
          die bewusste Wahl. Noch heller ginge nur bis #f9f8f9 selbst, dann steht die Schiene auf
          der Kopfzeile gar nicht mehr und zur Pille bleiben 6 Stufen. */
-      --vc-switch-rail: #f2f2f2;
+      --vc-switch-rail: var(--up-popup-bg);
       /* Die Flaeche eines Eingabefelds, SOLIDE. Es gab sie bisher nur als 60%-Variante
          (--vc-switch-bg im Dunkeln, --up-sel-bg, --vt-row-hover) -- und wo ein Chip auf einer Karte
          liegt, die selbst schon getoent ist, addieren sich zwei Halbtransparenzen zu einem dritten
@@ -1451,7 +1451,7 @@
          Aufgegeben ist damit das Ziel vom 22.09., EIN Ton je Rolle: er hat den haeufigsten Fall
          unsichtbar gemacht. Eine Liste von Flaechen mit eigener Schienenfarbe braucht es auch
          jetzt nicht -- die Stufe haengt am Grund, nicht an der Flaeche. */
-      --vc-switch-rail: rgba(255,255,255,.06);
+      --vc-switch-rail: var(--up-popup-bg);
       /* Eingabefelder wie Geists Input: Background 1 mit Rand (gemessen #0a0a0a, Ring Gray Alpha
          400). Im grauen Hell genauso (--vc-field = --vc-bg, weiss mit Rand). Vorher #232326 --
          ein Feld, das heller war als jedes Menue, in dem es stand. Seit 15.10. abends der Inhalt
@@ -3213,7 +3213,7 @@
     --up-menu-bg: #0f0f0f; --up-menu-border: #333333;
     --vt-row-hover-solid: #1f1f1f; --vc-hover-border: #707070;
     --vc-switch-bg: #1f1f1f; --vc-switch-border: #222222; --up-switch-off: #454545;
-    --vc-switch-rail: rgba(255,255,255,.06); --vc-switch-pill: rgba(255,255,255,.09);
+    --vc-switch-rail: var(--up-popup-bg); --vc-switch-pill: rgba(255,255,255,.09);
   }
   .up-root {
       --uhm-h0: #f0f3f8; --uhm-h1: #c8d4e5; --uhm-h2: #8aa4c4; --uhm-h3: #4a6e96; --uhm-h4: #1e3a5f;
@@ -3980,7 +3980,7 @@
       --vc-text: #171717; --vc-muted: #4d4d4d; --vc-third: #7d7d7d; --vc-fourth: #8f8f8f; --vc-border: #dcdbdd;
       --vc-heading-bg: #f9f8f9; --vc-hover-border: #6f6f6f; --vc-bg: #ffffff;
       --vc-switch-bg: #f9f8f9; --vc-switch-border: #e4e2e4; --vc-switch-pill: #ffffff;
-      --vc-switch-rail: #f2f2f2;   /* fehlte -- siehe die dunkle Fassung darunter */
+      --vc-switch-rail: var(--up-popup-bg);
       --up-dd-radius: 12px; --up-dd-pad: 8px; --up-dd-shadow: var(--up-e-2);
       --up-sel-bg: #f4f2f4;
       position: fixed; z-index: 100050; width: 248px;
@@ -4022,7 +4022,7 @@
       --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-third: #a1a1a1; --vc-fourth: #7d7d7d; --vc-border: #333333;
       --vc-heading-bg: #1f1f1f; --vc-hover-border: #707070; --vc-bg: #0f0f0f; --up-switch-off: #454545;
       --vc-switch-bg: #1f1f1f; --vc-switch-border: #222222;
-      --vc-switch-rail: rgba(255,255,255,.06); --vc-switch-pill: rgba(255,255,255,.09);
+      --vc-switch-rail: var(--up-popup-bg); --vc-switch-pill: rgba(255,255,255,.09);
       --up-dd-shadow: var(--up-e-2); --up-sel-bg: #242424;
     }
     /* .up-dense-btn.is-active's own dark override above is scoped to .up-root — this menu lives
@@ -9410,7 +9410,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up
    an seinem Umschalter (domain-detail, domains-table, power-dashboard, die kleine Form der Kopf-Umschalter).
    .up-root doppelt, damit die Regel die Grundformen der Bauteile (0,2,0) und die dunklen (0,3,1) auch ohne die Ladereihenfolge schlaegt. */
 .up-root.up-root :is(.up-seg, .cc-seg, .ubo-seg, .tcl-seg, .vc-gran, .cc-gran, .up-pagesize-seg, .up-filter-dim, .up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis, .upt-status, .udt-sub-dispseg, .uap-tabs) {
-  background: transparent; box-shadow: 0 0 0 1px var(--vc-switch-border); border-radius: var(--up-sw-r, var(--up-r-m)); }
+  background: var(--vc-switch-rail); box-shadow: 0 0 0 1px var(--vc-switch-border); border-radius: var(--up-sw-r, var(--up-r-m)); }
 .up-root.up-root :is(.up-seg, .cc-seg, .ubo-seg, .tcl-seg, .vc-gran, .cc-gran, .up-pagesize-seg, .up-filter-dim, .up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis, .upt-status, .udt-sub-dispseg, .uap-tabs)::before {
   border: 0; border-radius: var(--up-sw-r, var(--up-r-m)); background: var(--vc-switch-pill);
   box-shadow: 0 0 0 1px var(--vc-switch-border), var(--up-e-1); }

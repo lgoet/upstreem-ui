@@ -1907,6 +1907,7 @@
        die Namen von UC.icon sind camelCase; ein fremder Wert (aeltere Events tragen Emojis) faellt
        auf das Zeichen des Typs zurueck. */
     function eventZeichen(ev){
+      if (String(ev.kind || "") === "watch") return "eye";   /* wie events.js zeichen(): Citation Tracking hat kein Zeichen zur Wahl */
       var v = String(ev.icon || "").replace(/-([a-z0-9])/g, function(_, z){ return z.toUpperCase(); });
       if (v && UC.iconFormen && UC.iconFormen(v)) return v;
       var ty = UC.eventTyp ? UC.eventTyp(ev.event_type) : null;

@@ -916,7 +916,7 @@
      geprueft (Katalog-Kollision): keiner steht schon in core oder einer anderen Komponente. */
   if (UC.addMessages) UC.addMessages("de", {
     /* Schritte und Ziele */
-    "Step {n} of 4": "Schritt {n} von 4", "Tracking": "Tracking", "Check and create": "Prüfen und anlegen", "Check and save": "Prüfen und speichern",
+    "Step {n} of 4": "Schritt {n} von 4", "Step {n} of 2": "Schritt {n} von 2", "Tracking": "Tracking", "Check and create": "Prüfen und anlegen", "Check and save": "Prüfen und speichern",
     "What should we track?": "Was sollen wir tracken?", "Choose what to track.": "Wähl aus, was getrackt werden soll.",
     "URLs, paths or domains": "URLs, Pfade oder Domains", "Add to tracking": "Zum Tracking hinzufügen",
     "Brand metrics only": "Nur Markenwerte", "Visibility, rank and sentiment": "Visibility, Rank und Sentiment",
@@ -2158,7 +2158,7 @@
           '<button type="button" class="up-optrow" role="menuitem" data-aktion="edit" data-event-id="' + esc(ev.id) + '">' + UC.icon("squarePen", 2) + '<span class="up-aktionsmenue-lbl">' + esc(t("Edit")) + '</span></button>' +
           /* Am Telefon (is-vnarrow) steht das Anheften hier statt als Knopf im Kopf -- dort fehlt
              sonst der Platz fuer die Krume (gemessen 16.10.: "Overview" auf 9px gedrueckt). */
-          (wo === "kopf" && pinDa() && !istWatch(ev) ? '<button type="button" class="up-optrow uev-mehr-pin" role="menuitem" data-aktion="pin" data-event-id="' + esc(ev.id) + '">' + UC.icon("pin", 2) +
+          (wo === "kopf" && pinDa() ? '<button type="button" class="up-optrow uev-mehr-pin" role="menuitem" data-aktion="pin" data-event-id="' + esc(ev.id) + '">' + UC.icon("pin", 2) +
             '<span class="up-aktionsmenue-lbl">' + esc(t(istAngeheftet(ev.id) ? "Unpin from sidebar" : "Pin to sidebar")) + '</span></button>' : '') +
           (wo === "kopf" && !istWatch(ev) ? notifyZeileHtml(ev) : '') +
           (kannLoeschen ? '<div class="up-aktionsmenue-div"></div><button type="button" class="up-optrow is-gefahr" role="menuitem" data-aktion="delete" data-event-id="' + esc(ev.id) + '">' + UC.icon("trash", 2) + '<span class="up-aktionsmenue-lbl">' + esc(t("Delete")) + '</span></button>' : '') +
@@ -2566,7 +2566,7 @@
           '</div>' +
         '</div>';
       elAktion.querySelector(".uev-kopfmehr").innerHTML = mehrMenue(d, "kopf");
-      pinKnopfSetzen(istWatch(d) ? null : d);
+      pinKnopfSetzen(d);
     }
 
     /* ---- AN DIE SEITENLEISTE HEFTEN (16.10. angefordert: "im Event-Detail oben in der Kopfleiste
@@ -5360,6 +5360,8 @@
     function zielFelder(p) {
       var e = p.e;
       return '<div class="uev-ziel">' +
+          (p.art === "anlegen" && e.art === "watch" ? feld("Name", '<input type="text" class="up-topicmodal-name" data-feld="name" maxlength="' + NAME_MAX + '" autocomplete="off" spellcheck="false"' +
+            ' placeholder="' + esc(t("e.g. Help center pages")) + '" value="' + esc(e.name) + '"/>', false, "name") : '') +
           '<div class="up-topicmodal-field uev-ziel-teil uev-eingabe-teil">' + zielKopf(p) +
             (p.art === "ziel" ? '<p class="up-modal-hinweis">' + esc(t(zieleDa() ? "Rules count retroactively, also for pages that were cited before you add them."
               : "Observations are counted from the event date, also for URLs you add now.")) + '</p>' : '') +
@@ -5384,7 +5386,7 @@
        Seitenleiste, dann was getrackt wird (kurz) und das Schloss. Der Bearbeiten-Dialog behaelt
        das offene Raster (coverFeld): er hat keine Vorschau, an der ein Knopf stehen koennte. */
     function pruefFelder(e) {
-      if (e.art === "watch") return '<div class="uev-vorschaublock"><div class="uev-pruef"></div>' + coverWahlHtml(e) + '</div>' + feld("Tracking", '<div class="uev-pruefziele"></div>') + gesperrtHinweis("The type can't be changed later");
+      if (e.art === "watch") return '<div class="uev-vorschaublock"><div class="uev-pruef"></div>' + coverWahlHtml(e) + anheftenHtml(e) + '</div>' + feld("Tracking", '<div class="uev-pruefziele"></div>') + gesperrtHinweis("The type can't be changed later");
       return '<div class="uev-vorschaublock"><div class="uev-pruef"></div>' + coverWahlHtml(e) + anheftenHtml(e) + notifySchalterHtml(e) + '</div>' +
         feld("Tracking", '<div class="uev-pruefziele"></div>') +
         gesperrtHinweis(startSatz(e));
@@ -5672,6 +5674,14 @@
       if (!p || popup !== p) return;
       if (artenAuch) { var ao = im(".uev-arten-ort"); if (ao) ao.innerHTML = artenHtml(p); }
       var e = p.e, offen = e.zielArt !== "marke";
+      /* Citation Tracking (19.10.): der Name ist die Domain des ersten Ziels, solange niemand selbst einen getippt hat. */
+      if (e.art === "watch" && p.art === "anlegen" && !p.nameVonHand) {
+        var h0 = e.ziele.length ? String(zielHost(e.ziele[0]) || "").replace(/^www\./, "") : "";
+        if (h0 && h0 !== e.name) {
+          e.name = h0;
+          var nf = im('[data-feld="name"]'); if (nf) nf.value = h0;
+        }
+      }
       var hw = im(".uev-arthinweis");
       if (hw) hw.hidden = !!e.zielArt;
       /* Das Feld bleibt auch bei "Brand metrics only" stehen (15.10. spaet): es steht jetzt OBEN,
@@ -6885,8 +6895,8 @@
     /* ---- Zeichnen in einem offenen Popup --------------------------------------------------- */
     function im(sel) { return popup ? popup.api.el.querySelector(sel) : null; }
     /* Vier Schritte seit 15.10.: die Ziele sind ein eigener Schritt, das Pruefen der letzte. */
-    /* Die Schritte eines Ablaufs: das Event hat vier, das Citation Tracking drei (ohne Schritt 2, die Topics). */
-    function reiheVon(p) { return p && p.e && p.e.art === "watch" ? [1, 3, 4] : [1, 2, 3, 4]; }
+    /* Die Schritte eines Ablaufs: das Event hat vier, das Citation Tracking zwei (nur Tracking und Pruefen, 19.10.: kein Detail-Schritt, der Name steht oben im ersten). */
+    function reiheVon(p) { return p && p.e && p.e.art === "watch" ? [3, 4] : [1, 2, 3, 4]; }
     function vor(p, richtung) {
       var r = reiheVon(p), i = r.indexOf(p.schritt) + richtung;
       return r[Math.max(0, Math.min(r.length - 1, i))];
@@ -6894,7 +6904,7 @@
     function schrittText(n) {
       /* Beim Bearbeiten eines geplanten Events heisst der letzte Schritt "Check and save" (Audit EV-05). */
       var r = reiheVon(popup), i = Math.max(0, r.indexOf(n));
-      return ersetze(t(r.length === 3 ? "Step {n} of 3" : "Step {n} of 4"), { n: i + 1 }) + ": " + t(["Details", "Prompts", "Tracking", popup && popup.planEventId ? "Check and save" : "Check and create"][n - 1]);
+      return ersetze(t(r.length === 2 ? "Step {n} of 2" : "Step {n} of 4"), { n: i + 1 }) + ": " + t(["Details", "Prompts", "Tracking", popup && popup.planEventId ? "Check and save" : "Check and create"][n - 1]);
     }
     function typNeu() {
       var p = popup, tp = typVon(p.e.typ), b = im('[data-wahl="typ"]');
@@ -7197,7 +7207,7 @@
         if (p.vorschauLaeuft || !v) return false;
         return v.fehler || v.n !== 0;
       }
-      if (p.schritt === 3) return zieleOk(p);
+      if (p.schritt === 3) return zieleOk(p) && (e.art !== "watch" || !!e.name.trim());
       return true;
     }
     function knoepfeSync() {
@@ -7207,7 +7217,7 @@
       if (b) b.disabled = !schrittOk(p);
       if (p.art === "anlegen") {
         var z = p.api.knopf("zurueck");
-        if (z) z.hidden = p.schritt === 1;
+        if (z) z.hidden = p.schritt === reiheVon(p)[0];
         /* "Create without URLs?" (03.10.) ist seit 15.10. die ausdrueckliche Wahl "Brand metrics
            only" in Schritt 3 -- ein Event ohne Ziele entsteht nie mehr aus Versehen. */
         var lbl = p.schritt === 4 ? (p.planEventId ? "Save" : p.e.art === "watch" ? "Create" : "Create event") : "Continue", tx = b && b.querySelector(".up-modal-knopftxt");
@@ -7624,8 +7634,8 @@
         /* Erst jetzt, mit der Kennung aus der Antwort, an die Leiste (Schalter in Schritt 4). Die
            Meldung nennt es mit, statt einen zweiten Toast zu zeigen. */
         var wa = p.e.art === "watch";
-        /* Ein Citation Tracking hat weder Pin noch Meldungen (19.10.). */
-        var angeheftet = !wa && !!p.e.anheften && eventAnheften(d, true);
+        /* Ein Citation Tracking hat keine Meldungen (19.10.), aber einen Pin. */
+        var angeheftet = !!p.e.anheften && eventAnheften(d, true);
         if (wa) { /* nichts */ }
         else if (meldDa() && p.e.notify === false && !p.notifyGesendet && id) notifySetzen(id, false, true);
         else if (meldDa() && id) MELD_AN[String(id)] = p.e.notify !== false;
@@ -7844,8 +7854,8 @@
       coverLaden(coverVon({ cover: p.zufallsCover }));
       sucheBauen(p);
       popupAufbauen(p);
-      schritt(1);
-      if (e.art === "watch") { var wsub = api.el.querySelector(".up-topicmodal-sub"); if (wsub) wsub.textContent = schrittText(1); }
+      schritt(reiheVon(p)[0]);
+      if (e.art === "watch") { var wsub = api.el.querySelector(".up-topicmodal-sub"); if (wsub) wsub.textContent = schrittText(p.schritt); }
       p.start = popupStand(p);
       verfuegbarkeitHolen(function () {
         var b3 = p.api.body.querySelector('.uev-schritt[data-schritt="3"]');
@@ -8159,7 +8169,7 @@
     function popupEingabe(ev) {
       var p = popup, x = ev.target;
       if (!p || !x || !x.matches) return;
-      if (x.matches('[data-feld="name"]')) { p.e.name = x.value; feldFehler("name", ""); knoepfeSync(); return; }
+      if (x.matches('[data-feld="name"]')) { p.e.name = x.value; p.nameVonHand = !!x.value.trim(); feldFehler("name", ""); knoepfeSync(); return; }
       /* Die Beschreibung sagt die Grenze beim Tippen (2000 Zeichen, v2), nicht erst beim Senden. */
       if (x.matches('[data-feld="text"]')) {
         p.e.text = x.value;
