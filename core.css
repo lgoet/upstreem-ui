@@ -2771,7 +2771,7 @@
        own menu up with root.querySelector(".up-cols-menu") and a second element carrying that
        class silently steals the lookup -- that is exactly how Table Settings ended up rendering
        into the grouping dropdown. */
-    .up-menu, .up-cols-menu { position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; z-index: 60; width: 230px;
+    .up-menu, .up-cols-menu { position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; z-index: 60; width: max-content; min-width: 230px; max-width: min(420px, calc(100vw - 32px));
       background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius); box-shadow: var(--up-dd-shadow); padding: var(--up-dd-pad);
       opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none; transition: opacity 140ms ease, transform 140ms ease; }
     .up-menu.is-shown, .up-cols-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
@@ -7022,7 +7022,7 @@
 .up-entchip.up-spaltchip.is-aus:hover { color: var(--vc-text); border-color: var(--vc-hover-border); }
 .up-entchip.up-spaltchip.is-locked { cursor: default; }
 /* Eine Zeile "Name ........ Bedienelement" in einem Dropdown (Row height, Grouping im Display-Menue). */
-.up-pop-feld { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; padding: 0 10px; }
+.up-pop-feld { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; min-height: 40px; padding: 0 10px; }
 /* Der Kopf ueber Feldern und Chips steht auf derselben Kante wie sie (sonst 0 seitlich). */
 .up-pop-head.up-pop-head-feld { padding-left: 10px; padding-right: 10px; }
 /* Der Segmentstreifen darin steht RECHTS neben einem Namen, also so breit wie sein Inhalt statt

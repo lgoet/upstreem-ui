@@ -192,8 +192,8 @@
 /* Display (das Menue am Zahnrad, makeColumns cfg.form "chips"): 340 breit wie in der Prompt-Tabelle
    -- mit den 230 der anderen Menues brach "Row height" in zwei Zeilen. Telefon: so breit wie das
    Fenster erlaubt. */
-.ush-root .ush-tab .up-cols-menu { width: 340px; }
-.ush-root.is-vnarrow .ush-tab .up-cols-menu { width: min(340px, calc(100vw - 32px)); }
+.ush-root .ush-tab .up-cols-menu { width: max-content; min-width: 340px; }
+.ush-root.is-vnarrow .ush-tab .up-cols-menu { width: auto; min-width: 0; max-width: calc(100vw - 32px); }
 /* Im Produkt-Detail traegt die Preiszelle zwei Zeilen (letzter Preis, darunter die Spanne): ohne
    das stuende die erste ueber die ganze Zelle gestreckt und damit am rechten Rand statt in ihrer
    Spur. */

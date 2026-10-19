@@ -475,5 +475,5 @@
        Comfortable/Compact nicht: gemessen ragte der Segmentstreifen 15px ueber den Rand hinaus und
        "Row height" brach in zwei Zeilen. Telefon: so breit wie das Fenster erlaubt, das Menue
        scrollt in sich (dieselbe Regel wie dort). */
-    .uut-root[data-leiste="yes"] .up-cols-menu { width: 340px; }
-    .uut-root[data-leiste="yes"].is-vnarrow .up-cols-menu { width: min(340px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow-y: auto; }
+    .uut-root[data-leiste="yes"] .up-cols-menu { width: max-content; min-width: 340px; }
+    .uut-root[data-leiste="yes"].is-vnarrow .up-cols-menu { width: auto; min-width: 0; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); overflow-y: auto; }

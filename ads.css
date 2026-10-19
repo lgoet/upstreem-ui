@@ -161,8 +161,8 @@
 /* Display (das Menue am Zahnrad, makeColumns cfg.form "chips"): 340 breit wie in der Prompt-Tabelle
    -- mit den 230 der anderen Menues brach "Row height" in zwei Zeilen. Telefon: so breit wie das
    Fenster erlaubt. */
-.uad-root .uad-tab .up-cols-menu { width: 340px; }
-.uad-root.is-vnarrow .uad-tab .up-cols-menu { width: min(340px, calc(100vw - 32px)); }
+.uad-root .uad-tab .up-cols-menu { width: max-content; min-width: 340px; }
+.uad-root.is-vnarrow .uad-tab .up-cols-menu { width: auto; min-width: 0; max-width: calc(100vw - 32px); }
 .uad-titel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
 .uad-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); }
 .uad-zweizeilig { display: flex; flex-direction: column; gap: 2px; min-width: 0; }

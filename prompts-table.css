@@ -1379,7 +1379,7 @@
    340 breit wie das Menue der Gruppierung bisher: dessen Liste eigener Gruppierungen (Auge, Menue)
    braucht den Platz. Die Gruppierung bringt Polster und 340px Mindestbreite aus ihrem Popover mit;
    hier ist das Menue der Kasten, also beides weg. */
-.upt-root[data-leiste="yes"] .up-cols-menu { width: 340px; }
+.upt-root[data-leiste="yes"] .up-cols-menu { width: max-content; min-width: 340px; }
 .upt-group-menu.upt-disp-grp { width: auto; min-width: 0; max-width: none; padding: 0; }
 /* Der Segmentstreifen der Gruppierung als kompakter Streifen rechts in seiner Zeile (core:
    .up-pop-feld .up-dense). Die Regel des alten Popovers (.upt-group-menu .up-dense, volle Breite mit
@@ -1401,7 +1401,7 @@
 .upt-disp-reset-ic { display: inline-flex; flex: 0 0 16px; width: 16px; height: 16px; }
 .upt-disp-reset-ic svg { width: 16px; height: 16px; display: block; }
 /* Telefon: so breit wie das Fenster erlaubt, und das Menue scrollt in sich. */
-.upt-root[data-leiste="yes"].is-vnarrow .up-cols-menu { width: min(340px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow-y: auto; }
+.upt-root[data-leiste="yes"].is-vnarrow .up-cols-menu { width: auto; min-width: 0; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); overflow-y: auto; }
 
 /* Active / Inactive 32 hoch (15.10. verlangt), wie die Knoepfe daneben: die Werte der grossen Form
    aus core (.up-seg.is-lg: Schiene und Knoepfe 32, Polster 16). Die Pille misst core selbst. */
