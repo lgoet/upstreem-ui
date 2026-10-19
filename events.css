@@ -914,35 +914,34 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    ohne Eintraege ist gar nicht da (hidden), der Abstand steht nur zwischen zwei sichtbaren. */
 .uev-abschnitt[hidden], .uev-leer-gesamt[hidden] { display: none; }
 .uev-abschnitt:not([hidden]) ~ .uev-abschnitt:not([hidden]) { margin-top: 40px; }
-/* Der Auswahldialog "Create" (19.10., Vorlage des Nutzers): zwei Karten nebeneinander. Oben Titel (beim Hover erscheint ein Pfeil dahinter) und ein Satz, unten
-   eine angeschnittene, leicht gekippte Tafel mit einem Feld und dem Zeichen der Seite. Hover: der Grund der Karte tont sich in der leichtesten Stufe, die Tafel
-   kippt weich zur anderen Seite. Links (is-invers) in den Farben des anderen Themas: Tafel in dessen Seitengrund, Feld in dessen Feldfarbe. */
-.uev-wk-raster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.uev-wk { --uev-wk-w: -4deg; --uev-wk-h: 2deg; --uev-wk-hx: 10px; --uev-wk-tafel: var(--vc-heading-bg); --uev-wk-feld: var(--vc-bg); --uev-wk-ink: var(--vc-text);
-  display: flex; flex-direction: column; gap: 4px; min-width: 0; min-height: 236px; padding: 16px 16px 0; overflow: hidden; text-align: left; cursor: pointer;
-  border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); background: var(--vc-bg); color: var(--vc-text); font: inherit;
+/* Der Auswahldialog "Create" (19.10., Vorlage des Nutzers: die Template-Karten von Vercel, Markup vom Nutzer kopiert). Karte 210 hoch, Radius 8, Rahmen, Text mit 24 links
+   und 20 oben (Titel 16 Medium mit Pfeil, Satz 14). Die Tafel beginnt bei 15 % von links und 55 % von oben, ist so gross wie die Karte (rechts und unten
+   abgeschnitten), Radius 6, Rahmen, gegen den Uhrzeigersinn gekippt; darin oben mit 40 Abstand eine 208 mal 80 grosse Karte, Radius 16, Rahmen, Schatten, mit dem
+   Zeichen mittig (zu zwei Dritteln sichtbar). Hover: der Grund der Karte tont sich leicht, ein Pfeil erscheint hinter dem Titel, die Tafel dreht sich nach rechts.
+   Links (is-invers) in den Farben des anderen Themas: Tafel in dessen Seitengrund, Karte in dessen Feldfarbe, Rahmen in dessen Rahmenfarbe. */
+.uev-wk-raster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 24px; }
+.uev-wk { --uev-wk-tafel: var(--vc-heading-bg); --uev-wk-feld: var(--vc-bg); --uev-wk-ink: var(--vc-text); --uev-wk-rand: var(--vc-border);
+  position: relative; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; height: 210px; min-width: 0; padding: 20px 24px 0; overflow: hidden; text-align: left; cursor: pointer;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--vc-bg); color: var(--vc-text); font: inherit;
   transition: background var(--up-t-2) var(--up-ease); }
-.uev-wk:not(.is-invers) { --uev-wk-w: 4deg; --uev-wk-h: -2deg; --uev-wk-hx: -10px; }
-.uev-wk.is-invers { --uev-wk-tafel: var(--up-wk-invers-bg); --uev-wk-feld: var(--up-wk-invers-feld); --uev-wk-ink: var(--up-wk-invers-ink); }
+.uev-wk.is-invers { --uev-wk-tafel: var(--up-wk-invers-bg); --uev-wk-feld: var(--up-wk-invers-feld); --uev-wk-ink: var(--up-wk-invers-ink); --uev-wk-rand: var(--up-wk-invers-rand); }
 .uev-wk:hover { background: var(--vc-heading-bg); }
 .uev-wk:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
-.uev-wk-kopf { display: flex; align-items: center; gap: 6px; }
-.uev-wk-t { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); }
+.uev-wk-kopf { position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; }
+.uev-wk-t { font-size: var(--up-fs-xl); font-weight: var(--up-fw-m); line-height: 1; }
 .uev-wk-pfeil { display: inline-flex; opacity: 0; transform: translate(-4px, 4px); transition: opacity var(--up-t-2) var(--up-ease), transform var(--up-t-2) var(--up-ease); }
-.uev-wk-pfeil svg { width: 16px; height: 16px; }
+.uev-wk-pfeil svg { width: 14px; height: 14px; }
 .uev-wk:hover .uev-wk-pfeil, .uev-wk:focus-visible .uev-wk-pfeil { opacity: 1; transform: none; }
-.uev-wk-s { font-size: var(--up-fs-m); color: var(--vc-third); }
-.uev-wk-bild { position: relative; flex: 1 1 auto; min-height: 132px; margin: 12px -16px 0; }
-.uev-wk-tafel { position: absolute; left: 14%; right: 14%; top: 6px; bottom: -48px; border-radius: var(--up-r-2xl); background: var(--uev-wk-tafel);
-  border: 1px solid var(--vc-border); box-shadow: var(--up-e-1); transform: rotate(var(--uev-wk-w)); transform-origin: 50% 100%;
-  transition: transform var(--up-t-3) var(--up-ease); }
-.uev-wk.is-invers .uev-wk-tafel { border-color: transparent; }
-.uev-wk:hover .uev-wk-tafel, .uev-wk:focus-visible .uev-wk-tafel { transform: translateX(var(--uev-wk-hx)) rotate(var(--uev-wk-h)); }
-.uev-wk-feld { position: absolute; left: 50%; top: 28px; width: 76px; height: 76px; margin-left: -38px; display: grid; place-items: center; border-radius: var(--up-r-3xl);
-  background: var(--uev-wk-feld); color: var(--uev-wk-ink); border: 1px solid var(--vc-border); }
-.uev-wk.is-invers .uev-wk-feld { border-color: transparent; }
-.uev-wk-feld svg { width: 30px; height: 30px; }
-@media (max-width: 560px) { .uev-wk-raster { grid-template-columns: 1fr; } }
+.uev-wk-s { position: relative; z-index: 1; display: block; max-width: 90%; margin-top: 10px; font-size: var(--up-fs-l); line-height: 1.3; color: var(--vc-third); }
+.uev-wk-tafel { position: absolute; left: 15%; top: 55%; width: 100%; height: 100%; box-sizing: border-box; display: flex; align-items: flex-start; justify-content: center; padding-top: 40px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--uev-wk-tafel);
+  transform: rotate(-5.5deg); transform-origin: 50% 80px; transition: transform var(--up-t-3) var(--up-ease); }
+.uev-wk.is-invers .uev-wk-tafel { border-color: var(--uev-wk-rand); }
+.uev-wk:hover .uev-wk-tafel, .uev-wk:focus-visible .uev-wk-tafel { transform: rotate(1deg); }
+.uev-wk-feld { display: flex; align-items: center; justify-content: center; flex: 0 0 auto; width: min(208px, 62%); height: 80px; box-sizing: border-box;
+  border: 1px solid var(--uev-wk-rand); border-radius: var(--up-r-3xl); background: var(--uev-wk-feld); color: var(--uev-wk-ink); box-shadow: var(--up-e-1); }
+.uev-wk-feld svg { width: 32px; height: 32px; }
+@media (max-width: 640px) { .uev-wk-raster { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .uev-wk, .uev-wk-pfeil, .uev-wk-tafel { transition: none; } }
 /* Citation Tracking im Detail (19.10.): ohne Marken-Teile. Ausgeblendet wird wie im Modus "nur Zitierungen" (is-band-aus), dazu Hinweise,
    Umfang und der geplante Zustand -- sie gehoeren zur Kohorte und zum Datum, die es hier nicht gibt. */

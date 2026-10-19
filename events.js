@@ -7782,13 +7782,13 @@
         if (UC.toast) UC.toast(fehlerText("impact_event_limit_reached"), { kind: "error" });
         return;
       }
-      /* Zwei Karten nebeneinander (19.10., Vorlage des Nutzers): Titel mit Pfeil beim Hover, ein Satz, unten eine angeschnittene Tafel mit dem Zeichen der
-         Seite. Links Event Tracking in den Farben des anderen Themas, rechts Citation Tracking. Ein Klick waehlt und geht weiter -- kein "Continue". */
+      /* Zwei Karten nebeneinander (19.10., Vorlage des Nutzers): Bau der Karten von Vercel (Template-Karten): Text oben, darunter eine grosse Tafel, die bei 15 % von links und 55 % von oben beginnt und rechts und unten
+         abgeschnitten wird, mit einer breiten Karte darin, die zu zwei Dritteln sichtbar ist. Links Event Tracking in den Farben des anderen Themas, rechts Citation Tracking. Ein Klick waehlt und geht weiter -- kein "Continue". */
       var karten = '<div class="uev-wk-raster" role="group" aria-label="' + esc(t("What do you want to create?")) + '">' + KIND_WAHL.map(function (a) {
         return '<button type="button" class="uev-wk' + (a.invers ? " is-invers" : "") + '" data-kind="' + a.k + '">' +
           '<span class="uev-wk-kopf"><span class="uev-wk-t">' + esc(t(a.titel)) + '</span><span class="uev-wk-pfeil" aria-hidden="true">' + UC.icon("arrowUpRight", 2) + '</span></span>' +
           '<span class="uev-wk-s">' + esc(t(a.satz)) + '</span>' +
-          '<span class="uev-wk-bild" aria-hidden="true"><span class="uev-wk-tafel"><span class="uev-wk-feld">' + UC.icon(a.ic, 1.8) + '</span></span></span>' +
+          '<span class="uev-wk-tafel" aria-hidden="true"><span class="uev-wk-feld">' + UC.icon(a.ic, 1.8) + '</span></span>' +
         '</button>';
       }).join("") + '</div>';
       var api = UC.makeModal({
@@ -7799,7 +7799,7 @@
       });
       var p = { art: "art", api: api, e: {}, knopf: "weiter", pops: {} };
       popup = p;
-      try { api.karte.style.maxWidth = "680px"; } catch (e) {}
+      try { api.karte.style.maxWidth = "min(920px, calc(100vw - 32px))"; } catch (e) {}
       var box = api.body.querySelector(".uev-kindwahl");
       function weiter(k) {
         api.schliessen();
