@@ -9368,6 +9368,9 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up
   --vc-inverse-glanz: rgba(255,255,255,.09);
   /* Die umgekehrte Auswahlkarte (events.js, "Track an Event", 19.10.): Seitengrund, Feld und Schrift des ANDEREN Themas. Im Hellen also die des Dunkels. */
   --up-wk-invers-bg: #0a0a0a; --up-wk-invers-feld: #1f1f1f; --up-wk-invers-ink: #ededed; --up-wk-invers-rand: #2e2e2e;
+  /* Der Schatten der gekippten Tafel in den Auswahlkarten (19.10.): rundum, auch nach oben -- die Tafel ist rechts und unten abgeschnitten, ein nach unten fallender
+     Schatten (--up-e-*) kaeme gar nicht ins Bild. */
+  --up-wk-schatten: 0 -3px 14px rgba(0,0,0,.10), 0 4px 14px rgba(0,0,0,.08);
   /* DER GRUND EINES POPUPS (19.10., Nutzer): der Seitengrund, nicht die Flaeche einer Karte. Im Hellen Weiss, im grauen Hell der Seitengrund (unten, an
      .up-root im grauen Hell), im Dunkeln #0a0a0a (--up-seite-dunkel). Dialogkarte, Palette und die anderen Fenster lesen nur dieses Token. */
   --up-popup-bg: #ffffff;
@@ -9376,6 +9379,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up
   --vc-inverse-sub: #5f636b;
   --vc-inverse-glanz: rgba(255,255,255,.75);
   --up-wk-invers-bg: #f2f2f2; --up-wk-invers-feld: #ffffff; --up-wk-invers-ink: #171717; --up-wk-invers-rand: #dcdbdd;
+  --up-wk-schatten: 0 -3px 14px rgba(0,0,0,.55), 0 4px 14px rgba(0,0,0,.45);
   --up-popup-bg: #0a0a0a;
 }
 

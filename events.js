@@ -762,11 +762,11 @@
     "Previous and last {n} days": "Vorherige und letzte {n} Tage", "Citations ({n}d)": "Zitate ({n} T)",
     "Chart shows": "Chart zeigt",
     "Before this period": "Vor diesem Zeitraum",
-    "Event Tracking measures what a change did, and Citation Tracking watches which of your pages AI answers cite. You choose when you create.":
-      "Event Tracking misst, was eine Änderung bewirkt hat, Citation Tracking beobachtet, welche deiner Seiten KI-Antworten zitieren. Du wählst beim Erstellen.",
+    "Track an Event measures what a change did, Track Citations watches which of your pages AI answers cite. You choose when you create.":
+      "Event tracken misst, was eine Änderung bewirkt hat, Zitate tracken beobachtet, welche deiner Seiten KI-Antworten zitieren. Du wählst beim Erstellen.",
     "Two ways to track": "Zwei Arten zu tracken",
-    "Event Tracking compares before and after a date against a control group. Citation Tracking watches pages and domains across all your prompts, with no date. The tour continues with Event Tracking.":
-      "Event Tracking vergleicht vor und nach einem Datum mit einer Kontrollgruppe. Citation Tracking beobachtet Seiten und Domains über alle deine Prompts, ohne Datum. Die Tour geht mit Event Tracking weiter.",
+    "Track an Event: Measure the impact of Campaigns, Product Launches or other assets. Track Citations: Keep an eye on pages and domains with realtime updates. The tour continues with Track an Event.":
+      "Event tracken: Miss die Wirkung von Kampagnen, Produktlaunches oder anderen Assets. Zitate tracken: Behalte Seiten und Domains mit Echtzeit-Updates im Blick. Die Tour geht mit Event tracken weiter.",
     "Measures what a change did, such as a relaunch or a campaign: Upstreem compares your AI performance before and after its date.":
       "Misst, was eine Änderung bewirkt hat, etwa ein Relaunch oder eine Kampagne: Upstreem vergleicht deine AI Performance vor und nach dem Datum.",
     "Watches pages and domains. It covers all your prompts, including new ones, and shows which of your pages AI answers cite and how their global share changes. There is no date and no comparison group.":
@@ -8429,15 +8429,15 @@
       { id: "kopf", seiten: ["unten", "links"], zurueck: false,
         ziel: function () { return elAktion.querySelector(".uev-anlegen"); },
         titel: "Create",
-        text: "Event Tracking measures what a change did, and Citation Tracking watches which of your pages AI answers cite. You choose when you create.",
-        vis: function () { return anlZeile("calendar", t("Event Tracking")) + anlZeile("eye", t("Citation Tracking")); },
+        text: "Track an Event measures what a change did, Track Citations watches which of your pages AI answers cite. You choose when you create.",
+        vis: function () { return anlZeile("cells", t("Track an Event")) + anlZeile("globe", t("Track Citations")); },
         weiter: function () { popupArt(); } },
       /* Die Wahl der Art (19.10.): beide Arten in einer Karte. Danach geht die Anleitung mit Event Tracking weiter, der Art mit
          den vier Schritten; Citation Tracking hat drei einfache und braucht keine Fuehrung. */
       anlSchritt({ id: "art", ziel: function () { return im(".uev-wk-raster"); },
         titel: "Two ways to track",
-        text: "Event Tracking compares before and after a date against a control group. Citation Tracking watches pages and domains across all your prompts, with no date. The tour continues with Event Tracking.",
-        vis: function () { return anlZeile("calendar", t("Event Tracking")) + anlZeile("eye", t("Citation Tracking")); } },
+        text: "Track an Event: Measure the impact of Campaigns, Product Launches or other assets. Track Citations: Keep an eye on pages and domains with realtime updates. The tour continues with Track an Event.",
+        vis: function () { return anlZeile("cells", t("Track an Event")) + anlZeile("globe", t("Track Citations")); } },
         { mount: popupKarte, rahmen: popupKarte, seiten: ["rechts", "links"], zurueck: false,
           weiter: function () { if (popup && popup.art === "art") { popup.api.schliessen(); setTimeout(function () { popupAnlegen(null, "event"); }, 0); } },
           weiterAus: function () { return !popup || popup.art !== "art"; } }),

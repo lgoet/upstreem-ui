@@ -138,7 +138,9 @@
      scrollbar-gutter: stable -- die Rinne wird IMMER reserviert, nicht erst wenn die Leiste
      auftaucht: unter Windows ruckte der Inhalt sonst um 15px, sobald die Spaltenliste die Hoehe
      ueberschreitet. .uex-body steht in core in der Liste der Rollflaechen von Popups. */
-  .uex-body { min-height: 0; min-width: 0; overflow-y: auto; overflow-x: hidden; padding: 20px 24px; scrollbar-gutter: stable; }
+  /* Der innere Bereich ist die Flaeche (weiss, im Dunkeln --vc-bg), alles aussen herum -- Kopf, Liste links, Fuss -- der Grund der Seite (19.10.): die Karte selbst
+     traegt seit dem Popup-Grund (--up-popup-bg) den Seitengrund, darum steht hier die Flaeche ausdruecklich. */
+  .uex-body { min-height: 0; min-width: 0; overflow-y: auto; overflow-x: hidden; padding: 20px 24px; scrollbar-gutter: stable; background: var(--vc-bg); }
   /* hidden muss gegen display: flex gewinnen -- das Attribut allein verliert. */
   .uex-body > [hidden], .uex-feld[hidden], .uex-hinweis[hidden], .uex-presets[hidden], .uex-alle[hidden], .uex-filter-zurueck[hidden],
   .uex-balken[hidden], .uex-gekappt[hidden], .uex-foot-info[hidden] { display: none; }

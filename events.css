@@ -933,7 +933,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-wk:hover .uev-wk-pfeil, .uev-wk:focus-visible .uev-wk-pfeil { opacity: 1; transform: none; }
 .uev-wk-s { position: relative; z-index: 1; display: block; max-width: 90%; margin-top: 10px; font-size: var(--up-fs-l); line-height: 1.3; color: var(--vc-third); }
 .uev-wk-tafel { position: absolute; left: 15%; top: 116px; width: 100%; height: 100%; box-sizing: border-box; display: flex; align-items: flex-start; justify-content: center; padding-top: 40px;
-  border: 1px solid var(--uev-wk-rand); border-radius: var(--up-r-m); background: var(--uev-wk-tafel); box-shadow: var(--up-e-1);
+  border: 1px solid var(--uev-wk-rand); border-radius: var(--up-r-m); background: var(--uev-wk-tafel); box-shadow: var(--up-wk-schatten);
   transform: rotate(-5.5deg); transform-origin: 50% 80px; transition: transform var(--up-t-3) var(--up-ease); }
 .uev-wk:hover .uev-wk-tafel, .uev-wk:focus-visible .uev-wk-tafel { transform: rotate(-3.3deg); }
 .uev-wk-feld { display: flex; align-items: center; justify-content: center; flex: 0 0 auto; width: min(208px, 62%); height: 80px; box-sizing: border-box;
