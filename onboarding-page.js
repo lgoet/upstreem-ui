@@ -526,9 +526,11 @@
          und ein verzoegertes Bild feuert es spaet oder (in einem nicht gerenderten Rahmen) gar
          nicht. Gemessen: naturalWidth 16, aber complete false und onload nie gelaufen. */
       (favUrl ? '<img src="' + esc(favUrl) + '" alt="" referrerpolicy="no-referrer"' +
-                ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"' +
-                ' onload="if(this.naturalWidth&&this.naturalWidth&lt;=16){' +
-                  'this.parentNode.classList.remove(\'has-img\'); this.remove();}"/>' : "");
+                /* parentNode kann null sein: ein Bild, das waehrend des Ladens aus dem Dokument genommen wurde (die Ansicht zeichnet neu), meldet
+         sein Scheitern trotzdem noch -- "Cannot read properties of null (reading 'classList')", gemeldet 19.10. */
+      ' onerror="var p=this.parentNode; if(p) p.classList.remove(\'has-img\'); this.remove()"' +
+                ' onload="var p=this.parentNode; if(p&&this.naturalWidth&&this.naturalWidth&lt;=16){' +
+                  'p.classList.remove(\'has-img\'); this.remove();}"/>' : "");
   }
   function kachel(cls, name, domain, favUrl) {
     /* Eine mitgelieferte Adresse gewinnt ueber die selbst gebaute: die RPC kennt das Logo
@@ -866,6 +868,24 @@
             '<span data-next-txt>Continue</span><span class="uob-spin"></span>' +
           '</button>' +
         '</div>' +
+      '</div>' +
+
+      /* DER ABSCHLUSS (19.10.): nach der Kasse eine eigene Flaeche ueber der ganzen Seite, ohne Kopfzeile, Schiene und Tafel. Erst
+         "Processing" mittig, dann blendet es aus und "Welcome to upstreem" mit dem Logo ein, dann geht es in die App. */
+      '<div class="uob-fin" data-fin aria-hidden="true">' +
+        '<div class="uob-fin-wait" data-fin-wait></div>' +
+        '<div class="uob-fin-hallo" data-fin-hallo>' +
+          (logo ? '<img class="uob-fin-logo" src="' + esc(logo) + '" alt="upstreem" data-fin-logo ' +
+                  'onerror="this.remove()"/>' : '') +
+          '<h1 class="uob-fin-h">Welcome to upstreem</h1>' +
+        '</div>' +
+        '<div class="uob-fin-hinweis" data-fin-hinweis hidden>' +
+          '<p>This is taking longer than usual. Your payment went through and we are still setting up your workspace.</p>' +
+          '<div class="uob-fin-knoepfe">' +
+            '<button class="uob-back" type="button" data-fin-nochmal>Check again</button>' +
+            '<button class="uob-next" type="button" data-fin-app>Open the app</button>' +
+          '</div>' +
+        '</div>' +
       '</div>';
     }
 
@@ -1074,6 +1094,11 @@
                    nichts gewaehlt, bleibt die Zeile leer statt etwas zu behaupten. */
                 '<div class="uob-tl-tags" data-tltags>' +
                   state.topics.filter(function (t) { return state.selTopics[t.id]; })
+                    .concat(state.eigene.filter(function (e2) { return txt(e2.name); }).map(function (e2) {
+                      /* Die selbst angelegten Themen gehoeren dazu (19.10.: im zweiten Ladebild fehlten sie): mit dem Namen und der Farbe, die die
+                         Datenbank ihnen gleich gibt (eigeneFarbenRechnen). */
+                      return { id: e2.id, name: e2.name, hex_light: e2.farbe, hex_dark: e2.farbe };
+                    }))
                     .map(function (t) {
                       /* .up-topicchip aus core -- derselbe Chip, den die Prompts-Tabelle und die
                          Themenverwaltung zeichnen. is-static, weil er hier nur anzeigt. */
@@ -1377,6 +1402,7 @@
        Nutzer weiss besser als der Hintergrundlauf, wofuer er gefunden werden will.
        Ein Thema ohne Namen zaehlt nicht mit: erst wenn etwas dasteht, ist es eines. */
     function eigeneThemenHtml() {
+      eigeneFarbenRechnen();
       var fest = themenGesperrt();
       var html = state.eigene.map(function (e, i) {
         return '<div class="uob-item is-slim is-plain' + (fest ? " is-fest is-blocked" : "") +
@@ -2690,6 +2716,10 @@
         return;
       }
 
+      /* Der Abschluss dauert laenger als gedacht (nach 3 Minuten): noch einmal fragen oder ohne Warten in die App. */
+      if (e.target.closest("[data-fin-nochmal]")) { finPruefen(); finPollenStarten(); return; }
+      if (e.target.closest("[data-fin-app]")) { fire("data-dashboard-fn", "uobDashboard", null); return; }
+
       var exit = e.target.closest("[data-exit]");
       if (exit) {
         /* ZWEI getrennte Ereignisse und nicht eines mit einem Wert. So angesagt am 26.08., und es
@@ -2911,6 +2941,7 @@
           var zeile = e.target.closest("[data-eigen]");
           var hk = zeile && zeile.querySelector(".uob-check");
           if (hk) hk.classList.toggle("is-leer", !txt(eintrag.name));
+          eigeneFarbenAnwenden();
           themenZaehler();
         }
         return;
@@ -3027,6 +3058,39 @@
           changed_ids_json: alleThemen });
     }
 
+    /* DIE FARBE EINES EIGENEN THEMAS (19.10., "die Farbe im Schritt Topics war grau, bei den Prompts lila"): die erste FREIE Farbe in
+       fester Reihenfolge -- dieselbe Liste und dieselbe Regel wie app._onb_topic_free_color_v1, mit der die Datenbank dem Thema
+       beim Start des Promptlaufs seine Farbe gibt. Belegt sind die Farben aller vorgeschlagenen Themen (hex_light, auch die
+       nicht gewaehlten, wie in der DB) und die der eigenen davor. Ein Thema ohne Namen bekommt die naechste freie Farbe, belegt
+       sie aber nicht: die Datenbank bekommt nur die mit Namen. Aendert sich die Liste (Thema dazu, weg, Name getippt), wird neu
+       gerechnet. */
+    var FARBEN_EIGEN = [
+      "#de1b22", "#b65616", "#8d6a11", "#108440", "#107c84", "#1b6eda", "#9145e8", "#d51a8b",
+      "#ab2b2f", "#8b4c23", "#725a1d", "#1b6a3c", "#1b656a", "#295ea3", "#7a33cc", "#a32972",
+      "#b47476", "#a87b5d", "#988552", "#4f926b", "#509195", "#6a88af", "#977ab8", "#b27098",
+      "#666666", "#7d7d7d", "#575757", "#6f6f6f", "#787878", "#949494"];
+    function eigeneFarbenRechnen() {
+      var belegt = {};
+      state.topics.forEach(function (t) { var h = txt(t && t.hex_light).toLowerCase(); if (h) belegt[h] = true; });
+      function frei() {
+        for (var i = 0; i < FARBEN_EIGEN.length; i++) if (!belegt[FARBEN_EIGEN[i]]) return FARBEN_EIGEN[i];
+        return FARBEN_EIGEN[0];
+      }
+      state.eigene.forEach(function (e) {
+        var f = frei();
+        e.farbe = f;
+        if (txt(e.name)) belegt[f] = true;
+      });
+    }
+    /* Neu rechnen und die Farbpunkte der Zeilen, die schon dastehen, nachziehen. */
+    function eigeneFarbenAnwenden() {
+      eigeneFarbenRechnen();
+      state.eigene.forEach(function (e, i) {
+        var sw = root.querySelector('[data-eigen="' + i + '"] .uob-swatch');
+        if (sw) sw.style.setProperty("--uob-sw", e.farbe);
+      });
+    }
+
     /* Ein neues eigenes Thema. Die Zeile wird an Ort und Stelle eingesetzt und der Platzhalter
        wandert darunter -- kein Neuaufbau der Liste, sonst verlaere jedes andere Feld seinen
        Fokus und die Liste ihren Scrollstand. Die Farbe kommt aus der Themenpalette von core,
@@ -3034,14 +3098,13 @@
     function eigenesThemaAnlegen(platzhalter) {
       if (state.eigene.length >= EIGEN_MAX) return;
       if (themenGesperrt()) return;
-      var pal = UC.TOPIC_COLOR_PALETTE || [];
       var i = state.topics.length + state.eigene.length;
       state.eigene.push({
         id: "eigen-" + i + "-" + state.eigene.length,
         name: "",
-        /* Ohne Palette das Token aus core (17.10.) -- die Farbe geht nur in --uob-sw, nie an den Server. */
-        farbe: pal.length ? pal[i % pal.length] : "var(--vc-ob-thema-rueckfall)"
+        farbe: "var(--vc-ob-thema-rueckfall)"   /* gleich unten gerechnet (eigeneFarbenRechnen); die Farbe geht nur in --uob-sw, nie an den Server */
       });
+      eigeneFarbenRechnen();
       var idx = state.eigene.length - 1;
       var frisch = document.createElement("div");
       frisch.innerHTML = eigeneThemenHtml();
@@ -3068,6 +3131,7 @@
       var id = state.eigene[idx].id;
       delete state.selTopics[id];
       state.eigene.splice(idx, 1);
+      eigeneFarbenRechnen();
       /* Hier wird neu gebaut: die Indizes aller folgenden Zeilen verschieben sich, und die von
          Hand nachzuziehen waere mehr Code als der Neuaufbau kostet. Der Fokus ist ohnehin auf
          einem Knopf, der gerade verschwindet. */
@@ -4428,14 +4492,6 @@
         persist();
       });
     }
-    function neuTeamModus() {
-      var param = /[?&]neu=1(&|#|$)/.test(window.location.search);
-      try {
-        if (param) window.sessionStorage.setItem("up_onb_neu", "1");
-        return window.sessionStorage.getItem("up_onb_neu") === "1";
-      } catch (e) { return param; }
-    }
-    function neuTeamEnde() { try { window.sessionStorage.removeItem("up_onb_neu"); } catch (e) {} }
     function sbAnwenden(erg) {
       var d = sbDaten(erg);
       if (!d) {
@@ -4458,18 +4514,9 @@
       SB.id = txt(p.onboarding_id);
       sbAbo();
       if (st === "completed") {
-        /* NEUES TEAM (19.10., gemeldet: "Create new team" fuehrte sofort zurueck in die App): ein Nutzer hat genau EINE Zeile
-           onboarding_project, und die steht nach dem ersten Team auf "completed". Das hiess bisher immer "fertig, ab ins
-           Dashboard" -- richtig fuer den Weg aus der Kasse, falsch fuer jemanden, der ein weiteres Team anlegen will. Kommt er
-           ueber "Create new team" (?neu=1 aus der Seitenleiste), ist das fertige Projekt kein offener Lauf: wie ohne Projekt, ohne Tor
-           (das Tor fragt nach einem laufenden Onboarding), und onboarding_start_v1 setzt die Zeile beim Absenden neu auf. */
-        if (neuTeamModus()) {
-          torGeprueft = true; state.torAuf = false;
-          SB.id = "";
-          ctrl.setBundle(null);
-          if (rs) state.restart = rs;
-          return;
-        }
+        /* Ein fertiges, noch nicht bestaetigtes Projekt: der Abschluss (Welcome) steht noch aus. Ein bestaetigtes liefert die Datenbank
+           gar nicht mehr (onboarding_bundle_v1: row null) -- so beginnt "Create new team" mit einem leeren Formular, ohne Schalter
+           in der Adresse (19.10., ersetzt ?neu=1). */
         state.projekt = sbProjekt(p); sbFertig(p.team_id); return;
       }
       /* Nach der Kasse kein Tor und keine Auswahl: hier entsteht gerade das Team. */
@@ -4477,7 +4524,7 @@
         torGeprueft = true;
         bootBeenden();
         state.projekt = sbProjekt(p);
-        if (state.warten !== "workspace") warteStarten("workspace", false);
+        finStart();
         sbKassePruefenSpaeter();
         return;
       }
@@ -4540,7 +4587,7 @@
       }
       if (st === "finalizing") {
         torGeprueft = true; state.torAuf = false;
-        if (state.warten !== "workspace") warteStarten("workspace", false);
+        finStart();
         return;
       }
       if (st === "awaiting_billing") return;
@@ -4559,19 +4606,99 @@
       });
     }
 
+    /* ---- Der Abschluss nach der Kasse (19.10.) ----------------------------------------------------------------------------
+       Ein Weg, der nie zurueck auf Schritt Brand fuehrt: die Zahlung ist durch, das Team entsteht in der Datenbank in EINEM Schritt
+       (onboarding_finalize_after_billing_v1, gesperrt, idempotent). Die Seite wartet darauf -- ueber den Kanal und, falls der
+       schweigt, alle 3 Sekunden ueber onboarding_status_v1 --, und ein Fehler einer einzelnen Abfrage bricht nichts ab. Erst nach 3
+       Minuten steht ein ruhiger Satz mit zwei Knoepfen da.
+         processing  mittig das Ladebild aus core, mindestens 1,5 s (nichts blitzt auf)
+         hallo       "Processing" blendet aus (200ms), "Welcome to upstreem" mit Logo ein (Deckkraft und Transform), 2,4 s
+         danach      onboarding_ack_v1 (die DB merkt: abgeschlossen und gesehen), dann uobDashboard mit dem Team */
+    var FIN = { phase: "", seit: 0, lb: null, poll: null, hinweisUhr: null, team: "" };
+    function finEl() { return root.querySelector("[data-fin]"); }
+    function finStart() {
+      if (FIN.phase) return;
+      var el = finEl(); if (!el) return;
+      warteBeenden();
+      FIN.phase = "processing"; FIN.seit = new Date().getTime();
+      root.classList.add("is-fin");
+      el.setAttribute("aria-hidden", "false");
+      el.classList.remove("is-hallo");
+      var host = el.querySelector("[data-fin-wait]");
+      if (!FIN.lb && host && UC.makeLadebild) FIN.lb = UC.makeLadebild(host, { name: "", sub: "Processing", kompakt: false });
+      if (FIN.lb) FIN.lb.start();
+      finPollenStarten();
+    }
+    function finPollenStarten() {
+      if (FIN.poll) window.clearInterval(FIN.poll);
+      if (FIN.hinweisUhr) window.clearTimeout(FIN.hinweisUhr);
+      var hin = root.querySelector("[data-fin-hinweis]"); if (hin) hin.hidden = true;
+      FIN.poll = window.setInterval(finPruefen, 3000);
+      FIN.hinweisUhr = window.setTimeout(function () {
+        var h = root.querySelector("[data-fin-hinweis]"); if (h && FIN.phase === "processing") h.hidden = false;
+      }, 180000);
+    }
+    function finPollenEnde() {
+      if (FIN.poll) { window.clearInterval(FIN.poll); FIN.poll = null; }
+      if (FIN.hinweisUhr) { window.clearTimeout(FIN.hinweisUhr); FIN.hinweisUhr = null; }
+    }
+    /* Eine Abfrage: ist es fertig? Alles andere (Fehler, unlesbar, noch nicht) heisst weiter warten. */
+    function finPruefen() {
+      if (FIN.phase !== "processing" || !sbId()) return;
+      sbRpc("onboarding_status_v1", { p_onboarding: sbId() }, { timeoutMs: 20000 }).then(function (erg) {
+        var d = sbDaten(erg); if (d && d.row) d = d.row;
+        if (!d || FIN.phase !== "processing") return;
+        if (txt(d.status).toLowerCase() === "completed" && txt(d.team_id)) sbFertig(d.team_id);
+      });
+    }
+    function finFertig(teamId) {
+      if (FIN.phase === "hallo" || FIN.phase === "weg") return;
+      FIN.team = txt(teamId);
+      if (!FIN.phase) finStart();
+      finPollenEnde();
+      var rest = Math.max(0, 1500 - (new Date().getTime() - FIN.seit));
+      window.setTimeout(finHallo, rest);
+    }
+    function finHallo() {
+      if (FIN.phase === "hallo" || FIN.phase === "weg") return;
+      FIN.phase = "hallo";
+      var el = finEl(); if (!el) return;
+      var hin = el.querySelector("[data-fin-hinweis]"); if (hin) hin.hidden = true;
+      el.classList.add("is-hallo");
+      window.setTimeout(function () { if (FIN.lb) FIN.lb.stop(); }, 300);
+      window.setTimeout(finWeiter, 2400);
+    }
+    function finWeiter() {
+      if (FIN.phase === "weg") return;
+      FIN.phase = "weg";
+      var erledigt = false;
+      function los() {
+        if (erledigt) return; erledigt = true;
+        fireBubble("data-dashboard-fn", "uobDashboard", FIN.team ? { team_id: FIN.team } : null);
+      }
+      /* Bestaetigen, damit "Create new team" spaeter mit einem leeren Formular beginnt; scheitert es oder dauert es, geht es trotzdem
+         weiter (die Notbremse). */
+      window.setTimeout(los, 2500);
+      sbRpc("onboarding_ack_v1", { p_onboarding: sbId() }, { timeoutMs: 2500 }).then(los, los);
+    }
+    /* Die Zahlung war doch nicht durch (offen oder abgelaufen): zurueck auf den Tarif, mit Satz. */
+    function finZu() {
+      finPollenEnde();
+      FIN.phase = "";
+      root.classList.remove("is-fin");
+      var el = finEl(); if (el) { el.setAttribute("aria-hidden", "true"); el.classList.remove("is-hallo"); }
+      if (FIN.lb) FIN.lb.stop();
+    }
+
     /* ---- Fertig: ins Dashboard ---- */
     function sbFertig(teamId) {
-      neuTeamEnde();
       sbAboEnde();
       if (SB.pruefUhr) { window.clearTimeout(SB.pruefUhr); SB.pruefUhr = null; }
       torGeprueft = true; state.torAuf = false;
       bootBeenden();
-      if (state.warten !== "workspace") warteStarten("workspace", false);
-      state.fortschritt = 100; renderPhasen();
       persist();
-      /* Finalize hat das neue Team schon als aktives gesetzt (user_settings); der Weg ins
-         Dashboard ist derselbe wie der Knopf in der Kopfzeile. */
-      window.setTimeout(function () { fireBubble("data-dashboard-fn", "uobDashboard", teamId ? { team_id: txt(teamId) } : null); }, 600);
+      /* Finalize hat das neue Team schon als aktives gesetzt (user_settings); finFertig zeigt den Abschluss und geht dann in die App. */
+      finFertig(teamId);
     }
 
     /* ---- Rueckkehr aus der Kasse ---- */
@@ -4597,23 +4724,24 @@
       }, 20000);
     }
     function sbKassePruefen() {
-      if (state.warten !== "workspace") return;
+      if (FIN.phase !== "processing") return;
       var weg = SB.session
         ? sbEdge("onboarding-checkout-status", { session_id: SB.session }, { timeoutMs: 30000 })
         : sbRpc("onboarding_status_v1", { p_onboarding: sbId() }, { timeoutMs: 20000 });
       weg.then(function (erg) {
         var d = sbDaten(erg); if (d && d.row) d = d.row;
-        if (!d) { ctrl.setError(sbAllgemein(erg) || sbSatz("finalize_failed")); return; }
+        /* Ein Fehler dieser einen Abfrage (Netz, Edge Function, unlesbar) beendet NICHTS: die Zahlung ist durch, und die Seite fragt
+           weiter (finPruefen alle 3 s). Frueher stand hier ein Fehlerband und der Rueckweg auf Schritt Brand (gemeldet 19.10.). */
+        if (!d) return;
         if (num(d.status_phase) === 100 && txt(d.team_id)) { sbFertig(d.team_id); return; }
         var zahl = txt(d.payment);
         if (zahl === "open" || zahl === "expired") {
-          warteBeenden(); SB.rueckkehr = "";
+          finZu(); warteBeenden(); SB.rueckkehr = "";
           if (state.step !== "plan") gehe("plan", false);
           ctrl.setError(UC.t("The payment wasn't completed. You can choose your plan again."));
           return;
         }
-        if (txt(d.error_code)) { ctrl.setError(sbSatz(d.error_code)); return; }
-        /* Bezahlt, Finalize laeuft noch: weiter auf den Kanal warten. */
+        /* Bezahlt, Finalize laeuft noch (auch mit error_code finalize_*: die Datenbank schliesst idempotent ab): weiter warten. */
       });
     }
 
@@ -4670,7 +4798,6 @@
         var c = lebt() ? ctrl : resolve(instanceId); if (!c) return;
         var d = sbDaten(erg);
         if (!d || !txt(d.onboarding_id)) { c.__sbStartFehler(erg); return; }
-        neuTeamEnde();   /* der Lauf hat begonnen: das fertige Projekt von vorher ist ersetzt */
         SB.id = txt(d.onboarding_id);
         state.projekt = Object.assign({}, state.projekt || {}, {
           onboarding_id: SB.id, status: txt(d.status), status_phase: num(d.status_phase),
@@ -4762,7 +4889,7 @@
       if (/checkout_open/.test(c) && h === "paid") {
         torGeprueft = true;
         state.banner = "";
-        warteStarten("workspace", false);
+        finStart();
         sbKassePruefenSpaeter();
         return;
       }
@@ -4975,7 +5102,7 @@
        dann das Tor. */
     if (SELBST && !neuaufbau) {
       sbRueckkehrLesen();
-      if (SB.rueckkehr === "success") { torGeprueft = true; bootBeenden(); warteStarten("workspace", false); }
+      if (SB.rueckkehr === "success") { torGeprueft = true; bootBeenden(); finStart(); }
       sbLaden();
     }
 

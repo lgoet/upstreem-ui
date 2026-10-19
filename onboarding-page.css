@@ -39,7 +39,7 @@
      Blaustich aus der Zeit vor Linears Leiter, und der dunkle Zweig unten setzte laengst
      --vc-heading-bg. Zwei Toene fuer eine Bedeutung, und einer davon von Hand. Jetzt beide aus
      demselben Token: #f9f8f9 im Hellen, #232326 im Dunkeln. */
-  --uob-hover: var(--vc-heading-bg);
+  --uob-hover: var(--up-wahl-bg);   /* 19.10.: die Auswahlflaeche des Designsystems statt der Kopfzeilenflaeche (kaum zu sehen auf Weiss) */
   /* Breite je Schritt. Ein Formular liest sich in einer schmalen Spalte besser, eine Liste
      braucht mehr, drei Preiskarten am meisten. Der Wechsel laeuft ueber dieselben 200ms wie
      alles andere, deshalb eine Variable statt drei Klassen mit festen Breiten. */
@@ -728,7 +728,7 @@
   margin: 0 0 4px; align-items: center;
 }
 .uob-group-items.is-plain > *:last-child { margin-bottom: 0; }
-.uob-item.is-plain:hover { background: var(--vt-row-hover); border-color: transparent; }
+.uob-item.is-plain:hover { background: var(--up-wahl-bg); border-color: transparent; }   /* 19.10.: --vt-row-hover war auf Weiss kaum zu sehen */
 .uob-item.is-plain.is-on { background: var(--vt-row-hover); border-color: transparent; }
 
 .uob-item {
@@ -738,7 +738,7 @@
   font-family: inherit; cursor: pointer; outline: none;
   transition: border-color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
 }
-.uob-item:hover { border-color: var(--vc-hover-border); }
+.uob-item:hover { border-color: var(--vc-hover-border); background: var(--up-wahl-bg); }   /* 19.10.: auch die Flaeche, nicht nur der Rahmen */
 /* Gewaehlt faerbt die FLAECHE, der Rahmen bleibt der des Hovers. Ein Rahmen in der
    Primaerfarbe zog jede gewaehlte Zeile nach vorn, als waere sie ein Knopf -- fuenf davon
    nebeneinander waren fuenf Knoepfe. Die Flaeche sagt es leiser und genauso deutlich. */
@@ -751,14 +751,14 @@
    zu viel, und bei sieben Themen entscheidet genau das darueber, ob die Liste scrollt. */
 .uob-item.is-slim { min-height: 40px; padding: 6px 12px; }
 .uob-item.is-blocked { opacity: .45; cursor: default; }
-.uob-item.is-blocked:hover { border-color: var(--vc-border); }
+.uob-item.is-blocked:hover { border-color: var(--vc-border); background: var(--vc-bg); }
 /* FEST: die Themen stehen, weil die Prompts darauf gebaut sind. Das Ausgegraut kommt aus
    is-blocked -- dieselbe Bedeutung, dieselbe Klasse, derselbe Wert; hier steht nur, was darueber
    hinaus gilt. (Erst stand hier volle Deckkraft mit der Begruendung, die Wahl sei getroffen und
    gueltig. Angesagt am 26.08. war das Gegenteil: ausgegraut, mit Grund am Zeiger -- der Nutzer
    soll SEHEN, dass hier nichts mehr geht, und nicht erst beim Klicken merken.) */
 .uob-item.is-fest { cursor: default; }
-.uob-item.is-fest:hover { border-color: var(--vc-border); }
+.uob-item.is-fest:hover { border-color: var(--vc-border); background: var(--vc-bg); }
 /* Der Haken einer gewaehlten Zeile bleibt erkennbar, auch gedaempft: er ist die Aussage, WAS
    gewaehlt ist, und die muss lesbar bleiben. */
 .uob-item.is-fest.is-on { opacity: .6; }
@@ -854,7 +854,7 @@
   transition: background var(--uob-t) var(--uob-ease), color var(--uob-t) var(--uob-ease),
               opacity var(--uob-t) var(--uob-ease);
 }
-.uob-add:hover { background: var(--vt-row-hover); color: var(--vc-text); }
+.uob-add:hover { background: var(--up-wahl-bg); color: var(--vc-text); }
 .uob-add:focus-visible { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .uob-add svg { width: 15px; height: 15px; display: block; flex: 0 0 auto; }
 /* Neu dazugekommene Zeilen und Platzhalter blenden auf, statt zu erscheinen. Die Klasse nimmt
@@ -1302,21 +1302,20 @@
      nach LINKS geworfen, weil beide am rechten Rand haengen und von dort hereinkommen. Hier
      standen zwei Lagen mit blauem Stich und eine eigene Dunkel-Fassung -- die faellt mit weg,
      der Drawer hat auch keine. */
-  box-shadow: var(--up-e-drawer);
+  box-shadow: var(--up-e-2);   /* 19.10.: Popover-Schatten (haengt an einem Knopf) statt Drawer-Schatten */
   opacity: 0; transform: translateX(8px); pointer-events: none;
   transition: opacity var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease);
 }
 .uob-help.is-on { opacity: 1; transform: none; pointer-events: auto; }
 .uob-help-head {
   flex: 0 0 auto; display: flex; align-items: center;
-  gap: 7px; padding: 13px 10px 11px 16px;
+  gap: 8px; padding: 12px 8px 8px 16px;
 }
 /* Das Zeichen des Kastens steht links neben seinem Namen -- so ist der Kopf ein Etikett und
    nicht nur ein Wort mit einem Kreuz am anderen Ende. */
 .uob-help-ic { flex: 0 0 auto; display: inline-flex; color: var(--vc-muted); }
-.uob-help-ic svg { width: 15px; height: 15px; display: block; }
-.uob-help-title { flex: 1 1 auto; font-size: 13px; font-weight: 600; color: var(--vc-text);
-  letter-spacing: .01em; }
+.uob-help-ic svg { width: 16px; height: 16px; display: block; }
+.uob-help-title { flex: 1 1 auto; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
 /* Der Schliesskreuz-Knopf. .check_reinvention.py meldet ihn wie die uebrigen ruhigen Knoepfe
    dieser Datei als moeglichen Zwilling von .up-seg-btn -- ist er nicht: der ist 32px hoch und
    Mitglied eines Switchers. Dieser hier ist 24px, sitzt in einer Kastenkopfzeile und traegt nur
@@ -1340,28 +1339,27 @@
 /* Drei Stufen, damit das Auge weiss, wo es anfaengt: der Leitsatz gross und in Textfarbe, die
    Zwischenueberschriften klein und in Textfarbe (nicht grau -- eine graue Ueberschrift ueber
    grauem Text ist keine Stufe), der Fliesstext dazwischen in --vc-muted. */
-.uob-help-lead { margin: 0 0 18px; font-size: 15.5px; line-height: 1.45; font-weight: 600;
-  color: var(--vc-text); letter-spacing: -.008em; text-wrap: pretty; }
+.uob-help-lead { margin: 0 0 16px; font-size: var(--up-fs-l); line-height: 1.5; font-weight: var(--up-fw-m);
+  color: var(--vc-text); text-wrap: pretty; }   /* 19.10.: 14/500 statt 15.5/600, auf der Skala und leiser */
 /* Das Zeichen im Satz: auf der Grundlinie mitlaufend, in der ruhigen Farbe, damit es den Satz
    gliedert statt ihn zu unterbrechen. */
 /* Das Zeichen im Satz braucht rundum Luft: es steht zwischen zwei Woertern, und ohne Abstand
    klebt es am naechsten. Rechts mehr als links, weil danach das Wort kommt, um das es geht. */
 .uob-help-leadic { display: inline-flex; vertical-align: -2px;
   margin-left: 2px; margin-right: 6px; color: var(--vc-muted); }
-.uob-help-leadic svg { width: 15px; height: 15px; display: block; }
-.uob-help-sec + .uob-help-sec { margin-top: 18px; }
+.uob-help-leadic svg { width: 16px; height: 16px; display: block; }
+.uob-help-sec + .uob-help-sec { margin-top: 16px; }
 /* Die Zwischenueberschrift ist GROESSER als ihr Text, nicht kleiner. Sie war es kurz nicht --
    dann traegt die Stufe allein das Gewicht, und eine Ueberschrift, die kleiner ist als das,
    was unter ihr steht, liest sich als Beschriftung und nicht als Kapitel. */
-.uob-help-h { margin: 0 0 7px; font-size: 13.5px; font-weight: 600; color: var(--vc-text);
-  letter-spacing: -.005em; }
-.uob-help-t { margin: 0; font-size: 13px; line-height: 1.5; color: var(--vc-muted); text-wrap: pretty; }
+.uob-help-h { margin: 0 0 8px; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
+.uob-help-t { margin: 0; font-size: var(--up-fs-m); line-height: 1.5; color: var(--vc-muted); text-wrap: pretty; }
 /* Die Liste traegt ihre Punkte als eigene Zeichen, nicht als Aufzaehlungspunkte des Browsers:
    dessen Punkte sitzen ausserhalb des Textblocks und brechen die linke Kante. */
 .uob-help-l { margin: 0; padding: 0; list-style: none;
   display: flex; flex-direction: column; gap: 8px; }
 .uob-help-l li { position: relative; padding-left: 14px;
-  font-size: 13px; line-height: 1.5; color: var(--vc-muted); text-wrap: pretty; }
+  font-size: var(--up-fs-m); line-height: 1.5; color: var(--vc-muted); text-wrap: pretty; }
 .uob-help-l li::before {
   content: ""; position: absolute; left: 0; top: .55em;
   width: 4px; height: 4px; border-radius: 50%; background: var(--vc-third);
@@ -1540,4 +1538,40 @@ a.uob-help-calbtn { text-decoration: none; }
   .uob-spin, .uob-phase-ring { animation: none; }
   .uob-bar-fill { transition: none; }
   .uob-root.is-entering *, .uob-pane.is-arriving * { animation: none; }
+}
+
+
+/* ---------- Der Abschluss nach der Kasse (19.10.) ----------
+   Eine Flaeche ueber der ganzen Seite: ohne Kopfzeile, Schiene und Tafel (sie liegt mit dem Grund der Seite darueber). Erst das
+   Ladebild aus core mittig ("Processing"), dann blendet es aus und "Welcome to upstreem" mit dem Logo ein, beides ueber Deckkraft
+   und Transform (easeOutExpo, wie die uebrigen Auftritte der App). 900ms sind mit Absicht keine der drei Reaktionsdauern: das
+   Willkommen ist ein Auftritt, bei dem jemand zusieht (Bewegung wie mobbin, rund eine Sekunde), keine Antwort auf einen Klick. */
+.uob-fin {
+  position: absolute; inset: 0; z-index: 300;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--up-surface, var(--vc-bg));
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity var(--uob-t) var(--uob-ease), visibility 0s linear var(--uob-t);
+}
+.uob-root.is-fin .uob-fin { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
+.uob-fin-wait { display: flex; align-items: center; justify-content: center; min-width: 280px; transition: opacity var(--uob-t) var(--uob-ease); }
+.uob-fin-wait .up-lb { min-width: 280px; }   /* sonst kuerzt die Unterzeile ("Processing") mit Auslassungspunkten */
+.uob-fin.is-hallo .uob-fin-wait { opacity: 0; pointer-events: none; }
+.uob-fin-hallo {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+  opacity: 0; transform: translateY(8px); pointer-events: none;
+  transition: opacity 900ms var(--up-ease-expo), transform 900ms var(--up-ease-expo);
+}
+.uob-fin.is-hallo .uob-fin-hallo { opacity: 1; transform: none; transition-delay: 220ms; }
+.uob-fin-logo { height: 28px; width: auto; display: block; }
+.uob-fin-h { margin: 0; font-family: inherit; font-size: var(--up-fs-2xl); line-height: 1.2; font-weight: var(--up-fw-m); color: var(--vc-text); }
+.uob-fin-hinweis {
+  position: absolute; left: 0; right: 0; bottom: 15%; margin: 0 auto; max-width: 420px; padding: 0 24px;
+  display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center;
+}
+.uob-fin-hinweis[hidden] { display: none; }
+.uob-fin-hinweis p { margin: 0; font-size: var(--up-fs-m); line-height: 1.5; color: var(--vc-muted); text-wrap: pretty; }
+.uob-fin-knoepfe { display: flex; gap: 8px; }
+@media (prefers-reduced-motion: reduce) {
+  .uob-fin, .uob-fin-wait, .uob-fin-hallo { transition: none; }
 }
