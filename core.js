@@ -22206,7 +22206,7 @@
      die Bewegung seines Platzhalters (seitenVorab, siehe dort) an der Stelle, an der er gerade
      steht, statt noch einmal bei unsichtbar zu beginnen. Eine negative Verzoegerung laesst die Animation
      mittendrin anfangen; ist sie laenger als die Dauer, steht der Teil sofort fertig da. */
-  function auftrittBewegen(teile, ab, versatz){
+  function auftrittBewegen(teile, ab, versatz, ohneWeg){
     var weich = weicheBewegung(), ms = weich ? 160 : auftrittDauer();
     teile.forEach(function(el, i){
       var verz = (ab + i) * AUFTRITT_STAFFEL - (versatz || 0);
@@ -22217,8 +22217,13 @@
       if (typeof el.animate !== "function") return;
       /* Ein noch laufender Auftritt desselben Teils wird ersetzt, nicht gestapelt. */
       if (el.__upAuftritt){ try { el.__upAuftritt.cancel(); } catch(e){} }
-      var von = weich ? { opacity: 0 } : { opacity: 0, transform: "translateY(" + AUFTRITT_WEG + "px)" };
-      var nach = weich ? { opacity: 1 } : { opacity: 1, transform: "none" };
+      /* ohneWeg: der Inhalt nach dem Platzhalter (makeAuftritt, zeigen) blendet nur ein. Das Skelett
+         des Platzhalters steht schon an seiner Stelle (seine eigene Fahrt von 10px ist durch); finge
+         der echte Inhalt noch einmal 10px tiefer an, schoebe er sich unter dem noch sichtbaren
+         Skelett nach oben (gemessen 19.10.: Filterleiste y121 -> 112 vor dem Skelett bei y112). */
+      var nurBlende = weich || ohneWeg;
+      var von = nurBlende ? { opacity: 0 } : { opacity: 0, transform: "translateY(" + AUFTRITT_WEG + "px)" };
+      var nach = nurBlende ? { opacity: 1 } : { opacity: 1, transform: "none" };
       try {
         /* fill "backwards": waehrend der Staffel-Verzoegerung steht der Teil schon auf dem Anfang
            (unsichtbar) statt einmal voll aufzublitzen. Danach haelt NICHTS fest -- kein
@@ -22404,7 +22409,7 @@
          schmalen Fenster gemessen 13.10.: Citations stellt die Tabelle auf dicht um, Verschiebung
          0.77, voll sichtbar, als der Inhalt sofort ganz da stand). Unter der Einblendung sieht man
          das nicht -- dieselbe Einblendung wie ohne Platzhalter. */
-      auftrittBewegen(bewegt, vorabSeit >= 0 ? 0 : kopfN);
+      auftrittBewegen(bewegt, vorabSeit >= 0 ? 0 : kopfN, 0, vorabSeit >= 0);
       teile.forEach(function(el){ if (bewegt.indexOf(el) < 0) auftrittLos(el); });
     }
     function versuchen(){
