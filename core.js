@@ -803,8 +803,6 @@
     "Sentiment": "Sentiment",
     /* Der Name des Bretts -- er steht in der App ueberall so und wird nicht uebersetzt. */
     "Opportunities": "Opportunities",
-    /* Die Seite der Events (19.10.): Event Tracking und Citation Tracking stehen als Eigennamen der Abschnitte, nur die Seite wird uebersetzt. */
-    "Experiments": "Experimente",
     "Markets": "Märkte",
     "Model": "Modell",
     "Models": "Modelle",

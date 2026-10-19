@@ -45,7 +45,7 @@
   /* Ein Citation Tracking (kind "watch", 19.10.): ohne Datum der Wirkung, ohne Topics, alle Prompts; sein Detail wird wie das jedes
      Events aus der Zeile abgeleitet. Die Zahl der URLs folgt der Zeile. */
   liste.unshift({ id: "9c5b4a7f-eeee-4da2-8ebf-0000000000e5", kind: "watch", event_date: heute(), name: "Ratgeber im Blick", description: "Alle Seiten unter ratgeber.beispiel.de.",
-    event_type: "other", icon: null, color: null, scope_mode: "all", selected_topic_count: null, affected_prompt_count: 84, comparison_prompt_count: 0,
+    event_type: "other", icon: null, color: null, cover: "hills_green", scope_mode: "all", selected_topic_count: null, affected_prompt_count: 84, comparison_prompt_count: 0,
     affected_url_count: 3, created_by: "3f2a9c1e-7b44-4d0a-9e61-2c8d5f1a0b77", created_at: new Date().toISOString(), can_delete: true });
   function zeile(id) { for (var i = 0; i < liste.length; i++) if (String(liste[i].id) === String(id)) return liste[i]; return null; }
   /* Ein Event, das nur im Store der Seite steht (etwa aus einem Beispiel-Schritt fuer die Pins),
@@ -150,7 +150,7 @@
       if (!String(b.p_name || "").trim()) return { fehler: "impact_event_name_required" };
       var aw = details[ids.A] || {}, jw = new Date().toISOString();
       d = { id: uuid(), kind: "watch", team_id: aw.team_id, name: String(b.p_name).trim(), description: b.p_description || null,
-        event_type: "other", event_date: heute(), icon: null, color: null, cover: null, scope_mode: "all",
+        event_type: "other", event_date: heute(), icon: null, color: null, cover: b.p_cover || null, scope_mode: "all",
         created_by: aw.created_by, created_at: jw, updated_at: jw, can_delete: true, topics: [], selected_topic_count: null,
         affected_prompt_count: 84, comparison_prompt_count: 0, urls: [] };
       var gw = {};

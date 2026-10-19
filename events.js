@@ -255,14 +255,21 @@
       return '<span class="uev-zahl-teil">' + esc(t(x.n === 1 ? x.eins : x.viele)).replace("{n}", '<span class="uev-zahl-n">' + esc(zahl(x.n)) + '</span>') + '</span>';
     }).join("") + '</span>';
   }
+  /* Was ein Citation Tracking beobachtet, als eine Angabe: "1 domain", "3 URLs". Leer, solange die Liste es nicht sagt. */
+  function ziellText(ev) {
+    var z = zieleZaehlen(ev), teile = z.regeln && z.teile.length ? z.teile : (z.urls ? [{ n: z.urls, eins: "{n} URL", viele: "{n} URLs" }] : []);
+    return teile.map(function (x) { return ersetze(t(x.n === 1 ? x.eins : x.viele), { n: zahl(x.n) }); }).join(", ");
+  }
   /* Datum und Typ -- in der Karte und im Kopf des Details dieselben. Vor dem Datum ein kleines
      Kalender-Zeichen (03.10.), der Typ OHNE Zeichen in einer leisen Marke aus core (03.10.: "den
      Typ ohne Icon davor in einem kleinen Chip"); sein Zeichen steht ohnehin gross im Profilbild. */
   function angabenHtml(ev, klasse) {
     /* Citation Tracking (19.10.): kein Eventdatum, kein Typ, kein Status -- nur, seit wann es das gibt. */
     if (istWatch(ev)) {
+      var zt = ziellText(ev);
       return '<div class="uev-angaben' + (klasse ? " " + klasse : "") + '">' +
         (ev.created_at ? '<span class="uev-angabe uev-angabe-datum">' + UC.icon("calendar", 2) + '<span>' + esc(ersetze(t("Created {date}"), { date: datum(ev.created_at) })) + '</span></span>' : '') +
+        (zt ? '<span class="uev-angabe">' + UC.icon("link", 2) + '<span>' + esc(zt) + '</span></span>' : '') +
       '</div>';
     }
     var tp = typ(ev), st = statusInfo(ev);
@@ -340,7 +347,7 @@
   /* Kurz und in der Reihenfolge, in der man die Seite liest: was ein Event ist, womit verglichen
      wird, wie man das Ergebnis liest. */
   var SEITE_SAETZE = [
-    "Experiments has two kinds. Event Tracking measures what a change did, such as a relaunch or a campaign: Upstreem compares your AI performance before and after its date.",
+    "This page has two kinds. Event Tracking measures what a change did, such as a relaunch or a campaign: Upstreem compares your AI performance before and after its date.",
     "Affected prompts are the prompts in the topics you chose. The comparison group is your other active prompts, which the event did not touch. They show what would have happened anyway.",
     "If the affected prompts improve more than the comparison group, the event likely made the difference. The analysis window sets how many days before and after are compared.",
     "Citation Tracking watches pages and domains instead. It covers all your prompts, including new ones, and shows which of your pages AI answers cite and how their global share changes. It has no date and no comparison group."
@@ -537,8 +544,18 @@
     { key: "wave_teal", datei: "wave-teal.svg", pos: "70%", label: "Teal wave" },
     { key: "poly_blue", datei: "poly-blue.svg", pos: "50%", label: "Blue mosaic" },
     { key: "poly_pink", datei: "poly-pink.svg", pos: "50%", label: "Pink mosaic" },
-    { key: "poly_sand", datei: "poly-sand.svg", pos: "50%", label: "Sand mosaic" }
+    { key: "poly_sand", datei: "poly-sand.svg", pos: "50%", label: "Sand mosaic" },
+    /* Die Motive des Citation Tracking (19.10., vom Nutzer): eigene Reihe, gleiche Logik. grp "watch" -- ein Event bietet sie nicht an
+       und ein Citation Tracking nicht die Wellen und Mosaike. pos: die Kante der Huegel liegt je Motiv woanders. */
+    { key: "hills_green", datei: "hills-green.svg", pos: "45%", label: "Green hills", grp: "watch" },
+    { key: "hills_purple", datei: "hills-purple.svg", pos: "40%", label: "Purple hills", grp: "watch" },
+    { key: "hills_blue", datei: "hills-blue.svg", pos: "45%", label: "Blue hills", grp: "watch" },
+    { key: "dusk_purple", datei: "dusk-purple.svg", pos: "70%", label: "Dusk", grp: "watch" },
+    { key: "hills_grey", datei: "hills-grey.svg", pos: "75%", label: "Grey hills", grp: "watch" },
+    { key: "coral_night", datei: "coral-night.svg", pos: "80%", label: "Coral waves", grp: "watch" }
   ];
+  /* Die Motive einer Art: Event Tracking die ersten sechs, Citation Tracking die eigenen. */
+  function coversFuer(art) { return COVERS.filter(function (c) { return (c.grp === "watch") === (art === "watch"); }); }
   function coverVon(ev) {
     var k = ev && ev.cover;
     for (var i = 0; i < COVERS.length; i++) if (COVERS[i].key === k) return COVERS[i];
@@ -718,16 +735,19 @@
     "Measure what a change did with Event Tracking, or watch which of your pages AI answers cite with Citation Tracking.":
       "Miss mit Event Tracking, was eine Änderung bewirkt hat, oder beobachte mit Citation Tracking, welche deiner Seiten KI-Antworten zitieren.",
     "Pages and domains you watch. Global share is measured across all your active prompts.": "Seiten und Domains, die du beobachtest. Der Global Share wird über alle deine aktiven Prompts gemessen.",
-    "Global share, previous {n} days": "Global Share, vorherige {n} Tage", "Global share, last {n} days": "Global Share, letzte {n} Tage",
+    "Previous {n} days": "Vorherige {n} Tage", "Last {n} days": "Letzte {n} Tage",
     "No matching entries": "Keine passenden Einträge",
     "Citation Tracking isn't available yet. Please try again later.": "Citation Tracking ist noch nicht verfügbar. Bitte versuche es später noch einmal.",
+    "Full overview": "Gesamtübersicht", "Pages only": "Nur Seiten",
+    "Previous and last {n} days": "Vorherige und letzte {n} Tage", "Citations ({n}d)": "Zitate ({n} T)",
+    "Chart shows": "Chart zeigt",
     "Before this period": "Vor diesem Zeitraum",
     "Event Tracking measures what a change did, and Citation Tracking watches which of your pages AI answers cite. You choose when you create.":
       "Event Tracking misst, was eine Änderung bewirkt hat, Citation Tracking beobachtet, welche deiner Seiten KI-Antworten zitieren. Du wählst beim Erstellen.",
     "Two ways to track": "Zwei Arten zu tracken",
     "Event Tracking compares before and after a date against a control group. Citation Tracking watches pages and domains across all your prompts, with no date. The tour continues with Event Tracking.":
       "Event Tracking vergleicht vor und nach einem Datum mit einer Kontrollgruppe. Citation Tracking beobachtet Seiten und Domains über alle deine Prompts, ohne Datum. Die Tour geht mit Event Tracking weiter.",
-    "Experiments has two kinds. Event Tracking measures what a change did, such as a relaunch or a campaign: Upstreem compares your AI performance before and after its date.":
+    "This page has two kinds. Event Tracking measures what a change did, such as a relaunch or a campaign: Upstreem compares your AI performance before and after its date.":
       "Experimente gibt es in zwei Arten. Event Tracking misst, was eine Änderung bewirkt hat, etwa ein Relaunch oder eine Kampagne: Upstreem vergleicht deine AI Performance vor und nach dem Datum.",
     "Citation Tracking watches pages and domains instead. It covers all your prompts, including new ones, and shows which of your pages AI answers cite and how their global share changes. It has no date and no comparison group.":
       "Citation Tracking beobachtet dagegen Seiten und Domains. Es umfasst alle deine Prompts, auch neue, und zeigt, welche deiner Seiten KI-Antworten zitieren und wie sich ihr Global Share verändert. Es hat kein Datum und keine Vergleichsgruppe."
@@ -787,7 +807,7 @@
     "This topic was deleted after the event was created. Its prompts still count.":
       "Dieses Topic wurde nach dem Anlegen des Events gelöscht. Seine Prompts zählen weiter.",
     "vs. comparison": "vs. Vergleich", "Comparison group": "Vergleichsgruppe", "No comparison group": "Keine Vergleichsgruppe",
-    "How event analysis works": "So funktioniert die Event-Analyse", "How Experiments work": "So funktionieren Experimente",
+    "How event analysis works": "So funktioniert die Event-Analyse", "How Impact works": "So funktioniert Impact",
     "An event marks a change, such as a relaunch or a campaign. Upstreem compares your AI performance before and after its date.":
       "Ein Event markiert eine Änderung, etwa einen Relaunch oder eine Kampagne. Upstreem vergleicht deine AI Performance vor und nach dem Datum.",
     "Affected prompts are the prompts in the topics you chose. The comparison group is your other active prompts, which the event did not touch. They show what would have happened anyway.":
@@ -1819,7 +1839,7 @@
        Event gleichauf laufen und danach auseinandergehen -- genau das, was die Seite misst. */
     var seitenKarte = UC.makeExplain ? UC.makeExplain({ root: root, triggerSel: ".uev-seiteninfo", cls: "uev-explain-breit", getIsDark: isDark,
       html: function () {
-        return seiteZeichnung() + '<div class="up-explain-h">' + esc(t("How Experiments work")) + '</div>' +
+        return seiteZeichnung() + '<div class="up-explain-h">' + esc(t("How Impact works")) + '</div>' +
           SEITE_SAETZE.map(function (x) { return '<div class="up-explain-t">' + esc(t(x)) + '</div>'; }).join("");
       } }) : null;
     /* Per Klick (Touch hat kein Zeigen): oeffnen, wenn zu; schliessen tut ein Druck daneben. */
@@ -1829,7 +1849,7 @@
       seitenKarte.hide();
     }, true);
     function seitenInfoKnopf() {
-      return '<button type="button" class="up-iconbtn uev-seiteninfo" aria-label="' + esc(t("How Experiments work")) + '">' + UC.icon("info", 2) + '</button>';
+      return '<button type="button" class="up-iconbtn uev-seiteninfo" aria-label="' + esc(t("How Impact works")) + '">' + UC.icon("info", 2) + '</button>';
     }
     if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 760, vnarrowAt: 520 });
     var respInstanz = String(root.getAttribute("data-responses-instance") || "responses_events").trim();
@@ -1852,13 +1872,15 @@
       respUrl: "", geloescht: {},
       /* Seitenabdeckung je Event (Teil C) und die Wahl des Umschalters je Ziel -- gemerkt wie Detail
          und Analyse, damit ein Neuaufbau (Thema) kein Skelett zeigt. */
-      abd: gemerkt("abd", {}), abdSeg: gemerkt("abdSeg", {})
+      abd: gemerkt("abd", {}), abdSeg: gemerkt("abdSeg", {}),
+      /* Citation Tracking: was die Charts der Ziele zeigen, "share" (Anteil an allen Zitaten, Standard) oder "abs" (Zahl der Zitate). */
+      zielMetrik: gemerkt("zielMetrik", "share")
     };
     function persist() {
       if (root.isConnected === false) return;
       STORE[instanceId] = { ue: state.ue, detail: state.detail, analyse: state.analyse,
         fenster: state.fenster, seit: state.seit, metrik: state.metrik, modelle: state.modelle, maerkte: state.maerkte,
-        abd: state.abd, abdSeg: state.abdSeg };
+        abd: state.abd, abdSeg: state.abdSeg, zielMetrik: state.zielMetrik };
     }
     function dieDetail() { return state.eventId ? state.detail[state.eventId] || null : null; }
     /* Der Intent-Filter der App gehoert in die Signatur (13.10.): sonst zeigte ein Wechsel die
@@ -1883,7 +1905,7 @@
     }
     /* "Since event" (Nachtrag 17.10., Abschnitt 2): nur bei einem offenen, schon laufenden Event
        und nur mit v4 -- bei Kampagnen gelten die Abschnitte, ein geplantes hat noch kein Danach. */
-    function seitMoeglich(ev) { return kampagneDa() && !!ev && !mitEnde(ev) && !istGeplant(ev); }
+    function seitMoeglich(ev) { return kampagneDa() && !!ev && !istWatch(ev) && !mitEnde(ev) && !istGeplant(ev); }
     function seitAktiv(ev) { return !!state.seit && seitMoeglich(ev); }
     function listeEvent(id) {
       var l = UC.getEvents ? UC.getEvents() : [];
@@ -1896,7 +1918,7 @@
     root.innerHTML =
       '<div class="up-ph-top uev-pagehead">' +
         '<div class="up-ph-left">' +
-          '<h1 class="up-ph-heading">' + esc(t("Experiments")) + '</h1>' +
+          '<h1 class="up-ph-heading">' + esc(t("Impact")) + '</h1>' +
           '<p class="up-ph-desc" data-i18n="Track important changes and understand how AI performance develops around them.">' +
             esc(t("Track important changes and understand how AI performance develops around them.")) + '</p>' +
         '</div>' +
@@ -1911,7 +1933,7 @@
       '<div class="uev-main"></div>';
     var elMain = root.querySelector(".uev-main"), elAktion = root.querySelector(".uev-kopfaktion");
     var krumen = UC.makePageCrumbs ? UC.makePageCrumbs(root, {
-      icon: "tickets", name: "Experiments", komponente: true,
+      icon: "tickets", name: "Impact", komponente: true,
       klick: function () { zurUebersicht(true); },
       klickWenn: function () { return state.ansicht === "detail"; },
       stufen: function () {
@@ -2134,8 +2156,7 @@
           '<h3 class="uev-karte-titel">' + esc(ev.name || "") + '</h3>' +
           angabenHtml(ev, "uev-karte-meta") +
           (ev.description ? '<p class="uev-karte-text">' + esc(ev.description) + '</p>' : '') +
-          neueSeitenHtml(ev) +
-          kennzahlenHtml(ev) +
+          (istWatch(ev) ? '' : kennzahlenHtml(ev)) +
         '</div>' +
       '</article>';
     }
@@ -2469,7 +2490,7 @@
        markers" wie in jedem anderen Diagramm. */
     function chartMarker() {
       var d = dieDetail() || listeEvent(state.eventId), a = dieAnalyse();
-      if (!d) return [];
+      if (!d || istWatch(d)) return [];   /* Citation Tracking hat kein Datum und keine Pins (19.10.) */
       /* Eine Kampagne als Band (17.10.): von ihrem ersten bis zum letzten Tag mit phase "during"
          im Verlauf (Vertrag B.2), sonst aus windows, zuletzt aus end_date -- core zeichnet es
          hinter die Linien und kappt es an den Raendern. */
@@ -2515,7 +2536,7 @@
             '<h2 class="uev-dkopf-titel">' + esc(d.name || "") + '</h2>' +
             angabenHtml(d, "uev-hero-meta") +
             (d.description ? '<p class="uev-dkopf-text">' + esc(d.description) + '</p>' : '') +
-            umfangHtml(d, "uev-hero-zahlen") +
+            (istWatch(d) ? '' : umfangHtml(d, "uev-hero-zahlen")) +
           '</div>' +
         '</div>';
       elAktion.querySelector(".uev-kopfmehr").innerHTML = mehrMenue(d, "kopf");
@@ -3242,8 +3263,8 @@
       platz.innerHTML = sekKopf("URLs", wz ? "Pages and domains you watch. Global share is measured across all your active prompts." : "Pages, articles or external sources associated with this event. Global share is measured in the affected prompts.") +
         '<div class="up-vartable uev-urls">' +
           tabKopf({ t: "URL", s: "url" }, [{ t: "First cited", k: "uev-th-beob", info: wz ? null : "zitiert", s: "first" },
-            wz ? { t: ersetze(t("Global share, previous {n} days"), { n: wtage }), s: "gsbefore" } : { t: "Global share before", s: "gsbefore" },
-            wz ? { t: ersetze(t("Global share, last {n} days"), { n: wtage }), s: "gsafter" } : { t: "Global share after", s: "gsafter" }, { t: "Change", s: "change" }]) +
+            wz ? { t: ersetze(t("Previous {n} days"), { n: wtage }), s: "gsbefore" } : { t: "Global share before", s: "gsbefore" },
+            wz ? { t: ersetze(t("Last {n} days"), { n: wtage }), s: "gsafter" } : { t: "Global share after", s: "gsafter" }, { t: "Change", s: "change" }]) +
           '<div class="up-tbody up-vbody">' + urls.slice(ab.von, ab.bis).map(function (u) {
             var an = proId[u.id], hp = hostPfad(u.url), gs = an && an.global_share ? an.global_share : null;
             var hostTxt = gleich[hp.host + hp.pfad] > 1 ? hostGenau(u.url, hp) : hp.host;
@@ -3334,6 +3355,15 @@
       var s = zielFavUrl(adresse);
       return s ? '<img class="uev-fav" src="' + esc(s) + '" width="16" height="16" alt="" loading="lazy" referrerpolicy="no-referrer"/>' : rueckfall;
     }
+    function zielShare() { var d = dieDetail() || listeEvent(state.eventId); return istWatch(d) && state.zielMetrik !== "abs"; }
+    function zielMetrikSetzen() {
+      var bs = elMain.querySelectorAll(".uev-zielmetrik [data-zm]");
+      for (var i = 0; i < bs.length; i++) {
+        var an = bs[i].getAttribute("data-zm") === (state.zielMetrik === "abs" ? "abs" : "share");
+        bs[i].classList.toggle("is-active", an); bs[i].setAttribute("aria-pressed", String(an));
+      }
+      if (UC.segJetzt) { var sg = elMain.querySelectorAll(".uev-zielmetrik"); for (var j = 0; j < sg.length; j++) { try { UC.segJetzt(sg[j]); } catch (e) {} } }
+    }
     function zielSekAnlegen(host, zt) {
       var sek = document.createElement("section");
       var x = zielAusDb(zt) || { zeigen: String(zt.value || "") };
@@ -3348,9 +3378,15 @@
           '<button type="button" class="up-btn-sec uev-zielweg" data-ziel-id="' + esc(zt.id) + '">' + UC.icon("trash", 2) + '<span>' + esc(t("Remove")) + '</span></button>' +
         '</div>' +
         '<div class="uev-ziel-block">' +
-          /* is-4 aus core: vier Kennzahlen in einer Reihe, schmal zwei mal zwei. */
-          '<div class="up-kpiband is-offen is-4 uev-zielkpis"></div>' +
-          '<div class="up-box uev-chartbox uev-zielchart"><div class="up-line-wrap uev-linewrap uev-ziel-linie"><canvas></canvas></div><div class="up-legend uev-legende"></div></div>' +
+          /* is-4 aus core: vier Kennzahlen in einer Reihe, schmal zwei mal zwei. Beim Citation Tracking drei (is-3, ohne "New URLs"). */
+          '<div class="up-kpiband is-offen ' + (istWatch(dieDetail() || listeEvent(state.eventId)) ? "is-3" : "is-4") + ' uev-zielkpis"></div>' +
+          '<div class="up-box uev-chartbox uev-zielchart">' +
+            /* Citation Tracking (19.10.): der Share ist die Hauptzahl, die Zahl der Zitate die Option -- bei mehr Prompts steigt sie, ohne dass die Seite besser wird. */
+            (istWatch(dieDetail() || listeEvent(state.eventId))
+              ? '<div class="up-seg uev-zielmetrik" role="group" aria-label="' + esc(t("Chart shows")) + '">' +
+                  '<button type="button" class="up-seg-btn" data-zm="share">' + esc(t("Share")) + '</button>' +
+                  '<button type="button" class="up-seg-btn" data-zm="abs">' + esc(t("Citations")) + '</button></div>' : '') +
+            '<div class="up-line-wrap uev-linewrap uev-ziel-linie"><canvas></canvas></div><div class="up-legend uev-legende"></div></div>' +
           /* cited_urls_truncated (15.10.): die Tabelle traegt hoechstens 200 URLs, die neuesten. */
           '<div class="uev-hinweise uev-ziel-hinweis" hidden></div>' +
           '<div class="uev-ziel-tab"><div class="uev-tabinhalt"></div>' + fussHtml() + '</div>' +
@@ -3371,7 +3407,7 @@
       zielLinien[zt.id] = UC.makeLine ? UC.makeLine({
         wrap: lw, canvas: lw.querySelector("canvas"), legend: sek.querySelector(".uev-legende"),
         isDark: isDark, gran: function () { return "day"; },
-        unit: function () { return ""; }, decimals: function () { return 0; },
+        unit: function () { return zielShare() ? "%" : ""; }, decimals: function () { return zielShare() ? 1 : 0; },
         yOhneDeckel: true, yGanz: true, legendeImmer: true,
         tipLabel: function () { return ""; },
         markers: chartMarker,
@@ -3410,6 +3446,7 @@
     }
     function zielFuellen(sek, zt, z, a) {
       var kpis = sek.querySelector(".uev-zielkpis"), linie2 = zielLinien[zt.id], platz = sek.querySelector(".uev-tabinhalt");
+      if (istWatch(dieDetail() || listeEvent(state.eventId))) zielMetrikSetzen();
       var n = "ziel-" + zt.id, hinweis = sek.querySelector(".uev-ziel-hinweis");
       var mehr = !!(z && z.cited_urls_truncated === true && isArr(z.cited_urls) && z.cited_urls.length);
       /* EV-10: mit gesetztem Filter dazu die leise Zeile, dass "First cited" und "New URLs" ihn nicht
@@ -3419,7 +3456,10 @@
         hinweis.hidden = !mehr && !filterZeile;
         hinweis.innerHTML = (mehr ? '<span class="uev-angabe">' + UC.icon("info", 2) + '<span>' + esc(ersetze(t("Showing the newest {n} URLs"), { n: zahl(z.cited_urls.length) })) + '</span></span>' : "") + filterZeile;
       }
-      var kopf = tabKopf({ t: "URL", s: "url" }, [{ t: "First cited", k: "uev-th-beob", s: "first" }, { t: "Citations after", s: "citations" }, { t: "Prompts", s: "prompts" }, { t: "Models", s: "models" }]);
+      var wz = istWatch(dieDetail() || listeEvent(state.eventId)), wtage = num(a && a.windows && a.windows.window_days) || state.fenster || 30;
+      /* Citation Tracking: "nachher" gibt es nicht, es gibt das letzte Fenster. */
+      var kopf = tabKopf({ t: "URL", s: "url" }, [{ t: "First cited", k: "uev-th-beob", s: "first" },
+        { t: wz ? ersetze(t("Citations ({n}d)"), { n: wtage }) : "Citations after", s: "citations" }, { t: "Prompts", s: "prompts" }, { t: "Models", s: "models" }]);
       /* EIN Leerzustand fuer das ganze Ziel statt vier Nullen, einer flachen Linie und einer grauen
          Zeile (15.10. nachts gemessen: so sah ein Ziel ohne ein einziges Zitat aus). html "" zeigt
          Kennzahlen, Verlauf und Tabelle wie bisher. */
@@ -3466,7 +3506,16 @@
          einschraenkt (EV-10). */
       function neuFuss(html) { return analyseGefiltert() ? '<span data-tip="' + esc(t("Not affected by your filters")) + '">' + html + '</span>' : html; }
       var sb = num(z.share_of_citations_before), sa = num(z.share_of_citations_after);
-      kpis.innerHTML = [
+      kpis.classList.toggle("is-3", wz); kpis.classList.toggle("is-4", !wz);
+      var fensterFuss = esc(ersetze(t("Previous and last {n} days"), { n: wtage }));
+      /* Citation Tracking (19.10.): drei Kennzahlen, der Share vorn (die relative Zahl), die Zahl der Zitate danach, keine "New URLs". */
+      if (wz) kpis.innerHTML = [
+        UC.kpiKarte({ label: "Cited URLs", wertHtml: zahlWert(z.matched_url_count != null ? z.matched_url_count : zt.matched_url_count), fussHtml: esc(t("In the whole period")), klasse: "uev-kpi" }),
+        UC.kpiKarte({ label: "Share of all citations", vorherHtml: wertHtml("visibility", sb), wertHtml: wertHtml("visibility", sa),
+          trendHtml: sb != null && sa != null ? trendHtml("visibility", sa - sb) : "", fussHtml: fensterFuss, klasse: "uev-kpi" }),
+        UC.kpiKarte({ label: "Citation count", vorherHtml: zahlWert(z.citations_before), wertHtml: zahlWert(z.citations_after), fussHtml: fensterFuss, klasse: "uev-kpi" })
+      ].join("");
+      else kpis.innerHTML = [
         UC.kpiKarte({ label: "Cited URLs", wertHtml: zahlWert(z.matched_url_count != null ? z.matched_url_count : zt.matched_url_count), fussHtml: esc(t("In the whole period")), klasse: "uev-kpi" }),
         UC.kpiKarte({ label: "Citation count", vorherHtml: zahlWert(z.citations_before), wertHtml: zahlWert(z.citations_after), fussHtml: esc(t("Before and after the event")), klasse: "uev-kpi" }),
         UC.kpiKarte({ label: "Share of all citations", vorherHtml: wertHtml("visibility", sb), wertHtml: wertHtml("visibility", sa),
@@ -3497,6 +3546,18 @@
              Sie fehlt dann im Verlauf, zaehlt aber in new_urls_before/after. Die Kachel "New URLs"
              nimmt deshalb diese beiden Felder und nie die Summe der Tagesreihe. */
           var ohneLauf = function (p) { return num(p.runs) === 0; };
+          /* Citation Tracking: die Linie ist der Share je Tag (Zitate der Seiten durch alle Zitate der Prompts an diesem Tag) oder, als Option,
+             die Zahl der Zitate -- keine Linie "New URLs". Ein Tag ohne Nenner hat keine Zahl, die Linie bricht dort ab. */
+          if (wz) {
+            var alsShare = state.zielMetrik !== "abs";
+            linie2.render({ labels: tage.map(function (p) { return String(p.day).slice(0, 10); }), datasets: [
+              alsShare
+                ? { label: t("Share of all citations"), __id: "share", __baseColor: tinte, borderColor: tinte, __luecken: true, data: tage.map(function (p) {
+                    var c = num(p.citations), g = num(p.total_citations);
+                    return ohneLauf(p) || c == null || !g ? null : Math.round(c * 1000 / g) / 10; }) }
+                : { label: t("Citation count"), __id: "zitate", __baseColor: tinte, borderColor: tinte, __luecken: true, data: tage.map(function (p) { return ohneLauf(p) ? null : num(p.citations); }) }
+            ] });
+          } else
           linie2.render({ labels: tage.map(function (p) { return String(p.day).slice(0, 10); }), datasets: [
             { label: t("Citation count"), __id: "zitate", __baseColor: tinte, borderColor: tinte, __luecken: true, data: tage.map(function (p) { return ohneLauf(p) ? null : num(p.citations); }) },
             { label: t("New URLs"), __id: "neu", __baseColor: grau, borderColor: grau, __dash: true, __luecken: true, data: tage.map(function (p) { return ohneLauf(p) ? null : num(p.new_urls); }) }
@@ -3526,7 +3587,7 @@
       var evTag = String(ev.event_date || "").slice(0, 10);
       platz.innerHTML = '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
         urls.slice(ab.von, ab.bis).map(function (u) {
-          var hp = hostPfad(u.url), tag = String(u.first_observed_day || "").slice(0, 10), neu = !!tag && !!evTag && tag > evTag;
+          var hp = hostPfad(u.url), tag = String(u.first_observed_day || "").slice(0, 10), neu = !wz && !!tag && !!evTag && tag > evTag;
           var modelle = isArr(u.models_after) ? u.models_after : [];
           /* Die Zeile oeffnet das URL-Detail, wie in der Tabelle der URLs (Beschluss 2). Eine Antwort zeigt
              das Event-Detail gar nicht mehr: sie steht im Drawer der URL. */
@@ -4234,10 +4295,12 @@
     function modusStellen() {
       var box = elMain.querySelector(".uev-detail");
       if (!box || !UC.bandAus || state.ansicht !== "detail" || !state.eventId) return;
-      if (istWatch(dasEvent())) { modusWeg(); return; }
       var id = state.eventId, aus = !!(UC.bandAusGemerkt && UC.bandAusGemerkt(modusId(id)));
       var war = box.classList.contains("is-band-aus");
-      UC.bandAus(box, aus, { id: "events_detail", wahlen: [{ label: "Full Event Overview" }, { label: "Citation Tracking only" }],
+      /* Die Beschriftung folgt der Art (19.10.): "Citation Tracking" ist jetzt ein Eintrag, kein Modus. Event: ganze Seite oder nur die Seiten;
+         Citation Tracking: Chart und Tabelle oder nur die Tabelle (wie auf Citations und Brands). */
+      var wahlen = istWatch(dasEvent()) ? [{ label: "Chart and table" }, { label: "Table only" }] : [{ label: "Full overview" }, { label: "Pages only" }];
+      UC.bandAus(box, aus, { id: "events_detail", wahlen: wahlen,
         setzen: function (neu) {
           if (UC.bandAusMerken) UC.bandAusMerken(modusId(state.eventId), !!neu);
           modusStellen();
@@ -4408,6 +4471,8 @@
       if (!e.target.closest) return;
       if (e.target.closest(".uev-anlegen, [data-uev-create]")) { e.preventDefault(); popupArt(); return; }
       if (e.target.closest(".uev-zurueck")) { zurUebersicht(true); return; }
+      var zm = e.target.closest("[data-zm]");
+      if (zm) { state.zielMetrik = zm.getAttribute("data-zm") === "abs" ? "abs" : "share"; persist(); zielMetrikSetzen(); renderZiele(); return; }
       if (e.target.closest(".uev-pinknopf")) { pinUmschalten(); return; }
       var si = e.target.closest(".uev-seiteninfo");
       if (si) { if (seitenKarte && !seitenKarte.el.classList.contains("is-on")) seitenKarte.show(si); return; }
@@ -4989,7 +5054,7 @@
        sobald eine gewaehlt ist (200ms wie jedes Aufklappen im Popup). Ohne Titelbild steht das Band
        in der Event-Farbe -- das zeigt die Vorschau darunter. */
     function coverKacheln(e) {
-      return COVERS.map(function (c) {
+      return coversFuer(e.art).map(function (c) {
         var an = e.cover === c.key, ct = coverTeile(c);
         return '<button type="button" class="uev-cover' + (an ? " is-on" : "") + (ct.klasse.indexOf("is-laedt") >= 0 ? " is-laedt" : "") + '" data-cover="' + c.key + '" aria-pressed="' + an + '"' +
             ' aria-label="' + esc(t(c.label)) + '" data-tip="' + esc(t(c.label)) + '"' + ct.attr + '>' +
@@ -5293,7 +5358,7 @@
        Seitenleiste, dann was getrackt wird (kurz) und das Schloss. Der Bearbeiten-Dialog behaelt
        das offene Raster (coverFeld): er hat keine Vorschau, an der ein Knopf stehen koennte. */
     function pruefFelder(e) {
-      if (e.art === "watch") return '<div class="uev-vorschaublock"><div class="uev-pruef"></div></div>' + feld("Tracking", '<div class="uev-pruefziele"></div>') + gesperrtHinweis("The type can't be changed later");
+      if (e.art === "watch") return '<div class="uev-vorschaublock"><div class="uev-pruef"></div>' + coverWahlHtml(e) + '</div>' + feld("Tracking", '<div class="uev-pruefziele"></div>') + gesperrtHinweis("The type can't be changed later");
       return '<div class="uev-vorschaublock"><div class="uev-pruef"></div>' + coverWahlHtml(e) + anheftenHtml(e) + notifySchalterHtml(e) + '</div>' +
         feld("Tracking", '<div class="uev-pruefziele"></div>') +
         gesperrtHinweis(startSatz(e));
@@ -5336,13 +5401,13 @@
     /* Welches Motiv (18.10., Nutzer): erst eins, das kein Event des Teams schon traegt; sind alle vergeben, das am
        seltensten vergebene. Unter gleich seltenen entscheidet der Zufall wie bisher. Gezaehlt wird die schon geladene
        Liste, keine neue Abfrage. */
-    function coverWahl() {
-      var n = {};
-      COVERS.forEach(function (c) { n[c.key] = 0; });
+    function coverWahl(art) {
+      var n = {}, satz = coversFuer(art);
+      satz.forEach(function (c) { n[c.key] = 0; });
       (UC.getEvents ? UC.getEvents() : []).forEach(function (ev) { if (ev && !state.geloescht[ev.id] && n[ev.cover] != null) n[ev.cover]++; });
       var min = Infinity;
-      COVERS.forEach(function (c) { if (n[c.key] < min) min = n[c.key]; });
-      var frei = COVERS.filter(function (c) { return n[c.key] === min; });
+      satz.forEach(function (c) { if (n[c.key] < min) min = n[c.key]; });
+      var frei = satz.filter(function (c) { return n[c.key] === min; });
       return frei[Math.floor(Math.random() * frei.length)].key;
     }
     function coverZufall(p) {
@@ -7074,7 +7139,7 @@
         ev.status = e.datum > heuteIso() ? "planned" : "running";
       }
       el.innerHTML = '<span class="up-topicmodal-label">' + esc(t("Preview")) + '</span>' +
-        '<div class="uev-vorschau">' + karteHtml(ev, true) + (e.art === "watch" ? "" : coverKnopfHtml(p)) + '</div>';
+        '<div class="uev-vorschau">' + karteHtml(ev, true) + coverKnopfHtml(p) + '</div>';
       pruefZieleZeigen();
     }
     /* Schritt 3 ist bereit: eine Art ist gewaehlt, und ausser bei "Brand metrics only" steht ein
@@ -7136,7 +7201,7 @@
          nach dem naechsten Blick des Waechters da. */
       var box = p.api.body.querySelector('.uev-schritt[data-schritt="' + n + '"]');
       /* Vor dem Bau: die Kacheln zeigen das gewuerfelte Bild schon als gewaehlt. */
-      if (n === 4 && p.e.art !== "watch") coverZufall(p);
+      if (n === 4) coverZufall(p);
       if (box && !box.__uevGebaut) {
         box.__uevGebaut = 1;
         if (n === 2) { box.innerHTML = umfangFelder(p.e); topicsZeigen(); }
@@ -7333,6 +7398,7 @@
       /* Citation Tracking (19.10.): eigene Funktion, nur Name, Beschreibung und Ziele -- keine Prompts-Wahl, kein Datum. */
       if (e.art === "watch") {
         var wb = { p_name: e.name.trim(), p_description: e.text.trim() || null };
+        if (e.cover) wb.p_cover = e.cover;
         var wmit = e.zielArt && e.zielArt !== "marke" ? e.ziele : [];
         p.zielFehler = null; p.gesendet = wmit.slice();
         wb.p_targets = wmit.map(zielKoerper);
@@ -7694,14 +7760,14 @@
       }
       var wahl = null;
       function zeilen() {
-        return '<div class="uev-arten uev-kinds" role="radiogroup" aria-label="' + esc(t("What do you want to create?")) + '">' + KIND_WAHL.map(function (a, i) {
+        /* Choicebox nach Geist: eine Karte je Wahl mit Titel und Beschreibung, der Punkt rechts, gewaehlt in der Akzentfarbe. */
+        return '<div class="uev-choice" role="radiogroup" aria-label="' + esc(t("What do you want to create?")) + '">' + KIND_WAHL.map(function (a, i) {
           var an = a.k === wahl;
-          return '<div class="uev-art-w' + (an ? " is-on" : "") + '"><button type="button" class="uev-art' + (an ? " is-on" : "") + '" role="radio" aria-checked="' + an +
+          return '<button type="button" class="uev-choicebox' + (an ? " is-on" : "") + '" role="radio" aria-checked="' + an +
             '" tabindex="' + (an || (!wahl && i === 0) ? 0 : -1) + '" data-kind="' + a.k + '">' +
-            '<span class="uev-art-punkt" aria-hidden="true"></span>' +
-            '<span class="uev-art-ic" aria-hidden="true">' + UC.icon(a.ic, 2) + '</span>' +
-            '<span class="uev-art-txt"><span class="uev-art-t">' + esc(t(a.titel)) + '</span><span class="uev-art-s">' + esc(t(a.satz)) + '</span></span>' +
-          '</button></div>';
+            '<span class="uev-choice-txt"><span class="uev-choice-t">' + esc(t(a.titel)) + '</span><span class="uev-choice-s">' + esc(t(a.satz)) + '</span></span>' +
+            '<span class="uev-choice-punkt" aria-hidden="true"></span>' +
+          '</button>';
         }).join("") + '</div>';
       }
       var api = UC.makeModal({
@@ -7761,7 +7827,7 @@
       var p = { art: "anlegen", api: api, e: e, schritt: 1, knopf: "weiter", pops: {}, vorschauen: {}, topicSuche: "" };
       if (planEv) { p.planEventId = String(planEv.id); p.eventId = p.planEventId; p.alt = { ende: e.ende }; }
       /* Das Titelbild fuer Schritt 4 (coverZufall) jetzt schon waehlen und vorladen. */
-      p.zufallsCover = coverWahl();
+      p.zufallsCover = coverWahl(e.art);
       coverLaden(coverVon({ cover: p.zufallsCover }));
       sucheBauen(p);
       popupAufbauen(p);
@@ -7826,7 +7892,7 @@
       var alt = { name: e.name, typ: e.typ, text: e.text, icon: e.icon, farbe: e.farbe, cover: e.cover, ende: e.ende || null };
       var api = UC.makeModal({
         titel: e.art === "watch" ? "Edit Citation Tracking" : "Edit event", breit: true, isDark: isDark,
-        inhaltHtml: '<div class="uev-schritt">' + detailFelder(e, false) + (endeFrei ? feld("End date", endeFeld(e), false, "datum") : '') + (e.art === "watch" ? "" : coverFeld(e)) +
+        inhaltHtml: '<div class="uev-schritt">' + detailFelder(e, false) + (endeFrei ? feld("End date", endeFeld(e), false, "datum") : '') + coverFeld(e) +
           (e.art === "watch" ? gesperrtHinweis("The type can't be changed later")
             : gesperrtHinweis(endeFrei ? "Start date and scope can't be changed" : "Date and scope can't be changed")) + '</div>',
         knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
@@ -8355,7 +8421,7 @@
         weiter: function () { popupArt(); } },
       /* Die Wahl der Art (19.10.): beide Arten in einer Karte. Danach geht die Anleitung mit Event Tracking weiter, der Art mit
          den vier Schritten; Citation Tracking hat drei einfache und braucht keine Fuehrung. */
-      anlSchritt({ id: "art", ziel: function () { return im(".uev-kinds"); },
+      anlSchritt({ id: "art", ziel: function () { return im(".uev-choice"); },
         titel: "Two ways to track",
         text: "Event Tracking compares before and after a date against a control group. Citation Tracking watches pages and domains across all your prompts, with no date. The tour continues with Event Tracking.",
         vis: function () { return anlZeile("calendar", t("Event Tracking")) + anlZeile("eye", t("Citation Tracking")); } },

@@ -914,10 +914,29 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    ohne Eintraege ist gar nicht da (hidden), der Abstand steht nur zwischen zwei sichtbaren. */
 .uev-abschnitt[hidden], .uev-leer-gesamt[hidden] { display: none; }
 .uev-abschnitt:not([hidden]) ~ .uev-abschnitt:not([hidden]) { margin-top: 40px; }
-/* Der Auswahldialog "Create": zwei Zeilen im Format der Zielarten, die Beschreibung darf umbrechen. */
-.uev-kinds .uev-art { align-items: flex-start; padding: 12px 10px; }
-.uev-kinds .uev-art-punkt, .uev-kinds .uev-art-ic { margin-top: 2px; }
+/* Der Auswahldialog "Create" als Choicebox nach Geist (19.10.): eine Karte je Wahl, Titel und Beschreibung links, der Punkt rechts. Gewaehlt:
+   Rand und Grund in der Akzentfarbe, Text in der Akzent-Tinte. Radius 8 (Karte hoeher als 36), Abstand 8. */
+.uev-choice { display: flex; flex-direction: column; gap: 8px; }
+.uev-choicebox { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-width: 0; padding: 12px 16px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--vc-bg); color: var(--vc-text); font: inherit; text-align: left; cursor: pointer;
+  transition: background var(--up-t-1) var(--up-ease), border-color var(--up-t-1) var(--up-ease), color var(--up-t-1) var(--up-ease); }
+.uev-choicebox:hover { background: var(--vc-heading-bg); }
+.uev-choicebox.is-on, .uev-choicebox.is-on:hover { border-color: var(--up-accent); background: color-mix(in srgb, var(--up-accent) 8%, var(--vc-bg)); color: var(--up-accent-ink); }
+.uev-choicebox:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+.uev-choice-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.uev-choice-t { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); }
+.uev-choice-s { font-size: var(--up-fs-m); color: var(--vc-third); }
+.uev-choicebox.is-on .uev-choice-s { color: inherit; }
+.uev-choice-punkt { flex: 0 0 auto; width: 16px; height: 16px; box-sizing: border-box; border-radius: var(--up-r-voll); border: 1.5px solid var(--vc-border); background: var(--vc-bg);
+  transition: border var(--up-t-1) var(--up-ease); }
+.uev-choicebox.is-on .uev-choice-punkt { border: 5px solid var(--up-accent); }
 /* Citation Tracking im Detail (19.10.): ohne Marken-Teile. Ausgeblendet wird wie im Modus "nur Zitierungen" (is-band-aus), dazu Hinweise,
    Umfang und der geplante Zustand -- sie gehoeren zur Kohorte und zum Datum, die es hier nicht gibt. */
 .uev-detail.is-watch :is([data-sek="kpis"], [data-sek="bericht"], .uev-sek-chart, [data-sek="markt"], [data-sek="scope"], [data-sek="hinweise"], [data-sek="geplant"]) { display: none; }
 .uev-root.is-watch-ansicht .uev-anl-toggle { display: none; }
+/* Citation Tracking, Ziele: drei Kennzahlen (is-3), der Umschalter Share/Citations oben rechts im Chart, bei "Table only" ohne Kennzahlen und Chart. */
+.uev-zielkpis.is-3 { --up-kpiband-n: 3; }
+.up-root.is-narrow .uev-zielkpis.is-3 { --up-kpiband-n: 1; }
+.uev-zielchart { position: relative; }
+.uev-zielmetrik { position: absolute; top: 12px; right: 12px; z-index: 2; }
+.uev-detail.is-watch.is-band-aus :is(.uev-zielkpis, .uev-zielchart) { display: none; }
