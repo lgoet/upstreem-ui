@@ -779,9 +779,10 @@ html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
 .usn-qa:not(:empty) + .usn-nav { margin-top: 10px; }  /* 10 wie bei Vercel (Suche zur ersten Zeile, 18.10.), vorher 28: die Rechnung darueber gilt fuer die alten Werte */
 /* Derselbe Abstand wie zwischen Kopf, Quick Actions und Menue: alle groesseren Gruppen
    stehen gleich weit auseinander. */
-.usn-block + .usn-block { margin-top: 5px; padding-top: 5px; border-top: 1px solid var(--vc-border); }
-/* 18.10.: ein Trenner zwischen den Gruppen, so breit wie die Kaesten der Menuepunkte (die Gruppe hat kein eigenes Polster). Mit 5 darueber und
-   5 darunter bleibt der Abstand von Gruppe zu Gruppe bei 11 wie bei Vercel (vorher 32, dann 11 ohne Linie). */
+.usn-block + .usn-block { margin-top: 5px; padding-top: 14px; border-top: 1px solid var(--vc-border); }
+/* 18.10.: ein Trenner zwischen den Gruppen, so breit wie die Kaesten der Menuepunkte (die Gruppe hat kein eigenes Polster).
+   19.10.: 14 unter der Linie statt 5. Die Ueberschrift hat 6 Polster unter sich und die Zeile darunter 8 ueber ihrem Text, also stehen
+   zwischen Ueberschrift und erstem Wort 14; dieselben 14 stehen jetzt zwischen Linie und Ueberschrift. */
 /* Schrift und Farbe kommen jetzt aus .up-blockhead in core.css (12.09. dorthin gezogen, damit
    das Power Dashboard dieselbe Ueberschrift benutzen kann statt sie nachzubauen) -- hier bleibt
    nur, was .up-blockhead nicht selbst ist: ein KNOPF, volle Breite, mit Chevron rechts.
