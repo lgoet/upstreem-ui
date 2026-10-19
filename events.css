@@ -705,11 +705,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    ohne die Sperre an #main. Gegen die contain-Regel fuer .up-filter-list aus core (0,0,0) reicht
    die eine Klasse. */
 .uev-sm-baum { max-height: 320px; overflow-y: auto; overscroll-behavior: auto; gap: 2px; margin: 0 -6px; padding: 0; }
-.uev-sm-baum .uev-sm-reihe { position: relative; padding-left: calc(6px + var(--uev-tiefe, 0) * 20px); min-height: 36px; }
-/* Fuehrungslinien wie im Geist File Tree (19.10.): je Vorfahre eine senkrechte Linie unter der Mitte seines Pfeils (6 + 10), je Ebene 20 eingerueckt
-   (Breite des Pfeilknopfs). Als ::before: die Zeilen setzen Hover und Auswahl als Hintergrund. Die Linie reicht 1px ueber die Zeile (Abstand 2), damit sie durchlaeuft. */
-.uev-sm-baum .uev-sm-reihe::before { content: ""; position: absolute; left: 16px; top: -1px; bottom: -1px; width: calc(var(--uev-tiefe, 0) * 20px); pointer-events: none;
-  background: repeating-linear-gradient(to right, color-mix(in srgb, var(--vc-border) 88%, var(--vc-text)) 0 1px, transparent 1px 20px); }
+.uev-sm-baum .uev-sm-reihe { padding-left: calc(6px + var(--uev-tiefe, 0) * 20px); min-height: 36px; }
 .uev-sm-reihe:focus-visible { outline: 0; box-shadow: inset 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .uev-sm-reihe .uev-sm-klapp { color: var(--vc-third); }
 .uev-sm-auf-platz { flex: 0 0 20px; width: 20px; }
@@ -722,6 +718,9 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    ganzen Satz traegt der Tooltip der Zeile. */
 /* Telefon: das Datum weicht, die Zahl der Seiten bleibt -- der Name braucht den Platz. */
 @media (max-width: 520px) { .uev-sm-reihe .uev-sm-datum { display: none; } }
+/* Jedes Datum traegt den Tooltip "Newest change" und wird beim Hover eine Stufe kraeftiger (third -> muted). */
+.uev-sm-datum { transition: color var(--up-t-1) var(--up-ease); }
+.uev-sm-datum:hover { color: var(--vc-muted); }
 /* In einem gewaehlten Ordner (oder schon getrackt): gewaehlt, aber nicht einzeln zu aendern.
    Voll (16.10.): passt nicht mehr hinein -- ebenso gedaempft, aber ohne Haken. Der Grund steht erst nach
    einem Klick auf die Zeile da (.uev-sm-sperre), nie als Tooltip beim Ueberfahren. */
@@ -825,16 +824,9 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 /* Der Baum (17.10.): Ordnerzeilen wie Seitenzeilen, je Ebene 20 eingerueckt (--uev-tiefe, wie im
    Sitemap-Waehler). Die Ordnerzeile ist ein Knopf ueber die ganze Zeile; Zeichen statt Drehung. */
 .uev-abd-seite { padding-left: calc(var(--uev-tiefe, 0) * 20px); }
-/* Die Linie ist die Trennerfarbe um einen Hauch Schriftfarbe dunkler: in der Trennerfarbe selbst verschwand sie neben den Zeilenlinien.
-   BAUM NACH GEIST (File Tree, 19.10.): Abstaende und Fuehrungslinien, Zeichen und Schrift bleiben. Jede Ebene ist 20 eingerueckt
-   (Breite eines Zeichens plus Luecke), links 8 Luft. Eine senkrechte Linie je Vorfahre steht unter der Mitte seines Pfeils, damit man
-   an einer Seite sieht, zu welchem Ordner sie gehoert. Als ::before statt als Hintergrund: Hover und Auswahl setzen background als
-   Kurzform und wuerden ein Bild darin loeschen. Die Zeilen haben unten 1px Rahmen, die Linie reicht darueber, damit sie durchlaeuft. */
+/* BAUM NACH GEIST (File Tree, 19.10.): Abstaende, Zeichen und Schrift bleiben. Jede Ebene ist 20 eingerueckt
+   (Breite eines Zeichens plus Luecke), links 8 Luft. Fuehrungslinien gibt es bewusst nicht (19.10., abgelehnt). */
 .uev-abd-seiten > .uev-abd-ordner { padding-left: calc(8px + var(--uev-tiefe, 0) * 20px); padding-right: 8px; }
-.uev-abd-seiten > .uev-abd-ordner, .uev-abd-seiten > .uev-abd-seite.is-im-baum { position: relative; }
-.uev-abd-seiten > .uev-abd-ordner::before, .uev-abd-seiten > .uev-abd-seite.is-im-baum::before {
-  content: ""; position: absolute; left: 15px; top: 0; bottom: -1px; width: calc(var(--uev-tiefe, 0) * 20px); pointer-events: none;
-  background: repeating-linear-gradient(to right, color-mix(in srgb, var(--vc-border) 88%, var(--vc-text)) 0 1px, transparent 1px 20px); }
 /* Eine Seite hat keinen Pfeil: der Platz davor (14 + Luecke 8) haelt ihr Zeichen unter dem Ordnerzeichen der Ebene, den Text unter dem Namen. */
 .uev-abd-seiten > .uev-abd-seite.is-im-baum { padding-left: calc(8px + 22px + var(--uev-tiefe, 0) * 20px); padding-right: 8px; }
 .uev-abd-ordner { display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--up-h-gross); min-width: 0; margin: 0; padding: 0 0 0 calc(var(--uev-tiefe, 0) * 20px);

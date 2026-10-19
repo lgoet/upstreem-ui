@@ -6443,7 +6443,7 @@
           '<span class="uev-sm-auf-platz" aria-hidden="true"></span>' +
           '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
           '<span class="uev-sm-name" title="' + esc(k.loc) + '">' + esc(name) + '</span>' +
-          (k.lastmod ? '<span class="uev-sm-angaben"><span class="uev-sm-datum">' + esc(datum(k.lastmod)) + '</span></span>' : '') +
+          (k.lastmod ? '<span class="uev-sm-angaben"><span class="uev-sm-datum" data-tip="' + esc(t("Newest change")) + '">' + esc(datum(k.lastmod)) + '</span></span>' : '') +
         '</div>';
       }
       var offen = !!p.sm.auf[k.key] && !flach;
