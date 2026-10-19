@@ -742,7 +742,7 @@
             return function () {
               /* Nur mit eigener Auswahl auf die Marken im Chart gekuerzt (dieselbe Menge wie
                  p_companies); ohne Auswahl gilt die Antwort, wie sie kommt. */
-              var p = e[0].ok && e[1].ok ? D.zuVisibility(e[0].daten, e[1].daten, { nurImChart: !!manuell, platzInMenge: !!manuell }) : null;
+              var p = e[0].ok && e[1].ok ? D.zuVisibility(e[0].daten, e[1].daten, { nurImChart: !!manuell, platzInMenge: !!manuell, order: state.vis.order }) : null;
               if (e[1].ok) eigeneMerken(e[1].daten);
               if (!p) {
                 try { setter("renderVisibilityChart")({ instanceId: ids.vot, __parseError: fehlerArtVon(e) }); } catch (err) {}
@@ -774,7 +774,7 @@
           return alleLaden([["vis_sort", ov]], frisch).then(function (e) {
             if (e.some(function (x) { return x.ueberholt; })) return null;
             return function () {
-              var p = e[0].ok ? D.zuMarkentabelle(e[0].daten, { platzInMenge: !!manuell }) : null;
+              var p = e[0].ok ? D.zuMarkentabelle(e[0].daten, { platzInMenge: !!manuell, order: state.vis.order }) : null;
               if (e[0].ok) eigeneMerken(e[0].daten);
               try {
                 if (!p) setter("renderVisibilityChart")({ instanceId: ids.vot, __parseError: fehlerArtVon(e) });

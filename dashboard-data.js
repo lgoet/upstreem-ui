@@ -222,6 +222,8 @@
   function mitEigener(ov, tabelle, o) {
     var own = istObjekt(ov.own) && ov.own.company_id != null ? ov.own : null;
     if (!own || o.nurImChart || o.platzInMenge) return tabelle;
+    /* Nur bei Visibility sortiert (18.10. abends): bei Rank, Sentiment, Mentions, Name, Trend gilt die Liste der DB, wie sie kommt. */
+    if (o.order && !/^visibility(_desc|_asc)?$/.test(String(o.order))) return tabelle;
     if (tabelle.some(function (r) { return str(r.company_id) === str(own.company_id); })) return tabelle;
     return (tabelle.length >= UC_MAX_ZEILEN ? tabelle.slice(0, UC_MAX_ZEILEN - 1) : tabelle).concat([Object.assign({}, own, { _angehaengt: true })]);
   }

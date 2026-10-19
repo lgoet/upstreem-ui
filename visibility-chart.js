@@ -306,9 +306,7 @@
            Zeilen, 1 bis 8: die Position der Visibility waere dort eine Zahl ohne Bezug zur Reihenfolge. Die Luecke vor der
            eigenen Marke gibt es nur im einen Fall, in dem die Zahl springt. */
         var nachPosition = sortField === "visibility";
-        /* Abgesetzt wird die angehaengte eigene Marke (liegt ausserhalb der gezeigten acht) bei JEDER Sortierung, sobald ihre
-           Position hinter der achten liegt (18.10. abends: Rank und Sentiment zeigten sie vorher ohne Luecke an Stelle 8). */
-        var gap = (r.angehaengt && isLast && pos != null && pos > (UC.MAX_LINE_SERIES || 8)) ? " vt-gap" : "";
+        var gap = (nachPosition && sortDir === "desc" && isLast && pos != null && pos > (UC.MAX_LINE_SERIES || 8)) ? " vt-gap" : "";
         var logo = r.logo_url
           ? '<span class="up-logo-box has-img"><img src="' + esc(r.logo_url) + '"/></span>'
           : '<span class="up-logo-box"></span>';
