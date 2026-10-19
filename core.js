@@ -15414,10 +15414,30 @@
     /* Ein Bild spaeter einblenden, sonst laeuft der Uebergang nicht (Startzustand und Ziel im
        selben Stilaufbau). setTimeout statt rAF: rAF ruht in einem verdeckten Tab. */
     setTimeout(function(){ el.classList.add("is-shown"); }, 16);
-    setTimeout(function(){
-      var f = karte.querySelector("input:not([type=hidden]), textarea, select, [data-upm-fokus]");
-      try { (f || el.querySelector(".up-popup-close")).focus(); } catch(e){}
-    }, 60);
+    /* Fokus beim Oeffnen wie Geists Modal (19.10.): das erste sichtbare, nicht gesperrte Eingabefeld; ohne Feld die Karte selbst
+       (nie ein Knopf, nie das X); in einem Popup mit Gefahraktion Cancel -- Enter darf nie die zerstoerende Aktion ausloesen. */
+    karte.tabIndex = -1;
+    function ersterFokus(){
+      var f = null, l = karte.querySelectorAll("input:not([type=hidden]):not([disabled]), textarea:not([disabled]), select:not([disabled]), [data-upm-fokus]");
+      for (var i = 0; i < l.length; i++){ if (l[i].offsetParent !== null){ f = l[i]; break; } }
+      if (!f && knoepfe.some(function(k){ return k.art === "gefahr"; })){
+        var ab = knoepfe.filter(function(k){ return k.art === "sec"; })[0];
+        f = ab ? api.knopf(ab.id) : null;
+      }
+      return f || karte;
+    }
+    setTimeout(function(){ try { ersterFokus().focus({ preventScroll: true }); } catch(e){} }, 60);
+    /* Der Fokus bleibt im Popup (Tab und Umschalt-Tab laufen im Kreis). */
+    karte.addEventListener("keydown", function(e){
+      if (e.key !== "Tab") return;
+      var l = [].filter.call(karte.querySelectorAll("a[href], button:not([disabled]), input:not([type=hidden]):not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex='-1'])"), function(x){ return x.offsetParent !== null; });
+      if (!l.length){ e.preventDefault(); return; }
+      var erst = l[0], letzt = l[l.length - 1], a = document.activeElement;
+      if (e.shiftKey && (a === erst || a === karte)){ e.preventDefault(); letzt.focus(); }
+      else if (!e.shiftKey && a === letzt){ e.preventDefault(); erst.focus(); }
+    });
+    /* Rollt der Inhalt, klebt der Kopf und bekommt seine Haarlinie, sobald etwas darunter wegrollt. */
+    karte.addEventListener("scroll", function(){ karte.classList.toggle("is-gerollt", karte.scrollTop > 0); });
     if (typeof cfg.onOpen === "function"){ try { cfg.onOpen(api); } catch(e){} }
     return api;
   }

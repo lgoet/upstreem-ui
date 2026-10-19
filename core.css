@@ -1637,6 +1637,7 @@
     html[data-up-hell="grau"]:not([data-up-pagetheme="dark"]) body { background-color: var(--up-seite-grau); }
     html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) {
       --up-popup-bg: var(--up-seite-grau);   /* der Grund eines Popups ist der Seitengrund (19.10.) */
+      --up-popup-fuss: var(--up-leise-grau);
       --up-surface: var(--up-seite-grau);
       --vc-border: var(--up-kante-grau);
       --vc-switch-border: var(--up-kante-grau);
@@ -7609,6 +7610,45 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
 /* Ein Knopf, den ein Schritt nicht braucht (Zurueck auf Schritt 1): das hidden-Attribut allein
    verliert gegen display: inline-flex darueber. */
 .up-modal-foot > button[hidden] { display: none; }
+/* ============================================================
+   DAS POPUP NACH GEISTS MODAL (19.10., Nutzer: "bitte nutzt kuenftig vercel.com/geist/modal"). Gilt fuer jedes Popup aus UC.makeModal
+   (.up-modal); gemessen an Geists Default, Sticky und Eingabefeld-Modal:
+     Karte        540 breit, Radius 12, Schatten e-4, hoechstens min(800px, 80vh); sie ist der Rollbereich
+     Kopf         Titel 20/26, 600, -0.4px; darunter Untertitel 14/20 in der zweiten Textfarbe, 8px Abstand; 20 Polster rundum
+     Inhalt       20 links und rechts, 20 unten
+     Fuss         12 Polster, links Cancel, rechts die Hauptaktion (space-between), Knoepfe 32 hoch; eigene Flaeche und eine
+                  Haarlinie oben; klebt unten
+     Rollt es     klebt auch der Kopf oben (mit Haarlinie, sobald etwas darunter wegrollt: .is-gerollt), der Fuss wirft seinen Strich
+     Telefon      unter 540 wird die Karte ein Blatt am unteren Rand
+   Fokus: das erste Eingabefeld; ohne Feld die Karte selbst (nie ein Knopf, nie das X); in einem Popup mit Gefahraktion Cancel. */
+.up-modal {
+  --up-modal-pad: 20px;
+  padding: 0; gap: 0; max-width: 540px; max-height: min(800px, 80vh); overflow-y: auto; overflow-x: hidden; outline: 0;
+  font-size: var(--up-fs-l);
+}
+.up-modal.is-breit { max-width: 560px; }
+.up-modal > .up-topicmodal-head {
+  position: sticky; top: 0; z-index: 3; flex: 0 0 auto; padding: var(--up-modal-pad); gap: 12px;
+  background: var(--up-popup-bg, var(--up-surface)); transition: box-shadow var(--up-t-1) var(--up-ease);
+}
+.up-modal.is-gerollt > .up-topicmodal-head { box-shadow: 0 1px 0 0 var(--up-popup-linie); }
+.up-modal .up-topicmodal-heading { gap: 8px; }
+.up-modal .up-topicmodal-title { font-size: var(--up-fs-modaltitel); line-height: 26px; font-weight: 600; letter-spacing: -0.4px; color: var(--vc-text); }
+.up-modal .up-topicmodal-sub { font-size: var(--up-fs-l); line-height: 20px; color: var(--vc-muted); }
+.up-modal .up-popup-close { margin: -6px -6px 0 0; }
+.up-modal > .up-topicmodal-body { padding: 0 var(--up-modal-pad) var(--up-modal-pad); flex: 1 0 auto; gap: 24px; }
+.up-modal > .up-modal-err.is-on { margin: 0 var(--up-modal-pad) var(--up-modal-pad); }
+.up-modal > .up-topicmodal-foot {
+  position: sticky; bottom: 0; z-index: 3; flex: 0 0 auto; margin-top: auto; padding: 12px; gap: 12px; justify-content: space-between;
+  background: var(--up-popup-fuss); box-shadow: 0 -1px 0 0 var(--up-popup-linie);
+}
+.up-modal > .up-topicmodal-foot > button { height: var(--up-h-btn); font-size: var(--up-fs-l); }
+/* Eine einzelne Aktion steht rechts (Geists "Single button"), nicht links: space-between setzt sie sonst an den Anfang. */
+.up-modal > .up-topicmodal-foot > button:last-child { margin-left: auto; }
+@media (max-width: 540px) {
+  .up-modal-backdrop { align-items: flex-end; padding: 10px 0 0; }
+  .up-modal-backdrop > .up-modal { max-width: 100%; max-height: 90vh; max-height: 90dvh; border-radius: var(--up-r-2xl) var(--up-r-2xl) 0 0; border-bottom: 0; }
+}
 /* Der Gefahr-Knopf ist gefuellt rot mit weisser Schrift (10.10. angefordert, vorher umrandet und
    erst beim Ueberfahren rot). Mit .up-modal-foot davor: er muss .up-btn-sec samt :hover schlagen,
    und das entscheidet die Spezifitaet, nicht die Reihenfolge. Ueberfahren dunkelt ein wenig ab. */
@@ -9377,6 +9417,9 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up
   /* DER GRUND EINES POPUPS (19.10., Nutzer): der Seitengrund, nicht die Flaeche einer Karte. Im Hellen Weiss, im grauen Hell der Seitengrund (unten, an
      .up-root im grauen Hell), im Dunkeln #0a0a0a (--up-seite-dunkel). Dialogkarte, Palette und die anderen Fenster lesen nur dieses Token. */
   --up-popup-bg: #ffffff;
+  /* Fuss eines Popups (Geist Background 2) und die Haarlinie unter dem Kopf und ueber dem Fuss (Gray Alpha 400). */
+  --up-popup-fuss: #fafafa; --up-popup-linie: rgba(0,0,0,.08);
+  --up-fs-modaltitel: 20px;   /* Titel eines Popups: Geists text-heading-20, zwischen --up-fs-xl und --up-fs-2xl */
   /* DAS EINGABEFELD (19.10., Nutzer): im Hellen Weiss, auch im grauen Hell und in jedem Popup. Vorher lasen die Felder je Datei etwas anderes (--vc-bg, --up-surface,
      --vc-field, transparent) und fielen in Fenstern mit grauem Grund auseinander. Alle Felder lesen nur dieses Token. */
   --up-feld-bg: #ffffff;
@@ -9388,6 +9431,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up
   --up-wk-schatten: 0 -3px 14px rgba(0,0,0,.55), 0 4px 14px rgba(0,0,0,.45);
   --up-wk-schatten-leise: 0 -2px 10px rgba(0,0,0,.35), 0 3px 10px rgba(0,0,0,.3);
   --up-popup-bg: #0a0a0a;
+  --up-popup-fuss: #000000; --up-popup-linie: rgba(255,255,255,.14);
   --up-feld-bg: #0f0f0f;   /* wie --vc-field im Dunkeln */
 }
 
