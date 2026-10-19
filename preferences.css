@@ -133,12 +133,12 @@ html[data-up-dunkel="geist"] .ums-backdrop[data-theme="dark"] .ums-aside .ums-na
 .ums-recht-a:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* ---------- Inhalt rechts ---------- */
-.ums-main { flex: 1 1 auto; min-width: 0; height: 100%; overflow-y: auto; padding: 24px 28px 28px; }
-.ums-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 26px; }
+.ums-main { flex: 1 1 auto; min-width: 0; height: 100%; overflow-y: auto; padding: 20px; }
+.ums-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
 .ums-headtext { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 auto; }
-/* 22/500 und 16/400 in Drittfarbe -- STYLEGUIDE 27, dieselbe Paarung wie in jedem Dialog der App. */
-.ums-title { font-size: 22px; font-weight: 500; line-height: 1.2; color: var(--vc-text); }
-.ums-sub { font-size: 16px; font-weight: 400; color: var(--vc-third); line-height: 1.3; }
+/* Titel und Untertitel wie Geists Modal (19.10.): 20/26/600 mit -0.4px, darunter 14/20 in der zweiten Textfarbe. */
+.ums-title { font-size: var(--up-fs-modaltitel); font-weight: 600; line-height: 26px; letter-spacing: -0.4px; color: var(--vc-text); }
+.ums-sub { font-size: var(--up-fs-l); font-weight: 400; color: var(--vc-muted); line-height: 20px; }
 
 .ums-sec + .ums-sec { margin-top: 30px; }
 .ums-sectitle { font-size: 16px; font-weight: 500; color: var(--vc-text); margin: 0 0 4px; line-height: 1.3; }

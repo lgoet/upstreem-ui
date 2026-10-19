@@ -9996,7 +9996,7 @@
   }
 
   function setOeffnen(){
-    if (_setBack){ _setBack.classList.add('is-shown'); setZeichnen(); return; }
+    if (_setBack){ _setBack.classList.add('is-shown'); setZeichnen(); var mvA = window.UpstreemCore && window.UpstreemCore.modalVerhalten && window.UpstreemCore.modalVerhalten(_setBack.querySelector('.ums-card'), { nurKarte: true }); if (mvA) setTimeout(function(){ mvA.fokus(); }, 60); return; }
     var back = document.createElement('div');
     /* up-root fuer den Themen-Sweep von core, up-portal weil er ausserhalb jeder
        Komponentenwurzel im body lebt -- setUpstreemTheme sucht genau diese beiden. */
@@ -10019,6 +10019,8 @@
        kommt. */
     void back.offsetHeight;
     back.classList.add("is-shown");
+    var mvM = window.UpstreemCore && window.UpstreemCore.modalVerhalten && window.UpstreemCore.modalVerhalten(back.querySelector('.ums-card'), { nurKarte: true });
+    if (mvM) setTimeout(function(){ mvM.fokus(); }, 60);
     back.addEventListener('click', function(e){
       if (e.target === back){ setSchliessen(); return; }
       if (!e.target.closest) return;

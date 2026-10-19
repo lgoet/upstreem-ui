@@ -15316,6 +15316,7 @@
   /* DAS VERHALTEN EINES POPUPS NACH GEISTS MODAL (19.10.), fuer makeModal UND jedes eigene Fenster auf .up-topicmodal-card:
      - fokus(): das erste sichtbare, nicht gesperrte Eingabefeld (bei mehreren das erste); ohne Feld die Karte selbst (nie ein Knopf, nie das X);
        mit Gefahraktion (o.gefahr) das Abbrechen (o.abbrechen() liefert den Knopf) -- Enter darf nie die zerstoerende Aktion ausloesen
+     - o.nurKarte: Fenster ohne eigentliche Eingabe (Preferences, Einstellungen): der Fokus geht an die Karte, nicht an das erste Feld
      - Tab und Umschalt-Tab laufen im Kreis innerhalb der Karte
      - rollt die Karte, bekommt sie .is-gerollt (der klebende Kopf zeigt dann seine Haarlinie)
      Der Fokus kehrt beim Schliessen zum Ausloeser zurueck: das macht der Aufrufer (makeModal tut es selbst). */
@@ -15326,6 +15327,7 @@
     var EIN = "input:not([type=hidden]):not([disabled]), textarea:not([disabled]), select:not([disabled]), [data-upm-fokus]";
     function sichtbar(x){ return x.offsetParent !== null || (x.getClientRects && x.getClientRects().length > 0); }
     function ersterFokus(){
+      if (o.nurKarte) return karte;
       var l = karte.querySelectorAll(EIN);
       for (var i = 0; i < l.length; i++){ if (sichtbar(l[i]) && !l[i].closest("[hidden]")) return l[i]; }
       if (o.gefahr && typeof o.abbrechen === "function"){ var ab = o.abbrechen(); if (ab) return ab; }
@@ -28663,7 +28665,7 @@
       back.setAttribute("data-" + p + "-dialog", key);
       var tid = "up-plandlg-t-" + (++PLAN_DLG_SEQ);
       back.innerHTML =
-        '<div class="up-topicmodal-card up-plandlg-card ' + p + '-card" role="dialog" aria-modal="true"' +
+        '<div class="up-topicmodal-card up-geist up-plandlg-card ' + p + '-card" role="dialog" aria-modal="true"' +
           ' aria-labelledby="' + tid + '" tabindex="-1">' +
           '<div class="up-topicmodal-head">' +
             '<div class="up-topicmodal-heading">' +
@@ -28672,7 +28674,7 @@
             '</div>' +
             '<button type="button" class="up-popup-close" data-' + p + '-close>' + icon("x", 2) + '</button>' +
           '</div>' +
-          '<div class="up-plandlg-body ' + p + '-planbody" data-' + p + '-planbody></div>' +
+          '<div class="up-topicmodal-body up-plandlg-body ' + p + '-planbody" data-' + p + '-planbody></div>' +
           '<div class="up-formerr up-plandlg-err ' + p + '-selerr" data-' + p + '-selerr role="alert">' +
             '<div><div class="up-formerr-in"></div></div></div>' +
         '</div>';

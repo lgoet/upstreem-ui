@@ -58,7 +58,9 @@
     max-height: min(calc(100dvh - 48px), 720px);
     padding: 0; gap: 0; overflow: hidden;
   }
-  .uex-head { padding: 16px; }
+  /* Kopf und Fuss nach Geists Modal (19.10.): Polster 20 und 12, Titel 20/26/600. */
+  .uex-head { padding: 20px; }
+  .uex-titel { font-size: var(--up-fs-modaltitel); line-height: 26px; font-weight: 600; letter-spacing: -0.4px; }
 
   /* Der Rumpf ist 565 hoch und gibt nach, wenn das Fenster niedriger ist (flex-shrink unter der
      max-height der Karte) -- dann rollen Liste und Einstellungen, nie die Karte. 565 = die volle
@@ -325,7 +327,7 @@
      Links der Dateiname (Zeichen 14, Mono 12, dritte Textfarbe) oder an seiner Stelle der rote
      Satz; rechts zwei Knoepfe aus core in der Knopfstufe 32 wie auf der Leinwand. */
   .uex-foot {
-    flex: 0 0 auto; display: flex; align-items: center; gap: 16px; padding: 12px 16px;
+    flex: 0 0 auto; display: flex; align-items: center; gap: 16px; padding: 12px;
     border-top: 1px solid var(--vc-border); background: var(--up-seite-grau);
   }
   .uex-overlay[data-theme="dark"] .uex-foot { background: var(--up-seite-dunkel); }

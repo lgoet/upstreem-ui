@@ -9141,12 +9141,13 @@ html[data-usn-modus="hint"] .up-ph-heading.is-knapp > .up-ph-crumb:first-child:n
    der Landingpage bei 1280 Fensterbreite knapp 390 -- darunter wird ihre Merkmalsliste eng.
    Zwei Klassen, weil .up-topicmodal-card eine eigene Breite (420) setzt. */
 .up-plandlg .up-plandlg-card { width: 100%; max-width: 1160px; }
+.up-plandlg .up-plandlg-card.up-geist { max-height: min(900px, 90vh); }
 .up-plandlg-card:focus { outline: 0; }
 .up-plandlg-body { min-width: 0; }
 /* Der Fehlersatz unter den Karten steht nur da, wenn ein Klick keinen Empfaenger fand; zu ist er
    eine Zeile der Hoehe 0 und naehme trotzdem die Luecke der Karte (32) mit. */
 .up-plandlg-card > .up-plandlg-err:not(.is-on) { display: none; }
-.up-plandlg-card > .up-plandlg-err.is-on { margin-top: 0; }
+.up-plandlg-card > .up-plandlg-err.is-on { margin: 0 var(--up-modal-pad) var(--up-modal-pad); }
 @media (prefers-reduced-motion: reduce){ .up-plan-note { transition: none; } }
 
 /* ---------- DIE GESAMTZEILE EINER TABELLE (.up-sumrow, UC.makeSumZeile, 15.10.) ----------
