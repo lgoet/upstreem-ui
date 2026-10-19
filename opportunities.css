@@ -126,7 +126,7 @@
    at the same 16px the title has above it. */
 /* Kein seitliches Polster mehr: die Spalte hat keine eigene Flaeche, also gibt es auch keinen
    Rand, von dem die Ueberschrift einruecken muesste. Sie steht jetzt buendig ueber ihren Karten. */
-.uo-col-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 16px 0; }
+.uo-col-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 16px 0 12px; }
 /* Der Seitengrund, damit die Karten nicht sichtbar hinter der angehefteten Ueberschrift
    durchlaufen -- dieselbe Aufgabe wie bei .up-sticky .up-head in core, und aus demselben Grund
    am 07.09. zurueckgeholt: die Flaeche war nie das Problem, sie passte nur nicht mehr zur
@@ -184,7 +184,9 @@
 .uo-col-menu-wrap { margin-left: auto; position: relative; }
 
 .uo-col-body {
-  flex: 1 1 auto; padding: 0;
+  /* 4 oben: die oberste Karte hebt sich beim Hover um 2px (.up-karte-klick) und lief sonst unter den klebenden Kopf (z-index 4) -- ihre Oberkante
+     war abgeschnitten. Der Kopf gibt dieselben 4 unten ab, der Abstand bleibt 16. */
+  flex: 1 1 auto; padding: 4px 0 0;
   display: flex; flex-direction: column; gap: 12px;
 }
 
@@ -244,7 +246,7 @@
 .uo-eyebrow span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .uo-card-title {
-  margin: 0; font-size: 15px; font-weight: 600; line-height: 1.35; letter-spacing: -0.015em;
+  margin: 0; font-size: var(--up-fs-l); font-weight: 600; line-height: 1.35; letter-spacing: -0.015em;
   color: var(--vc-text);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
 }
@@ -265,7 +267,7 @@
    darunter traegt einen Hintergrund, seine Kante IST die sichtbare Kante. Also gehen sie oben
    ab: 13 + 2.6 + 1.3 = 16.9 gegen 17.2, ein Drittel Pixel Unterschied.
    Wer hier die 16 wieder einsetzt, macht die Meldung auf. */
-.uo-source { display: flex; align-items: center; gap: 10px; margin-top: 13px; min-width: 0; }
+.uo-source { display: flex; align-items: center; gap: 8px; margin-top: 12px; min-width: 0; }
 .uo-source-meta { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 /* Titel in Sekundaer-, Domain in Drittfarbe (08.09.). Vorher trug der Titel die Primaerfarbe und
    stand damit gleichrangig neben der Ueberschrift der Karte. */
@@ -283,8 +285,8 @@
    beantwortet keine Frage, die man vor dem Oeffnen der Karte stellt. Die Regel bleibt stehen
    statt geloescht zu werden: kommt spaeter etwas anderes in den Fuss, steht seine Anordnung noch
    da und muss nur wieder sichtbar gemacht werden. */
-.uo-card-foot { display: none; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; }
-.uo-date { font-size: 12px; color: var(--vc-fourth); font-weight: 500; display: inline-flex; align-items: center; gap: 5px; }
+.uo-card-foot { display: none; align-items: center; justify-content: space-between; gap: 8px; margin-top: 16px; }
+.uo-date { font-size: 12px; color: var(--vc-fourth); font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
 .uo-date svg { width: 13px; height: 13px; flex: 0 0 auto; }
 
 /* ---------- potential bars ----------
@@ -298,8 +300,8 @@
    darueber liegt. Nur die Hoehe zu kuerzen haette den Verlauf um die Balken herum verschoben.
    Gerechnet: 5 -> 4, 15 -> 12, Radius 4 -> 3.2, Abstand 3 -> 2.4, und der Verlauf 4*4 + 3*2.4
    = 23.2px statt 29. Die Versaetze sind die Startpunkte der Balken darin: i * (4 + 2.4). */
-.uo-pot-bars { display: flex; align-items: center; gap: 2.4px; }
-.uo-pot-bar { width: 4px; height: 12px; border-radius: 3px; background: var(--vc-border); }
+.uo-pot-bars { display: flex; align-items: center; gap: 2px; }
+.uo-pot-bar { width: 4px; height: 12px; border-radius: var(--up-r-xs); background: var(--vc-border); }
 .uo-pot-bar.is-on {
   background-image: linear-gradient(90deg, var(--uo-pot-a), var(--uo-pot-b));
   background-size: 23.2px 100%; background-repeat: no-repeat;
@@ -325,8 +327,8 @@
 
 /* ---------- list mode ---------- */
 .uo-list { padding-right: 2px; }
-.uo-list-section { margin-bottom: 18px; }
-.uo-list-sechead { display: flex; align-items: center; gap: 8px; padding: 4px 4px 10px; }
+.uo-list-section { margin-bottom: 16px; }
+.uo-list-sechead { display: flex; align-items: center; gap: 8px; padding: 4px 4px 12px; }
 /* Same job the lane header does on the board: the status you are scrolling through stays labelled.
    Each heading pins inside its own .uo-list-section, so it hands over to the next one instead of
    stacking. Extra top padding only while pinned, so the rows have something to disappear behind
@@ -342,11 +344,11 @@
 .uo-list-rows { display: flex; flex-direction: column; gap: 8px; }
 .uo-row {
   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-xl);
-  padding: 12px 15px; cursor: pointer; transition: border-color 140ms ease, background 140ms ease;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl);
+  padding: 12px 16px; cursor: pointer;
 }
-.uo-row:hover { border-color: var(--vc-hover-border); background: var(--vt-row-hover); }
-.uo-row-main { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+/* Der Hover der Zeilen ist der der Karten (.up-karte-klick aus core, im Markup): Flaeche toent sich, Hebung 2px, Schatten e-1, der Rand bleibt. */
+.uo-row-main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .uo-row-title { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .uo-row-sub { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .uo-row-sub .up-logo-box { width: 18px; height: 18px; border-radius: var(--up-r-xs); }
@@ -561,20 +563,20 @@
 .uo-skel-z > .uo-skel { max-width: 100%; }
 .uo-skel-z.is-eyebrow { height: 24px; font-size: 11px; }
 .uo-skel-z.is-eyebrow > .uo-skel { height: 10px; border-radius: var(--up-sk-r); }
-.uo-skel-z.is-title   { font-size: 15px; line-height: 1.35; }
+.uo-skel-z.is-title   { font-size: var(--up-fs-l); line-height: 1.35; }
 .uo-skel-z.is-title > .uo-skel { height: 12px; border-radius: var(--up-sk-r); }
 .uo-skel-z.is-stitle  { font-size: 13px; font-weight: 500; }
 .uo-skel-z.is-stitle > .uo-skel { height: 10px; border-radius: var(--up-sk-r); }
 .uo-skel-z.is-sdomain { font-size: 12px; }
 .uo-skel-z.is-sdomain > .uo-skel { height: 9px; border-radius: var(--up-sk-r); }
 .uo-skel-meta { flex: 1 1 auto; }
-/* Die Balken rechts oben: dieselbe Gesamtbreite wie die vier echten (4 * 4 + 3 * 2.4). */
-.uo-skel-pot { width: 23.2px; height: 12px; border-radius: 3px; }
+/* Die Balken rechts oben: dieselbe Gesamtbreite wie die vier echten (4 * 4 + 3 * 2). */
+.uo-skel-pot { width: 22px; height: 12px; border-radius: var(--up-r-xs); }
 /* Die Listenzeile: dieselbe Schale wie .uo-row, ohne Zeiger und ohne Hover -- es gibt nichts
    zu oeffnen. Schriftgroessen wie dort: Titel 14px, Unterzeile 12px neben einer 18px-Kachel. */
 .uo-skel-row {
   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-xl); padding: 12px 15px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); padding: 12px 16px;
 }
 .uo-skel-z.is-rtitle { font-size: 14px; font-weight: 500; }
 .uo-skel-z.is-rtitle > .uo-skel { height: 11px; border-radius: var(--up-sk-r); }
@@ -586,7 +588,7 @@
 .uo-skel-title.short { width: 62%; margin-top: 8px; }
 .uo-skel-text { width: 100%; height: 11px; border-radius: var(--up-sk-r); margin-top: 14px; }
 .uo-skel-text.short { width: 78%; margin-top: 7px; }
-.uo-skel-source { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
+.uo-skel-source { display: flex; align-items: center; gap: 8px; margin-top: 17px; }
 .uo-skel-fav { width: 24px; height: 24px; border-radius: var(--up-r-m); flex: 0 0 auto; }
 .uo-skel-source .uo-skel-line { flex: 1 1 auto; max-width: 60%; height: 12px; border-radius: var(--up-sk-r); }
 .uo-skel-tags { display: flex; gap: 6px; margin-top: 16px; }
@@ -611,7 +613,6 @@
   .uo-meta-grid, .uo-kpis { grid-template-columns: minmax(0,1fr); }
 }
 @media (max-width: 420px) {
-  .uo-card-title { font-size: 14.5px; }
 }
 /* Telefon: die Markenleiste stapelt wie in Response Detail (.urd-root.is-vnarrow, Schwelle 480)
    -- oben die Zahl, darunter jede Marke als eigene Zeile ueber die volle Breite. Die Schublade

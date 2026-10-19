@@ -678,7 +678,12 @@
       var open = S.pick === k;
       wrap.classList.toggle("is-open", open);
       wrap.querySelector(".uap-trigger").setAttribute("aria-expanded", open ? "true" : "false");
-      wrap.querySelector(".uap-menu").classList.toggle("is-shown", open);
+      var menuEl = wrap.querySelector(".uap-menu");
+      menuEl.classList.toggle("is-shown", open);
+      /* Wie jedes Dropdown der App (core dropdownOpened/menuEscape): unten, wenn dort Platz ist, sonst oben, und frei ueber der Karte statt in ihr
+         abgeschnitten; ein anderes offenes Menue geht dabei zu. */
+      if (open && !wrap.__uapReg && UC.dropdownOpened) wrap.__uapReg = UC.dropdownOpened(menuEl, closePick, wrap);
+      if (!open && wrap.__uapReg){ var rg = wrap.__uapReg; wrap.__uapReg = null; try { rg(); } catch (e) {} }
       if (open) wrap.querySelector(".uap-list-opts").innerHTML = optsHtml(k);
     });
     if (S.pick) {

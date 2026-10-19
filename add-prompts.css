@@ -35,9 +35,6 @@
    ueber den Rumpf -- eine rollende Karte schnitte sie an ihrer Oberkante ab. Rollen tut der
    Rumpf darunter, Kopf und Fuss bleiben stehen. */
 .uap-backdrop .uap-card { width: 100%; max-width: 640px; box-sizing: border-box; }
-/* Die Menues Market und Topics haengen im Fuss und oeffnen nach oben IN die Karte, die jetzt (Geist) selbst rollt und alles
-   Herausragende abschneidet: sie braucht Hoehe genug fuer das hoechste Menue, auch wenn noch kein Prompt in der Liste steht. */
-.uap-backdrop .uap-card { min-height: min(440px, calc(100dvh - 48px)); }
 .uap-card.is-saving { pointer-events: none; opacity: .6; }
 
 /* ---- head ---- */
@@ -66,7 +63,7 @@
    und des Felds steht 4px vor ihrer Kante. Ohne den Ausgleich schnitte die Rollflaeche beides
    ab, und die Liste allein machte einen waagerechten Rollbalken auf.
    Steht in core in der Liste der Rollflaechen von Popups (contain, Seitensperre). */
-.uap-rumpf { display: flex; flex-direction: column; gap: 32px; }
+.uap-rumpf { display: flex; flex-direction: column; gap: 24px; }
 /* Der Umschalter IST seit dem 27.09. .up-seg.is-lg aus core (Klassen im Markup, add-prompts.js).
    Hier stand ein Nachbau in eigener Bauart -- eingerueckte Reiter in einer umrandeten Schiene,
    Pille aus --vc-bg mit Schatten, 12.5px -- und die Pille war im Dunkeln die Farbe der Karte,
@@ -356,7 +353,7 @@
 
 /* Opens UPWARD: the triggers live in the footer, so a menu hanging below would leave the card. */
 .uap-menu {
-  position: absolute; bottom: calc(100% + var(--up-dd-gap)); left: 0; z-index: 60;
+  position: absolute; top: calc(100% + var(--up-dd-gap)); left: 0; z-index: 60;
   display: flex; flex-direction: column; width: 296px; max-width: 84vw;
   border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius); padding: var(--up-dd-pad);
   background: var(--up-menu-bg); color: var(--vc-text);

@@ -669,6 +669,8 @@
 
     function q(sel){ return overlay.querySelector(sel); }
     var elDialog  = q(".uex-dialog");
+    /* "Nach oben" in den beiden Rollflaechen (core modalNachOben, 20.10.). */
+    var UCx = window.UpstreemCore; if (UCx && UCx.modalNachOben){ UCx.modalNachOben(q(".uex-body")); UCx.modalNachOben(q(".uex-nav")); }
     var elBody    = q(".uex-body");
     var elTitel   = q(".uex-titel");
     var elNav     = q(".uex-nav");

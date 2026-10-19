@@ -728,6 +728,7 @@
     "Not enough space at this width. Turn it on and another column makes room.": "Bei dieser Breite ist kein Platz. Schalte sie ein, dann macht eine andere Spalte Platz.",
     "Select all": "Alle auswählen",
     "Row height": "Zeilenhöhe",
+    "Back to top": "Nach oben",
     "Comfortable": "Komfortabel",
     "Compact": "Kompakt",
     "Sort by": "Sortieren nach",
@@ -8089,7 +8090,9 @@
          Chips zum An- und Abschalten statt als Zeilen mit Schalter, die Zeilenhoehe als Zeile
          "Row height" mit beschrifteten Knoepfen statt Zeichen. Dieselben data-col / data-colsall /
          data-rowheight -- die Klickwege der Tabelle bleiben gleich. Ohne cfg.form wie bisher. */
-      if (cfg.form === "chips"){
+      /* Die Chip-Form ist seit dem 20.10. die Form JEDER Spaltenliste (Nutzer: "alle Columns-Einstellungen wie in der Prompts-Tabelle");
+         cfg.form === "rows" waehlt die alte Zeilenform nur noch ausdruecklich. */
+      if (cfg.form !== "rows"){
         var chips = '<div class="up-spaltchips">' + listed.map(function(c){
           var on = !!da[c.key];
           var platzlos = !on && state.cols[c.key] !== false;
@@ -8105,7 +8108,14 @@
                 return '<button class="up-dense-btn' + (state.rowHeight === o.key ? " is-active" : "") +
                        '" type="button" data-rowheight="' + o.key + '">' + esc(t_(o.label)) + '</button>';
               }).join("") + '</div></div><div class="up-pop-div"></div>'
-          : "";
+          : cfg.dense
+            /* Eine Tabelle mit nur zwei Zeilenhoehen (statt rowHeightSwitch) behaelt ihre Wahl, in derselben Form. */
+            ? '<div class="up-pop-feld"><span class="up-pop-label">' + esc(t_("Row height")) + '</span>' +
+                '<div class="up-dense">' +
+                  '<button class="up-dense-btn' + (!state.dense ? " is-active" : "") + '" type="button" data-dense="0">' + esc(t_("Comfortable")) + '</button>' +
+                  '<button class="up-dense-btn' + (state.dense ? " is-active" : "") + '" type="button" data-dense="1">' + esc(t_("Compact")) + '</button>' +
+                '</div></div><div class="up-pop-div"></div>'
+            : "";
         menu.innerHTML = hoehe + head.replace('class="up-pop-head up-pop-head-row"', 'class="up-pop-head up-pop-head-row up-pop-head-feld"') + chips;
       } else {
         menu.innerHTML = head + rows + densePart + rowHeightPart;
@@ -14554,6 +14564,11 @@
     var root = cfg && cfg.root, tools = cfg && cfg.tools;
     var leer = { sync: function(){}, refit: function(){}, destroy: function(){}, gepinnt: function(){ return false; } };
     if (!root || !tools) return leer;
+    /* ABGESCHALTET (20.10., Nutzer): die Werkzeugleiste klappt nirgends mehr ein oder auf, alle Knoepfe stehen immer da -- die Leisten
+       sind an allen Stellen stark zusammengestrichen. Alle sechs Aufrufer bekommen die leere Fassung zurueck und merken nichts; der
+       Rest dieser Funktion ist ausser Betrieb und kann mit den .is-tools-*-Regeln in core.css, brands-overview.css und
+       prompts-table.css in einem eigenen Schritt entfernt werden. */
+    return leer;
 
     /* Die Vorgabe faengt ALLES, was die aktuelle Ansicht benennt, und den Export-Knopf. Sie ist
        bewusst breit: die Alternative waere, dass jede Komponente ihre eigene Liste mitgibt -- und
@@ -15313,6 +15328,43 @@
             isDark(), onClose, onOpen(api), vorSchliessen(api) }
      aktion: Funktion(api) -- gibt sie false zurueck, bleibt das Popup offen; ohne aktion schliesst
      der Knopf. Rueckgabe: { el, karte, body, schliessen, busy(id, an), fehler(text), knopf(id) }. */
+  /* "NACH OBEN"-KNOPF IN EINEM ROLLENDEN POPUP (20.10., Nutzer: der Knopf aus Mira, umgedreht). Ab 16px Scroll erscheint er oben mittig
+     UNTER dem klebenden Kopf (o.kopf: Selektor des Kopfes im Host, dessen Hoehe die Marke --up-oben-top setzt), acht Pixel darunter.
+     Ein Wrapper der Hoehe 0 klebt im Rollbereich -- er verschiebt nichts. Der Inhalt eines Fensters kann neu gezeichnet werden
+     (Preferences): fehlt der Wrapper nach einem Scroll, wird er wieder eingesetzt. scroller: das Element, das rollt; o.host: wo der
+     Wrapper klebt (Vorgabe der Scroller). Gilt fuer jedes Popup, in dem etwas rollt (modalVerhalten fuer die Karte, direkt fuer
+     Zwei-Spalten-Fenster). */
+  function modalNachOben(scroller, o){
+    o = o || {};
+    if (!scroller) return null;
+    if (scroller.__upNach) return scroller.__upNach;
+    var host = o.host || scroller;
+    var wrap = document.createElement("div");
+    wrap.className = "up-modal-oben";
+    wrap.innerHTML = '<button type="button" class="up-modal-obenbtn" tabindex="-1" aria-label="' + esc(t("Back to top")) + '">' + icon("chevronUp", 2.2) + '</button>';
+    var btn = wrap.firstChild;
+    function kopf(){ return o.kopf ? host.querySelector(o.kopf) : null; }
+    function einsetzen(){
+      if (wrap.parentNode === host) return;
+      var k = kopf();
+      if (k && k.parentNode === host) host.insertBefore(wrap, k.nextSibling); else host.insertBefore(wrap, host.firstChild);
+    }
+    function sync(){
+      einsetzen();
+      var k = kopf();
+      wrap.style.setProperty("--up-oben-top", (k ? k.offsetHeight : 0) + "px");
+      btn.classList.toggle("is-visible", scroller.scrollTop >= 16);
+    }
+    scroller.addEventListener("scroll", sync, { passive: true });
+    btn.addEventListener("click", function(){
+      var ruhig = false;
+      try { ruhig = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch(e){}
+      try { scroller.scrollTo({ top: 0, behavior: ruhig ? "auto" : "smooth" }); } catch(e){ scroller.scrollTop = 0; }
+    });
+    einsetzen();
+    return (scroller.__upNach = { sync: sync });
+  }
+
   /* DAS VERHALTEN EINES POPUPS NACH GEISTS MODAL (19.10.), fuer makeModal UND jedes eigene Fenster auf .up-topicmodal-card:
      - fokus(): das erste sichtbare, nicht gesperrte Eingabefeld (bei mehreren das erste); ohne Feld die Karte selbst (nie ein Knopf, nie das X);
        mit Gefahraktion (o.gefahr) das Abbrechen (o.abbrechen() liefert den Knopf) -- Enter darf nie die zerstoerende Aktion ausloesen
@@ -15341,7 +15393,24 @@
       if (e.shiftKey && (a === erst || a === karte)){ e.preventDefault(); letzt.focus(); }
       else if (!e.shiftKey && a === letzt){ e.preventDefault(); erst.focus(); }
     });
-    karte.addEventListener("scroll", function(){ karte.classList.toggle("is-gerollt", karte.scrollTop > 0); });
+    /* .is-gerollt: der klebende Kopf zeigt seine Haarlinie. .has-mehr: unter dem Fuss liegt noch Inhalt -- der Fuss wirft dann
+       seinen Schatten nach oben (Geists Sticky-Modal), 200ms ein und aus (CSS); ganz unten ist er weg. */
+    function rollMarken(){
+      karte.classList.toggle("is-gerollt", karte.scrollTop > 0);
+      karte.classList.toggle("has-mehr", karte.scrollHeight - karte.clientHeight - karte.scrollTop > 1);
+      /* scrollIntoView der Inhalte rechnet den klebenden Kopf und Fuss mit (sonst landet ein Feld, das man ansteuert, darunter). */
+      var kh = karte.querySelector(".up-topicmodal-head"), kf = karte.querySelector(".up-topicmodal-foot");
+      karte.style.scrollPaddingTop = (kh ? kh.offsetHeight + 8 : 0) + "px";
+      karte.style.scrollPaddingBottom = (kf ? kf.offsetHeight + 8 : 0) + "px";
+    }
+    karte.addEventListener("scroll", rollMarken, { passive: true });
+    if (typeof ResizeObserver === "function"){
+      var ro = new ResizeObserver(rollMarken);
+      ro.observe(karte);
+      for (var ci = 0; ci < karte.children.length; ci++) ro.observe(karte.children[ci]);
+    }
+    rollMarken();
+    modalNachOben(karte, { kopf: ".up-topicmodal-head" });
     return (karte.__upMv = { fokus: function(){ try { ersterFokus().focus({ preventScroll: true }); } catch(e){} } });
   }
   function makeModal(cfg){
@@ -30010,7 +30079,7 @@
     onModels: onModels,
     getEvents: getEvents, setEvents: setEvents, onEvents: onEvents, eventsStand: eventsStand, eventsChanged: eventsChanged,
     EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen, eventMeldungenDa: eventMeldungenDa,
-    kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal, modalVerhalten: modalVerhalten,
+    kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal, modalVerhalten: modalVerhalten, modalNachOben: modalNachOben,
     seitenSperreAbgleichen: seitenSperreAbgleichen,
     sparkHtml: sparkHtml, zahlZaehlen: zahlZaehlen, zaehlHtml: zaehlHtml, hochzaehlen: hochzaehlen,
     storeStand: storeStand,

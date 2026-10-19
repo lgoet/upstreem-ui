@@ -10019,6 +10019,7 @@
        kommt. */
     void back.offsetHeight;
     back.classList.add("is-shown");
+    if (window.UpstreemCore && window.UpstreemCore.modalNachOben) window.UpstreemCore.modalNachOben(back.querySelector('.ums-main'));
     var mvM = window.UpstreemCore && window.UpstreemCore.modalVerhalten && window.UpstreemCore.modalVerhalten(back.querySelector('.ums-card'), { nurKarte: true });
     if (mvM) setTimeout(function(){ mvM.fokus(); }, 60);
     back.addEventListener('click', function(e){

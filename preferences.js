@@ -925,6 +925,7 @@
       opener = document.activeElement;
       document.addEventListener("keydown", aufTaste);
       zeichnen();
+      if (UC.modalNachOben) UC.modalNachOben(M.main);
       if (UC.modalVerhalten) { var mvP = UC.modalVerhalten(M.back.querySelector(".ums-card"), { nurKarte: true }); setTimeout(function () { mvP.fokus(); }, 60); }
     }
     function schliessen() {

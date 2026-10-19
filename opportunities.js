@@ -469,7 +469,7 @@
       if (!items.length) return;
       html += '<div class="uo-list-section"><div class="uo-list-sechead"><span class="uo-col-dot'+(col.key==='in_progress'?' is-hollow':'')+'" style="'+(col.key==='in_progress'?'color:':'background:')+col.dot+';"></span><span class="uo-col-title">'+col.label+'</span><span class="up-zaehler uo-col-count">'+items.length+'</span></div><div class="uo-list-rows">';
       html += items.map(function(item){
-        return '<div class="uo-row" data-id="'+esc(item.id)+'">'+
+        return '<div class="uo-row up-karte-klick" data-id="'+esc(item.id)+'">'+
           '<div class="uo-row-main">'+
             '<span class="uo-row-title">'+esc(item.headline||'')+'</span>'+
             '<span class="uo-row-sub">'+favHtml(item.lead_favicon, item.lead_domain)+'<span class="uo-row-domain">'+esc(item.lead_domain||'')+'</span><span class="uo-dot-sep"></span><span class="uo-row-domain">'+esc(fmtDate(item.created_at))+'</span></span>'+
@@ -1226,12 +1226,6 @@
      Dashboard, wo genau dieser Fehler gerade gemeldet wurde: der Zustand war richtig, nur sein
      Abbild fehlte. Und es raeumt nebenbei ein bereits eingebautes Bubble-Markup mit auf, das die
      alte Schalterstellung noch traegt -- bubble/*.html erreicht ein stehendes Element nicht. */
-  if (settingsPop){
-    ['pending','in_progress','done','ignored'].forEach(function(k){
-      var sw = settingsPop.querySelector('[data-board="' + k + '"] .up-switch');
-      if (sw) sw.classList.toggle('is-on', !!S.visible[k]);
-    });
-  }
   if (sortPop){
     var swExt0 = sortPop.querySelector('.uo-switch-external');
     if (swExt0) swExt0.classList.toggle('is-on', !!S.externalOnly);
@@ -1268,27 +1262,23 @@
   document.addEventListener('click', function(e){
     if (!settingsPop.contains(e.target) && !settingsBtn.contains(e.target)) setPop(settingsPop, settingsBtn, false);
   });
-  /* Kopf und Sperre wie im Menue "Columns" jeder Tabelle (core makeColumns): Titel mit "Select all"
-     rechts (nur sichtbar, wenn mindestens zwei Lanes aus sind), und die letzte sichtbare Lane laesst sich
-     nicht abschalten. Zur Laufzeit gesetzt, weil bereits eingebautes Bubble-Markup den alten Kopf traegt. */
+  /* Das Lanes-Menue ist die Spaltenliste der Tabellen (core makeColumns, Chip-Form wie in der Prompts-Tabelle): Kopf "Lanes" mit "Select all"
+     rechts (nur sichtbar, wenn mindestens zwei Lanes aus sind), darunter jede Lane als Chip; die letzte sichtbare laesst sich nicht abschalten.
+     Zur Laufzeit gebaut, weil bereits eingebautes Bubble-Markup den alten Kopf und die Zeilen mit Schalter traegt. */
   var LANE_KEYS = ['pending','in_progress','done','ignored'];
+  var LANE_LABEL = { pending: 'Pending', in_progress: 'In Progress', done: 'Done', ignored: 'Ignored' };
   function lanesSync(){
     if (!settingsPop) return;
-    var head = settingsPop.querySelector('.up-pop-head');
-    if (head && !head.querySelector('[data-lanesall]')){
-      var tt = UC.t ? UC.t('Lanes') : 'Lanes', sa = UC.t ? UC.t('Select all') : 'Select all';
-      head.classList.add('up-pop-head-row');
-      head.innerHTML = '<span>' + tt + '</span><button class="up-pop-action" type="button" data-lanesall>' + sa + '</button>';
-    }
+    var tt = UC.t ? UC.t : function(x){ return x; };
     var an = LANE_KEYS.filter(function(k){ return S.visible[k]; }).length;
-    var allBtn = settingsPop.querySelector('[data-lanesall]');
-    if (allBtn) allBtn.classList.toggle('is-hidden', LANE_KEYS.length - an < 2);
-    LANE_KEYS.forEach(function(k){
-      var row = settingsPop.querySelector('[data-board="' + k + '"]'); if (!row) return;
-      var sw = row.querySelector('.up-switch');
-      if (sw){ sw.classList.toggle('is-on', !!S.visible[k]); sw.setAttribute('aria-checked', S.visible[k] ? 'true' : 'false'); }
-      row.classList.toggle('is-locked', !!S.visible[k] && an === 1);
-    });
+    var html = '<div class="up-pop-head up-pop-head-row up-pop-head-feld"><span>' + tt('Lanes') + '</span>' +
+      '<button class="up-pop-action' + (LANE_KEYS.length - an >= 2 ? '' : ' is-hidden') + '" type="button" data-lanesall>' + tt('Select all') + '</button></div>' +
+      '<div class="up-spaltchips">' + LANE_KEYS.map(function(k){
+        var on = !!S.visible[k];
+        return '<button type="button" class="up-entchip up-spaltchip' + (on ? ' is-soft' : ' is-aus') + (on && an === 1 ? ' is-locked' : '') +
+          '" data-board="' + k + '" aria-pressed="' + (on ? 'true' : 'false') + '">' + tt(LANE_LABEL[k]) + '</button>';
+      }).join('') + '</div>';
+    if (settingsPop.__lanesHtml !== html){ settingsPop.__lanesHtml = html; settingsPop.innerHTML = html; }
   }
   lanesSync();
   settingsPop.addEventListener('click', function(e){

@@ -395,7 +395,8 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
   transition: grid-template-rows var(--up-t-2) var(--up-ease), opacity var(--up-t-2) var(--up-ease), visibility 0s linear var(--up-t-2); }
 .uev-klapp.is-offen { grid-template-rows: 1fr; opacity: 1; visibility: visible;
   transition: grid-template-rows var(--up-t-2) var(--up-ease), opacity var(--up-t-2) var(--up-ease), visibility 0s linear 0s; }
-.uev-klapp-in { min-height: 0; overflow: hidden; }
+/* Rand 2/3 innen und gleich viel negativ aussen: der Ring (1px) und der Fokusring (2px) von Umschaltern und Feldern am Rand des Klappers werden sonst vom overflow abgeschnitten (And/Or im Schritt Prompts, gemessen); die Lage aendert sich nicht. */
+.uev-klapp-in { min-height: 0; overflow: hidden; padding: 2px 3px; margin: -2px -3px; }
 @media (prefers-reduced-motion: reduce) { .uev-klapp, .uev-klapp.is-offen { transition: none; } }
 
 /* Umfang: Umschalter, Topics und Zahl als eine Gruppe. 16 zwischen den Teilen (15.10. spaet, vorher
@@ -935,7 +936,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-wk-tafel { position: absolute; left: 15%; top: 116px; width: 100%; height: 100%; box-sizing: border-box; display: flex; align-items: flex-start; justify-content: center; padding-top: 40px;
   border: 1px solid var(--uev-wk-rand); border-radius: var(--up-r-m); background: var(--uev-wk-tafel); box-shadow: var(--uev-wk-schatten);
   transform: rotate(-5.5deg); transform-origin: 50% 80px; transition: transform var(--up-t-3) var(--up-ease); }
-.uev-wk:hover .uev-wk-tafel, .uev-wk:focus-visible .uev-wk-tafel { transform: rotate(-3.3deg); }
+.uev-wk:hover .uev-wk-tafel, .uev-wk:focus-visible .uev-wk-tafel { transform: rotate(-4.7deg); }
 .uev-wk-feld { display: flex; align-items: center; justify-content: center; flex: 0 0 auto; width: min(208px, 62%); height: 80px; box-sizing: border-box;
   border: 1px solid var(--uev-wk-feld-rand); border-radius: var(--up-r-3xl); background: var(--uev-wk-feld); color: var(--uev-wk-ink); }
 .uev-wk-feld svg { width: 32px; height: 32px; }
