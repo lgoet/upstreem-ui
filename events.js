@@ -255,6 +255,18 @@
       return '<span class="uev-zahl-teil">' + esc(t(x.n === 1 ? x.eins : x.viele)).replace("{n}", '<span class="uev-zahl-n">' + esc(zahl(x.n)) + '</span>') + '</span>';
     }).join("") + '</span>';
   }
+  /* Die Hosts, die ein Citation Tracking beobachtet (19.10.): bis zu drei in der Reihenfolge des Hinzufuegens und die Zahl der verschiedenen.
+     Aus der Liste (target_hosts, target_host_count) oder aus dem Detail (targets[].host). null, solange keine Quelle es sagt. */
+  function watchHosts(ev) {
+    if (!ev) return null;
+    var hosts = [], n = null;
+    if (isArr(ev.target_hosts)) { hosts = ev.target_hosts; n = num(ev.target_host_count); }
+    else if (isArr(ev.targets)) ev.targets.forEach(function (x) { var h = x && x.host ? String(x.host).replace(/^www\./, "") : ""; if (h && hosts.indexOf(h) < 0) hosts.push(h); });
+    else return null;
+    hosts = hosts.filter(Boolean);
+    return { hosts: hosts.slice(0, 3), n: n != null && n >= hosts.length ? n : hosts.length };
+  }
+  function hostFavicon(h) { return favicon("https://" + h); }
   /* Was ein Citation Tracking beobachtet, als eine Angabe: "1 domain", "3 URLs". Leer, solange die Liste es nicht sagt. */
   function ziellText(ev) {
     var z = zieleZaehlen(ev), teile = z.regeln && z.teile.length ? z.teile : (z.urls ? [{ n: z.urls, eins: "{n} URL", viele: "{n} URLs" }] : []);
@@ -270,6 +282,12 @@
       return '<div class="uev-angaben' + (klasse ? " " + klasse : "") + '">' +
         (ev.created_at ? '<span class="uev-angabe uev-angabe-datum">' + UC.icon("calendar", 2) + '<span>' + esc(ersetze(t("Created {date}"), { date: datum(ev.created_at) })) + '</span></span>' : '') +
         (zt ? '<span class="uev-angabe">' + UC.icon("link", 2) + '<span>' + esc(zt) + '</span></span>' : '') +
+        /* Bei mehreren Seiten bis zu drei Favicons der zuerst hinzugefuegten, als Logoplatten wie die Citation-Chips der Tabellen: ohne Hover, ohne "+N". */
+        (function () {
+          var wh = watchHosts(ev);
+          if (!wh || wh.n < 2 || !wh.hosts.length || !UC.brandStack) return "";
+          return UC.brandStack(wh.hosts.map(function (h) { return { name: h, favicon: hostFavicon(h) }; }), wh.hosts.length, { max: 3, fav: true, still: true });
+        })() +
       '</div>';
     }
     var tp = typ(ev), st = statusInfo(ev);
@@ -545,14 +563,11 @@
     { key: "poly_blue", datei: "poly-blue.svg", pos: "50%", label: "Blue mosaic" },
     { key: "poly_pink", datei: "poly-pink.svg", pos: "50%", label: "Pink mosaic" },
     { key: "poly_sand", datei: "poly-sand.svg", pos: "50%", label: "Sand mosaic" },
-    /* Die Motive des Citation Tracking (19.10., vom Nutzer): eigene Reihe, gleiche Logik. grp "watch" -- ein Event bietet sie nicht an
+    /* Die Motive des Citation Tracking (19.10., vom Nutzer, drei von sechs): eigene Reihe, gleiche Logik. grp "watch" -- ein Event bietet sie nicht an
        und ein Citation Tracking nicht die Wellen und Mosaike. pos: die Kante der Huegel liegt je Motiv woanders. */
     { key: "hills_green", datei: "hills-green.svg", pos: "45%", label: "Green hills", grp: "watch" },
     { key: "hills_purple", datei: "hills-purple.svg", pos: "40%", label: "Purple hills", grp: "watch" },
-    { key: "hills_blue", datei: "hills-blue.svg", pos: "45%", label: "Blue hills", grp: "watch" },
-    { key: "dusk_purple", datei: "dusk-purple.svg", pos: "70%", label: "Dusk", grp: "watch" },
-    { key: "hills_grey", datei: "hills-grey.svg", pos: "75%", label: "Grey hills", grp: "watch" },
-    { key: "coral_night", datei: "coral-night.svg", pos: "80%", label: "Coral waves", grp: "watch" }
+    { key: "hills_blue", datei: "hills-blue.svg", pos: "45%", label: "Blue hills", grp: "watch" }
   ];
   /* Die Motive einer Art: Event Tracking die ersten sechs, Citation Tracking die eigenen. */
   function coversFuer(art) { return COVERS.filter(function (c) { return (c.grp === "watch") === (art === "watch"); }); }
@@ -1933,7 +1948,7 @@
       '<div class="uev-main"></div>';
     var elMain = root.querySelector(".uev-main"), elAktion = root.querySelector(".uev-kopfaktion");
     var krumen = UC.makePageCrumbs ? UC.makePageCrumbs(root, {
-      icon: "tickets", name: "Impact", komponente: true,
+      icon: "cells", name: "Impact", komponente: true,
       klick: function () { zurUebersicht(true); },
       klickWenn: function () { return state.ansicht === "detail"; },
       stufen: function () {
@@ -2120,7 +2135,11 @@
        Farbe in der Schriftfarbe). In der Karte und im Kopf des Details halb ueber dem Farbband. */
     function avatarHtml(ev, groesse) {
       var f = farbe(ev);
-      return '<span class="uev-avatar' + (groesse ? " is-" + groesse : "") + '"' + (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + ' aria-hidden="true">' + UC.icon(zeichen(ev), 2) + '</span>';
+      /* Citation Tracking: bei genau EINER beobachteten Seite deren Favicon statt des Zeichens (erst wenn es geladen ist, bis dahin und bei einem Fehler steht das Zeichen da);
+         bei mehreren das Zeichen. */
+      var wh = istWatch(ev) ? watchHosts(ev) : null, fav = wh && wh.n === 1 && wh.hosts.length === 1 ? wh.hosts[0] : "";
+      return '<span class="uev-avatar' + (groesse ? " is-" + groesse : "") + '"' + (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + ' aria-hidden="true">' + UC.icon(zeichen(ev), 2) +
+        (fav ? '<img class="uev-avatar-fav" src="' + esc(hostFavicon(fav)) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onload="this.parentNode.classList.add(\'has-fav\')" onerror="this.remove()"/>' : '') + '</span>';
     }
     function mehrMenue(ev, wo) {
       var kannLoeschen = ev.can_delete === true;
@@ -2285,7 +2304,7 @@
       var alle = (UC.getEvents ? UC.getEvents() : []).filter(function (ev) { return !state.geloescht[ev.id]; });
       if (!alle.length) {
         ABSCHNITTE.forEach(function (art) { zahlSetzen(art, null); abschnittZeigen(art, false); });
-        gesamtLeer(UC.leerHtml({ icon: "tickets", titel: "Nothing here yet",
+        gesamtLeer(UC.leerHtml({ icon: "cells", titel: "Nothing here yet",
           text: "Measure what a change did with Event Tracking, or watch which of your pages AI answers cite with Citation Tracking.",
           knopf: "Create", knopfAttr: "data-uev-create" }));
         return;
@@ -4042,7 +4061,7 @@
         seg.innerHTML = "";
         if (!liste.querySelector(".up-lb")) {
           liste.innerHTML = '<div class="uev-abd-lb"></div>';
-          abdLb[zt.id] = UC.makeLadebild ? UC.makeLadebild(liste.querySelector(".uev-abd-lb"), { icon: "tickets", name: "Reading your sitemap",
+          abdLb[zt.id] = UC.makeLadebild ? UC.makeLadebild(liste.querySelector(".uev-abd-lb"), { icon: "cells", name: "Reading your sitemap",
             saetze: ["Looking for your sitemap…", "Reading pages…", "Sorting pages into folders…"], kompakt: true }) : null;
           if (abdLb[zt.id]) abdLb[zt.id].start();
         }
@@ -6693,7 +6712,7 @@
         if (!inh.querySelector(".up-lb")) {
           inh.innerHTML = '<div class="uev-sm-lb"></div>';
           /* kompakt: ein Teilschritt im Dialog, kein ganzer Bildschirm (Kreis 40 statt 48, core 16.10.). */
-          sm.lb = UC.makeLadebild ? UC.makeLadebild(inh.querySelector(".uev-sm-lb"), { icon: "tickets", name: "Reading your sitemap",
+          sm.lb = UC.makeLadebild ? UC.makeLadebild(inh.querySelector(".uev-sm-lb"), { icon: "cells", name: "Reading your sitemap",
             saetze: ["Looking for your sitemap…", "Reading pages…", "Sorting pages into folders…"], kompakt: true }) : null;
           if (sm.lb) sm.lb.start();
         }

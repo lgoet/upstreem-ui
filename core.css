@@ -7354,6 +7354,12 @@
 .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
 .up-stack-item:hover ~ .up-stack-more,
 .up-stack-item:hover ~ .up-stack-tail { transform: translateX(16px); }
+/* Ein ruhiger Stapel (brandStack opts.still, 19.10., Citation Tracking auf der Karte): kein Anheben, keine Luecke beim Hover. */
+.up-stack.is-still .up-stack-item:hover { z-index: auto; }
+.up-stack.is-still .up-stack-item .up-stack-vis,
+.up-stack.is-still .up-stack-item:hover .up-stack-vis,
+.up-stack.is-still .up-stack-item:first-child:hover .up-stack-vis,
+.up-stack.is-still .up-stack-item:hover ~ .up-stack-item .up-stack-vis { transform: none; }
 .up-stack-item:first-child:hover ~ .up-stack-item .up-stack-vis,
 .up-stack-item:first-child:hover ~ .up-stack-more,
 .up-stack-item:first-child:hover ~ .up-stack-tail { transform: translateX(8px); }

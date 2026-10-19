@@ -104,7 +104,7 @@
       /* Impact Events (03.10. angefordert: zwischen Opportunities und Prompt Research). Tickets
          (Hugeicons, 03.10. angefordert) ist das Zeichen der Events-Komponente selbst (Krume im
          Seitenkopf), derselbe Ort, dasselbe Zeichen. Schluessel "events" = ?view=events. */
-      { key: "events",        label: "Impact",          icon: "tickets" },
+      { key: "events",        label: "Impact",          icon: "cells" },
       /* Schluessel "research", nicht "prompt-research" -- siehe AKTIV_SYNONYM weiter unten. */
       { key: "research",      label: "Prompt Research", icon: "telescope" },
       /* blend statt der Bilddatei: Mira traegt jetzt dasselbe Zeichen wie ihre Wortmarke in der

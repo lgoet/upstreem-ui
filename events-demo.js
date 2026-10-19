@@ -42,11 +42,20 @@
   function mitSchema(u) { u = String(u || "").trim(); return /^https?:\/\//i.test(u) ? u : "https://" + u; }
 
   var ids = DATEN.ids, liste = kopie(DATEN.liste), details = kopie(DATEN.details), CTX = {};
+  /* Hosts der Ziele einer URL-Liste: bis zu drei verschiedene in der Reihenfolge, dazu die Zahl der verschiedenen (wie target_hosts der Liste). */
+  function hostsAus(urls) {
+    var h = [];
+    (urls || []).forEach(function (u) { try { var x = new URL(mitSchema(u.url || u)).hostname.replace(/^www\./, ""); if (h.indexOf(x) < 0) h.push(x); } catch (e) {} });
+    return { target_hosts: h.slice(0, 3), target_host_count: h.length };
+  }
   /* Ein Citation Tracking (kind "watch", 19.10.): ohne Datum der Wirkung, ohne Topics, alle Prompts; sein Detail wird wie das jedes
      Events aus der Zeile abgeleitet. Die Zahl der URLs folgt der Zeile. */
   liste.unshift({ id: "9c5b4a7f-eeee-4da2-8ebf-0000000000e5", kind: "watch", event_date: heute(), name: "Ratgeber im Blick", description: "Alle Seiten unter ratgeber.beispiel.de.",
     event_type: "other", icon: null, color: null, cover: "hills_green", scope_mode: "all", selected_topic_count: null, affected_prompt_count: 84, comparison_prompt_count: 0,
-    affected_url_count: 3, created_by: "3f2a9c1e-7b44-4d0a-9e61-2c8d5f1a0b77", created_at: new Date().toISOString(), can_delete: true });
+    affected_url_count: 3, target_hosts: ["sonnenkraft.de"], target_host_count: 1, created_by: "3f2a9c1e-7b44-4d0a-9e61-2c8d5f1a0b77", created_at: new Date().toISOString(), can_delete: true });
+  liste.unshift({ id: "9c5b4a7f-eeee-4da2-8ebf-0000000000e6", kind: "watch", event_date: heute(), name: "Hilfe und Presse", description: null,
+    event_type: "other", icon: null, color: null, cover: "hills_blue", scope_mode: "all", selected_topic_count: null, affected_prompt_count: 84, comparison_prompt_count: 0,
+    affected_url_count: 3, target_hosts: ["hilfe.beispiel.de", "presse.beispiel.de", "blog.beispiel.de"], target_host_count: 4, created_by: "3f2a9c1e-7b44-4d0a-9e61-2c8d5f1a0b77", created_at: new Date().toISOString(), can_delete: true });
   function zeile(id) { for (var i = 0; i < liste.length; i++) if (String(liste[i].id) === String(id)) return liste[i]; return null; }
   /* Ein Event, das nur im Store der Seite steht (etwa aus einem Beispiel-Schritt fuer die Pins),
      bekommt ebenfalls ein Detail -- aus seiner Zeile abgeleitet wie das vierte Event. */
@@ -106,7 +115,7 @@
   }
   function zeileAus(d) {
     return { id: d.id, event_date: d.event_date, name: d.name, description: d.description, event_type: d.event_type,
-      kind: d.kind || "event", icon: d.icon, color: d.color, cover: d.cover || null, scope_mode: d.scope_mode, selected_topic_count: d.selected_topic_count,
+      kind: d.kind || "event", target_hosts: d.target_hosts, target_host_count: d.target_host_count, icon: d.icon, color: d.color, cover: d.cover || null, scope_mode: d.scope_mode, selected_topic_count: d.selected_topic_count,
       affected_prompt_count: d.affected_prompt_count, comparison_prompt_count: d.comparison_prompt_count,
       affected_url_count: (d.urls || []).length, created_by: d.created_by, created_at: d.created_at, can_delete: d.can_delete };
   }
@@ -161,6 +170,7 @@
         d.urls.push({ id: uuid(), url: mitSchema(z.input).replace(/[?#].*$/, ""), url_input: z.input, team_kannte_url: false, created_at: jw });
       });
       d.affected_url_count = d.urls.length;
+      var hw = hostsAus(d.urls); d.target_hosts = hw.target_hosts; d.target_host_count = hw.target_host_count;
       details[d.id] = d; zeileErneuern(d);
       return { detail: d, liste: kopie(liste) };
     }
