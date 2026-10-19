@@ -327,7 +327,8 @@
          Unschaerfe 1.5px und die Dauern 160/200ms gehoeren zum Schleier selbst bzw. zum
          Kopf-Skript; hier steht nur die Farbe. Fuer alle Drawer: Kern-Drawer, Seiten-Drawer,
          Opportunity und Prompt Research. Dialoge behalten ihre .30/.35 (STYLEGUIDE 27). */
-      --vc-drawer-schleier: rgba(0,0,0,.2);
+      --up-schleier: rgba(255,255,255,.68); --up-schleier-blur: 1.5px;
+      --vc-drawer-schleier: var(--up-schleier);
       /* DIE UMGEKEHRTE KARTE (28.09.): Grund und Tinte der Erklaerkarte (.up-explain), die sich
          gegen das Thema dreht -- hell eine dunkle Karte, dunkel eine helle. Sie stand fuenfmal
          als Literal da (core, domains-table, visibility-chart, quick-actions, create-with-ai),
@@ -502,7 +503,7 @@
       --vc-qa-knopf: rgba(255,255,255,0.60); /* --am-trigger-bg: nur der geschlossene Knopf, 60 % Weiss */
       --vc-qa-hover: #eef0f3;                /* --am-hover-bg: Zeichenknoepfe (Chip-x, Leeren, Stern) */
       /* Der Schleier hinter der Palette: hell der Grund der Karte zu 80 % (Geist), dunkel Schwarz. */
-      --vc-qa-schleier: color-mix(in srgb, var(--vc-qa-karte) 80%, transparent);
+      --vc-qa-schleier: var(--up-schleier);
       /* Beschriftungs-Chip der zwei Knoepfe im Eingabefeld (.mqa-btip): wie .up-tip in BEIDEN
          Themen die dunkle Karte -- deshalb nicht --vc-inverse-*, das sich im Dunkeln dreht. */
       --vc-qa-tip-bg: #1f1f1b;
@@ -634,7 +635,7 @@
       --vc-mira-aufnahme-weg-hover: #e9e9ec;
       --vc-mira-aufnahme-ok-hover: #585855;
       --vc-mira-aufnahme-fehler: var(--vt-down);
-      --vc-mira-schleier: rgba(0,0,0,.30);
+      --vc-mira-schleier: var(--up-schleier);
       --vc-mira-haken-an: var(--vc-text);
       --vc-mira-skelett-blase-a: rgba(255,255,255,0.35);
       --vc-mira-skelett-blase-b: rgba(255,255,255,0.6);
@@ -669,7 +670,7 @@
       /* Der Schleier hinter der ausgefahrenen Seitenleiste (hint-Zustand). In BEIDEN Themen .30:
          die dunkle Regel in sidebar.css (.45) war schwaecher (0,2,0) als die helle (0,3,0) und hat
          nie gegriffen -- gemessen 17.10. Bleibt so, eine Angleichung waere eine eigene Entscheidung. */
-      --vc-seitenleiste-schleier: rgba(0,0,0,.30);
+      --vc-seitenleiste-schleier: var(--up-schleier);
       /* Der Fehlerring im Team-Formular: der helle Ring von --vc-fehler-ring, in BEIDEN Themen
          (team-orga hatte nie eine dunkle Fassung). */
       --vc-fehler-ring-fest: rgba(176,32,12,.16);
@@ -706,7 +707,7 @@
       /* AB HIER DREHT ES MIT DEM THEMA (dunkle Werte in der Liste darunter). */
       /* Der Schleier hinter einem Dialog (STYLEGUIDE 27): .30 hell, .35 dunkel -- Gefahrendialog
          der Settings. */
-      --vc-dialog-schleier: rgba(0,0,0,.30);
+      --vc-dialog-schleier: var(--up-schleier);
       /* Die Schicht am <body> mit eigener Leiter: Gefahrendialog (settings-brand .usb-dlg) und
          Tooltip der Performance-Matrix (.uhm-tip). Ihre Schrift ist eine Stufe leiser als die der
          Wurzel (#6b6f78 als zweite, #9e9e9e als dritte Stufe), ihr Rand der eines Menues. */
@@ -751,7 +752,7 @@
       --vc-syntax-attribut: #b45309;
       --vc-syntax-zeichenkette: #15803d;
       /* Der Schleier hinter dem Fenster von Create with AI. */
-      --vc-ki-schleier: rgba(17,18,20,0.34);
+      --vc-ki-schleier: var(--up-schleier);
       /* Fehler im Feld (Add Brand): Fokusring und Flaeche der Meldung. */
       --vc-fehler-ring: rgba(176,32,12,0.16);
       --vc-fehler-flaeche: rgba(176,32,12,0.06);
@@ -894,7 +895,7 @@
       --vc-mira-aufnahme-weg-hover: var(--up-sel-bg);
       --vc-mira-aufnahme-ok-hover: #a0a0a0;
       --vc-mira-aufnahme-fehler: #e07068;
-      --vc-mira-schleier: rgba(0,0,0,.45);
+      --vc-mira-schleier: rgba(0,0,0,.45); --vc-seitenleiste-schleier: rgba(0,0,0,.45);
       --vc-mira-haken-an: #e0e0e0;
       --vc-mira-skelett-blase-a: rgba(255,255,255,0.12);
       --vc-mira-skelett-blase-b: rgba(255,255,255,0.22);
@@ -7444,8 +7445,8 @@
    ============================================================ */
 .up-topicmodal-backdrop {
   position: fixed; inset: 0; z-index: 100000;   /* above the bulk-bar's 99999 */
-  background: rgba(0,0,0,.30);
-  backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
+  background: var(--vc-dialog-schleier, rgba(0,0,0,.30));
+  backdrop-filter: blur(var(--up-schleier-blur, 1.5px)); -webkit-backdrop-filter: blur(var(--up-schleier-blur, 1.5px));
   display: flex; align-items: center; justify-content: center; padding: 24px;
   opacity: 0; pointer-events: none;
   transition: opacity 160ms ease;

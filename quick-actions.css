@@ -49,10 +49,9 @@
      button AND the panel, so the whole popup went translucent. Keep the two separate. */
   --am-card: var(--vc-qa-karte);
   --am-trigger-bg: var(--vc-qa-knopf);
-  /* Der Schleier nach Geist: der Grund zu 80 %, die Seite tritt zurueck statt dunkel zu werden.
-     Aus --am-card gemischt (weiss), damit hier keine neue Farbe steht. Dunkel bleibt der bisherige
-     Wert -- dort IST der Seitengrund fast schwarz, und 55 % Schwarz kommt Geists 80 % #0a0a0a nahe. */
-  --am-overlay: color-mix(in srgb, var(--am-card) 80%, transparent);
+  /* Der Schleier aller Fenster (--up-schleier in core, 19.10.): hell Weiss zu 68 % mit 1.5px Unschaerfe, die Seite tritt zurueck statt dunkel zu werden.
+     Dunkel bleibt der bisherige Wert (--vc-qa-schleier). */
+  --am-overlay: var(--vc-qa-schleier);
   /* Die Palette liegt ueber einem Schleier, also die vierte Tiefe aus core (28.09.; vorher ein
      eigener Zweilagen-Wert). Ohne Rueckfallwert (17.10.): das Token steht in beiden Themen an
      :root, ein Rueckfall hielte nur die alte Fassung fest. */
@@ -146,14 +145,16 @@
   position: fixed; inset: 0; width: auto; height: auto;
   max-width: none; max-height: none; margin: 0; padding: 15vh 16px 16px;
   border: 0; background: var(--am-overlay); overflow: visible;
+  backdrop-filter: blur(var(--up-schleier-blur, 1.5px)); -webkit-backdrop-filter: blur(var(--up-schleier-blur, 1.5px));
 }
 .mqa-overlay[popover]:not(:popover-open) { display: none; }
 
 .mqa-overlay {
   position: fixed; inset: 0; z-index: 2147483000; display: none;
   align-items: flex-start; justify-content: center; padding: 15vh 16px 16px;
-  /* Ohne Unschaerfe (Geist): der Schleier allein nimmt die Seite zurueck. 15vh wie Geists top-[15%]. */
+  /* Seit dem 19.10. der Schleier aller Fenster (--up-schleier: hell, mit der Unschaerfe der Dialoge). 15vh wie Geists top-[15%]. */
   background: var(--am-overlay);
+  backdrop-filter: blur(var(--up-schleier-blur, 1.5px)); -webkit-backdrop-filter: blur(var(--up-schleier-blur, 1.5px));
   font-family: var(--mqa-font); touch-action: none;
 }
 .mqa-overlay.is-open { display: flex; animation: mqaFade var(--up-t-3, 260ms) ease both; }

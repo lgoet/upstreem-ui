@@ -81,7 +81,7 @@
 .uca-overlay {
   position: fixed; inset: 0; z-index: 2147483000;
   display: none; align-items: center; justify-content: center; padding: 20px;
-  background: var(--uca-scrim); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  background: var(--uca-scrim); backdrop-filter: blur(var(--up-schleier-blur, 1.5px)); -webkit-backdrop-filter: blur(var(--up-schleier-blur, 1.5px));
   opacity: 0; transition: opacity .2s ease;
 }
 .uca-overlay.is-open { display: flex; opacity: 1; }
