@@ -721,6 +721,7 @@
     "Global share, previous {n} days": "Global Share, vorherige {n} Tage", "Global share, last {n} days": "Global Share, letzte {n} Tage",
     "No matching entries": "Keine passenden Einträge",
     "Citation Tracking isn't available yet. Please try again later.": "Citation Tracking ist noch nicht verfügbar. Bitte versuche es später noch einmal.",
+    "Before this period": "Vor diesem Zeitraum",
     "Event Tracking measures what a change did, and Citation Tracking watches which of your pages AI answers cite. You choose when you create.":
       "Event Tracking misst, was eine Änderung bewirkt hat, Citation Tracking beobachtet, welche deiner Seiten KI-Antworten zitieren. Du wählst beim Erstellen.",
     "Two ways to track": "Zwei Arten zu tracken",
@@ -3148,8 +3149,9 @@
       var st = o.status, txt, ja = true;
       /* Citation Tracking (19.10.): es gibt keinen Event-Tag -- "zuerst zitiert" ist einfach das Datum, sonst "Not yet". */
       if (istWatch(dasEvent())) {
-        ja = !!o.first_observed_day;
-        return '<span class="up-marke is-leise uev-beob' + (ja ? " is-ja" : "") + '">' + esc(ja ? datum(o.first_observed_day) : t("Not yet")) + '</span>';
+        /* Vor dem letzten Fenster zitiert: die Rechnung nennt dann kein Datum im Fenster, aber observed_before_event ist wahr. */
+        ja = !!o.first_observed_day || o.observed_before_event === true;
+        return '<span class="up-marke is-leise uev-beob' + (ja ? " is-ja" : "") + '">' + esc(o.first_observed_day ? datum(o.first_observed_day) : ja ? t("Before this period") : t("Not yet")) + '</span>';
       }
       /* day_number zaehlt die Tage NACH dem Event (Vertrag 3.9: 0 = Event-Tag) -- darum "After 10
          days" und nicht "Day 10", das sich wie ein Wochentag oder ein Zaehler ab 1 las. */
