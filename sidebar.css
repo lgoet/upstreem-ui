@@ -750,7 +750,7 @@ html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
    auch zum offsetParent jeder Zeile, deren Lage die Marke uebernimmt. Beides gehoert zusammen:
    offsetTop wird dadurch unabhaengig von der Scrollposition, und die Marke scrollt mit dem
    Inhalt, weil sie in derselben Flaeche liegt. */
-.usn-nav { position: relative; margin-top: 10px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.usn-nav { position: relative; margin-top: 24px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
 /* 33 UND NICHT 24, wenn Quick Actions dasteht -- gemeldet am 07.09.: "das Gap zwischen Quick
    Actions und DATENBANK ist kleiner als das nach oben". In der Datei standen beide auf 24, und
    zwischen den KAESTEN sind es auch beide 24. Verschieden ist, was dazwischen liegt:
@@ -776,13 +776,12 @@ html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
    zwischen Quick Actions und Datenbank ist kleiner als das nach oben" ist genau so entstanden
    und kommt genau so zurueck. Gemessen wird das in _h_usn_kopfgaps.html an den SICHTBAREN
    Kanten. */
-.usn-qa:not(:empty) + .usn-nav { margin-top: 10px; }  /* 10 wie bei Vercel (Suche zur ersten Zeile, 18.10.), vorher 28: die Rechnung darueber gilt fuer die alten Werte */
+.usn-qa:not(:empty) + .usn-nav { margin-top: 24px; }  /* 24 (19.10.), vorher 10 wie bei Vercel und davor 28; die Rechnung darueber gilt fuer die alten Werte */
 /* Derselbe Abstand wie zwischen Kopf, Quick Actions und Menue: alle groesseren Gruppen
    stehen gleich weit auseinander. */
-.usn-block + .usn-block { margin-top: 5px; padding-top: 14px; border-top: 1px solid var(--vc-border); }
-/* 18.10.: ein Trenner zwischen den Gruppen, so breit wie die Kaesten der Menuepunkte (die Gruppe hat kein eigenes Polster).
-   19.10.: 14 unter der Linie statt 5. Die Ueberschrift hat 6 Polster unter sich und die Zeile darunter 8 ueber ihrem Text, also stehen
-   zwischen Ueberschrift und erstem Wort 14; dieselben 14 stehen jetzt zwischen Linie und Ueberschrift. */
+.usn-block + .usn-block { margin-top: 24px; }
+/* 19.10.: keine Trenner mehr zwischen den Gruppen (auf Wunsch zurueck), dafuer wieder mehr Luft: 24 statt der 11 von Vercel
+   (urspruenglich 32). Dieselben 24 stehen ueber der ersten Gruppe (.usn-nav). */
 /* Schrift und Farbe kommen jetzt aus .up-blockhead in core.css (12.09. dorthin gezogen, damit
    das Power Dashboard dieselbe Ueberschrift benutzen kann statt sie nachzubauen) -- hier bleibt
    nur, was .up-blockhead nicht selbst ist: ein KNOPF, volle Breite, mit Chevron rechts.
