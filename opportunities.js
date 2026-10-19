@@ -1268,11 +1268,39 @@
   document.addEventListener('click', function(e){
     if (!settingsPop.contains(e.target) && !settingsBtn.contains(e.target)) setPop(settingsPop, settingsBtn, false);
   });
+  /* Kopf und Sperre wie im Menue "Columns" jeder Tabelle (core makeColumns): Titel mit "Select all"
+     rechts (nur sichtbar, wenn mindestens zwei Lanes aus sind), und die letzte sichtbare Lane laesst sich
+     nicht abschalten. Zur Laufzeit gesetzt, weil bereits eingebautes Bubble-Markup den alten Kopf traegt. */
+  var LANE_KEYS = ['pending','in_progress','done','ignored'];
+  function lanesSync(){
+    if (!settingsPop) return;
+    var head = settingsPop.querySelector('.up-pop-head');
+    if (head && !head.querySelector('[data-lanesall]')){
+      var tt = UC.t ? UC.t('Lanes') : 'Lanes', sa = UC.t ? UC.t('Select all') : 'Select all';
+      head.classList.add('up-pop-head-row');
+      head.innerHTML = '<span>' + tt + '</span><button class="up-pop-action" type="button" data-lanesall>' + sa + '</button>';
+    }
+    var an = LANE_KEYS.filter(function(k){ return S.visible[k]; }).length;
+    var allBtn = settingsPop.querySelector('[data-lanesall]');
+    if (allBtn) allBtn.classList.toggle('is-hidden', LANE_KEYS.length - an < 2);
+    LANE_KEYS.forEach(function(k){
+      var row = settingsPop.querySelector('[data-board="' + k + '"]'); if (!row) return;
+      var sw = row.querySelector('.up-switch');
+      if (sw){ sw.classList.toggle('is-on', !!S.visible[k]); sw.setAttribute('aria-checked', S.visible[k] ? 'true' : 'false'); }
+      row.classList.toggle('is-locked', !!S.visible[k] && an === 1);
+    });
+  }
+  lanesSync();
   settingsPop.addEventListener('click', function(e){
+    if (e.target.closest('[data-lanesall]')){
+      LANE_KEYS.forEach(function(k){ S.visible[k] = true; });
+      lanesSync(); render(); return;
+    }
     var row = e.target.closest('[data-board]'); if (!row) return;
     var k = row.getAttribute('data-board');
+    if (S.visible[k] && LANE_KEYS.filter(function(x){ return S.visible[x]; }).length === 1) return;
     S.visible[k] = !S.visible[k];
-    row.querySelector('.up-switch').classList.toggle('is-on', S.visible[k]);
+    lanesSync();
     render();
   });
 
@@ -1446,8 +1474,8 @@
   /* modeSeg statt root.querySelectorAll: dieselbe Begruendung wie beim Aussen-Schalter oben --
      die Leiste kann ausgeliehen in einer fremden Kopfzeile stehen. */
   window.opportunitiesSetMode = function(m){ if (m==='board'||m==='list'){ S.mode = m; if (modeSeg) modeSeg.querySelectorAll('.up-seg-btn').forEach(function(x){ x.classList.toggle('is-active', x.getAttribute('data-mode')===m); }); render(); } };
-  window.opportunitiesSetShowIgnored = function(v){ S.visible.ignored = isYesVal(v);   /* gleicher Defekt wie oben */ var row = settingsPop.querySelector('[data-board="ignored"] .up-switch'); if (row) row.classList.toggle('is-on', S.visible.ignored); render(); };
-  window.opportunitiesSetVisibleBoards = function(obj){ if (obj && typeof obj === 'object'){ ['pending','in_progress','done','ignored'].forEach(function(k){ if (k in obj){ S.visible[k] = !!obj[k]; var sw = settingsPop.querySelector('[data-board="'+k+'"] .up-switch'); if (sw) sw.classList.toggle('is-on', S.visible[k]); } }); render(); } };
+  window.opportunitiesSetShowIgnored = function(v){ S.visible.ignored = isYesVal(v);   /* gleicher Defekt wie oben */ lanesSync(); render(); };
+  window.opportunitiesSetVisibleBoards = function(obj){ if (obj && typeof obj === 'object'){ ['pending','in_progress','done','ignored'].forEach(function(k){ if (k in obj){ S.visible[k] = !!obj[k]; } }); lanesSync(); render(); } };
   window.opportunitiesSetTheme = function(t){ root.setAttribute('data-theme', String(t).toLowerCase()==='dark' ? 'dark' : 'light'); if (String(t).toLowerCase() !== 'dark') root.removeAttribute('data-theme'); portal.setAttribute('data-theme', isDark() ? 'dark' : 'light'); };
   /* Eine Karte von aussen verschieben -- derselbe Weg, den das Ziehen und der Umschalter in der
      Schublade nehmen, samt Ereignis nach Bubble. Gebraucht von der Hero-Sektion der Landingpage,
