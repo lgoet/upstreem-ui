@@ -104,7 +104,7 @@
   width: 100%; box-sizing: border-box; resize: none; overflow-y: auto;
   min-height: 80px; max-height: 200px; padding: 10px 44px 10px 12px;
   border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
-  background: var(--vc-bg); color: var(--vc-text);
+  background: var(--up-feld-bg); color: var(--vc-text);
   font: inherit; font-size: 13.5px; line-height: 1.45;
   transition: border-color 120ms ease;
 }
@@ -286,7 +286,7 @@
 .uap-rowedit {
   flex: 1 1 auto; min-width: 0; height: var(--up-h-btn); margin: 0 0 0 -5px; padding: 0 8px 0 4px;
   border: 1px solid var(--vc-hover-border); border-radius: var(--up-r-m);
-  background: var(--vc-bg); color: var(--vc-text);
+  background: var(--up-feld-bg); color: var(--vc-text);
   font: inherit; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 1.35;
 }
 /* Vorher stand hier nur outline:none. Das Feld hatte damit ueberhaupt keine Fokusanzeige --

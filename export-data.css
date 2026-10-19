@@ -359,7 +359,7 @@
      traegt sie fuer den Kasten). Die Endung steht im Kasten in dritter Textfarbe, der Stamm in
      Textfarbe -- man sieht, was man tippt und was fest ist. Eine Klasse (0,1,0): Hover und
      Fokus aus core (0,2,0) liegen darueber. */
-  .uex-foot-feld { border-color: var(--vc-border); background: var(--up-surface); cursor: text; }
+  .uex-foot-feld { border-color: var(--vc-border); background: var(--up-feld-bg); cursor: text; }
   /* Das Feld waechst mit dem Text: die unsichtbare Kopie im selben Rasterfeld gibt die Breite vor
      (white-space: pre, damit auch Leerzeichen zaehlen), das Feld fuellt sie. Breiter als der Fuss
      wird es nicht (min-width: 0), dann rollt der Text im Feld. Die Spalte minmax(0, 1fr) statt

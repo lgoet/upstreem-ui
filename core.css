@@ -2266,7 +2266,7 @@
     /* Radius --up-r-m: auf der Geist-Skala (seit dem Merge der Ecken) die Stufe 6 fuer Knopf und Feld
        32-36px -- genau Geists rounded-md am Input. */
     .up-search.is-open {
-      border-radius: var(--up-r-m); background: var(--vc-bg);
+      border-radius: var(--up-r-m); background: var(--up-feld-bg);
       box-shadow: 0 0 0 1px var(--vc-border);
       transition: box-shadow var(--up-t-1) ease;
     }
@@ -2725,7 +2725,7 @@
     /* Brand search inside the dropdown, plus a capped list so ~10.5 rows show and the 11th peeks. */
     .up-ment-search {
       width: 100%; height: 32px; margin: 2px 0 6px; padding: 0 10px; box-sizing: border-box; flex: 0 0 auto;
-      border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--vc-bg);
+      border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--up-feld-bg);
       color: var(--vc-text); font: inherit; font-size: 13px; outline: 0;
     }
     .up-ment-search::placeholder { color: var(--vc-third); }
@@ -3024,7 +3024,7 @@
     .up-ddsearch-in {
       width: 100%; height: 32px; box-sizing: border-box; padding: 0 36px 0 11px;
       border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
-      background: var(--vc-bg); color: var(--vc-text);
+      background: var(--up-feld-bg); color: var(--vc-text);
       font-family: inherit; font-size: 12.5px; outline: none;
       transition: border-color 150ms ease, background 150ms ease;
     }
@@ -3504,7 +3504,7 @@
     .up-es-label + * { margin-top: 7px; }
     .up-es-input {
       height: 40px; width: 100%; padding: 0 14px;
-      border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--vc-bg);
+      border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--up-feld-bg);
       font-family: inherit; font-size: 14px; color: var(--vc-text); outline: none;
       transition: border-color var(--up-t-2) var(--up-ease), box-shadow var(--up-t-2) var(--up-ease);
     }
@@ -7549,7 +7549,7 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
    Sorte Abweichung, gegen die der ganze Umbau laeuft.
    Sechs Verwender in drei Dialogen: Name, Appearance, Topics, Group name, Prompt, Topics. */
 .up-topicmodal-name { height: 36px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
-  background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; width: 100%; }
+  background: var(--up-feld-bg); color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; width: 100%; }
 .up-topicmodal-name:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* Appearance row: emoji + color trigger buttons. */
@@ -8546,7 +8546,7 @@ html[data-usn-modus="hint"] .up-ph-heading.is-knapp > .up-ph-crumb:first-child:n
   color: var(--vc-muted); font-family: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
 .upt-gm-more:hover, .up-cgm-more:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
 .upt-gm-search-in, .up-cgm-search-in { flex: 1 1 auto; height: 36px; padding: 0 34px 0 12px; border: 1px solid var(--vc-border);
-  border-radius: var(--up-r-m); background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; }
+  border-radius: var(--up-r-m); background: var(--up-feld-bg); color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; }
 .upt-gm-search-in:focus, .up-cgm-search-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
 .upt-gm-clear, .up-cgm-clear { position: absolute; right: 6px; width: 20px; height: 20px; border: 0; border-radius: var(--up-r-s);
   padding: 0; background: transparent; color: var(--vc-muted); cursor: pointer;
@@ -9377,6 +9377,9 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up
   /* DER GRUND EINES POPUPS (19.10., Nutzer): der Seitengrund, nicht die Flaeche einer Karte. Im Hellen Weiss, im grauen Hell der Seitengrund (unten, an
      .up-root im grauen Hell), im Dunkeln #0a0a0a (--up-seite-dunkel). Dialogkarte, Palette und die anderen Fenster lesen nur dieses Token. */
   --up-popup-bg: #ffffff;
+  /* DAS EINGABEFELD (19.10., Nutzer): im Hellen Weiss, auch im grauen Hell und in jedem Popup. Vorher lasen die Felder je Datei etwas anderes (--vc-bg, --up-surface,
+     --vc-field, transparent) und fielen in Fenstern mit grauem Grund auseinander. Alle Felder lesen nur dieses Token. */
+  --up-feld-bg: #ffffff;
 }
 [data-theme="dark"], .up-root[data-theme="dark"] {
   --vc-inverse-sub: #5f636b;
@@ -9385,6 +9388,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up
   --up-wk-schatten: 0 -3px 14px rgba(0,0,0,.55), 0 4px 14px rgba(0,0,0,.45);
   --up-wk-schatten-leise: 0 -2px 10px rgba(0,0,0,.35), 0 3px 10px rgba(0,0,0,.3);
   --up-popup-bg: #0a0a0a;
+  --up-feld-bg: #0f0f0f;   /* wie --vc-field im Dunkeln */
 }
 
 /* DIE KLEINEN UMSCHALTER AM TELEFON 32 HOCH (18.10., Nutzer): unter 500 (is-vnarrow) sind sie mit 24 bis 26 zu klein fuer

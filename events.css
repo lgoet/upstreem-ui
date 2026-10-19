@@ -920,7 +920,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    208 mal 80 grosse Karte, Radius 16, mit Rahmen (links in der Rahmenfarbe des anderen Themas), ohne Schatten, mit dem Zeichen mittig (zu 57 % sichtbar). Hover: ein Pfeil erscheint hinter dem Titel, die Tafel dreht sich ein Drittel so weit nach rechts wie sie steht.
    Links (is-invers) in den Farben des anderen Themas: Tafel in dessen Seitengrund, Karte in dessen Feldfarbe, Rahmen in dessen Rahmenfarbe. */
 .uev-wk-raster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.uev-wk { --uev-wk-tafel: var(--vc-heading-bg); --uev-wk-feld: var(--vc-bg); --uev-wk-ink: var(--vc-text); --uev-wk-rand: color-mix(in srgb, var(--vc-text) 10%, transparent); --uev-wk-feld-rand: var(--vc-border); --uev-wk-schatten: var(--up-wk-schatten-leise);
+.uev-wk { --uev-wk-tafel: var(--vc-heading-bg); --uev-wk-feld: var(--up-feld-bg); --uev-wk-ink: var(--vc-text); --uev-wk-rand: color-mix(in srgb, var(--vc-text) 10%, transparent); --uev-wk-feld-rand: var(--vc-border); --uev-wk-schatten: var(--up-wk-schatten-leise);
   position: relative; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; height: 201.5px; min-width: 0; padding: 20px 24px 0; overflow: hidden; text-align: left; cursor: pointer;
   border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--vc-bg); color: var(--vc-text); font: inherit;
   transition: background var(--up-t-2) var(--up-ease); }

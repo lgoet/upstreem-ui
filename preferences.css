@@ -266,7 +266,7 @@ html[data-up-dunkel="geist"] .ums-backdrop[data-theme="dark"] .ums-aside .ums-na
 .ums-in {
   width: 100%; max-width: 320px; height: 40px; padding: 0 12px; box-sizing: border-box;
   border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
-  background: var(--vc-bg); color: var(--vc-text);
+  background: var(--up-feld-bg); color: var(--vc-text);
   font-family: inherit; font-size: 14px; font-weight: 400; outline: 0;
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }

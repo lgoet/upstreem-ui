@@ -523,7 +523,7 @@
 .uob-input {
   height: 40px; width: 100%;
   border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
-  background: var(--vc-bg); padding: 0 14px;
+  background: var(--up-feld-bg); padding: 0 14px;
   font-family: inherit; font-size: 14px; color: var(--vc-text);
   outline: none;
   transition: border-color var(--uob-t) var(--uob-ease), box-shadow var(--uob-t) var(--uob-ease);
@@ -588,7 +588,7 @@
   height: 40px; width: 100%;
   display: inline-flex; align-items: center; gap: 10px;
   border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
-  background: var(--vc-bg); padding: 0 12px 0 14px;
+  background: var(--up-feld-bg); padding: 0 12px 0 14px;
   font-family: inherit; font-size: 14px; color: var(--vc-text); text-align: left;
   cursor: pointer; outline: none;
   transition: border-color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease),

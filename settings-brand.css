@@ -115,7 +115,7 @@
 /* Ein ganz normales Eingabefeld: 1px Rahmen in der Rahmenfarbe, sonst nichts. .up-field brachte
    hier einen zu schweren Rahmen mit, weil es fuer die Suchfelder in den Menues gedacht ist. */
 .usb-urlin { flex: 1 1 auto; height: 32px; width: 240px; min-width: 0; padding: 0 10px;
-  border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: transparent;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--up-feld-bg);
   color: var(--vc-text); font: inherit; font-size: 13px; }
 .usb-urlin::placeholder { color: var(--vc-third); }
 /* Hover kommt aus core (Hover der Eingabefelder, 13.10.). */
@@ -261,7 +261,7 @@
 /* Farben ausdruecklich aus den Tokens. Ohne sie nimmt das textarea die Browser-Vorgabe -- also
    weiss, auch im Dark Mode. Rahmen und Fokusring wie bei jedem anderen Feld der App. */
 .usb-sumin { width: 100%; min-height: 132px; padding: 10px 12px; border-radius: var(--up-r-xl);
-  border: 1px solid var(--vc-border); background: var(--vc-bg); color: var(--vc-text);
+  border: 1px solid var(--vc-border); background: var(--up-feld-bg); color: var(--vc-text);
   font-family: inherit; font-size: 13.5px; line-height: 1.55; resize: vertical; display: block;
   outline: 0; transition: border-color 150ms ease, box-shadow 150ms ease; }
 .usb-sumin::placeholder { color: var(--vc-third); }
@@ -371,7 +371,7 @@ html[data-up-hell="grau"] .usb-dlg-backdrop:not([data-theme="dark"]) .usb-dlg {
 .usb-dlg-lbl { font-size: 13px; color: var(--vc-muted); }
 .usb-dlg-lbl b { color: var(--vc-text); font-weight: 500; }
 .usb-dlg-in { height: 36px; padding: 0 12px; border-radius: var(--up-r-m); font: inherit; font-size: 13.5px;
-  border: 1px solid var(--vc-border); background: transparent; color: var(--vc-text); }
+  border: 1px solid var(--vc-border); background: var(--up-feld-bg); color: var(--vc-text); }
 .usb-dlg-in:focus { outline: 0; border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .usb-dlg-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .usb-dlg-go {

@@ -334,7 +334,7 @@
 
 .udt-sub-search { display: inline-flex; align-items: center; gap: 6px; height: 32px;
   padding: 0 8px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
-  background: transparent; width: 200px; box-sizing: border-box;
+  background: var(--up-feld-bg); width: 200px; box-sizing: border-box;
   transition: border-color 120ms ease; }
 /* Feld-Hover wie Geist-Input (15.10.): die Kante eine Stufe kraeftiger, nicht #6f6f6f. */
 .udt-sub-search:hover { border-color: var(--up-knopf-rand-hover); }
