@@ -958,3 +958,8 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-avatar.is-gross > .uev-avatar-fav { width: 32px; height: 32px; border-radius: var(--up-r-s); }
 /* Die Unterueberschriften der Seiteninfo (19.10.): je Art eine, kleiner als die Ueberschrift der Karte. */
 .uev-explain-unter { font-size: var(--up-fs-m); font-weight: var(--up-fw-h); line-height: 1.2; padding: 0 3px; margin: 10px 0 3px; color: var(--vc-inverse-ink); }
+
+/* Die Wahl der Art ("Create", der allererste Schritt) bleibt im Hellen auf dem hellen Grau des Seitengrunds (20.10., Nutzer): die weissen Tafeln
+   der Karten heben sich nur von Grau ab. Im Dunkeln gilt der Grund aller Popups. */
+.up-modal.uev-kind-karte, .up-modal.uev-kind-karte > .up-topicmodal-head { background: var(--up-seite-grau); }
+.up-topicmodal-backdrop[data-theme="dark"] .up-modal.uev-kind-karte, .up-topicmodal-backdrop[data-theme="dark"] .up-modal.uev-kind-karte > .up-topicmodal-head { background: var(--up-popup-bg); }

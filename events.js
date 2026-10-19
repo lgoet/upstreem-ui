@@ -7828,6 +7828,7 @@
         knoepfe: [],
         onClose: popupZu, vorSchliessen: function () { return true; }
       });
+      api.karte.classList.add("uev-kind-karte");
       var p = { art: "art", api: api, e: {}, knopf: "weiter", pops: {} };
       popup = p;
       try { api.karte.style.maxWidth = "min(920px, calc(100vw - 32px))"; } catch (e) {}
