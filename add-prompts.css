@@ -34,21 +34,15 @@
    (overflow: visible): die Menues fuer Market und Topics haengen im Fuss und oeffnen nach oben
    ueber den Rumpf -- eine rollende Karte schnitte sie an ihrer Oberkante ab. Rollen tut der
    Rumpf darunter, Kopf und Fuss bleiben stehen. */
-.uap-backdrop .uap-card {
-  width: 100%; max-width: 640px; box-sizing: border-box;
-  max-height: calc(100dvh - 48px);
-  padding: 16px;
-  display: flex; flex-direction: column; gap: 32px;
-  overflow: visible;
-}
-.uap-head, .uap-foot { flex: 0 0 auto; }
+.uap-backdrop .uap-card { width: 100%; max-width: 640px; box-sizing: border-box; }
+/* Die Menues Market und Topics haengen im Fuss und oeffnen nach oben IN die Karte, die jetzt (Geist) selbst rollt und alles
+   Herausragende abschneidet: sie braucht Hoehe genug fuer das hoechste Menue, auch wenn noch kein Prompt in der Liste steht. */
+.uap-backdrop .uap-card { min-height: min(440px, calc(100dvh - 48px)); }
 .uap-card.is-saving { pointer-events: none; opacity: .6; }
 
 /* ---- head ---- */
 .uap-head { display: flex; align-items: flex-start; gap: 12px; }
 .uap-heading { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.uap-title { font-size: 22px; font-weight: 500; line-height: 1.2; }
-.uap-sub { font-size: 16px; font-weight: 400; color: var(--vc-third); line-height: 1.3; }
 .uap-close {
   margin: -8px -8px 0 0; margin-left: auto;
   width: 32px; height: 32px; flex: 0 0 32px;
@@ -72,12 +66,7 @@
    und des Felds steht 4px vor ihrer Kante. Ohne den Ausgleich schnitte die Rollflaeche beides
    ab, und die Liste allein machte einen waagerechten Rollbalken auf.
    Steht in core in der Liste der Rollflaechen von Popups (contain, Seitensperre). */
-.uap-rumpf {
-  flex: 0 1 auto; min-height: 0;
-  margin: -4px -8px; padding: 4px 8px;
-  display: flex; flex-direction: column; gap: 32px;
-  overflow-x: hidden; overflow-y: auto;
-}
+.uap-rumpf { display: flex; flex-direction: column; gap: 32px; }
 /* Der Umschalter IST seit dem 27.09. .up-seg.is-lg aus core (Klassen im Markup, add-prompts.js).
    Hier stand ein Nachbau in eigener Bauart -- eingerueckte Reiter in einer umrandeten Schiene,
    Pille aus --vc-bg mit Schatten, 12.5px -- und die Pille war im Dunkeln die Farbe der Karte,
@@ -294,7 +283,7 @@
 .uap-rowedit:focus { outline: 0; border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* ---- foot: batch controls left, actions right ---- */
-.uap-foot { display: flex; align-items: center; gap: 12px; }
+.uap-foot { display: flex; align-items: center; }
 .uap-meta { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; }
 .uap-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 
@@ -413,15 +402,11 @@
    Under 560px the footer stops being one row: the batch controls need their full width, and a
    primary action squeezed to three characters is worse than one on its own line. */
 @media (max-width: 560px) {
-  .uap-backdrop { padding: 12px; align-items: flex-end; }
-  .uap-card { gap: 24px; border-radius: var(--up-r-2xl); }
+
   /* Zwei Klassen, weil die Hoehe oben ebenfalls auf zwei Klassen steht; eine Klasse verlore.
      Das gap: 24px in der Zeile darueber verliert aus genau diesem Grund schon laenger gegen die
      32 oben (gemessen 17.10.: am Telefon 32) -- bewusst nicht mitgezogen, das waere eine
      Aenderung am Bild, die hier keiner bestellt hat. */
-  .uap-backdrop .uap-card { max-height: calc(100dvh - 24px); }
-  .uap-title { font-size: 19px; }
-  .uap-sub { font-size: 14px; }
   .uap-foot { flex-direction: column; align-items: stretch; gap: 10px; }
   .uap-meta { justify-content: flex-start; }
   .uap-actions { margin-left: 0; }

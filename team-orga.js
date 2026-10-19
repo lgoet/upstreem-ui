@@ -161,16 +161,16 @@
       back.setAttribute("aria-modal", "true");
       back.setAttribute("aria-label", "Invite new members");
       back.innerHTML =
-        '<div class="up-topicmodal-card uto-card">' +
-          '<div class="uto-head">' +
-            '<div class="uto-heading">' +
-              '<div class="uto-title">Invite new Members</div>' +
-              '<div class="uto-sub">They get an email with a link to join this team</div>' +
+        '<div class="up-topicmodal-card up-geist uto-card">' +
+          '<div class="uto-head up-topicmodal-head">' +
+            '<div class="uto-heading up-topicmodal-heading">' +
+              '<div class="uto-title up-topicmodal-title">Invite new Members</div>' +
+              '<div class="uto-sub up-topicmodal-sub">They get an email with a link to join this team</div>' +
             '</div>' +
             '<button type="button" class="up-popup-close" data-uto-close aria-label="Close">' +
               UC.icon("x", 2) + '</button>' +
           '</div>' +
-          '<div class="uto-dlgbody">' +
+          '<div class="uto-dlgbody up-topicmodal-body">' +
             '<div class="uto-field" data-uto-field>' +
               '<label class="uto-label" for="uto-mail">Email</label>' +
               '<input class="uto-in" id="uto-mail" type="email" autocomplete="off"' +
@@ -194,7 +194,7 @@
               '</span>' +
             '</div>' +
           '</div>' +
-          '<div class="uto-dlgfoot">' +
+          '<div class="uto-dlgfoot up-topicmodal-foot">' +
             '<div class="uto-formerr" data-uto-formerr></div>' +
             '<button class="up-btn-sec" type="button" data-uto-close>Cancel</button>' +
             '<button class="up-export" type="button" data-uto-send>' +
@@ -282,6 +282,7 @@
         back.classList.add("is-shown");
         document.addEventListener("keydown", aufTaste);
         setTimeout(function () { try { D.mail.focus(); } catch (e) {} }, 40);
+        if (UC.modalVerhalten) UC.modalVerhalten(D.card);
       }
       function schliessen() {
         if (!D.offen) return;

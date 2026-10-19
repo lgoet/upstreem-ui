@@ -1258,32 +1258,34 @@
       var team = meta.teamName || "this team";
 
       dlg = document.createElement("div");
-      dlg.className = "usb-dlg-backdrop";
+      dlg.className = "up-root up-portal up-topicmodal-backdrop usb-dlg-backdrop";
       dlg.setAttribute("data-theme", isDark() ? "dark" : "light");
       dlg.innerHTML =
-        '<div class="usb-dlg" role="dialog" aria-modal="true" aria-label="' + esc(goLabel()) + '">' +
-          '<div class="usb-dlg-band">' +
-            '<h3 class="usb-dlg-title">' + (isDel ? "Delete " : "Leave ") + esc(team) + '</h3>' +
-            '<button class="usb-dlg-close" type="button" data-dlg-close aria-label="Close">' + ICON.close + '</button>' +
+        '<div class="up-topicmodal-card up-geist usb-dlg" role="dialog" aria-modal="true" aria-label="' + esc(goLabel()) + '">' +
+          '<div class="up-topicmodal-head">' +
+            '<div class="up-topicmodal-heading">' +
+              '<h3 class="up-topicmodal-title">' + (isDel ? "Delete " : "Leave ") + esc(team) + '</h3>' +
+              '<p class="up-topicmodal-sub">' + (isDel
+                /* Seit dem 11.10. wird weich geloescht (Settings v1 9.2/13.2): sofort weg fuer alle,
+                   endgueltig nach 30 Tagen, bis dahin nur ueber den Support zurueck. "cannot be
+                   undone" stimmte damit nicht mehr -- und genau das zu wissen kann jemandem den
+                   Tag retten, der aus Versehen geloescht hat. */
+                ? "This removes the workspace and everything in it for every member. It is deleted for good after 30 days. Until then, only our support can restore it."
+                : "You lose access to this workspace. Other members keep theirs.") + '</p>' +
+            '</div>' +
+            '<button class="up-popup-close" type="button" data-dlg-close aria-label="Close">' + ICON.close + '</button>' +
           '</div>' +
-          '<div class="usb-dlg-body">' +
-            '<p class="usb-dlg-sub">' + (isDel
-              /* Seit dem 11.10. wird weich geloescht (Settings v1 9.2/13.2): sofort weg fuer alle,
-                 endgueltig nach 30 Tagen, bis dahin nur ueber den Support zurueck. "cannot be
-                 undone" stimmte damit nicht mehr -- und genau das zu wissen kann jemandem den
-                 Tag retten, der aus Versehen geloescht hat. */
-              ? "This removes the workspace and everything in it for every member. It is deleted for good after 30 days. Until then, only our support can restore it."
-              : "You lose access to this workspace. Other members keep theirs.") + '</p>' +
+          '<div class="up-topicmodal-body">' +
             '<div class="usb-dlg-field">' +
               '<label class="usb-dlg-lbl" for="usb-dlg-in">Type <b>' + esc(team) + '</b> to confirm</label>' +
               '<input class="usb-dlg-in" id="usb-dlg-in" type="text" autocomplete="off" ' +
                 'spellcheck="false" placeholder="' + esc(team) + '" data-dlg-in/>' +
             '</div>' +
-            '<div class="usb-dlg-foot">' +
-              '<button class="up-btn-sec usb-dlg-cancel" type="button" data-dlg-close>Cancel</button>' +
-              '<button class="usb-dlg-go" type="button" data-dlg-go disabled>' +
-                '<span class="usb-dlg-golbl">' + goLabel() + '</span></button>' +
-            '</div>' +
+          '</div>' +
+          '<div class="up-topicmodal-foot">' +
+            '<button class="up-btn-sec usb-dlg-cancel" type="button" data-dlg-close>Cancel</button>' +
+            '<button class="usb-dlg-go" type="button" data-dlg-go disabled>' +
+              '<span class="usb-dlg-golbl">' + goLabel() + '</span></button>' +
           '</div>' +
         '</div>';
       document.body.appendChild(dlg);
@@ -1293,6 +1295,7 @@
       var input = dlg.querySelector("[data-dlg-in]");
       var go = dlg.querySelector("[data-dlg-go]");
       setTimeout(function(){ try { input.focus(); } catch(e){} }, 60);
+      if (window.UpstreemCore && window.UpstreemCore.modalVerhalten) window.UpstreemCore.modalVerhalten(dlg.querySelector('.usb-dlg'));
 
       /* Gross/klein zaehlt nicht (11.10., wie der Server: team_leave_v1/team_delete_v1 vergleichen
          getrimmt und ohne Gross/klein) -- sonst lehnte der Dialog einen Namen ab, den die

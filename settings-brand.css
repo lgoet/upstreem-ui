@@ -296,88 +296,21 @@
 .usb-dangerbtn.is-hard:hover { background: var(--vt-down); color: var(--vc-ink-auf-farbe); }
 .usb-dangerbtn:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) color-mix(in srgb, var(--vt-down) 24%, transparent); }
 
-/* ---------- Danger-Dialog (STYLEGUIDE 27) ----------
-   Scrim und Kartenwerte aus dem Template. Abweichung mit Absicht: statt eines Icons in der Ecke
-   traegt der Dialog ein 64px hohes Kopfband in Signalfarbe mit weisser Ueberschrift. Er soll auf
-   den ersten Blick anders aussehen als jeder andere Dialog der App, nicht erst beim Lesen. */
-.usb-dlg-backdrop {
-  position: fixed; inset: 0; z-index: 2147483200;
-  display: grid; place-items: center; padding: 24px;
-  background: var(--vc-dialog-schleier); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
-  opacity: 0; pointer-events: none; transition: opacity 160ms ease;
-}
-/* Der dunkle Schleier (.35) kommt seit dem 17.10. aus derselben Marke: der Schleier traegt
-   data-theme selbst, --vc-dialog-schleier loest dort dunkel auf. */
-.usb-dlg-backdrop.is-shown { opacity: 1; pointer-events: auto; }
-.usb-dlg {
-  --vc-text: var(--vc-schicht-text); --vc-muted: var(--vc-schicht-muted); --vc-third: var(--vc-schicht-third); --vc-border: var(--vc-schicht-border);
-  --vc-heading-bg: var(--vc-schicht-leise); --vc-hover-border: var(--vc-schicht-hover-rand); --up-surface: var(--up-popup-bg, var(--vc-schicht-flaeche));
-  /* --vt-down stand hier als eigene Kopie (hell #b0200c, dunkel #c8321c). Seit dem 15.10. kommt es
-     von :root bzw. vom dunklen Schleier ([data-theme="dark"]) aus core -- Geist Red 900. */
-  /* Ohne diese drei traegt das Feld im Dialog keinen Fokusring: die Karte haengt am body, also
-     ausserhalb von .up-root, wo die Tokens definiert sind, und var(--up-focus) waere leer. */
-  --up-focus: var(--vc-schicht-fokus); --up-focus-ring: var(--vc-schicht-fokus-ring); --up-focus-w: 2px;
-  width: 100%; max-width: 440px; max-height: calc(100vh - 48px); overflow: hidden auto;
-  border-radius: var(--up-r-2xl); background: var(--up-popup-bg, var(--up-surface)); border: 1px solid var(--vc-border);
-  color: var(--vc-text); font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  box-shadow: var(--up-e-4);
-  transform: translateY(6px) scale(.985); transition: transform 160ms ease;
-}
-.usb-dlg-backdrop.is-shown .usb-dlg { transform: translateY(0) scale(1); }
-/* Dunkel nach Geist (15.10.): ein Dialog traegt Background 1, sein Rand ist der einer schwebenden
-   Schicht, die leise Flaeche Gray 100 -- Marken aus core statt der Linear-Kopie. Die leise Flaeche
-   ERBT (inherit): die helle Grundregel der Karte setzt sie selbst, der dunkle Schleier darueber
-   traegt den dunklen Wert aus core. */
-/* Schrift im Dunkeln nach Geist (16.10.): Wert fuer Wert getauscht (#e0e0e0 -> #ededed, #a0a0a0 -> #a1a1a1), Flaeche am <body> mit eigener Leiter. */
-.usb-dlg-backdrop[data-theme="dark"] .usb-dlg {
-  --vc-text: var(--vc-schicht-text); --vc-muted: var(--vc-schicht-muted); --vc-third: var(--vc-schicht-third); --vc-border: var(--up-menu-border);
-  --vc-heading-bg: inherit; --vc-hover-border: var(--vc-schicht-hover-rand); --up-surface: var(--vc-bg);
-  --up-focus: var(--vc-schicht-fokus); --up-focus-ring: var(--vc-schicht-fokus-ring);
-}
-/* IM GRAUEN HELL DIE LEISE FLAECHE DER APP (17.10.), nach dem Muster der core-Dialoge
-   (.up-topicmodal-card): die Karte setzt ihre leise Flaeche oben selbst auf den Wert vor dem grauen
-   Hell (#f9f8f9) und erreicht damit die Marke --up-leise-grau (#f2f2f2) nicht.
-   ZWEI Ziele, und der Schleier ist das wichtigere: --up-knopf-hover (Hover von "Cancel",
-   .up-btn-sec) wird an [data-theme] berechnet, also am Schleier, und der ist keine .up-root -- er
-   bekam seine leise Flaeche von :root (#f9f8f9). Gemessen vorher: Cancel-Hover #f9f8f9 auf der
-   weissen Karte. Im core-Dialog ist der Schleier eine .up-root und traegt das Grau schon.
-   Nur mit dem Marker am <html> (ohne ihn bleibt der alte Wert) und nur im Hellen; (0,3,1) und
-   (0,4,1) gegen die Grundregeln (0,1,0), die dunklen Fassungen schliesst das :not() aus. */
-html[data-up-hell="grau"] .usb-dlg-backdrop:not([data-theme="dark"]),
-html[data-up-hell="grau"] .usb-dlg-backdrop:not([data-theme="dark"]) .usb-dlg {
-  --vc-heading-bg: var(--up-leise-grau);
-}
-@media (prefers-reduced-motion: reduce){ .usb-dlg-backdrop, .usb-dlg { transition-duration: 1ms; } }
-.usb-dlg * { box-sizing: border-box; }
-
-.usb-dlg-band {
-  height: 64px; flex: 0 0 64px; background: var(--vt-down);
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 0 16px;
-}
-.usb-dlg-title { font-size: 22px; font-weight: 500; color: var(--vc-ink-auf-farbe); margin: 0; line-height: 1.2;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.usb-dlg-close {
-  flex: 0 0 32px; width: 32px; height: 32px; margin-right: -6px; border: 0; border-radius: var(--up-r-m);
-  background: transparent; color: var(--vc-ink-auf-farbe-leise); cursor: pointer;
-  display: grid; place-items: center; transition: background 120ms ease, color 120ms ease;
-}
-.usb-dlg-close:hover { background: var(--vc-hover-auf-farbe); color: var(--vc-ink-auf-farbe); }
-.usb-dlg-close svg { width: 18px; height: 18px; display: block; }
-
-.usb-dlg-body { display: flex; flex-direction: column; gap: 32px; padding: 16px; }
-.usb-dlg-sub { font-size: 16px; font-weight: 400; color: var(--vc-third); margin: 0; line-height: 1.35; }
+/* ---------- Danger-Dialog ----------
+   Seit dem 19.10. ein Popup nach Geists Modal wie jedes andere (Schale, Kopf, Fuss: core, .up-geist). Die rote Kopfleiste ist
+   weg: die Gefahr sagt der Hauptknopf in der Warnfarbe, so wie Geist es fuer "Delete Project" zeigt. */
+.usb-dlg-backdrop { z-index: 2147483200; }
+.usb-dlg { max-width: 440px; }
 .usb-dlg-field { display: flex; flex-direction: column; gap: 8px; }
 .usb-dlg-lbl { font-size: 13px; color: var(--vc-muted); }
 .usb-dlg-lbl b { color: var(--vc-text); font-weight: 500; }
 .usb-dlg-in { height: 36px; padding: 0 12px; border-radius: var(--up-r-m); font: inherit; font-size: 13.5px;
   border: 1px solid var(--vc-border); background: var(--up-feld-bg); color: var(--vc-text); }
 .usb-dlg-in:focus { outline: 0; border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
-.usb-dlg-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .usb-dlg-go {
-  height: 32px; padding: 0 14px; border-radius: var(--up-r-m); cursor: pointer; white-space: nowrap;
+  padding: 0 14px; border-radius: var(--up-r-m); cursor: pointer; white-space: nowrap;
   border: 1px solid var(--vt-down); background: var(--vt-down); color: var(--vc-ink-auf-farbe);
-  font: inherit; font-size: 13.5px; font-weight: 500; transition: background 120ms ease, opacity 120ms ease;
+  font: inherit; font-weight: 500; transition: background 120ms ease, opacity 120ms ease;
 }
 .usb-dlg-go:disabled { opacity: .4; cursor: default; }
 .usb-dlg-go:not(:disabled):hover { background: color-mix(in srgb, var(--vt-down) 86%, var(--vc-abdunkeln)); }

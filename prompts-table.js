@@ -2499,7 +2499,7 @@
       etModal.className = "up-root up-portal up-topicmodal-backdrop upt-et-backdrop";
       if (isDark) etModal.setAttribute("data-theme", "dark");
       etModal.innerHTML =
-        '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-label="Edit Topics">' +
+        '<div class="up-topicmodal-card up-geist" role="dialog" aria-modal="true" aria-label="Edit Topics">' +
           '<div class="up-topicmodal-head">' +
             '<div class="up-topicmodal-heading"><h3 class="up-topicmodal-title">Edit Topics</h3></div>' +
             '<button class="up-topicmodal-close" type="button" data-et-close aria-label="Close">' + CLOSE_SVG + '</button>' +
@@ -2526,6 +2526,7 @@
       document.body.appendChild(etModal);
       etRenderLists(false);
       requestAnimationFrame(function(){ if (etModal) etModal.classList.add("is-shown"); });
+      if (UC.modalVerhalten){ UC.modalVerhalten(etModal.querySelector(".up-topicmodal-card")); setTimeout(function(){ if (etModal) UC.modalVerhalten(etModal.querySelector(".up-topicmodal-card")).fokus(); }, 60); }
       document.addEventListener("keydown", etModalKey, true);
       etModal.addEventListener("click", function(e){
         if (e.target === etModal){ closeEtModal(); return; }

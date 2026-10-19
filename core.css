@@ -7621,33 +7621,33 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
      Rollt es     klebt auch der Kopf oben (mit Haarlinie, sobald etwas darunter wegrollt: .is-gerollt), der Fuss wirft seinen Strich
      Telefon      unter 540 wird die Karte ein Blatt am unteren Rand
    Fokus: das erste Eingabefeld; ohne Feld die Karte selbst (nie ein Knopf, nie das X); in einem Popup mit Gefahraktion Cancel. */
-.up-modal {
+.up-modal, .up-geist {
   --up-modal-pad: 20px;
   padding: 0; gap: 0; max-width: 540px; max-height: min(800px, 80vh); overflow-y: auto; overflow-x: hidden; outline: 0;
   font-size: var(--up-fs-l);
 }
-.up-modal.is-breit { max-width: 560px; }
-.up-modal > .up-topicmodal-head {
+.up-modal.is-breit, .up-geist.is-breit { max-width: 560px; }
+:is(.up-modal, .up-geist) > .up-topicmodal-head {
   position: sticky; top: 0; z-index: 3; flex: 0 0 auto; padding: var(--up-modal-pad); gap: 12px;
   background: var(--up-popup-bg, var(--up-surface)); transition: box-shadow var(--up-t-1) var(--up-ease);
 }
-.up-modal.is-gerollt > .up-topicmodal-head { box-shadow: 0 1px 0 0 var(--up-popup-linie); }
-.up-modal .up-topicmodal-heading { gap: 8px; }
-.up-modal .up-topicmodal-title { font-size: var(--up-fs-modaltitel); line-height: 26px; font-weight: 600; letter-spacing: -0.4px; color: var(--vc-text); }
-.up-modal .up-topicmodal-sub { font-size: var(--up-fs-l); line-height: 20px; color: var(--vc-muted); }
-.up-modal .up-popup-close { margin: -6px -6px 0 0; }
-.up-modal > .up-topicmodal-body { padding: 0 var(--up-modal-pad) var(--up-modal-pad); flex: 1 0 auto; gap: 24px; }
-.up-modal > .up-modal-err.is-on { margin: 0 var(--up-modal-pad) var(--up-modal-pad); }
-.up-modal > .up-topicmodal-foot {
+:is(.up-modal, .up-geist).is-gerollt > .up-topicmodal-head { box-shadow: 0 1px 0 0 var(--up-popup-linie); }
+:is(.up-modal, .up-geist) .up-topicmodal-heading { gap: 8px; }
+:is(.up-modal, .up-geist) .up-topicmodal-title { font-size: var(--up-fs-modaltitel); line-height: 26px; font-weight: 600; letter-spacing: -0.4px; color: var(--vc-text); }
+:is(.up-modal, .up-geist) .up-topicmodal-sub { font-size: var(--up-fs-l); line-height: 20px; color: var(--vc-muted); }
+:is(.up-modal, .up-geist) .up-popup-close { margin: -6px -6px 0 0; }
+:is(.up-modal, .up-geist) > .up-topicmodal-body { padding: 0 var(--up-modal-pad) var(--up-modal-pad); flex: 1 0 auto; gap: 24px; }
+:is(.up-modal, .up-geist) > .up-modal-err.is-on { margin: 0 var(--up-modal-pad) var(--up-modal-pad); }
+:is(.up-modal, .up-geist) > .up-topicmodal-foot {
   position: sticky; bottom: 0; z-index: 3; flex: 0 0 auto; margin-top: auto; padding: 12px; gap: 12px; justify-content: space-between;
   background: var(--up-popup-fuss); box-shadow: 0 -1px 0 0 var(--up-popup-linie);
 }
-.up-modal > .up-topicmodal-foot > button { height: var(--up-h-btn); font-size: var(--up-fs-l); }
+:is(.up-modal, .up-geist) > .up-topicmodal-foot > button { height: var(--up-h-btn); font-size: var(--up-fs-l); }
 /* Eine einzelne Aktion steht rechts (Geists "Single button"), nicht links: space-between setzt sie sonst an den Anfang. */
-.up-modal > .up-topicmodal-foot > button:last-child { margin-left: auto; }
+:is(.up-modal, .up-geist) > .up-topicmodal-foot > button:last-child { margin-left: auto; }
 @media (max-width: 540px) {
-  .up-modal-backdrop { align-items: flex-end; padding: 10px 0 0; }
-  .up-modal-backdrop > .up-modal { max-width: 100%; max-height: 90vh; max-height: 90dvh; border-radius: var(--up-r-2xl) var(--up-r-2xl) 0 0; border-bottom: 0; }
+  .up-topicmodal-backdrop:has(> .up-geist, > .up-modal) { align-items: flex-end; padding: 10px 0 0; }
+  .up-topicmodal-backdrop > :is(.up-modal, .up-geist) { max-width: 100%; max-height: 90vh; max-height: 90dvh; border-radius: var(--up-r-2xl) var(--up-r-2xl) 0 0; border-bottom: 0; }
 }
 /* Der Gefahr-Knopf ist gefuellt rot mit weisser Schrift (10.10. angefordert, vorher umrandet und
    erst beim Ueberfahren rot). Mit .up-modal-foot davor: er muss .up-btn-sec samt :hover schlagen,

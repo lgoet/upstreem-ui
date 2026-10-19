@@ -735,11 +735,11 @@
     back.setAttribute("aria-modal", "true");
     back.setAttribute("aria-label", "Add prompts");
     back.innerHTML =
-      '<div class="up-topicmodal-card uap-card">' +
-        '<div class="uap-head">' +
-          '<div class="uap-heading">' +
-            '<div class="uap-title">Add prompts</div>' +
-            '<div class="uap-sub">Type them one by one, or import a spreadsheet.</div>' +
+      '<div class="up-topicmodal-card up-geist uap-card">' +
+        '<div class="uap-head up-topicmodal-head">' +
+          '<div class="uap-heading up-topicmodal-heading">' +
+            '<div class="uap-title up-topicmodal-title">Add prompts</div>' +
+            '<div class="uap-sub up-topicmodal-sub">Type them one by one, or import a spreadsheet.</div>' +
           '</div>' +
           '<button type="button" class="uap-close" data-act="close" aria-label="Close">' + ICON.x + '</button>' +
         '</div>' +
@@ -748,7 +748,7 @@
            und Fuss. Im niedrigen Fenster rollt er, Kopf und Fuss mit den Knoepfen bleiben stehen.
            Vorher lagen die vier direkt in der Karte, die nie rollt (overflow: visible wegen der
            Menues im Fuss) -- und so gab die Liste als einzige nach: bei 1024x440 4px hoch. */
-        '<div class="uap-rumpf">' +
+        '<div class="uap-rumpf up-topicmodal-body">' +
 
         /* Der grosse Umschalter aus core (27.09.). Vorher ein Nachbau mit eingerueckten Reitern,
            Rahmen, Schatten und einer Pille aus --vc-bg -- im Dunkeln die Farbe der Karte, auf
@@ -805,7 +805,7 @@
            32px gaps make a modal taller than most laptop screens before a single prompt is in it.
            Batch controls left, actions right is also what every bulk-add dialog worth copying does
            -- they modify what the button is about to do, so they belong next to it. */
-        '<div class="uap-foot">' +
+        '<div class="uap-foot up-topicmodal-foot">' +
           /* Both pickers are the SAME control the markets and topics filters already use — the
              trigger with the chevron that turns into a clear-X on hover once something is picked,
              the core dropdown shell, core's search row, core's .up-filter-item rows with their
@@ -1234,6 +1234,7 @@
     showShell();
     renderAll(); renderMenus();
     setTimeout(function () { if (S.tab === "manual") M.input.focus(); }, 60);
+    if (UC.modalVerhalten) UC.modalVerhalten(M.card);
   }
 
   function close() {

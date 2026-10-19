@@ -246,15 +246,10 @@
 @keyframes uto-rise-in { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
 @keyframes uto-fade-out { to { opacity: 0; } }
 /* Zwei Klassen, weil core's .up-topicmodal-card eine eigene Breite setzt. */
-.uto-backdrop .uto-card {
-  width: 100%; max-width: 520px; box-sizing: border-box;
-  padding: 16px; display: flex; flex-direction: column; gap: 32px; overflow: visible;
-}
+.uto-backdrop .uto-card { width: 100%; box-sizing: border-box; }
 .uto-card.is-saving { pointer-events: none; opacity: .6; }
 .uto-head { display: flex; align-items: flex-start; gap: 12px; }
 .uto-heading { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1 1 auto; }
-.uto-title { font-size: 22px; font-weight: 500; line-height: 1.2; }
-.uto-sub { font-size: 16px; font-weight: 400; color: var(--vc-third); line-height: 1.3; }
 .uto-dlgbody { display: flex; flex-direction: column; gap: 24px; }
 .uto-field { display: flex; flex-direction: column; gap: 8px; }
 .uto-label { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; }
@@ -279,8 +274,10 @@
    Single/Multi-Schalter in den Filtern. Ein Auswahlfeld waere fuer zwei Werte ein Klick zu viel. */
 .uto-seg { align-self: flex-start; }
 .uto-seg .up-seg-btn { padding: 0 18px; }
-.uto-dlgfoot { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
-.uto-formerr { margin-right: auto; font-size: 12.5px; color: var(--vt-down); line-height: 1.4; }
+.uto-dlgfoot > .uto-formerr:not(:empty) { flex: 1 1 100%; }
+.uto-dlgfoot { flex-wrap: wrap; }
+.uto-formerr:empty { display: none; }
+.uto-formerr { font-size: 12.5px; color: var(--vt-down); line-height: 1.4; }
 
 /* ---------- schmal ---------- */
 /* Zwei Spalten fallen weg, bevor die Zeilen zu Wortsalat werden: das Beitrittsdatum steht in

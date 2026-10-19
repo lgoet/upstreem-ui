@@ -13065,7 +13065,7 @@
       modalBackdrop.className = "up-root up-portal up-topicmodal-backdrop";
       modalBackdrop.setAttribute("aria-hidden", "true");
       modalBackdrop.innerHTML =
-        '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-labelledby="up-topicmodal-title-' + Math.random().toString(36).slice(2) + '">' +
+        '<div class="up-topicmodal-card up-geist" role="dialog" aria-modal="true" aria-labelledby="up-topicmodal-title-' + Math.random().toString(36).slice(2) + '">' +
           '<div class="up-topicmodal-head">' +
             '<div class="up-topicmodal-heading">' +
               '<h2 class="up-topicmodal-title"></h2>' +
@@ -13163,6 +13163,7 @@
       void modalBackdrop.offsetWidth;   // force layout flush so the appear transition actually runs
       modalBackdrop.classList.add("is-shown");
       setTimeout(function(){ try { nameInput.focus(); nameInput.select(); } catch(e){} }, 60);
+      modalVerhalten(modalBackdrop.querySelector(".up-topicmodal-card"));
     }
     function closeModal(){
       if (!modalBackdrop || !modalMode) return;
@@ -15312,6 +15313,35 @@
             isDark(), onClose, onOpen(api), vorSchliessen(api) }
      aktion: Funktion(api) -- gibt sie false zurueck, bleibt das Popup offen; ohne aktion schliesst
      der Knopf. Rueckgabe: { el, karte, body, schliessen, busy(id, an), fehler(text), knopf(id) }. */
+  /* DAS VERHALTEN EINES POPUPS NACH GEISTS MODAL (19.10.), fuer makeModal UND jedes eigene Fenster auf .up-topicmodal-card:
+     - fokus(): das erste sichtbare, nicht gesperrte Eingabefeld (bei mehreren das erste); ohne Feld die Karte selbst (nie ein Knopf, nie das X);
+       mit Gefahraktion (o.gefahr) das Abbrechen (o.abbrechen() liefert den Knopf) -- Enter darf nie die zerstoerende Aktion ausloesen
+     - Tab und Umschalt-Tab laufen im Kreis innerhalb der Karte
+     - rollt die Karte, bekommt sie .is-gerollt (der klebende Kopf zeigt dann seine Haarlinie)
+     Der Fokus kehrt beim Schliessen zum Ausloeser zurueck: das macht der Aufrufer (makeModal tut es selbst). */
+  function modalVerhalten(karte, o){
+    o = o || {};
+    if (karte.__upMv) return karte.__upMv;
+    if (karte.tabIndex < 0 || !karte.hasAttribute("tabindex")) karte.tabIndex = -1;
+    var EIN = "input:not([type=hidden]):not([disabled]), textarea:not([disabled]), select:not([disabled]), [data-upm-fokus]";
+    function sichtbar(x){ return x.offsetParent !== null || (x.getClientRects && x.getClientRects().length > 0); }
+    function ersterFokus(){
+      var l = karte.querySelectorAll(EIN);
+      for (var i = 0; i < l.length; i++){ if (sichtbar(l[i]) && !l[i].closest("[hidden]")) return l[i]; }
+      if (o.gefahr && typeof o.abbrechen === "function"){ var ab = o.abbrechen(); if (ab) return ab; }
+      return karte;
+    }
+    karte.addEventListener("keydown", function(e){
+      if (e.key !== "Tab") return;
+      var l = [].filter.call(karte.querySelectorAll("a[href], button:not([disabled]), input:not([type=hidden]):not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex='-1'])"), function(x){ return sichtbar(x) && !x.closest("[hidden]"); });
+      if (!l.length){ e.preventDefault(); return; }
+      var erst = l[0], letzt = l[l.length - 1], a = document.activeElement;
+      if (e.shiftKey && (a === erst || a === karte)){ e.preventDefault(); letzt.focus(); }
+      else if (!e.shiftKey && a === letzt){ e.preventDefault(); erst.focus(); }
+    });
+    karte.addEventListener("scroll", function(){ karte.classList.toggle("is-gerollt", karte.scrollTop > 0); });
+    return (karte.__upMv = { fokus: function(){ try { ersterFokus().focus({ preventScroll: true }); } catch(e){} } });
+  }
   function makeModal(cfg){
     cfg = cfg || {};
     var dunkel = false;
@@ -15414,30 +15444,10 @@
     /* Ein Bild spaeter einblenden, sonst laeuft der Uebergang nicht (Startzustand und Ziel im
        selben Stilaufbau). setTimeout statt rAF: rAF ruht in einem verdeckten Tab. */
     setTimeout(function(){ el.classList.add("is-shown"); }, 16);
-    /* Fokus beim Oeffnen wie Geists Modal (19.10.): das erste sichtbare, nicht gesperrte Eingabefeld; ohne Feld die Karte selbst
-       (nie ein Knopf, nie das X); in einem Popup mit Gefahraktion Cancel -- Enter darf nie die zerstoerende Aktion ausloesen. */
-    karte.tabIndex = -1;
-    function ersterFokus(){
-      var f = null, l = karte.querySelectorAll("input:not([type=hidden]):not([disabled]), textarea:not([disabled]), select:not([disabled]), [data-upm-fokus]");
-      for (var i = 0; i < l.length; i++){ if (l[i].offsetParent !== null){ f = l[i]; break; } }
-      if (!f && knoepfe.some(function(k){ return k.art === "gefahr"; })){
-        var ab = knoepfe.filter(function(k){ return k.art === "sec"; })[0];
-        f = ab ? api.knopf(ab.id) : null;
-      }
-      return f || karte;
-    }
-    setTimeout(function(){ try { ersterFokus().focus({ preventScroll: true }); } catch(e){} }, 60);
-    /* Der Fokus bleibt im Popup (Tab und Umschalt-Tab laufen im Kreis). */
-    karte.addEventListener("keydown", function(e){
-      if (e.key !== "Tab") return;
-      var l = [].filter.call(karte.querySelectorAll("a[href], button:not([disabled]), input:not([type=hidden]):not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex='-1'])"), function(x){ return x.offsetParent !== null; });
-      if (!l.length){ e.preventDefault(); return; }
-      var erst = l[0], letzt = l[l.length - 1], a = document.activeElement;
-      if (e.shiftKey && (a === erst || a === karte)){ e.preventDefault(); letzt.focus(); }
-      else if (!e.shiftKey && a === letzt){ e.preventDefault(); erst.focus(); }
-    });
-    /* Rollt der Inhalt, klebt der Kopf und bekommt seine Haarlinie, sobald etwas darunter wegrollt. */
-    karte.addEventListener("scroll", function(){ karte.classList.toggle("is-gerollt", karte.scrollTop > 0); });
+    /* Fokus beim Oeffnen, Tab im Kreis und klebender Kopf: dasselbe fuer jedes Popup, siehe modalVerhalten. */
+    var vh = modalVerhalten(karte, { gefahr: knoepfe.some(function(k){ return k.art === "gefahr"; }),
+      abbrechen: function(){ var ab = knoepfe.filter(function(k){ return k.art === "sec"; })[0]; return ab ? api.knopf(ab.id) : null; } });
+    setTimeout(function(){ vh.fokus(); }, 60);
     if (typeof cfg.onOpen === "function"){ try { cfg.onOpen(api); } catch(e){} }
     return api;
   }
@@ -29075,7 +29085,7 @@
       modal.className = "up-root up-portal up-topicmodal-backdrop up-cgm-backdrop upt-gm-backdrop";
       if (getIsDark()) modal.setAttribute("data-theme", "dark");
       modal.innerHTML =
-        '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-label="' +
+        '<div class="up-topicmodal-card up-geist" role="dialog" aria-modal="true" aria-label="' +
             esc(t_(bearbeitet ? "Edit Grouping" : "New Grouping")) + '">' +
           '<div class="up-topicmodal-head">' +
             '<div class="up-topicmodal-heading">' +
@@ -29123,6 +29133,8 @@
       document.body.appendChild(modal);
       renderBody();
       requestAnimationFrame(function(){ if (modal) modal.classList.add("is-shown"); });
+      var gmVh = modalVerhalten(modal.querySelector(".up-topicmodal-card"));
+      setTimeout(function(){ if (modal) gmVh.fokus(); }, 60);
       document.addEventListener("keydown", taste, true);
 
       modal.addEventListener("input", function(e){
@@ -29996,7 +30008,7 @@
     onModels: onModels,
     getEvents: getEvents, setEvents: setEvents, onEvents: onEvents, eventsStand: eventsStand, eventsChanged: eventsChanged,
     EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen, eventMeldungenDa: eventMeldungenDa,
-    kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal,
+    kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal, modalVerhalten: modalVerhalten,
     seitenSperreAbgleichen: seitenSperreAbgleichen,
     sparkHtml: sparkHtml, zahlZaehlen: zahlZaehlen, zaehlHtml: zaehlHtml, hochzaehlen: hochzaehlen,
     storeStand: storeStand,

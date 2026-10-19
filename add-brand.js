@@ -143,17 +143,17 @@
       back.setAttribute("aria-modal", "true");
       back.setAttribute("aria-label", "Add brand");
       back.innerHTML =
-        '<div class="up-topicmodal-card uab-card">' +
+        '<div class="up-topicmodal-card up-geist uab-card">' +
 
-          '<div class="uab-head">' +
-            '<div class="uab-heading">' +
-              '<div class="uab-title">Add Brand</div>' +
-              '<div class="uab-sub">Add a new Brand to track in your AI answers</div>' +
+          '<div class="uab-head up-topicmodal-head">' +
+            '<div class="uab-heading up-topicmodal-heading">' +
+              '<div class="uab-title up-topicmodal-title">Add Brand</div>' +
+              '<div class="uab-sub up-topicmodal-sub">Add a new Brand to track in your AI answers</div>' +
             '</div>' +
             '<button type="button" class="up-popup-close" data-act="close" aria-label="Close">' + ICON.x + '</button>' +
           '</div>' +
 
-          '<div class="uab-body">' +
+          '<div class="uab-body up-topicmodal-body">' +
 
             '<div class="uab-field" data-field="name">' +
               '<div class="uab-labelwrap">' +
@@ -188,7 +188,7 @@
              sie gehoert zum Absenden, nicht zu einem einzelnen Feld. */
           '<div class="uab-formerr" data-formerr></div>' +
 
-          '<div class="uab-foot">' +
+          '<div class="uab-foot up-topicmodal-foot">' +
             '<button type="button" class="uab-cancel" data-act="close">Cancel</button>' +
             '<button type="button" class="up-topicmodal-save uab-save" data-act="add">' +
               '<span class="uab-spin" aria-hidden="true"></span>' +
@@ -351,6 +351,7 @@
       /* Steht schon ein Name, geht der Fokus ins Domainfeld: wer vorausgefuellt oeffnet, will
          meist nur noch bestaetigen und soll nicht erst den Namen wegtabben. */
       setTimeout(function () { (M.name.value ? M.domain : M.name).focus(); }, 40);
+      if (UC.modalVerhalten) UC.modalVerhalten(M.card);
     }
 
     function close() {
