@@ -4428,6 +4428,14 @@
         persist();
       });
     }
+    function neuTeamModus() {
+      var param = /[?&]neu=1(&|#|$)/.test(window.location.search);
+      try {
+        if (param) window.sessionStorage.setItem("up_onb_neu", "1");
+        return window.sessionStorage.getItem("up_onb_neu") === "1";
+      } catch (e) { return param; }
+    }
+    function neuTeamEnde() { try { window.sessionStorage.removeItem("up_onb_neu"); } catch (e) {} }
     function sbAnwenden(erg) {
       var d = sbDaten(erg);
       if (!d) {
@@ -4449,7 +4457,21 @@
       var p = row.project, st = txt(p.status).toLowerCase();
       SB.id = txt(p.onboarding_id);
       sbAbo();
-      if (st === "completed") { state.projekt = sbProjekt(p); sbFertig(p.team_id); return; }
+      if (st === "completed") {
+        /* NEUES TEAM (19.10., gemeldet: "Create new team" fuehrte sofort zurueck in die App): ein Nutzer hat genau EINE Zeile
+           onboarding_project, und die steht nach dem ersten Team auf "completed". Das hiess bisher immer "fertig, ab ins
+           Dashboard" -- richtig fuer den Weg aus der Kasse, falsch fuer jemanden, der ein weiteres Team anlegen will. Kommt er
+           ueber "Create new team" (?neu=1 aus der Seitenleiste), ist das fertige Projekt kein offener Lauf: wie ohne Projekt, ohne Tor
+           (das Tor fragt nach einem laufenden Onboarding), und onboarding_start_v1 setzt die Zeile beim Absenden neu auf. */
+        if (neuTeamModus()) {
+          torGeprueft = true; state.torAuf = false;
+          SB.id = "";
+          ctrl.setBundle(null);
+          if (rs) state.restart = rs;
+          return;
+        }
+        state.projekt = sbProjekt(p); sbFertig(p.team_id); return;
+      }
       /* Nach der Kasse kein Tor und keine Auswahl: hier entsteht gerade das Team. */
       if (st === "finalizing" || (SB.rueckkehr === "success" && st === "awaiting_billing")) {
         torGeprueft = true;
@@ -4539,6 +4561,7 @@
 
     /* ---- Fertig: ins Dashboard ---- */
     function sbFertig(teamId) {
+      neuTeamEnde();
       sbAboEnde();
       if (SB.pruefUhr) { window.clearTimeout(SB.pruefUhr); SB.pruefUhr = null; }
       torGeprueft = true; state.torAuf = false;
@@ -4647,6 +4670,7 @@
         var c = lebt() ? ctrl : resolve(instanceId); if (!c) return;
         var d = sbDaten(erg);
         if (!d || !txt(d.onboarding_id)) { c.__sbStartFehler(erg); return; }
+        neuTeamEnde();   /* der Lauf hat begonnen: das fertige Projekt von vorher ist ersetzt */
         SB.id = txt(d.onboarding_id);
         state.projekt = Object.assign({}, state.projekt || {}, {
           onboarding_id: SB.id, status: txt(d.status), status_phase: num(d.status_phase),
