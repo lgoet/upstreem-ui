@@ -114,6 +114,25 @@
     "See which pages AI trusts most": "Diesen Quellen vertraut die KI",
     "The domains and exact URLs the models cite, so you know where to get mentioned next.":
       "Die Domains und URLs, die KI-Modelle zitieren. So weißt du, wo sich eine Erwähnung als Nächstes lohnt.",
+    /* Events: die zwei Karten der unteren Reihe (19.10.). Texte der Vorschauen wie in events.js (de-Katalog dort). */
+    "See which pages AI already cites": "Sieh, welche Seiten KI schon zitiert",
+    "Load your sitemap and see, folder by folder, which pages are cited and which are still missing.":
+      "Lade deine Sitemap und sieh Ordner für Ordner, welche Seiten zitiert werden und welche noch fehlen.",
+    "Track a page, a path or a whole domain": "Tracke eine Seite, einen Pfad oder eine ganze Domain",
+    "Add single URLs, everything under a path or a whole domain, with or without its subdomains.":
+      "Füg einzelne URLs hinzu, alles unter einem Pfad oder eine ganze Domain, mit oder ohne Subdomains.",
+    "Refresh": "Aktualisieren", "All (43)": "Alle (43)", "Cited (12)": "Zitiert (12)", "Not cited yet (31)": "Noch nicht zitiert (31)",
+    "12 of 43 pages cited. Last checked 5 minutes ago.": "12 von 43 Seiten zitiert. Zuletzt geprüft vor 5 Minuten.",
+    "Not cited yet": "Noch nicht zitiert", "Homepage": "Startseite",
+    "31 citations": "31 Zitate", "12 citations": "12 Zitate", "214 citations": "214 Zitate", "58 citations": "58 Zitate",
+    "2 of 3 cited": "2 von 3 zitiert", "5 of 14 cited": "5 von 14 zitiert", "0 of 6 cited": "0 von 6 zitiert",
+    "URLs, paths or domains": "URLs, Pfade oder Domains", "Load from sitemap": "Aus Sitemap laden",
+    "What should we track?": "Was sollen wir tracken?", "Specific URLs": "Bestimmte URLs",
+    "Everything under a path": "Alles unter einem Pfad", "Whole domain": "Ganze Domain",
+    "Include all subdomains": "Alle Subdomains einbeziehen", "Brand metrics only": "Nur Marken-Kennzahlen",
+    "Only blog.acme.com itself. Pages on blog.blog.acme.com are not counted.":
+      "Nur blog.acme.com selbst. Seiten auf blog.blog.acme.com zählen nicht.",
+    "Visibility, rank and sentiment": "Visibility, Rank und Sentiment", "Add": "Hinzufügen",
     "Share": "Anteil", "Type": "Typ", "42 pages": "42 Seiten", "18 pages": "18 Seiten", "63 pages": "63 Seiten",
     "All URL Types": "Alle URL-Typen", "Title": "Titel", "Page": "Seite", "Domain Share": "Domain-Anteil",
     "Your next moves, ranked by priority": "Deine nächsten Schritte, nach Wirkung priorisiert",
@@ -403,7 +422,15 @@
      STEHT JETZT WEITER OBEN als frueher, weil seit dem 21.09. auch die MARKEN echte sind und
      ihre Zeichen von hier kommen. */
   function quellzeichen(domain){
-    return "https://www.google.com/s2/favicons?sz=64&domain=" + encodeURIComponent(domain);
+    /* Gemini hat in der App ein eigenes Logo (core: llm_logos/gemini_logo.webp); das Favicon von
+       gemini.google.com ist das allgemeine Google-Zeichen. */
+    if (domain === "gemini.google.com")
+      return "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/gemini_logo.webp";
+    /* ABSOLUT (19.10. gemeldet: "Perplexity, Gemini und Google AIO Logos fehlen"). upstreem-web
+       schreibt Fremdadressen in dieser Datei auf /fremd/... um (lib/fremd.ts), also relativ -- und
+       die Logo-Pruefungen von core (UC.modelLogoUrl, sichereUrl in shopping.js, brandedHtml)
+       nehmen nur http(s). Die absolute Adresse der eigenen Domain besteht beide. */
+    return absolut("https://www.google.com/s2/favicons?sz=64&domain=" + encodeURIComponent(domain));
   }
 
   /* ACMES ZEICHEN -- ein Monogramm: schwarzes Plaettchen, weisses A, sonst nichts.
@@ -2875,6 +2902,8 @@
     if (art === "regal" || art === "werber") return '<div class="ulh-balken" data-ulh-balken="' + art + '"></div>';
     if (art === "anzeigen") return visAnzeigen();
     if (art === "eventkarte") return visEventKarte();
+    if (art === "eventabd") return visEventAbd();
+    if (art === "eventziel") return visEventZiel();
     if (art === "reise") return visReise();
     if (art === "branded") return visBranded();
     if (art === "eventkurve") return '<div class="ulh-evk" data-ulh-evk><div class="ulh-evk-wrap"><canvas class="up-line-canvas"></canvas></div><div class="up-legend"></div></div>';
@@ -3689,7 +3718,16 @@
       p: "Content updates, campaigns and price changes sit on your visibility chart, so every shift has a known cause." },
     { breit: 60, vis: "eventkurve",
       h: "Prove the impact of each initiative",
-      p: "Affected prompts from day one, measured against an untouched comparison group, so noise never passes as impact." }
+      p: "Affected prompts from day one, measured against an untouched comparison group, so noise never passes as impact." },
+    /* DIE UNTERE REIHE (19.10. angefordert: "2 weitere Cards, dass es 2x2 wird; links breiter"): links
+       ein Ausschnitt aus einem gefuellten Event-Detail mit der Sitemap, rechts ein Ausschnitt aus
+       Schritt 3 des Anlegens. Beide mit den Klassen und Texten von events.js. */
+    { breit: 60, vis: "eventabd",
+      h: "See which pages AI already cites",
+      p: "Load your sitemap and see, folder by folder, which pages are cited and which are still missing." },
+    { breit: 40, vis: "eventziel",
+      h: "Track a page, a path or a whole domain",
+      p: "Add single URLs, everything under a path or a whole domain, with or without its subdomains." }
   ];
   var EVENT_TON = "#3b82f6";
   var EVENT_NAME = "acme.com/electric relaunch";
@@ -3748,6 +3786,96 @@
                        topics: "3", prompts: "86", urls: "12" }, "ulh-evkarte-vorn") +
     '</div>';
   }
+  /* ---- Karte "Sitemap": ein Ausschnitt aus dem Event-Detail (19.10.) ----
+     Dieselben Klassen und Texte wie events.js (sekKopf, abdSeiteHtml, abdOrdnerHtml, der Schalter
+     .up-seg): Kopf mit Satz und Refresh, der Schalter All | Cited | Not cited yet (All gewaehlt),
+     darunter der Baum der Seiten von acme.com -- ein Ordner offen, zwei zu, danach Seiten ohne
+     Ordner. Zitierte Seiten tragen rechts die Zahl der Zitate, die anderen "Not cited yet". Nichts
+     davon ist bedienbar (tabindex -1, aria-hidden). */
+  function visEventAbd(){
+    var kern = window.UpstreemCore;
+    var ic = function(n){ return kern ? kern.icon(n, 2) : ""; };
+    var fav = '<img class="uev-fav" src="' + MARKEN[0].logo + '" width="16" height="16" alt="" referrerpolicy="no-referrer"/>';
+    function seite(name, zitate, tiefe){
+      var zit = zitate > 0;
+      return '<div class="uev-abd-seite' + (zit ? " is-zitiert" : "") + '"' + (tiefe ? ' style="--uev-tiefe:' + tiefe + '"' : "") + '>' +
+        fav + '<span class="uev-abd-pfad">' + name + '</span>' +
+        (zit ? '<span class="uev-abd-datum uev-abd-zitate">' + zitate + (zitate === 1 ? " citation" : " citations") + '</span>'
+             : '<span class="up-marke is-leise uev-abd-marke">Not cited yet</span>') +
+      '</div>';
+    }
+    function ordner(name, offen, text, tiefe){
+      return '<div class="uev-abd-ordner"' + (tiefe ? ' style="--uev-tiefe:' + tiefe + '"' : "") + '>' +
+        ic(offen ? "chevronDown" : "chevronRight") + '<span class="uev-abd-ic">' + ic(offen ? "folderOpen" : "folder") + '</span>' +
+        '<span class="uev-abd-pfad">' + name + '</span><span class="uev-abd-datum">' + text + '</span></div>';
+    }
+    return '<div class="ulh-evabd" aria-hidden="true">' +
+      '<section class="uev-sek uev-zielsek">' +
+        '<div class="up-sec-head uev-sec-head"><div class="up-sec-titles">' +
+          '<span class="up-heading up-sec-h uev-ziel-h"><span class="uev-ziel-ic">' + ic("globe") + '</span>' +
+            '<span class="uev-notation is-titel">acme.com/*</span></span></div></div>' +
+        '<div class="uev-abd-sek">' +
+          '<div class="uev-abd-kopf"><div class="up-sec-head uev-sec-head"><div class="up-sec-titles">' +
+            '<span class="up-heading up-sec-h">Sitemap</span>' +
+            '<span class="up-sec-sub">12 of 43 pages cited. Last checked 5 minutes ago.</span></div>' +
+            '<button type="button" class="up-btn-sec uev-abd-neu" tabindex="-1">' + ic("refreshCw") + '<span>Refresh</span></button></div></div>' +
+          '<div class="uev-abd-seg"><div class="up-seg uev-abd-schalter" role="group">' +
+            '<button class="up-seg-btn is-active" type="button" tabindex="-1">All (43)</button>' +
+            '<button class="up-seg-btn" type="button" tabindex="-1">Cited (12)</button>' +
+            '<button class="up-seg-btn" type="button" tabindex="-1">Not cited yet (31)</button></div></div>' +
+          '<div class="uev-abd-liste"><div class="uev-abd-seiten">' +
+            ordner("/electric", true, "2 of 3 cited", 0) +
+            seite("/range-calculator", 31, 1) + seite("/compare-models", 12, 1) + seite("/faq", 0, 1) +
+            ordner("/blog", false, "5 of 14 cited", 0) +
+            ordner("/support", false, "0 of 6 cited", 0) +
+            seite("Homepage", 214, 0) + seite("/pricing", 58, 0) + seite("/about", 0, 0) + seite("/contact", 0, 0) +
+          '</div></div>' +
+        '</div>' +
+      '</section>' +
+    '</div>';
+  }
+
+  /* ---- Karte "Ziele": Schritt 3 des Anlegens (19.10.) ----
+     Die Felder des Schritts, wie zielFelder in events.js sie zeichnet: das Feld mit "Add" (hier
+     blog.acme.com eingegeben), darunter die Wahl der Art, "Whole domain" gewaehlt, "Include all
+     subdomains" aus -- mit dem Satz, den die App dazu zeigt. */
+  function visEventZiel(){
+    var kern = window.UpstreemCore;
+    var ic = function(n){ return kern ? kern.icon(n, 2) : ""; };
+    function art(titel, zeichen, bsp, an, unter){
+      return '<div class="uev-art-w' + (an ? " is-on" : "") + '">' +
+        '<div class="uev-art' + (an ? " is-on" : "") + '" role="radio" aria-checked="' + an + '">' +
+          '<span class="uev-art-punkt" aria-hidden="true"></span>' +
+          '<span class="uev-art-ic" aria-hidden="true">' + ic(zeichen) + '</span>' +
+          '<span class="uev-art-txt"><span class="uev-art-t">' + titel + '</span>' + bsp + '</span>' +
+        '</div>' + (unter || "") + '</div>';
+    }
+    function notation(t){ return '<span class="uev-notation is-leise uev-art-bsp">' + t + '</span>'; }
+    var unter = '<div class="uev-klapp uev-unter-klapp is-offen"><div class="uev-klapp-in">' +
+      '<div class="uev-unter"><span class="uev-unter-lbl">Include all subdomains</span><span class="up-switch" role="switch" aria-checked="false"></span></div>' +
+      '<p class="uev-unter-satz">Only blog.acme.com itself. Pages on blog.blog.acme.com are not counted.</p></div></div>';
+    return '<div class="ulh-evziel" aria-hidden="true"><div class="uev-ziel">' +
+      '<div class="up-topicmodal-field uev-ziel-teil uev-eingabe-teil">' +
+        '<div class="uev-zielkopf"><span class="up-topicmodal-label">URLs, paths or domains</span>' +
+          '<span class="uev-sm-knopfzeile"><button type="button" class="up-quietbtn uev-sm-auf" tabindex="-1">' + ic("folderTree") + '<span>Load from sitemap</span></button></span></div>' +
+        '<div class="uev-eingabe-ort"><div class="uev-zieleingabe"><div class="uev-zielzeile">' +
+          '<div class="uev-feldspalte"><div class="uev-urlsuche"><span class="uev-urlsuche-ic">' + ic("globe") + '</span>' +
+            '<textarea class="up-topicmodal-name uev-urlein uev-zielein" rows="1" readonly tabindex="-1">blog.acme.com</textarea></div></div>' +
+          '<button type="button" class="up-btn-sec is-lg uev-zielhinzu" tabindex="-1">Add</button>' +
+        '</div></div></div>' +
+      '</div>' +
+      '<div class="up-topicmodal-field uev-ziel-teil uev-arten-teil">' +
+        '<span class="up-topicmodal-label">What should we track?</span>' +
+        '<div class="uev-arten-ort"><div class="uev-arten" role="radiogroup">' +
+          art("Specific URLs", "link", notation("example.com/blog/launch"), false) +
+          art("Everything under a path", "folder", notation("example.com/blog/*"), false) +
+          art("Whole domain", "globe", notation("example.com/*"), true, unter) +
+          art("Brand metrics only", "chartSpline", '<span class="uev-art-s">Visibility, rank and sentiment</span>', false) +
+        '</div></div>' +
+      '</div>' +
+    '</div></div>';
+  }
+
   /* Die Kurve: 28 Tage, der Relaunch am 15. Die betroffenen Prompts stehen davor bei gut 21
      Prozent und ziehen danach auf rund 31 an; die Vergleichsgruppe bleibt bei 19 bis 20. Feste
      kleine Wellen statt Zufall -- in jeder Runde dasselbe Bild. */
@@ -4041,6 +4169,7 @@
         '<div class="ulh-cards-box">' +
           '<div class="ulh-cards">' +
             '<div class="ulh-cards-row">' + merkmalKarte(EVENTKARTEN[0], 0) + merkmalKarte(EVENTKARTEN[1], 1) + '</div>' +
+            '<div class="ulh-cards-row">' + merkmalKarte(EVENTKARTEN[2], 0) + merkmalKarte(EVENTKARTEN[3], 1) + '</div>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -5371,7 +5500,13 @@
      waere. setActiveElements setzt die Punkte, tooltip.setActiveElements zeichnet den Kasten.
      Auf mouseleave raeumt Chart.js beides ab, deshalb der Zuhoerer: nach dem Zeigen steht der
      Tooltip wieder da, wo er hingehoert. */
-  var TIPP_PUNKT = 2;
+  /* ZWEITER PUNKT (19.10. gemeldet: "der Tooltip liegt auf der Hover-Linie, da soll ein Gap zwischen
+     sein wie in der Hauptapp"). Der Kasten ist 220 breit und core setzt ihn 16 rechts vom Punkt --
+     passt er dort nicht mehr hin, kippt er nach links, und bei einem Chart von 356 Flaeche stand
+     keiner der Seiten genug Platz zur Verfuegung: er wurde auf den Rand geklemmt und deckte die
+     Linie zu (gemessen: Linie bei 165, Kasten von 38 bis 258). Beim zweiten Monat (x 102) liegen
+     102 + 16 + 220 = 338 unter der rechten Kante: der Kasten steht rechts, 16 von der Linie. */
+  var TIPP_PUNKT = 1;
 
   function tippZeigen(root){
     var leinwand = root.querySelector(".up-line-canvas");
@@ -5552,6 +5687,46 @@
       clearTimeout(uhr);
       uhr = setTimeout(nachmessen, 400);
     });
+  }
+
+  /* DIE FILTER ERREICHEN DIE SEITEN NICHT (19.10. gemeldet: Shopping "erst erscheinen die Sachen, dann
+     sind sie sofort weg, und die Liste geht in den Ladezustand"; Performance "ab und zu der
+     No-data-Platzhalter"). Jede Seite der App haengt an ihrer Filterzeile: Kalender, Modelle,
+     Maerkte, Topics melden ihre Wahl als Ereignis, die Seite aendert daraufhin ihren Stand, raeumt
+     ihre Tabelle (Prompts, Radar) oder wartet auf eine neue Antwort (Shopping, Signatur samt
+     Zeitraum). Im Fenster kommt keine Antwort -- die Daten setzt die Landing selbst, einmal je
+     Szene. Der Kalender richtet sich erst nach dem Laden ein (auf einem langsameren Rechner nach
+     den Daten) und meldet dann seinen Zeitraum: genau dieser Augenblick war der Absturz in den
+     Ladezustand, und er liegt je nach Rechner mal davor und mal danach (deshalb "ab und zu").
+     Die Ereignisse werden an der Filterzeile angehalten und an das document weitergereicht, wo die
+     Filterleiste auf sie hoert (filter-bar.js, Zeile 1692) -- Chips und Zaehler stimmen, die Seite
+     darunter bleibt, wie sie ist. */
+  var FILTER_EVT = ["umf-models", "umk-markets", "utf-topics", "uif-intents"];
+  function filterzeilenAbschirmen(root){
+    var app = root.querySelector(".ulh-app");
+    if (!app) return;
+    function binden(){
+      var zeilen = app.querySelectorAll('[class*="-filterzeile"]');
+      for (var i = 0; i < zeilen.length; i++){
+        var z = zeilen[i];
+        if (z.__ulhAb) continue;
+        z.__ulhAb = true;
+        FILTER_EVT.forEach(function(name){
+          z.addEventListener(name, function(e){
+            if (e.__ulhWeiter) return;
+            e.stopPropagation();
+            var neu = new CustomEvent(name, { detail: e.detail, bubbles: true });
+            neu.__ulhWeiter = true;
+            document.dispatchEvent(neu);
+          });
+        });
+        z.addEventListener("change", function(e){
+          if (e.target && e.target.classList && e.target.classList.contains("udr-root")) e.stopPropagation();
+        });
+      }
+    }
+    binden();
+    if (window.MutationObserver) new MutationObserver(binden).observe(app, { childList: true, subtree: true });
   }
 
   function reiterBewachen(root){
@@ -6021,6 +6196,9 @@
       if (!w.__ulhDauerAn){
         w.__ulhDauerAn = true;
         auftritte(w);
+        intentFuerPerf(false);
+        filterWerte();
+        shopLieferant();
         hellBewachen(w);
         reiterBewachen(w);
         stufenWachen(w);
@@ -6041,7 +6219,7 @@
         totalCountDomain: 412,
         totalCountUrl: 1893,
         citations_total: 15899,
-        top_domains: QUELLEN.map(function(q){
+        top_domains: QUELLEN.slice(0, 6).map(function(q){
           return { domain: q.domain, favicon: q.logo,
                    share_pct: q.share_pct,
                    share_delta_pct: q.share_delta_pct, used_total: q.used_total,
@@ -7242,8 +7420,7 @@
          Mit Rank UND Brand Mentions blieben dem Prompt 363px, die Fragen brachen zweizeilig um
          (Zeilen 63 statt 56). Also Rank, Sentiment und Market ausdruecklich weg: die Logos der
          Marken sind im Schaustueck das Aussagekraeftigste dieser Tabelle. */
-      ls.setItem("upt_cols__" + ID.upt, JSON.stringify({ created: false, topics: false, rank: false,
-        sentiment: false, market: false }));
+      ls.setItem("upt_cols__" + ID.upt, JSON.stringify({ created: false, topics: false, market: false }));
       /* Die Werkzeugleiste angepinnt: sie steht offen und faehrt nicht beim Ueberfahren heraus.
          "1" ist der Wert, den UC.makeTools dafuer liest (prefKey upt_tools__<id>). */
       ls.setItem("upt_tools__" + ID.upt, "1");
@@ -7828,6 +8005,43 @@
                          rank_min: minRang, rank_max: maxRang } };
   }
 
+  /* DIE FILTER, DIE IM FENSTER GESETZT SIND (19.10. angefordert): Prompt Insights nach ChatGPT,
+     Performance nach USA und Intent Recommendation (in der App "Commercial"). Die Chips kommen aus
+     den Filterleisten der Seiten selbst, wie dort; die Zahlen darunter bleiben die Demozahlen --
+     der Lader der Seite geht nie hinaus (stillerLader). Modelle und Maerkte stehen dafuer im Speicher
+     von core, sonst kennt die Leiste "chatgpt" und "US" nicht. */
+  function filterWerte(){
+    shopModelle();
+    if (window.setUpstreemMarkets && !filterWerte.maerkte){
+      filterWerte.maerkte = true;
+      window.setUpstreemMarkets(JSON.stringify([
+        { alpha2: "US", alpha3: "USA", name: "United States" },
+        { alpha2: "DE", alpha3: "DEU", name: "Germany" },
+        { alpha2: "GB", alpha3: "GBR", name: "United Kingdom" }
+      ]));
+    }
+    if (window.setModelsFilterSelected) window.setModelsFilterSelected(ID.upi + "_models", "chatgpt");
+    if (window.setMarketsFilterSelected) window.setMarketsFilterSelected(ID.upf + "_markets", "US");
+  }
+  /* Der Intent-Filter liegt in core EINMAL fuer die ganze App (UC.intentFilterSet) und zeigt sich in
+     jeder Filterleiste. Gewollt ist er nur auf Performance: gesetzt wird er mit dieser Szene und mit
+     ihr wieder abgenommen (intentFuerPerf); beim Start steht keiner, auch wenn ein frueherer Besuch
+     einen im Speicher liess. */
+  function intentFuerPerf(an){
+    var kern = window.UpstreemCore;
+    if (!kern || !kern.intentFilterSet) return;
+    try { kern.intentFilterSet({ intents: an ? ["recommendation"] : [] }); } catch (e){}
+  }
+
+  /* DAS SKELETT STATT "NO DATA" (19.10. gemeldet: "hier sieht man ab und zu No-data-Platzhalter, das
+     darf nirgends passieren"). Zwischen dem Zuruecksetzen der Matrix und ihrer Fuellung steht die
+     Seite leer da -- gewollt, die Zellen sollen hereinkommen, waehrend man hinsieht. Eine
+     zurueckgesetzte Radar-Seite zeigt dabei ihren Leerzustand "No data"; geladen wird nichts, also
+     ist der ehrliche Zustand der des Ladens: das Skelett. Gesetzt, sobald die Seite zu sehen ist und
+     nach jedem Zuruecksetzen, beendet von perfFuellen. */
+  function perfLaedt(){
+    if (window.setPerformanceRadarLoading) window.setPerformanceRadarLoading(ID.uhm, "yes");
+  }
   function perfFuellen(){
     if (!window.renderPerformanceRadar) return false;
     var d = perfZellen();
@@ -7854,6 +8068,9 @@
                  role: i === 0 ? "own" : "competitor", position: i + 1 };
       })
     });
+    /* Den Ladezustand ausdruecklich beenden (perfLaedt setzt ihn): die Komponente haelt einen
+       ausdruecklich gesetzten Zustand, bis er ebenso ausdruecklich endet. */
+    if (window.setPerformanceRadarLoading) window.setPerformanceRadarLoading(ID.uhm, "no");
     return true;
   }
 
@@ -7958,6 +8175,7 @@
     perfNach(function(){
       seite.classList.remove("is-weg");
       seite.classList.add("is-da");
+      perfLaedt();
       hellHalten(root);
       ohneTipps(root);
       /* GEFUELLT WIRD ERST, WENN DIE SEITE STEHT. Die Matrix hat einen eigenen Auftritt -- die
@@ -8161,10 +8379,13 @@
       topics: [{ tag_id: "t4", name: "Charging", responses: 31, share: 67.4 },
                { tag_id: "t1", name: "Pricing", responses: 12, share: 26.1 },
                { tag_id: "t3", name: "Electric", responses: 9, share: 19.6 }],
-      models: [{ model: "chatgpt", responses: 21, share: 45.7 }, { model: "perplexity", responses: 14, share: 30.4 },
-               { model: "gemini", responses: 11, share: 23.9 }],
-      markets: [{ market: "DE", responses: 29, share: 63.0 }, { market: "AT", responses: 10, share: 21.7 },
-                { market: "CH", responses: 7, share: 15.2 }],
+      /* DREI VERSCHIEDENE REIHEN (19.10. gemeldet: "jedes der 3 Barcharts hat exakt die gleichen 3
+         Werte"). Die Themen zaehlen eine Antwort mehrfach (Summe ueber 100), Modelle und Maerkte
+         teilen sich die 46 Antworten und ergeben 100. */
+      models: [{ model: "chatgpt", responses: 24, share: 52.2 }, { model: "perplexity", responses: 13, share: 28.3 },
+               { model: "gemini", responses: 9, share: 19.6 }],
+      markets: [{ market: "DE", responses: 33, share: 71.7 }, { market: "AT", responses: 8, share: 17.4 },
+                { market: "CH", responses: 5, share: 10.9 }],
       merchants: haendler.map(function(h){
         return { merchant_name: h[0], observations: h[1], share: h[2], latest_price: preis(h[3]),
                  price_ranges: [{ currency: "EUR", min: h[3], max: h[3] }] };
@@ -8193,12 +8414,34 @@
   }
   /* Die Daten in die Komponente, ueber ihren echten Setter -- im selben Zug, in dem die Seite
      auftritt (shopSzene). Der Tabellenkoerper ist bis ZEILEN_START verborgen (is-kommt). */
-  function shopFuellen(root){
-    shopModelle();
+  /* DER LIEFERANT FUER SHOPPING (19.10. gemeldet: Shopping "geht nach dem Auftritt wieder in den
+     Ladezustand"). Die Seite fragt ihre Daten ueber Bubble-Ereignisse an (shopOverview ...), und
+     bis heute verpuffte jede Anfrage in der Stummschaltung (landing-boot.js): die Daten setzte die
+     Landing erst mit der Szene. Dazwischen laeuft in der Komponente ein Wecker -- 25 s, dann
+     "Shopping data could not be loaded. This is taking longer than expected" --, und auf einem
+     Rechner, auf dem die Szene spaeter kommt (oder nach einem Neustart der Runde, der die Seite
+     zuruecksetzt und neu anfragen laesst), stand diese Meldung im Bild, bevor die Daten kamen.
+     Jetzt antwortet die Landing SOFORT auf jede Anfrage, mit denselben Demodaten: die Seite hat nie
+     etwas offen, und es gibt nichts, was ablaufen koennte. Dasselbe gilt fuer das Produktdetail. */
+  function shopLiefern(){
     if (window.setShoppingOverview){
       try { window.setShoppingOverview(ID.ush, JSON.stringify(shopDaten()), ""); }
       catch (e){ if (window.console) console.warn("[landing-hero] Shopping:", e); }
     }
+  }
+  function shopLieferant(){
+    if (shopLieferant.an) return;
+    shopLieferant.an = true;
+    window.shopOverview = function(){ shopLiefern(); };
+    window.shopProductDetail = function(){
+      if (!window.setShoppingProductDetail) return;
+      try { window.setShoppingProductDetail(ID.ush, JSON.stringify(shopDetailDaten(SHOP_PRODUKT)), ""); }
+      catch (e){ if (window.console) console.warn("[landing-hero] Shopping-Detail:", e); }
+    };
+    shopLiefern();           /* die Anfrage vom Aufbau der Seite, die schon unterwegs ist */
+  }
+  function shopFuellen(root){
+    shopModelle();
     ohneTipps(root); hellHalten(root); zeichenSetzen(root);
   }
   /* Der Zaehler fuer die Staffel steht erst im AUGENBLICK von is-zeilen an den Zeilen, nicht
@@ -8217,6 +8460,24 @@
      das ausloest, verpufft in der Stummschaltung (landing-boot.js), die Antwort kommt im selben
      Zug ueber den echten Setter -- das Skelett wird nie gemalt. Die Teile des Details steigen
      danach auf wie die der Uebersicht (is-detail, landing-hero.css). */
+  /* DIE BALKENLISTEN NACH IHRER EINFAHRT NEU MESSEN (19.10. gemeldet: "die Logo-Container liegen
+     teils mittig auf den Kanten der Balken"). makeBarList setzt die Beschriftung neben den Balken
+     (innen oder aussen) 640ms nach dem Start der Einfahrt, an der Breite, die der Balken DANN hat --
+     die Einfahrt dauert 600ms und beginnt erst nach zwei Bildern. Auf einem Rechner, der in diesem
+     Moment ruckelt (die Seite zeichnet zugleich Chart, Tabelle und Auftritt), ist der Balken bei
+     der Messung noch unterwegs, und die Beschriftung bleibt auf halber Strecke stehen. Der
+     Groessenwaechter der Liste misst von selbst neu, wenn sich ihr Kasten aendert: ein Hauch an
+     der Breite (0.01px, im naechsten Bild zurueck) weckt ihn, nachdem alle Balken stehen. */
+  function balkenNachmessen(root){
+    var listen = root.querySelectorAll(".up-bars");
+    [].forEach.call(listen, function(l){
+      var m = l.parentElement;
+      if (!m) return;
+      var alt = m.style.marginRight;
+      m.style.marginRight = "-0.01px";
+      requestAnimationFrame(function(){ m.style.marginRight = alt; });
+    });
+  }
   function shopProduktKlick(root){
     var seite = root.querySelector(".ulh-shop");
     var komp = seite && seite.querySelector(".ush-root");
@@ -8232,6 +8493,8 @@
         catch (e){ if (window.console) console.warn("[landing-hero] Shopping-Detail:", e); }
       }
       ohneTipps(root); hellHalten(root); zeichenSetzen(root);
+      shopNach(function(){ balkenNachmessen(seite); }, 1300);
+      shopNach(function(){ balkenNachmessen(seite); }, 2600);
       shopNach(function(){ seite.classList.remove("is-detail"); ohneTipps(root); hellHalten(root); }, SHOP_DETAIL_AUF + 120);
     }
     if (!zeile){ oeffnen(); return true; }
@@ -8262,6 +8525,12 @@
     });
     if (window.setSidebarActive) window.setSidebarActive(ID.usn, "shopping");
     shopUhrenAus();
+    /* Zurueck auf Anfang, solange die Seite noch unsichtbar ist: die Seite fragt neu an, der
+       Lieferant (shopLieferant) antwortet im selben Zug, und die Kennzahlen zaehlen hoch, waehrend
+       die Seite einblendet -- ohne dass je ein Skelett oder eine Meldung zu sehen waere. */
+    var shopKomp0 = seite.querySelector(".ush-root");
+    if (shopKomp0 && shopKomp0.__ushController && shopKomp0.__ushController.seite) shopKomp0.__ushController.seite("overview", false);
+    if (window.resetShopping) window.resetShopping(ID.ush);
     shopNach(function(){
       seite.classList.remove("is-weg");
       seite.classList.add("is-da");
@@ -8289,6 +8558,11 @@
     if (!seite || seite.__ulhChancenAuf) return false;
     seite.__ulhChancenAuf = true;
     schubladeEinholen(root);
+    /* Der Intent-Filter geht an, solange Performance noch nicht zu sehen ist (19.10.): jede Seite
+       der App reagiert auf ihn mit einer neuen Anfrage und raeumt ihre Daten -- die Matrix zeigte
+       dann beim Auftritt "No data". Hier, eine ganze Szene davor, geschieht das unsichtbar; die
+       Performance-Seite steht danach mit dem Chip da und wartet auf ihre Zellen. */
+    intentFuerPerf(true);
     /* Weg geht, was GERADE steht -- seit dem 06.10. ist das Shopping, nicht mehr die Prompts. */
     [].forEach.call(root.querySelectorAll(".ulh-seite.is-da"), function(alt){
       if (alt === seite) return;
@@ -8394,6 +8668,7 @@
       if (window.resetShopping) window.resetShopping(ID.ush);
       schubladeZu(root);             /* nichts Offenes in die naechste Runde mitnehmen */
       perfUhrenAus();                /* alle Uhren der Szene anhalten */
+      intentFuerPerf(false);
       perfTippWeg();
       /* Die Matrix wird geleert und faengt in der naechsten Runde wieder bei der Sichtbarkeit an.
          Gewichtungsschalter UND Metrik ueberleben sonst: der Schalter liegt in der Ablage
@@ -8403,6 +8678,7 @@
       if (window.setPerformanceRadarMetric) window.setPerformanceRadarMetric(ID.uhm, "visibility");
       if (window.setPerformanceRadarWeights) window.setPerformanceRadarWeights(ID.uhm, "no");
       if (window.resetPerformanceRadar) window.resetPerformanceRadar(ID.uhm);
+      perfLaedt();
       var perfKarte = root.querySelector(".ulh-perf .uhm-root");
       if (perfKarte) perfKarte.classList.remove("is-geht");
       root.__ulhMiraAn = false;
@@ -8565,7 +8841,10 @@
     return {
       laden: function(){ return new Promise(function(){}); },
       ausSpeicher: function(){ return true; },
-      leeren: function(){}, abbrechen: function(){}, stand: function(){ return 0; }
+      leeren: function(){}, abbrechen: function(){}, stand: function(){ return 0; },
+      /* Seit dem 18.10. rufen die Seiten auch diese drei (Version beim Blaettern, Bereinigung beim
+         Neuaufbau, "laeuft ein Kanal"): ohne sie wirft initRoot, und die Seite baut sich nie auf. */
+      versionMit: function(){}, bereinigenMit: function(){}, laeuft: function(){ return false; }
     };
   }
   function seitenLaderStill(){
@@ -8593,6 +8872,8 @@
        375 breit. Die Marke beendet den Lauf an der Wurzel. */
     root.setAttribute("data-up-keepclip", "");
     bauen(root);
+    /* Gleich nach dem Bauen und noch vor den ersten Ereignissen der Filter (filterzeilenAbschirmen). */
+    filterzeilenAbschirmen(root);
     nurSchauen(root);
     /* NACH nurSchauen: das schluckt Klicks nur in .ulh-view (dem nachgebauten App-Fenster), die
        Preissektion ist davon nicht betroffen. */
@@ -8870,6 +9151,19 @@
     var roots = document.querySelectorAll(WURZEL);
     for (var i = 0; i < roots.length; i++){
       if (roots[i].__ulhAuf) continue;
+      /* ERST WENN landing-hero.css DA IST (19.10. gemeldet: "beim allerersten Pageload sah ich einmal
+         kurz eine Sidebar ueber der Landingpage, ganz links"). landing-boot.js haengt die
+         Stylesheets per link ein, und ein dynamischer Link haelt das Skript nicht auf: bauen()
+         setzte die Leiste ein, bevor .ulh-app sein transform hatte -- und eine position: fixed ohne
+         transform im Vorfahren bezieht sich auf das Browserfenster, nicht aufs Fenster der Demo.
+         Die Marke ist --ulh-kasten (steht nur in dieser CSS). Nach 5s geht es auch ohne los. */
+      if (!roots[i].__ulhCssWarte) roots[i].__ulhCssWarte = 0;
+      if (roots[i].__ulhCssWarte < 100 &&
+          !window.getComputedStyle(roots[i]).getPropertyValue("--ulh-kasten")){
+        roots[i].__ulhCssWarte++;
+        setTimeout(start, 50);
+        continue;
+      }
       roots[i].__ulhAuf = true;
       /* MIRAS GROSSE CHATLISTE BLEIBT ZU -- zu sehen ist nur die schmale Schiene daneben
          (21.09. angefordert). Mira entscheidet das beim Start aus ihrer Ablage: kein Wert und

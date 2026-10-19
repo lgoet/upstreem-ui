@@ -177,6 +177,12 @@
      hellHalten in landing-hero.js -- Begruendung dort.) In der App steht die Zeile nicht. */
   try { window.__upThemeBooted = true; } catch (e){}
 
+  /* Die Intents sind freigegeben (19.10.): die Filterleisten der Seiten im Fenster bauen den
+     Intent-Filter nur, wenn der Gastgeber sie freigibt (UC.intentsLive). In der App setzt das
+     Kopf-Skript den Schalter; hier steht er, damit die Performance-Seite ihren Chip zeigen kann
+     (landing-hero.js, intentFuerPerf). Gesetzt wird er nie ausser dort. */
+  try { window.__upIntentsLive = true; } catch (e){}
+
   /* ══ KEIN APP-START AUF DER LANDINGPAGE (13.10.) ═══════════════════════════════════════════
      Seit 2ea3ef9 (12.10.) startet core die App von selbst, sobald eine Seitenleiste (.usn-root)
      auf der Seite steht (appAutostart): app_start_v1, und ohne Anmeldung nach 1,5 s

@@ -666,7 +666,12 @@
 /* Das Ende aller Stufen mit is-entering steht als ERSCHEINEN_MS in landing-hero.js -- wer hier
    eine Verzoegerung oder Laenge aendert, zieht die Zahl dort mit (sonst faellt is-entering mitten
    in einer Stufe ab, und das Teil springt auf seinen Endzustand). */
-.ulh-stage { opacity: 0; }
+/* 0.001 und nicht 0 (19.10.): UC.istSichtbar (core) zaehlt Deckkraft 0 als "nicht zu sehen" -- die
+   Seiten der App im Fenster (dashboard-page.js und die anderen) bauen sich aber erst auf, wenn ihre
+   Wurzel sichtbar ist, und das Fenster wartet seinerseits auf sie (bereit()). Der Kreis schloss sich
+   nie, und nach 5s blendete die Landing die Buehne ganz aus. 0.1 Prozent Deckkraft sind nicht zu
+   sehen, zaehlen fuer core aber als sichtbar. */
+.ulh-stage { opacity: 0.001; }
 .ulh-root.is-shown .ulh-stage { opacity: 1; }
 /* ---- STUFE 0: DER TEXTBLOCK UEBER DEM FENSTER (24.09. angefordert) --------------------------
    "Erst der GET-MENTIONED-Chip, dann die h1, usw. -- natuerlich vor dem Hero-Fenster darunter."
@@ -850,7 +855,9 @@
 /* Mira und die Prompts-Seite liegen von Anfang an im Markup, aber unsichtbar: die Komponenten
    brauchen ihre echte Groesse, um sich einzurichten (Chathoehe, is-compact, Scrollsperre, die
    Spaltenanpassung der Tabelle), und display: none haette ihnen eine Hoehe von 0 gemeldet. */
-.ulh-mira, .ulh-prompts, .ulh-chancen, .ulh-perf, .ulh-shop { opacity: 0; }
+/* 0.001 aus demselben Grund wie an .ulh-stage: die Seiten der App bauen sich erst auf, wenn ihre
+   Wurzel fuer core "sichtbar" ist (Deckkraft 0 ist es nicht). Sie sollen aber von Anfang an stehen. */
+.ulh-mira, .ulh-prompts, .ulh-chancen, .ulh-perf, .ulh-shop { opacity: 0.001; }
 .ulh-seite.is-da { opacity: 1; }
 /* is-weg NACH is-da, und das ist kein Schoenheitsfehler in der Reihenfolge: eine Seite, die schon
    dran WAR und jetzt weg soll, traegt beide Klassen. Beide haben dieselbe Spezifitaet, also
@@ -1915,30 +1922,11 @@
    Deshalb liegt die Sperre an der Wurzel und nicht an den einzelnen Schaltern. Der Tooltip steht
    ohnehin ohne Maus (landing-hero.js setzt ihn). */
 .ulh-quell-app .udd-root { pointer-events: none; }
-/* Kurve OBEN, Trichter DARUNTER, die zwei Aufschluesselungen darunter nebeneinander (14.10.
-   abends angefordert; vorher standen Kurve und Trichter in einer Zeile). Eine Spalte wie die
-   Abschnittsform der Komponente selbst; nur die Aufschluesselungen teilen sich eine Zeile
-   (.udd-row2). 48 statt der 64 der Komponente: hier steht sie in einem Ausschnitt, nicht auf
-   einer ganzen Seite -- dieselbe Ueberlegung wie bei den Kartenpolstern darunter. */
-.ulh-quell-app .udd-root {
-  display: grid; grid-template-columns: 1fr; row-gap: 48px; align-items: stretch;
-}
-/* 50-50 statt 1.15 zu 1: in der App ist die Typkarte breiter, weil dort neben dem Ring die
-   Legende mit Prozenten steht und rechts nur vier Balken. Hier stehen beide fuer sich, und
-   ungleiche Haelften lesen sich als Versehen. */
-.ulh-quell-app .udd-row2 { grid-column: 1 / -1; gap: 8px; grid-template-columns: 1fr 1fr; }
-.ulh-quell-app .udd-card { padding: 14px; }
-/* HIER STANDEN ZWEI FEHLVERSUCHE fuer das 8px-Gap neben dem Forbes-Zeichen: erst an .udd-head
-   (der Kopfzeile der Chartkarte, wo gar kein Zeichen steht), dann an .up-bar-row (den Zeilen der
-   URL-Liste). Beide sind wieder raus -- sie haben Inhalt verschoben, den niemand verschoben
-   haben wollte. Gemeint war die Zeile UEBER dem Fenster; die Einrueckung steht jetzt dort, an
-   .ulh-quell-dom. */
-/* Hier stand das Strecken des Trichters auf die Hoehe der Kurvenkarte -- beide teilten sich eine
-   Zeile. Seit sie untereinander stehen, hat der Trichter wieder seine eigene Hoehe aus der
-   Komponente. */
-/* Die oberste Zeile faellt weg: darin stehen der Modus-Umschalter (der Modus ist hier gesetzt und
-   soll nicht wechseln) und das Zahnrad fuer die Bereiche (hier gibt es nichts einzurichten). */
-.ulh-quell-app .udd-toprow { display: none; }
+/* DOMAIN DETAIL WIE IN DER APP (19.10. angefordert: "angleichen an die Hauptapp: Alignment der Elemente
+   und Separatoren, Schalter"). Hier standen eigene Layoutregeln: eine Spalte mit 48px Zeilenabstand,
+   50/50 fuer die zwei Aufschluesselungen, Kartenpolster 14 und eine ausgeblendete oberste Zeile mit
+   dem Modus-Umschalter. Seit dem 13.10. zeigt die App Domain Detail in Abschnitten (data-form), und
+   die Landing laesst die Komponente jetzt ihr eigenes Layout, mit Kopfzeile, Linien und Schaltern. */
 /* Keine Legende. NICHT display: none: core misst die Legendenbreite, und solange sie 0 ist,
    versucht es alle 100ms erneut -- eine Uhr, die auf einer Landingpage bis in alle Ewigkeit
    laeuft, ohne dass etwas dabei herauskommt (core.js, legendLayout). Mit Hoehe 0 und
@@ -2005,6 +1993,27 @@
    Rechts die Kurve des Event-Details (UC.makeLine), so hoch wie der sichtbare Teil der Vorschau.
    Beide Reihen 344 hoch, wie die unteren Reihen des ersten Blocks. */
 .ulh-vis-eventkarte, .ulh-vis-eventkurve { --ulh-vs: 1; --ulh-vh: 344px; }
+/* Die untere Reihe der Events (19.10.): zwei Ausschnitte aus der App -- der Baum der Sitemap im
+   Event-Detail (links, breiter) und Schritt 3 des Anlegens (rechts). Wie die Tabellen: etwas kleiner
+   gerechnet, innen mit Luft zum Rand, unten laeuft der Inhalt in den Kartengrund aus. */
+.ulh-vis-eventabd, .ulh-vis-eventziel { --ulh-vs: 0.86; --ulh-vh: 440px; }
+.ulh-vis-eventabd .ulh-vis-in, .ulh-vis-eventziel .ulh-vis-in { padding: 0 40px; box-sizing: border-box; }
+.ulh-vis-eventabd::after, .ulh-vis-eventziel::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 19%;
+  -webkit-backdrop-filter: blur(1.6px); backdrop-filter: blur(1.6px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 90%);
+  mask-image: linear-gradient(to bottom, transparent, #000 90%);
+  pointer-events: none; z-index: 2;
+}
+.ulh-vis-eventabd::before, .ulh-vis-eventziel::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 18%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, #ffffff 94%);
+  pointer-events: none; z-index: 3;
+}
+/* Der Abstand von 40px, den die Seite in der App ueber der Sitemap laesst, entfaellt: hier steht sie oben. */
+.ulh-evabd .uev-abd-sek { margin-top: 0; }
+.ulh-evabd .uev-zielsek .up-sec-head { margin-bottom: 0; }
+.ulh-evabd, .ulh-evziel { pointer-events: none; }
 .ulh-evkarten { position: relative; height: calc(100% - 40px); display: flex; justify-content: center; align-items: flex-start; padding-top: 6px; }
 .ulh-evkarten .uev-karte { width: 340px; flex: 0 0 auto; }
 .ulh-evkarte-links, .ulh-evkarte-rechts {
@@ -3065,10 +3074,19 @@
    eine Ansicht, die es hier nicht gibt. */
 .ulh-app .vot-scale-btn { display: none; }
 .ulh-app .vot-max-right { display: none; }
+/* Eine Linie unter dem Kopf der flachen Tabellen, nicht zwei (19.10. gemeldet: "unter Product eine
+   doppelte Border"). In der App liegen die Linie des Kopfes (inset 0 -1px am .up-thead) und die
+   Unterkante jeder Kopfzelle (border-bottom) auf DEMSELBEN Pixel und sehen aus wie eine. Im
+   verkleinerten Fenster sind die Zelle 1,05px und der Schatten 1px dick und treffen verschiedene
+   Pixel: zwei Linien dicht untereinander. Den Strich zeichnet hier der Kopf allein. */
+.ulh-app .up-root[data-flach="yes"] .up-thead .up-th { border-bottom-width: 0; }
 /* Zwischen dem Visibility-Band und Top Citations 32 statt der 48 der App (16.10. angefordert:
    "auf die gleiche Hoehe wie der Filter-Knopf"). Die 48 stehen als --up-stapel-luft an .uds-main
    (dashboard-page.css); 32 ist die Knopfhoehe der Skala. */
 .ulh-app .uds-main { --up-stapel-luft: var(--up-h-btn); }
+/* Die Legende unter der Linie faellt weg (immer so bestellt: die Tabelle rechts nennt dieselben Marken
+   mit demselben Zeichen). Beim Umbau auf die Seiten der App am 16.10. versehentlich mit entfernt. */
+.ulh-app .up-legend { display: none; }
 /* Die Rahmenfarbe der LANDINGPAGE (Leiste, Karten, Chip), nicht der App: ein Viertel heller als
    --vc-border. */
 .ulh-root { --ulh-border: #e7e9ec; }
