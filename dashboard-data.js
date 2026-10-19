@@ -199,7 +199,7 @@
   function marke(r) {
     return {
       company_id: str(r.company_id), position: num(r.position), name: str(r.name), logo_url: absolut(r.logo_url),
-      is_own: r.is_own === true, visibility_pct: num(r.visibility_pct), visibility_delta_pct: num(r.visibility_delta_pct),
+      is_own: r.is_own === true, angehaengt: r._angehaengt === true, visibility_pct: num(r.visibility_pct), visibility_delta_pct: num(r.visibility_delta_pct),
       avg_rank: num(r.avg_rank), avg_rank_delta: num(r.avg_rank_delta), sentiment: num(r.sentiment), sentiment_delta: num(r.sentiment_delta),
       mentions: num(r.mentions)
     };
@@ -223,7 +223,7 @@
     var own = istObjekt(ov.own) && ov.own.company_id != null ? ov.own : null;
     if (!own || o.nurImChart || o.platzInMenge) return tabelle;
     if (tabelle.some(function (r) { return str(r.company_id) === str(own.company_id); })) return tabelle;
-    return (tabelle.length >= UC_MAX_ZEILEN ? tabelle.slice(0, UC_MAX_ZEILEN - 1) : tabelle).concat([own]);
+    return (tabelle.length >= UC_MAX_ZEILEN ? tabelle.slice(0, UC_MAX_ZEILEN - 1) : tabelle).concat([Object.assign({}, own, { _angehaengt: true })]);
   }
   function zuVisibility(vis, ov, o) {
     o = o || {};

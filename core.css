@@ -9141,6 +9141,12 @@ html[data-usn-modus="hint"] .up-ph-heading.is-knapp > .up-ph-crumb:first-child:n
   overflow: hidden; padding: 0 16px 0 12px; border-left: 1px solid var(--vc-border);
 }
 .up-sumzelle:first-child { border-left: none; }
+/* Die Aktionsspur hat in der Gesamtzeile keine Zelle: die Linie an ihrer linken Kante trennt sie
+   ab wie die Linien zwischen den Zellen. Breite min(1px, Spur): ohne Spur (0px) keine Linie. */
+.up-sumrow::after { content: ""; position: absolute; top: 0; bottom: 0; right: var(--up-akt-w, 0px);
+  width: min(1px, var(--up-akt-w, 0px)); background: var(--vc-border); pointer-events: none; }
+.up-root.up-root[data-flach="yes"] .up-sumrow::after { right: calc(var(--up-akt-w, 0px) + var(--up-flach-aus)); }
+.up-root.is-vnarrow .up-sumrow::after { display: none; }
 /* Die erste Zelle traegt heute nur die Anzahl ("102 count"); kann aber mehrere Paare tragen, und
    dann nur, solange sie ganz passen: die Reihe ist eine Zeile hoch, und was nicht mehr daneben passt, bricht in
    eine zweite um, die abgeschnitten ist. Kein Messen, und nie ein halbes Paar. 24 hoch, weil ein

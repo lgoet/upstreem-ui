@@ -7914,6 +7914,9 @@
         root.style.setProperty("--up-cols", tpl);
         lastTpl = tpl;
       }
+      /* Breite der Aktionsspur fuer die Gesamtzeile: sie hat dort keine Zelle, die Trennlinie vor
+         der Spur (.up-sumrow::after) braucht aber ihren Abstand von rechts. 0 = keine Spur = keine Linie. */
+      root.style.setProperty("--up-akt-w", (!cfg.noActions && !root.classList.contains("is-t2")) ? ACTIONS_MIN_F() + "px" : "0px");
       /* Per-cell show/hide has to touch cells, so it gets its own guard — but the guard CANNOT be
          "the column set is unchanged" alone. Hiding a cell is an inline style, and renderTable()
          replaces every .up-row with brand-new nodes that carry no inline styles at all. So after
