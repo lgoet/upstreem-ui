@@ -59,7 +59,8 @@
     padding: 0; gap: 0; overflow: hidden;
   }
   /* Kopf und Fuss nach Geists Modal (19.10.): Polster 20 und 12, Titel 20/26/600. */
-  .uex-head { padding: 20px; }
+  .uex-head { padding: 20px; background: var(--up-seite-grau); }
+  .uex-overlay[data-theme="dark"] .uex-head { background: var(--up-seite-dunkel); }
   .uex-titel { font-size: var(--up-fs-modaltitel); line-height: 26px; font-weight: 600; letter-spacing: -0.4px; }
 
   /* Der Rumpf ist 565 hoch und gibt nach, wenn das Fenster niedriger ist (flex-shrink unter der
