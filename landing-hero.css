@@ -2011,7 +2011,7 @@
   pointer-events: none; z-index: 3;
 }
 /* Der Abstand von 40px, den die Seite in der App ueber der Sitemap laesst, entfaellt: hier steht sie oben. */
-.ulh-evabd .uev-abd-sek { margin-top: 28px; }
+.ulh-evabd .uev-abd-sek { margin-top: 14px; }
 /* Luft zwischen den Teilen des Kopfes (19.10. gemeldet: "alles viel zu cramped"): Ziel, Titel samt
    Satz, Refresh, Schalter und Liste stehen je 16 bis 20 auseinander statt dicht aufeinander. */
 .ulh-evabd .uev-sec-head { gap: 16px; }
@@ -4291,3 +4291,9 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
   .ulh-root .ulh-vis-chancen .uo-row { transition: none; }
   .ulh-root .ulh-fen-donut.is-wechsel { filter: none; }
 }
+
+/* Top Citations im Dashboard: die Balken fuellen die Hoehe, die das Band von der Tabelle daneben
+   bekommt, und beginnen oben im Kasten. Die Komponente zentriert sie senkrecht (margin auto): bei
+   dieser Hoehe lag der erste Balken ~100px unter der Ueberschrift und ausserhalb des Fensters. */
+.ulh-app .tcd-root .up-donut-body > .up-bars { margin: 0; flex: 1 1 auto; }
+.ulh-app .tcd-root .up-donut-body > .up-bars > .up-bar-row { flex: 0 0 24px; }
