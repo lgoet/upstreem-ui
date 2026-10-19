@@ -365,10 +365,12 @@
   /* Kurz und in der Reihenfolge, in der man die Seite liest: was ein Event ist, womit verglichen
      wird, wie man das Ergebnis liest. */
   var SEITE_SAETZE = [
-    "This page has two kinds. Event Tracking measures what a change did, such as a relaunch or a campaign: Upstreem compares your AI performance before and after its date.",
-    "Affected prompts are the prompts in the topics you chose. The comparison group is your other active prompts, which the event did not touch. They show what would have happened anyway.",
-    "If the affected prompts improve more than the comparison group, the event likely made the difference. The analysis window sets how many days before and after are compared.",
-    "Citation Tracking watches pages and domains instead. It covers all your prompts, including new ones, and shows which of your pages AI answers cite and how their global share changes. It has no date and no comparison group."
+    { h: "Event Tracking", t: [
+      "Measures what a change did, such as a relaunch or a campaign: Upstreem compares your AI performance before and after its date.",
+      "Affected prompts are the prompts in the topics you chose. The comparison group is your other active prompts, which the event did not touch. They show what would have happened anyway.",
+      "If the affected prompts improve more than the comparison group, the event likely made the difference. The analysis window sets how many days before and after are compared."] },
+    { h: "Citation Tracking", t: [
+      "Watches pages and domains. It covers all your prompts, including new ones, and shows which of your pages AI answers cite and how their global share changes. There is no date and no comparison group."] }
   ];
   /* DIE ZEICHNUNG IM HELLEN FELD DER KARTE (03.10., dritte Fassung). Wie das Liniendiagramm der
      App im Kleinen: weiche Kurven (Catmull-Rom, als Bezier vorgerechnet), leise Hilfslinien, unter
@@ -753,6 +755,9 @@
     "Previous {n} days": "Vorherige {n} Tage", "Last {n} days": "Letzte {n} Tage",
     "No matching entries": "Keine passenden Einträge",
     "Citation Tracking isn't available yet. Please try again later.": "Citation Tracking ist noch nicht verfügbar. Bitte versuche es später noch einmal.",
+    "Track an Event": "Event tracken", "Track Citations": "Zitate tracken",
+    "Measure the impact of Campaigns, Product Launches or other assets": "Miss die Wirkung von Kampagnen, Produktlaunches oder anderen Assets",
+    "Keep an eye on pages and domains with realtime updates": "Behalte Seiten und Domains mit Echtzeit-Updates im Blick",
     "Full overview": "Gesamtübersicht", "Pages only": "Nur Seiten",
     "Previous and last {n} days": "Vorherige und letzte {n} Tage", "Citations ({n}d)": "Zitate ({n} T)",
     "Chart shows": "Chart zeigt",
@@ -762,10 +767,10 @@
     "Two ways to track": "Zwei Arten zu tracken",
     "Event Tracking compares before and after a date against a control group. Citation Tracking watches pages and domains across all your prompts, with no date. The tour continues with Event Tracking.":
       "Event Tracking vergleicht vor und nach einem Datum mit einer Kontrollgruppe. Citation Tracking beobachtet Seiten und Domains über alle deine Prompts, ohne Datum. Die Tour geht mit Event Tracking weiter.",
-    "This page has two kinds. Event Tracking measures what a change did, such as a relaunch or a campaign: Upstreem compares your AI performance before and after its date.":
-      "Experimente gibt es in zwei Arten. Event Tracking misst, was eine Änderung bewirkt hat, etwa ein Relaunch oder eine Kampagne: Upstreem vergleicht deine AI Performance vor und nach dem Datum.",
-    "Citation Tracking watches pages and domains instead. It covers all your prompts, including new ones, and shows which of your pages AI answers cite and how their global share changes. It has no date and no comparison group.":
-      "Citation Tracking beobachtet dagegen Seiten und Domains. Es umfasst alle deine Prompts, auch neue, und zeigt, welche deiner Seiten KI-Antworten zitieren und wie sich ihr Global Share verändert. Es hat kein Datum und keine Vergleichsgruppe."
+    "Measures what a change did, such as a relaunch or a campaign: Upstreem compares your AI performance before and after its date.":
+      "Misst, was eine Änderung bewirkt hat, etwa ein Relaunch oder eine Kampagne: Upstreem vergleicht deine AI Performance vor und nach dem Datum.",
+    "Watches pages and domains. It covers all your prompts, including new ones, and shows which of your pages AI answers cite and how their global share changes. There is no date and no comparison group.":
+      "Beobachtet Seiten und Domains. Es umfasst alle deine Prompts, auch neue, und zeigt, welche deiner Seiten KI-Antworten zitieren und wie sich ihr Global Share verändert. Es gibt kein Datum und keine Vergleichsgruppe.",
   });
   if (UC.addMessages) UC.addMessages("de", {
     "Notify me": "Benachrichtige mich",
@@ -1855,7 +1860,9 @@
     var seitenKarte = UC.makeExplain ? UC.makeExplain({ root: root, triggerSel: ".uev-seiteninfo", cls: "uev-explain-breit", getIsDark: isDark,
       html: function () {
         return seiteZeichnung() + '<div class="up-explain-h">' + esc(t("How Impact works")) + '</div>' +
-          SEITE_SAETZE.map(function (x) { return '<div class="up-explain-t">' + esc(t(x)) + '</div>'; }).join("");
+          SEITE_SAETZE.map(function (g) {
+            return '<div class="uev-explain-unter">' + esc(t(g.h)) + '</div>' + g.t.map(function (x) { return '<div class="up-explain-t">' + esc(t(x)) + '</div>'; }).join("");
+          }).join("");
       } }) : null;
     /* Per Klick (Touch hat kein Zeigen): oeffnen, wenn zu; schliessen tut ein Druck daneben. */
     document.addEventListener("pointerdown", function (e) {
@@ -7766,10 +7773,8 @@
        "Create" fragt zuerst, was angelegt wird: Event Tracking (Wirkung messen, mit Kontrollgruppe) oder Citation Tracking
        (Seiten beobachten). Zwei Zeilen im Format der Zielarten (.uev-art), "Continue" bleibt gesperrt, bis eine gewaehlt ist. */
     var KIND_WAHL = [
-      { k: "event", ic: "calendar", titel: "Event Tracking",
-        satz: "Measure what a change did. Compares your AI results before and after a date, against a control group of prompts you didn't change." },
-      { k: "watch", ic: "eye", titel: "Citation Tracking",
-        satz: "Keep an eye on pages and domains. See which of them AI answers cite, across all your prompts, including new ones. No before-and-after test." }
+      { k: "event", ic: "cells", titel: "Track an Event", satz: "Measure the impact of Campaigns, Product Launches or other assets", invers: true },
+      { k: "watch", ic: "globe", titel: "Track Citations", satz: "Keep an eye on pages and domains with realtime updates", invers: false }
     ];
     function popupArt() {
       if (popup) return;
@@ -7777,49 +7782,38 @@
         if (UC.toast) UC.toast(fehlerText("impact_event_limit_reached"), { kind: "error" });
         return;
       }
-      var wahl = null;
-      function zeilen() {
-        /* Choicebox nach Geist: eine Karte je Wahl mit Titel und Beschreibung, der Punkt rechts, gewaehlt in der Akzentfarbe. */
-        return '<div class="uev-choice" role="radiogroup" aria-label="' + esc(t("What do you want to create?")) + '">' + KIND_WAHL.map(function (a, i) {
-          var an = a.k === wahl;
-          return '<button type="button" class="uev-choicebox' + (an ? " is-on" : "") + '" role="radio" aria-checked="' + an +
-            '" tabindex="' + (an || (!wahl && i === 0) ? 0 : -1) + '" data-kind="' + a.k + '">' +
-            '<span class="uev-choice-txt"><span class="uev-choice-t">' + esc(t(a.titel)) + '</span><span class="uev-choice-s">' + esc(t(a.satz)) + '</span></span>' +
-            '<span class="uev-choice-punkt" aria-hidden="true"></span>' +
-          '</button>';
-        }).join("") + '</div>';
-      }
+      /* Zwei Karten nebeneinander (19.10., Vorlage des Nutzers): Titel mit Pfeil beim Hover, ein Satz, unten eine angeschnittene Tafel mit dem Zeichen der
+         Seite. Links Event Tracking in den Farben des anderen Themas, rechts Citation Tracking. Ein Klick waehlt und geht weiter -- kein "Continue". */
+      var karten = '<div class="uev-wk-raster" role="group" aria-label="' + esc(t("What do you want to create?")) + '">' + KIND_WAHL.map(function (a) {
+        return '<button type="button" class="uev-wk' + (a.invers ? " is-invers" : "") + '" data-kind="' + a.k + '">' +
+          '<span class="uev-wk-kopf"><span class="uev-wk-t">' + esc(t(a.titel)) + '</span><span class="uev-wk-pfeil" aria-hidden="true">' + UC.icon("arrowUpRight", 2) + '</span></span>' +
+          '<span class="uev-wk-s">' + esc(t(a.satz)) + '</span>' +
+          '<span class="uev-wk-bild" aria-hidden="true"><span class="uev-wk-tafel"><span class="uev-wk-feld">' + UC.icon(a.ic, 1.8) + '</span></span></span>' +
+        '</button>';
+      }).join("") + '</div>';
       var api = UC.makeModal({
         titel: "Create", unter: t("What do you want to create?"), isDark: isDark,
-        inhaltHtml: '<div class="uev-schritt uev-kindwahl">' + zeilen() + '</div>',
-        knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
-                  { id: "weiter", text: "Continue", art: "pri", aktion: function () { weiter(); return false; } }],
+        inhaltHtml: '<div class="uev-schritt uev-kindwahl">' + karten + '</div>',
+        knoepfe: [],
         onClose: popupZu, vorSchliessen: function () { return true; }
       });
       var p = { art: "art", api: api, e: {}, knopf: "weiter", pops: {} };
       popup = p;
+      try { api.karte.style.maxWidth = "680px"; } catch (e) {}
       var box = api.body.querySelector(".uev-kindwahl");
-      function sync() {
-        box.innerHTML = zeilen();
-        var b = api.knopf("weiter"); if (b) b.disabled = !wahl;
-      }
-      function waehlen(k) { wahl = k; sync(); var f = box.querySelector('[data-kind="' + k + '"]'); if (f) f.focus(); }
-      function weiter() {
-        if (!wahl) return;
-        var k = wahl;
+      function weiter(k) {
         api.schliessen();
         setTimeout(function () { popupAnlegen(null, k); }, 0);
       }
-      box.addEventListener("click", function (ev) { var b = ev.target.closest("[data-kind]"); if (b) waehlen(b.getAttribute("data-kind")); });
+      box.addEventListener("click", function (ev) { var b = ev.target.closest("[data-kind]"); if (b) weiter(b.getAttribute("data-kind")); });
       box.addEventListener("keydown", function (ev) {
         var b = ev.target.closest("[data-kind]");
         if (!b) return;
-        var i = KIND_WAHL.map(function (x) { return x.k; }).indexOf(b.getAttribute("data-kind"));
-        if (ev.key === "ArrowDown" || ev.key === "ArrowRight") { ev.preventDefault(); waehlen(KIND_WAHL[(i + 1) % KIND_WAHL.length].k); }
-        else if (ev.key === "ArrowUp" || ev.key === "ArrowLeft") { ev.preventDefault(); waehlen(KIND_WAHL[(i + KIND_WAHL.length - 1) % KIND_WAHL.length].k); }
-        else if (ev.key === " " || ev.key === "Enter") { ev.preventDefault(); if (wahl === b.getAttribute("data-kind")) weiter(); else waehlen(b.getAttribute("data-kind")); }
+        var l = [].slice.call(box.querySelectorAll("[data-kind]")), i = l.indexOf(b);
+        if (ev.key === "ArrowRight" || ev.key === "ArrowDown") { ev.preventDefault(); l[(i + 1) % l.length].focus(); }
+        else if (ev.key === "ArrowLeft" || ev.key === "ArrowUp") { ev.preventDefault(); l[(i + l.length - 1) % l.length].focus(); }
       });
-      sync();
+      setTimeout(function () { var f = box.querySelector("[data-kind]"); try { if (f && popup === p) f.focus(); } catch (e) {} }, 30);
       if (anleitung && anleitung.laeuft()) anleitungZeige("art");
     }
     function popupAnlegen(planEid, art) {
@@ -8440,7 +8434,7 @@
         weiter: function () { popupArt(); } },
       /* Die Wahl der Art (19.10.): beide Arten in einer Karte. Danach geht die Anleitung mit Event Tracking weiter, der Art mit
          den vier Schritten; Citation Tracking hat drei einfache und braucht keine Fuehrung. */
-      anlSchritt({ id: "art", ziel: function () { return im(".uev-choice"); },
+      anlSchritt({ id: "art", ziel: function () { return im(".uev-wk-raster"); },
         titel: "Two ways to track",
         text: "Event Tracking compares before and after a date against a control group. Citation Tracking watches pages and domains across all your prompts, with no date. The tour continues with Event Tracking.",
         vis: function () { return anlZeile("calendar", t("Event Tracking")) + anlZeile("eye", t("Citation Tracking")); } },
