@@ -362,6 +362,12 @@
   transition: opacity 120ms ease, transform 120ms ease;
 }
 .uap-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+/* Geschlossen steht das Menue UNTER dem Fuss und vergroesserte den Rollbereich der Karte (20.10., gemessen): die Karte rollte schon beim
+   Oeffnen leer, und der klebende Fuss lief beim Scrollen mit nach oben, weil sein Block endet, bevor der Ueberhang endet. Zu ist es
+   deshalb aus dem Fluss; solange es im Top Layer ausblendet (popover), bleibt es stehen. */
+.uap-menu:not(.is-shown):not([popover]) { display: none; }
+@keyframes uap-menu-auf { from { opacity: 0; transform: translateY(4px) scale(0.985); } }
+.uap-menu.is-shown { animation: uap-menu-auf 120ms ease; }
 /* Both menus align LEFT with their own trigger. The topics menu was right-aligned as a guard
    against overflowing the card; measured, it does not — the trigger sits far enough left that a
    296px menu still ends inside the card, and two dropdowns that anchor differently read as a

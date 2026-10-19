@@ -5381,8 +5381,6 @@
     function zielFelder(p) {
       var e = p.e;
       return '<div class="uev-ziel">' +
-          (p.art === "anlegen" && e.art === "watch" ? feld("Name", '<input type="text" class="up-topicmodal-name" data-feld="name" maxlength="' + NAME_MAX + '" autocomplete="off" spellcheck="false"' +
-            ' placeholder="' + esc(t("e.g. Help center pages")) + '" value="' + esc(e.name) + '"/>', false, "name") : '') +
           '<div class="up-topicmodal-field uev-ziel-teil uev-eingabe-teil">' + zielKopf(p) +
             (p.art === "ziel" ? '<p class="up-modal-hinweis">' + esc(t(zieleDa() ? "Rules count retroactively, also for pages that were cited before you add them."
               : "Observations are counted from the event date, also for URLs you add now.")) + '</p>' : '') +
@@ -5407,7 +5405,9 @@
        Seitenleiste, dann was getrackt wird (kurz) und das Schloss. Der Bearbeiten-Dialog behaelt
        das offene Raster (coverFeld): er hat keine Vorschau, an der ein Knopf stehen koennte. */
     function pruefFelder(e) {
-      if (e.art === "watch") return '<div class="uev-vorschaublock"><div class="uev-pruef"></div>' + coverWahlHtml(e) + anheftenHtml(e) + '</div>' + feld("Tracking", '<div class="uev-pruefziele"></div>') + gesperrtHinweis("The type can't be changed later");
+      if (e.art === "watch") return feld("Name", '<input type="text" class="up-topicmodal-name" data-feld="name" maxlength="' + NAME_MAX + '" autocomplete="off" spellcheck="false"' +
+          ' placeholder="' + esc(t("e.g. Help center pages")) + '" value="' + esc(e.name) + '"/>', false, "name") +
+        '<div class="uev-vorschaublock"><div class="uev-pruef"></div>' + coverWahlHtml(e) + anheftenHtml(e) + '</div>' + feld("Tracking", '<div class="uev-pruefziele"></div>') + gesperrtHinweis("The type can't be changed later");
       return '<div class="uev-vorschaublock"><div class="uev-pruef"></div>' + coverWahlHtml(e) + anheftenHtml(e) + notifySchalterHtml(e) + '</div>' +
         feld("Tracking", '<div class="uev-pruefziele"></div>') +
         gesperrtHinweis(startSatz(e));
@@ -5695,14 +5695,6 @@
       if (!p || popup !== p) return;
       if (artenAuch) { var ao = im(".uev-arten-ort"); if (ao) ao.innerHTML = artenHtml(p); }
       var e = p.e, offen = e.zielArt !== "marke";
-      /* Citation Tracking (19.10.): der Name ist die Domain des ersten Ziels, solange niemand selbst einen getippt hat. */
-      if (e.art === "watch" && p.art === "anlegen" && !p.nameVonHand) {
-        var h0 = e.ziele.length ? String(zielHost(e.ziele[0]) || "").replace(/^www\./, "") : "";
-        if (h0 && h0 !== e.name) {
-          e.name = h0;
-          var nf = im('[data-feld="name"]'); if (nf) nf.value = h0;
-        }
-      }
       var hw = im(".uev-arthinweis");
       if (hw) hw.hidden = !!e.zielArt;
       /* Das Feld bleibt auch bei "Brand metrics only" stehen (15.10. spaet): es steht jetzt OBEN,
@@ -7228,7 +7220,8 @@
         if (p.vorschauLaeuft || !v) return false;
         return v.fehler || v.n !== 0;
       }
-      if (p.schritt === 3) return zieleOk(p) && (e.art !== "watch" || !!e.name.trim());
+      if (p.schritt === 3) return zieleOk(p);
+      if (p.schritt === 4 && e.art === "watch") return !!e.name.trim() && laenge(e.text.trim()) <= TEXT_MAX;
       return true;
     }
     function knoepfeSync() {
@@ -7258,6 +7251,12 @@
          nach dem naechsten Blick des Waechters da. */
       var box = p.api.body.querySelector('.uev-schritt[data-schritt="' + n + '"]');
       /* Vor dem Bau: die Kacheln zeigen das gewuerfelte Bild schon als gewaehlt. */
+      /* Citation Tracking (20.10.): der Name steht im letzten Schritt und ist mit der Domain des ersten Ziels vorbelegt, solange niemand
+         selbst einen getippt hat. */
+      if (n === 4 && p.e.art === "watch" && !p.nameVonHand && p.e.zielArt && p.e.zielArt !== "marke") {
+        var h0 = p.e.ziele.length ? String(zielHost(p.e.ziele[0]) || "").replace(/^www\./, "") : "";
+        if (h0) p.e.name = h0;
+      }
       if (n === 4) coverZufall(p);
       if (box && !box.__uevGebaut) {
         box.__uevGebaut = 1;
@@ -7280,6 +7279,7 @@
         }, 30);
       }
       if (n === 4) pruefenZeigen();
+      if (n === 4 && p.e.art === "watch") { var nm4 = im('[data-feld="name"]'); if (nm4 && nm4.value !== p.e.name) { nm4.value = p.e.name; pruefenZeigen(); } setTimeout(function () { try { if (nm4 && popup === p) { nm4.focus({ preventScroll: true }); nm4.select(); } } catch (e) {} }, 30); }
       if (n === 1) { var nm = im('[data-feld="name"]'); setTimeout(function () { try { if (nm) nm.focus(); } catch (e) {} }, 30); }
       try { p.api.karte.scrollTop = 0; } catch (e) {}
       knoepfeSync();
@@ -7860,7 +7860,7 @@
                 modus: "topics", topics: [], tagModus: "or", zielArt: null, unterdomains: true, ziele: [], eingabe: "", artVonHand: false };
       var api = UC.makeModal({
         titel: planEv ? "Edit event" : e.art === "watch" ? "Create Citation Tracking" : "Create Event Tracking", unter: schrittText(1), breit: true, isDark: isDark,
-        inhaltHtml: '<div class="uev-schritt" data-schritt="1">' + detailFelder(e, true) + '</div>' +
+        inhaltHtml: '<div class="uev-schritt" data-schritt="1"' + (e.art === "watch" ? " hidden" : "") + '>' + (e.art === "watch" ? "" : detailFelder(e, true)) + '</div>' +
           '<div class="uev-schritt" data-schritt="2" hidden></div>' +
           '<div class="uev-schritt" data-schritt="3" hidden></div>' +
           '<div class="uev-schritt" data-schritt="4" hidden></div>',
@@ -8191,7 +8191,12 @@
     function popupEingabe(ev) {
       var p = popup, x = ev.target;
       if (!p || !x || !x.matches) return;
-      if (x.matches('[data-feld="name"]')) { p.e.name = x.value; p.nameVonHand = !!x.value.trim(); feldFehler("name", ""); knoepfeSync(); return; }
+      if (x.matches('[data-feld="name"]')) {
+        p.e.name = x.value; p.nameVonHand = !!x.value.trim(); feldFehler("name", ""); knoepfeSync();
+        /* Der Titel der Vorschau folgt dem Feld beim Tippen (nur der Text, die Karte wird nicht neu gebaut). */
+        var vt = im(".uev-pruef .uev-karte-titel"); if (vt) vt.textContent = p.e.name.trim() || t("Untitled event");
+        return;
+      }
       /* Die Beschreibung sagt die Grenze beim Tippen (2000 Zeichen, v2), nicht erst beim Senden. */
       if (x.matches('[data-feld="text"]')) {
         p.e.text = x.value;

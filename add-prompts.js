@@ -694,7 +694,7 @@
          still in it must show the X, and one that was cleared must show the magnifier again. */
       var wrap = owner.querySelector(".up-ddsearch");
       if (wrap) wrap.classList.toggle("has-text", !!S.pickQuery.length);
-      if (inp) inp.focus();
+      if (inp) { try { inp.focus({ preventScroll: true }); } catch (e) { inp.focus(); } }
     }
   }
 

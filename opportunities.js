@@ -1236,12 +1236,16 @@
   if (modeSeg) modeSeg.querySelectorAll('.up-seg-btn[data-mode]').forEach(function(x){ x.classList.toggle('is-active', x.getAttribute('data-mode') === S.mode); });
   if (sortPop) sortPop.querySelectorAll('.up-pop-opt[data-sort]').forEach(function(o){ o.classList.toggle('is-active', o.getAttribute('data-sort') === S.sort); });
 
-  /* Core's .up-menu uses an opacity/scale appear animation keyed off .is-shown; the standalone had
-     .is-open on a copy of the same menu, plus a hard display:none toggle on the column menus. */
+  /* Beide Menues laufen ueber core makePopover wie jedes Dropdown der App (Aussenklick, Escape, gegenseitiges Schliessen, unten oder oben).
+     Der Aussenklick wird bei pointerdown entschieden: ein Menue, das sich bei einem Klick neu zeichnet (Lanes), schliesst sich nicht selbst. */
+  var settingsH = UC.makePopover({ wrap: settingsBtn.parentNode, menu: settingsPop, opener: settingsBtn,
+    onClose: function(){ settingsBtn.classList.remove('is-active'); } });
+  var sortH = UC.makePopover({ wrap: sortBtn.parentNode, menu: sortPop, opener: sortBtn,
+    onClose: function(){ sortBtn.classList.remove('is-active'); } });
   function setPop(pop, btn, open){
     if (!pop) return;
-    pop.classList.toggle('is-shown', open);
-    pop.setAttribute('aria-hidden', open ? 'false' : 'true');
+    var h = pop === settingsPop ? settingsH : sortH;
+    if (open) h.open(); else h.close(false);
     if (btn) btn.classList.toggle('is-active', open);
   }
   function closePops(){ setPop(sortPop, sortBtn, false); setPop(settingsPop, settingsBtn, false); }
@@ -1258,9 +1262,6 @@
     var open = !settingsPop.classList.contains('is-shown');
     closeColMenus(); setPop(sortPop, sortBtn, false);
     setPop(settingsPop, settingsBtn, open);
-  });
-  document.addEventListener('click', function(e){
-    if (!settingsPop.contains(e.target) && !settingsBtn.contains(e.target)) setPop(settingsPop, settingsBtn, false);
   });
   /* Das Lanes-Menue ist die Spaltenliste der Tabellen (core makeColumns, Chip-Form wie in der Prompts-Tabelle): Kopf "Lanes" mit "Select all"
      rechts (nur sichtbar, wenn mindestens zwei Lanes aus sind), darunter jede Lane als Chip; die letzte sichtbare laesst sich nicht abschalten.
@@ -1299,9 +1300,6 @@
     var open = !sortPop.classList.contains('is-shown');
     closeColMenus(); setPop(settingsPop, settingsBtn, false);
     setPop(sortPop, sortBtn, open);
-  });
-  document.addEventListener('click', function(e){
-    if (!sortPop.contains(e.target) && !sortBtn.contains(e.target)) setPop(sortPop, sortBtn, false);
   });
   sortPop.addEventListener('click', function(e){
     var opt = e.target.closest('.up-pop-opt[data-sort]');

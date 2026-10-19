@@ -7647,24 +7647,18 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
 /* Der Schatten des Fusses (Geists Sticky-Modal): liegt unter dem Fuss noch Inhalt (.has-mehr, core modalVerhalten), blendet er 200ms
    ein, sonst aus. */
 :is(.up-modal, .up-geist) > .up-topicmodal-foot::before {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 12px; pointer-events: none;
+  content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 8px; pointer-events: none;
   background: linear-gradient(to top, var(--up-popup-schatten), transparent); opacity: 0;
   transition: opacity var(--up-t-2) var(--up-ease);
 }
 :is(.up-modal, .up-geist).has-mehr > .up-topicmodal-foot::before { opacity: 1; }
-/* Der Knopf "nach oben" (core modalNachOben): der "nach unten" aus Mira (36 rund, Rand, Karte, e-2), umgedreht. Der Wrapper hat Hoehe 0 und klebt
-   unter dem Kopf; der Knopf haengt 8px darunter. */
-.up-modal-oben { position: sticky; top: var(--up-oben-top, 0px); z-index: 2; height: 0; display: flex; justify-content: center; pointer-events: none; }
-.up-modal-obenbtn {
-  position: absolute; top: 8px; width: 36px; height: 36px; padding: 0; border-radius: var(--up-r-voll); cursor: pointer;
-  border: 1px solid var(--vc-border); background: var(--up-popup-bg, var(--vc-bg)); color: var(--vc-text);
-  display: flex; align-items: center; justify-content: center; box-shadow: var(--up-e-2);
-  opacity: 0; pointer-events: none; transform: translateY(-6px);
-  transition: opacity var(--up-t-1) var(--up-ease), transform var(--up-t-1) var(--up-ease), background var(--up-t-1) var(--up-ease);
+/* Dasselbe oben: ist Inhalt nach oben weggerollt (.has-oben), wirft der klebende Kopf einen Schatten nach unten -- man sieht, dass darueber etwas ist. */
+:is(.up-modal, .up-geist) > .up-topicmodal-head::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 8px; pointer-events: none;
+  background: linear-gradient(to bottom, var(--up-popup-schatten), transparent); opacity: 0;
+  transition: opacity var(--up-t-2) var(--up-ease);
 }
-.up-modal-obenbtn.is-visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
-.up-modal-obenbtn:hover { background: var(--vt-row-hover-solid, var(--vc-heading-bg)); }
-.up-modal-obenbtn svg { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+:is(.up-modal, .up-geist).has-oben > .up-topicmodal-head::after { opacity: 1; }
 :is(.up-modal, .up-geist) > .up-topicmodal-foot > button { height: var(--up-h-btn); font-size: var(--up-fs-l); }
 /* Eine einzelne Aktion steht rechts (Geists "Single button"), nicht links: space-between setzt sie sonst an den Anfang. */
 :is(.up-modal, .up-geist) > .up-topicmodal-foot > button:last-child { margin-left: auto; }
@@ -9444,7 +9438,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up
   --up-seite-bg: #ffffff;
   /* Fuss eines Popups (Geist Background 2) und die Haarlinie unter dem Kopf und ueber dem Fuss (Gray Alpha 400). */
   --up-popup-fuss: #fafafa; --up-popup-linie: rgba(0,0,0,.08);
-  --up-popup-schatten: rgba(0,0,0,.075);
+  --up-popup-schatten: rgba(0,0,0,.05);
   --up-fs-modaltitel: 20px;   /* Titel eines Popups: Geists text-heading-20, zwischen --up-fs-xl und --up-fs-2xl */
   /* DAS EINGABEFELD (19.10., Nutzer): im Hellen Weiss, auch im grauen Hell und in jedem Popup. Vorher lasen die Felder je Datei etwas anderes (--vc-bg, --up-surface,
      --vc-field, transparent) und fielen in Fenstern mit grauem Grund auseinander. Alle Felder lesen nur dieses Token. */
@@ -9459,7 +9453,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up
   --up-popup-bg: #0a0a0a;
   --up-seite-bg: #0a0a0a;
   --up-popup-fuss: #000000; --up-popup-linie: rgba(255,255,255,.14);
-  --up-popup-schatten: rgba(255,255,255,.10);
+  --up-popup-schatten: rgba(255,255,255,.07);
   --up-feld-bg: #0f0f0f;   /* wie --vc-field im Dunkeln */
 }
 

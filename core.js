@@ -728,7 +728,6 @@
     "Not enough space at this width. Turn it on and another column makes room.": "Bei dieser Breite ist kein Platz. Schalte sie ein, dann macht eine andere Spalte Platz.",
     "Select all": "Alle auswählen",
     "Row height": "Zeilenhöhe",
-    "Back to top": "Nach oben",
     "Comfortable": "Komfortabel",
     "Compact": "Kompakt",
     "Sort by": "Sortieren nach",
@@ -15328,43 +15327,6 @@
             isDark(), onClose, onOpen(api), vorSchliessen(api) }
      aktion: Funktion(api) -- gibt sie false zurueck, bleibt das Popup offen; ohne aktion schliesst
      der Knopf. Rueckgabe: { el, karte, body, schliessen, busy(id, an), fehler(text), knopf(id) }. */
-  /* "NACH OBEN"-KNOPF IN EINEM ROLLENDEN POPUP (20.10., Nutzer: der Knopf aus Mira, umgedreht). Ab 16px Scroll erscheint er oben mittig
-     UNTER dem klebenden Kopf (o.kopf: Selektor des Kopfes im Host, dessen Hoehe die Marke --up-oben-top setzt), acht Pixel darunter.
-     Ein Wrapper der Hoehe 0 klebt im Rollbereich -- er verschiebt nichts. Der Inhalt eines Fensters kann neu gezeichnet werden
-     (Preferences): fehlt der Wrapper nach einem Scroll, wird er wieder eingesetzt. scroller: das Element, das rollt; o.host: wo der
-     Wrapper klebt (Vorgabe der Scroller). Gilt fuer jedes Popup, in dem etwas rollt (modalVerhalten fuer die Karte, direkt fuer
-     Zwei-Spalten-Fenster). */
-  function modalNachOben(scroller, o){
-    o = o || {};
-    if (!scroller) return null;
-    if (scroller.__upNach) return scroller.__upNach;
-    var host = o.host || scroller;
-    var wrap = document.createElement("div");
-    wrap.className = "up-modal-oben";
-    wrap.innerHTML = '<button type="button" class="up-modal-obenbtn" tabindex="-1" aria-label="' + esc(t("Back to top")) + '">' + icon("chevronUp", 2.2) + '</button>';
-    var btn = wrap.firstChild;
-    function kopf(){ return o.kopf ? host.querySelector(o.kopf) : null; }
-    function einsetzen(){
-      if (wrap.parentNode === host) return;
-      var k = kopf();
-      if (k && k.parentNode === host) host.insertBefore(wrap, k.nextSibling); else host.insertBefore(wrap, host.firstChild);
-    }
-    function sync(){
-      einsetzen();
-      var k = kopf();
-      wrap.style.setProperty("--up-oben-top", (k ? k.offsetHeight : 0) + "px");
-      btn.classList.toggle("is-visible", scroller.scrollTop >= 16);
-    }
-    scroller.addEventListener("scroll", sync, { passive: true });
-    btn.addEventListener("click", function(){
-      var ruhig = false;
-      try { ruhig = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch(e){}
-      try { scroller.scrollTo({ top: 0, behavior: ruhig ? "auto" : "smooth" }); } catch(e){ scroller.scrollTop = 0; }
-    });
-    einsetzen();
-    return (scroller.__upNach = { sync: sync });
-  }
-
   /* DAS VERHALTEN EINES POPUPS NACH GEISTS MODAL (19.10.), fuer makeModal UND jedes eigene Fenster auf .up-topicmodal-card:
      - fokus(): das erste sichtbare, nicht gesperrte Eingabefeld (bei mehreren das erste); ohne Feld die Karte selbst (nie ein Knopf, nie das X);
        mit Gefahraktion (o.gefahr) das Abbrechen (o.abbrechen() liefert den Knopf) -- Enter darf nie die zerstoerende Aktion ausloesen
@@ -15397,6 +15359,7 @@
        seinen Schatten nach oben (Geists Sticky-Modal), 200ms ein und aus (CSS); ganz unten ist er weg. */
     function rollMarken(){
       karte.classList.toggle("is-gerollt", karte.scrollTop > 0);
+      karte.classList.toggle("has-oben", karte.scrollTop > 1);
       karte.classList.toggle("has-mehr", karte.scrollHeight - karte.clientHeight - karte.scrollTop > 1);
       /* scrollIntoView der Inhalte rechnet den klebenden Kopf und Fuss mit (sonst landet ein Feld, das man ansteuert, darunter). */
       var kh = karte.querySelector(".up-topicmodal-head"), kf = karte.querySelector(".up-topicmodal-foot");
@@ -15410,7 +15373,6 @@
       for (var ci = 0; ci < karte.children.length; ci++) ro.observe(karte.children[ci]);
     }
     rollMarken();
-    modalNachOben(karte, { kopf: ".up-topicmodal-head" });
     return (karte.__upMv = { fokus: function(){ try { ersterFokus().focus({ preventScroll: true }); } catch(e){} } });
   }
   function makeModal(cfg){
@@ -30079,7 +30041,7 @@
     onModels: onModels,
     getEvents: getEvents, setEvents: setEvents, onEvents: onEvents, eventsStand: eventsStand, eventsChanged: eventsChanged,
     EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen, eventMeldungenDa: eventMeldungenDa,
-    kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal, modalVerhalten: modalVerhalten, modalNachOben: modalNachOben,
+    kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal, modalVerhalten: modalVerhalten,
     seitenSperreAbgleichen: seitenSperreAbgleichen,
     sparkHtml: sparkHtml, zahlZaehlen: zahlZaehlen, zaehlHtml: zaehlHtml, hochzaehlen: hochzaehlen,
     storeStand: storeStand,
