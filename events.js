@@ -3719,7 +3719,7 @@
       if (!zit) { if (opt.tab !== "offen") marke = '<span class="up-marke is-leise uev-abd-marke">' + esc(t("Not cited yet")) + '</span>'; }
       else if (p.is_new === true) marke = '<span class="up-marke is-leise uev-abd-marke" data-tip="' + esc(t("New in the sitemap or updated since the event")) + '">' + esc(t("New or updated")) + '</span>';
       var offen = zit ? ' is-zitiert" role="link" tabindex="0" data-url="' + esc(treffer && treffer.url ? treffer.url : p.url || "") : "";
-      return '<div class="uev-abd-seite' + (weg ? " is-weg" : "") + offen + '"' + (zit ? "" : ' data-abd-seite="1" data-url="' + esc(p.url || "") + '"') + (opt.tiefe ? ' style="--uev-tiefe:' + opt.tiefe + '"' : '') + '>' +
+      return '<div class="uev-abd-seite' + (opt.name != null ? " is-im-baum" : "") + (weg ? " is-weg" : "") + offen + '"' + (zit ? "" : ' data-abd-seite="1" data-url="' + esc(p.url || "") + '"') + (opt.tiefe ? ' style="--uev-tiefe:' + opt.tiefe + '"' : '') + '>' +
         zielFavKlein(p.url || "", '<span class="uev-abd-fav0">' + UC.icon("globe", 2) + '</span>') +
         '<span class="uev-abd-pfad" title="' + esc(p.url || "") + '">' + abdLinkHtml(p.url, pfad) + '</span>' +
         marke +
