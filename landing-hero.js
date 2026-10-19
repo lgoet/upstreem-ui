@@ -9032,6 +9032,7 @@
            Die Animationen sind CSS (Deckkraft, Transform) und laufen mit ihren Verzoegerungen los;
            das Fenster selbst steigt erst nach 970 ms, und bis dahin ist gefuellt. */
         mass(root);
+        root.classList.add("is-bereit");
         erscheinen(root);
         try { fuellen(); root.__ulhGefuellt = true; }
         catch (e){
@@ -9174,7 +9175,7 @@
      Dritteln durch, und der Inhalt setzt darauf auf, statt zu warten, bis alles steht.
      Seit dem 01.10. faengt der Rahmen bei 970 an statt bei 440 (der Textblock darueber ist
      langsamer), also 970 + 440 = 1410. */
-  var INHALT_FRUEH = 1410;
+  var INHALT_FRUEH = 650;       /* 19.10.: Fenster steigt 150 ms nach is-bereit, 440 ms spaeter ist es zu zwei Dritteln durch */
   var INHALT_SPAET = 6000;       /* Notbremse */
   function inhaltZeigen(root, frueh){
     if (root.__ulhInhaltAn) return;

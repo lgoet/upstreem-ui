@@ -705,8 +705,12 @@
    haengt nicht mehr an einer Uhr -- siehe unten.
    Beide um 530ms spaeter (440 -> 970, 640 -> 1170), damit das Fenster wie bisher 100ms nach dem
    letzten Knopf anfaengt und nicht mitten in den Text faellt. Die Laengen bleiben. */
-.ulh-root.is-entering .ulh-frame  { animation: ulhRise 900ms var(--ulh-expo) 970ms backwards; }
-.ulh-root.is-entering :is(.uds-pagehead, .uds-filterzeile) { animation: ulhRise 810ms var(--ulh-expo) 1170ms backwards; }
+/* 19.10.: der Textblock laeuft jetzt ab dem ersten Bild (is-shown und is-entering stehen schon im
+   vorgerenderten Markup), das Fenster aber erst, wenn landing-hero.js BEREIT meldet (is-bereit: Leiste
+   und Komponenten stehen). Die Verzoegerung zaehlt ab da: vorher 970/1170 ab Skriptstart, weil der
+   Text erst dann anfing; jetzt hat der Text schon vorgelaufen. */
+.ulh-root.is-entering.is-bereit .ulh-frame  { animation: ulhRise 900ms var(--ulh-expo) 150ms backwards; }
+.ulh-root.is-entering.is-bereit :is(.uds-pagehead, .uds-filterzeile) { animation: ulhRise 810ms var(--ulh-expo) 350ms backwards; }
 /* NICHT MEHR ZWEI GROSSE RECHTECKE (21.09. gemeldet: "Bitte eine richtige Appear animation im
    Dashboard, das sieht aktuell sehr mau aus"). Vorher stiegen .vot-root und .tcd-root als je ein
    Block herauf -- zwei Bewegungen fuer vier Kaesten, und in einer Sektion, in der das Brett der
@@ -3983,6 +3987,8 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
       Skript entstand. Crawler lesen den Text unabhaengig davon (sie werten keine CSS aus).
       Faellt das Skript aus, setzt landing-hero.js is-shown trotzdem (Aufgeben nach 10 s). */
 .ulh-root[data-ulh-ssr]:not(.is-shown) :is(.ulh-eyebrow, .ulh-h1, .ulh-sub, .ulh-cta, .ulh-modelle) { opacity: 0; }
+/* Das Fenster bleibt unsichtbar, bis es sich aufbauen darf (is-bereit); danach uebernimmt seine Animation. */
+.ulh-root[data-ulh-ssr]:not(.is-bereit) .ulh-frame { opacity: 0; }
 /* 3. Die Anker der Leiste (#overview, #sources, #mira) kommen von anderen Seiten: die Sektion
       soll beim Sprung unter der Leiste stehen, nicht dahinter. */
 .ulh-root > section[id] { scroll-margin-top: 63px; }

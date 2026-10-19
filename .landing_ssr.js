@@ -50,7 +50,7 @@ if (!h || !h.seite || !h.stand || !h.leiste || !h.fuss || !h.demo || !h.kontakt)
                     laesst sie aus, landing-teile.js bindet sie */
 const TEILE = {
   "framer/UpstreemLanding.tsx": { name: "SEITE",
-    html: '<div class="ulh-root" data-ulh-ssr="' + h.stand + '" data-ulh-inline="">' + h.seite + "</div>" },
+    html: '<div class="ulh-root is-shown is-entering" data-ulh-ssr="' + h.stand + '" data-ulh-inline="">' + h.seite + "</div>" },
   "framer/UpstreemTopbar.tsx": { name: "LEISTE",
     html: '<div class="ulh-root ulh-teil" data-ulh-teil="leiste">' + h.leiste + "</div>" },
   "framer/UpstreemFooter.tsx": { name: "FUSS",
