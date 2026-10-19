@@ -2011,8 +2011,13 @@
   pointer-events: none; z-index: 3;
 }
 /* Der Abstand von 40px, den die Seite in der App ueber der Sitemap laesst, entfaellt: hier steht sie oben. */
-.ulh-evabd .uev-abd-sek { margin-top: 0; }
-.ulh-evabd .uev-zielsek .up-sec-head { margin-bottom: 0; }
+.ulh-evabd .uev-abd-sek { margin-top: 28px; }
+/* Luft zwischen den Teilen des Kopfes (19.10. gemeldet: "alles viel zu cramped"): Ziel, Titel samt
+   Satz, Refresh, Schalter und Liste stehen je 16 bis 20 auseinander statt dicht aufeinander. */
+.ulh-evabd .uev-sec-head { gap: 16px; }
+.ulh-evabd .up-sec-titles { display: flex; flex-direction: column; gap: 8px; }
+.ulh-evabd .uev-abd-kopf .up-sec-head { margin-bottom: 20px; align-items: flex-start; }
+.ulh-evabd .uev-abd-seg { margin-bottom: 20px; }
 .ulh-evabd, .ulh-evziel { pointer-events: none; }
 .ulh-evkarten { position: relative; height: calc(100% - 40px); display: flex; justify-content: center; align-items: flex-start; padding-top: 6px; }
 .ulh-evkarten .uev-karte { width: 340px; flex: 0 0 auto; }
@@ -2254,13 +2259,11 @@
 /* Die Kopfzeile der Tabelle ist in der App gross, weil sie dort sortierbar ist. In einer Vorschau
    ist sie eine Beschriftung: kleiner und ruhiger -- das tragen Groesse und Farbe, der Schnitt ist
    der aller Kopfzeilen (siehe oben). */
+/* 19.10.: ohne eigene Schrift, Hoehe und Farbe -- die Koepfe der Karten sind .up-th aus core, genau wie
+   in der App (Groesse, Schnitt, Farbe, 45 hoch; Zahlenspalten rechts mit .up-th-zahl). */
 .ulh-vis-tab .up-thead, .ulh-vis-dom .up-thead {
-  position: static; border: 0; border-radius: 0;
-  font-size: 11px; font-weight: var(--ulh-vis-kopf); letter-spacing: .01em; color: var(--vc-muted);
-  height: 40px; flex: 0 0 40px; text-transform: none;
+  position: static; border: 0; border-radius: 0; text-transform: none;
 }
-.ulh-vis-tab .up-thead .up-td, .ulh-vis-dom .up-thead .up-td,
-.ulh-vis-dom .udt-sub-head { font-weight: var(--ulh-vis-kopf); }
 .ulh-vis-tab .up-num, .ulh-vis-tab .up-stack-more,
 .ulh-vis-dom .udt-dom-title, .ulh-vis-dom .udt-num, .ulh-vis-dom .udt-date,
 .ulh-vis-dom .udt-pagesbtn .udt-pagesbtn-lbl, .ulh-vis-dom .udt-sub-title,
@@ -3074,12 +3077,22 @@
    eine Ansicht, die es hier nicht gibt. */
 .ulh-app .vot-scale-btn { display: none; }
 .ulh-app .vot-max-right { display: none; }
+/* Das Band mit dem Chart ist so hoch wie die Tabelle mit ihren sechs Zeilen (19.10.): die Hoehe 489 der
+   App ist fuer acht Zeilen gerechnet, darunter stand Leerraum. Fit height, die Kurve waechst mit. */
+.ulh-app .up-root.vot-root[data-flach="yes"] .vot-box { height: auto; }
+/* "Clear All" in den Filterleisten faellt weg (Prompts, Performance): im Fenster setzt niemand Filter zurueck. */
+.ulh-app .ufb-clear { display: none; }
+/* Die Seitenleiste haengt sich beim Booten an <body> und wird erst danach ins Fenster gesetzt
+   (leisteHolen): bis dahin steht sie am Fensterrand ueber der ganzen Seite (19.10. gemeldet). */
+body > .usn-bar, body > .usn-scrim, body > .usn-fab { visibility: hidden; }
+.ulh-app .ush-seite { --up-stapel-luft: var(--up-h-btn); }
 /* Eine Linie unter dem Kopf der flachen Tabellen, nicht zwei (19.10. gemeldet: "unter Product eine
    doppelte Border"). In der App liegen die Linie des Kopfes (inset 0 -1px am .up-thead) und die
    Unterkante jeder Kopfzelle (border-bottom) auf DEMSELBEN Pixel und sehen aus wie eine. Im
    verkleinerten Fenster sind die Zelle 1,05px und der Schatten 1px dick und treffen verschiedene
-   Pixel: zwei Linien dicht untereinander. Den Strich zeichnet hier der Kopf allein. */
-.ulh-app .up-root[data-flach="yes"] .up-thead .up-th { border-bottom-width: 0; }
+   Pixel: zwei Linien dicht untereinander. Den Strich zeichnet hier die Kopfzelle allein -- ueberall
+   dieselbe (19.10.: mit dem Schatten als einziger Linie stand sie unter "Product" duenner). */
+.ulh-app .up-root[data-flach="yes"] .up-thead { box-shadow: none; }
 /* Zwischen dem Visibility-Band und Top Citations 32 statt der 48 der App (16.10. angefordert:
    "auf die gleiche Hoehe wie der Filter-Knopf"). Die 48 stehen als --up-stapel-luft an .uds-main
    (dashboard-page.css); 32 ist die Knopfhoehe der Skala. */

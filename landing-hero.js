@@ -115,12 +115,12 @@
     "The domains and exact URLs the models cite, so you know where to get mentioned next.":
       "Die Domains und URLs, die KI-Modelle zitieren. So weißt du, wo sich eine Erwähnung als Nächstes lohnt.",
     /* Events: die zwei Karten der unteren Reihe (19.10.). Texte der Vorschauen wie in events.js (de-Katalog dort). */
-    "See which pages AI already cites": "Sieh, welche Seiten KI schon zitiert",
-    "Load your sitemap and see, folder by folder, which pages are cited and which are still missing.":
-      "Lade deine Sitemap und sieh Ordner für Ordner, welche Seiten zitiert werden und welche noch fehlen.",
-    "Track a page, a path or a whole domain": "Tracke eine Seite, einen Pfad oder eine ganze Domain",
-    "Add single URLs, everything under a path or a whole domain, with or without its subdomains.":
-      "Füg einzelne URLs hinzu, alles unter einem Pfad oder eine ganze Domain, mit oder ohne Subdomains.",
+    "Watch every page you publish, cited or not": "Beobachte jede Seite, die du veröffentlichst, zitiert oder nicht",
+    "Load your sitemap and follow whole folders and pages from the day they go live, before an AI has cited them.":
+      "Lade deine Sitemap und verfolge ganze Ordner und Seiten ab dem Tag der Veröffentlichung, noch bevor eine KI sie zitiert.",
+    "Follow a whole domain or subdomain from day one": "Verfolge eine ganze Domain oder Subdomain ab Tag eins",
+    "Track a single URL, everything under a path or a whole (sub)domain, so new pages count from the moment you publish.":
+      "Tracke eine einzelne URL, alles unter einem Pfad oder eine ganze (Sub-)Domain, damit neue Seiten ab der Veröffentlichung zählen.",
     "Refresh": "Aktualisieren", "All (43)": "Alle (43)", "Cited (12)": "Zitiert (12)", "Not cited yet (31)": "Noch nicht zitiert (31)",
     "12 of 43 pages cited. Last checked 5 minutes ago.": "12 von 43 Seiten zitiert. Zuletzt geprüft vor 5 Minuten.",
     "Not cited yet": "Noch nicht zitiert", "Homepage": "Startseite",
@@ -2638,7 +2638,7 @@
          (prompts-table.js, UC.kopfZeichen: squareStack und tags). */
       '<div class="up-row up-thead">' + kopf.map(function(t, k){
         var zeichen = { "Brand Mentions": "squareStack", "Topics": "tags" }[t];
-        return '<div class="up-th' + (k === 0 ? " up-th-prompt" : "") + '">' + (k === 0 ? kastchen() : "") +
+        return '<div class="up-th' + (k === 0 ? " up-th-prompt" : "") + (t === "Visibility" ? " up-th-zahl" : "") + '">' + (k === 0 ? kastchen() : "") +
           (zeichen && kern && kern.kopfZeichenHtml ? kern.kopfZeichenHtml(zeichen) : "") +
           '<span class="up-th-txt">' + t + '</span></div>'; }).join("") + '</div>';
     html += VIS_ZEILEN.map(function(z, i){
@@ -2760,7 +2760,7 @@
       '</div>' +
       '<div class="ulh-vis-dom" style="' + cols + '">' +
       '<div class="up-row up-thead"><div class="up-th"><span class="up-th-txt">Domain</span></div>' +
-      '<div class="up-th"><span class="up-th-txt">Share</span></div>' +
+      '<div class="up-th up-th-zahl"><span class="up-th-txt">Share</span></div>' +
       /* Das Zeichen vor "Type" wie in der Domaintabelle der App (domains-table.js, UC.kopfZeichen). */
       '<div class="up-th">' + (kern && kern.kopfZeichenHtml ? kern.kopfZeichenHtml("dropdownFieldType") : "") +
         '<span class="up-th-txt">Type</span></div></div>';
@@ -3157,7 +3157,7 @@
       '</div>' +
       '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 104px 128px 140px;">' +
       '<div class="up-row up-thead">' + kopf.map(function(t){
-        return '<div class="up-th"><span class="up-th-txt">' + t + '</span></div>'; }).join("") + '</div>';
+        return '<div class="up-th' + (t === "Product" ? "" : " up-th-zahl") + '"><span class="up-th-txt">' + t + '</span></div>'; }).join("") + '</div>';
     html += oben.map(function(p){
       return '<div class="up-row">' +
         '<div class="up-td">' + produktZelleHtml(p) + '</div>' +
@@ -3723,11 +3723,11 @@
        ein Ausschnitt aus einem gefuellten Event-Detail mit der Sitemap, rechts ein Ausschnitt aus
        Schritt 3 des Anlegens. Beide mit den Klassen und Texten von events.js. */
     { breit: 60, vis: "eventabd",
-      h: "See which pages AI already cites",
-      p: "Load your sitemap and see, folder by folder, which pages are cited and which are still missing." },
+      h: "Watch every page you publish, cited or not",
+      p: "Load your sitemap and follow whole folders and pages from the day they go live, before an AI has cited them." },
     { breit: 40, vis: "eventziel",
-      h: "Track a page, a path or a whole domain",
-      p: "Add single URLs, everything under a path or a whole domain, with or without its subdomains." }
+      h: "Follow a whole domain or subdomain from day one",
+      p: "Track a single URL, everything under a path or a whole (sub)domain, so new pages count from the moment you publish." }
   ];
   var EVENT_TON = "#3b82f6";
   var EVENT_NAME = "acme.com/electric relaunch";
@@ -5706,6 +5706,10 @@
     var app = root.querySelector(".ulh-app");
     if (!app) return;
     function binden(){
+      /* Die Performance-Leiste in der grossen Form (Flagge und Wert im Chip, wie "Model is ChatGPT"). */
+      [].forEach.call(app.querySelectorAll(".upf-filterzeile .ufb-root:not([data-form])"), function(b){
+        b.setAttribute("data-form", "gross");
+      });
       var zeilen = app.querySelectorAll('[class*="-filterzeile"]');
       for (var i = 0; i < zeilen.length; i++){
         var z = zeilen[i];
@@ -5727,6 +5731,42 @@
     }
     binden();
     if (window.MutationObserver) new MutationObserver(binden).observe(app, { childList: true, subtree: true });
+    zahlKoepfe(app);
+    if (window.MutationObserver) new MutationObserver(function(){ zahlKoepfe(app); }).observe(app, { childList: true, subtree: true });
+  }
+  /* Der Kern setzt .up-th-zahl nicht innerhalb von .ulh-root (core zahlSpaltenKopf), also hier dieselbe
+     Regel: eine Spalte, deren Zellen eine Zahl (.up-num, Rang, Sentiment) rechtsbuendig tragen, bekommt
+     den Kopf rechts. Nur hinzufuegen, Mira hat keine Tabelle. */
+  function zahlKoepfe(app){
+    var koepfe = app.querySelectorAll(".up-thead, .vt-thead, .tct-thead");
+    var THK = /(^|\s)(up-th|vt-th|tct-th)(\s|$)/;
+    for (var i = 0; i < koepfe.length; i++){
+      var kopf = koepfe[i], n = kopf.children.length;
+      if (!n || kopf.closest(".ulh-mira")) continue;
+      var zeilen = kopf.parentElement.querySelectorAll(".up-row, .vt-row, .tct-row"), gelesen = 0;
+      for (var z = 0; z < zeilen.length && gelesen < 8; z++){
+        var r = zeilen[z];
+        if (r === kopf || r.children.length !== n || r.classList.contains("up-sumrow")) continue;
+        gelesen++;
+        for (var k = 0; k < n; k++){
+          var th = kopf.children[k];
+          if (th.classList.contains("up-th-zahl") || !THK.test(th.className)) continue;
+          var td = r.children[k];
+          if (r.classList.contains("up-tsk")){
+            if (td.classList.contains("up-tsk-zahl")) th.classList.add("up-th-zahl");
+            continue;
+          }
+          for (var c = td.firstElementChild; c; c = c.nextElementSibling){
+            var cl = c.classList;
+            if (cl.contains("is-empty")) continue;
+            if (cl.contains("up-num") || cl.contains("up-rank-group") || cl.contains("tct-num") || cl.contains("tct-used") || (cl.contains("up-sent") && !cl.contains("up-pille"))){
+              if (getComputedStyle(td).justifyContent === "flex-end") th.classList.add("up-th-zahl");
+              break;
+            }
+          }
+        }
+      }
+    }
   }
 
   function reiterBewachen(root){
@@ -8015,9 +8055,10 @@
     if (window.setUpstreemMarkets && !filterWerte.maerkte){
       filterWerte.maerkte = true;
       window.setUpstreemMarkets(JSON.stringify([
-        { alpha2: "US", alpha3: "USA", name: "United States" },
-        { alpha2: "DE", alpha3: "DEU", name: "Germany" },
-        { alpha2: "GB", alpha3: "GBR", name: "United Kingdom" }
+        /* Ohne alpha2, mit dem Kuerzel als Namen (19.10.: "Market Flagge und US"): mit alpha2 setzt
+           die Leiste den Laendernamen ein (core landName), der Chip hiesse "United States". Der
+           Schluessel ist das Kuerzel, aus dem auch die Flagge entsteht. */
+        { alpha3: "US", name: "US" }, { alpha3: "DE", name: "DE" }, { alpha3: "GB", name: "GB" }
       ]));
     }
     if (window.setModelsFilterSelected) window.setModelsFilterSelected(ID.upi + "_models", "chatgpt");
