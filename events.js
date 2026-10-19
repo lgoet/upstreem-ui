@@ -177,6 +177,10 @@
     }
     return x;
   }
+  /* DIE ART EINES EINTRAGS (19.10.): "event" (Event Tracking: Datum, Topics, Kontrollgruppe) oder "watch" (Citation Tracking:
+     Seiten und Domains beobachten, alle Prompts, ohne Datum und ohne Kohorte). Ohne Feld "kind" (aeltere Datenbank) ist alles ein
+     Event. Die Art ist nach dem Anlegen nicht aenderbar. */
+  function istWatch(ev) { return !!ev && String(ev.kind || "") === "watch"; }
   var ZEICHEN = {};
   /* Die Zeichen der 19 Typen und eines mehr: mail fuer den Newsletter -- im Popup stehen damit zwei
      volle Reihen zu zehn (03.10. angefordert: "immer einheitlich viele"). */
@@ -195,6 +199,7 @@
     return ZEICHEN[c] ? c : null;
   }
   function zeichen(ev) {
+    if (istWatch(ev)) return "eye";   /* Citation Tracking hat kein eigenes Zeichen zur Wahl (19.10.) */
     return iconAusDb(ev && ev.icon) || typ(ev).icon;
   }
   function farbe(ev) {
@@ -254,6 +259,12 @@
      Kalender-Zeichen (03.10.), der Typ OHNE Zeichen in einer leisen Marke aus core (03.10.: "den
      Typ ohne Icon davor in einem kleinen Chip"); sein Zeichen steht ohnehin gross im Profilbild. */
   function angabenHtml(ev, klasse) {
+    /* Citation Tracking (19.10.): kein Eventdatum, kein Typ, kein Status -- nur, seit wann es das gibt. */
+    if (istWatch(ev)) {
+      return '<div class="uev-angaben' + (klasse ? " " + klasse : "") + '">' +
+        (ev.created_at ? '<span class="uev-angabe uev-angabe-datum">' + UC.icon("calendar", 2) + '<span>' + esc(ersetze(t("Created {date}"), { date: datum(ev.created_at) })) + '</span></span>' : '') +
+      '</div>';
+    }
     var tp = typ(ev), st = statusInfo(ev);
     /* Kampagnen (17.10.): der Zeitraum statt des Tages, dahinter der Status als dritte Angabe --
        in der Karte und im Kopf des Details derselbe. Laufend in der Akzent-Tinte (is-laeuft):
@@ -269,6 +280,7 @@
      schon zitiert werden. null heisst "noch kein Regel-Ziel gelesen" (nichts zeigen, keine 0),
      0 heisst "nichts Neues" (auch nichts zeigen). Eine ruhige Angabe mit Zeichen, keine Pille. */
   function neueSeitenHtml(ev) {
+    if (istWatch(ev)) return "";
     var n = num(ev && ev.new_page_count), c = num(ev && ev.new_page_cited_count);
     if (!(n > 0) || (ev.status === "planned")) return "";
     var k = n === 1 ? (c > 0 ? "{n} new page since the event, cited" : "{n} new page since the event, not cited yet")
@@ -293,6 +305,8 @@
       ["Prompts", pc != null ? zahl(pc) : "\u2013"],
       dritte
     ];
+    /* Citation Tracking (19.10.): keine Topics, immer alle Prompts -- zwei Zellen: was beobachtet wird und der Umfang. */
+    if (istWatch(ev)) zellen = [dritte, ["Prompts", t("All active")]];
     return '<dl class="uev-stats">' + zellen.map(function (z) {
       return '<div class="uev-stat"><dt>' + esc(t(z[0])) + '</dt><dd>' + esc(z[1]) + '</dd></div>';
     }).join("") + '</dl>';
@@ -326,9 +340,10 @@
   /* Kurz und in der Reihenfolge, in der man die Seite liest: was ein Event ist, womit verglichen
      wird, wie man das Ergebnis liest. */
   var SEITE_SAETZE = [
-    "An event marks a change, such as a relaunch or a campaign. Upstreem compares your AI performance before and after its date.",
+    "Experiments has two kinds. Event Tracking measures what a change did, such as a relaunch or a campaign: Upstreem compares your AI performance before and after its date.",
     "Affected prompts are the prompts in the topics you chose. The comparison group is your other active prompts, which the event did not touch. They show what would have happened anyway.",
-    "If the affected prompts improve more than the comparison group, the event likely made the difference. The analysis window sets how many days before and after are compared."
+    "If the affected prompts improve more than the comparison group, the event likely made the difference. The analysis window sets how many days before and after are compared.",
+    "Citation Tracking watches pages and domains instead. It covers all your prompts, including new ones, and shows which of your pages AI answers cite and how their global share changes. It has no date and no comparison group."
   ];
   /* DIE ZEICHNUNG IM HELLEN FELD DER KARTE (03.10., dritte Fassung). Wie das Liniendiagramm der
      App im Kleinen: weiche Kurven (Catmull-Rom, als Bezier vorgerechnet), leise Hilfslinien, unter
@@ -458,7 +473,8 @@
        mehr anbietet -- ein zweiter Tab oder ein Kollege kann den Stand verschoben haben. */
     "impact_event_locked_field": "This can't be changed after the event has started.",
     "impact_event_scope_frozen": "The scope can't be changed after the event has started.",
-    "impact_event_campaigns_unavailable": "Date ranges aren't available right now. Please try again later."
+    "impact_event_campaigns_unavailable": "Date ranges aren't available right now. Please try again later.",
+    "impact_event_watch_unavailable": "Citation Tracking isn't available yet. Please try again later."
   };
   /* impact_event_invalid_param nennt das Feld in hint -- je Feld ein eigener Satz, damit am Feld
      steht, WAS nicht passt. */
@@ -685,6 +701,36 @@
      "Overview" zu "Übersicht" und "Event" zu "Event" gemacht -- das letzte stellte die Spalte
      "Ereignis" im Aktivitaetsprotokoll der Teams um. Vor jedem neuen Eintrag in core.js suchen. */
 
+  /* Experimente: Event Tracking und Citation Tracking (19.10.). Die Namen der beiden Arten bleiben englisch (Eigennamen der Abschnitte);
+     die Sätze und Felder sind deutsch. "Create" und "Experiments" liegen in core. */
+  if (UC.addMessages) UC.addMessages("de", {
+    "Event Tracking": "Event Tracking", "Citation Tracking": "Citation Tracking",
+    "Create Event Tracking": "Event Tracking erstellen", "Create Citation Tracking": "Citation Tracking erstellen", "Edit Citation Tracking": "Citation Tracking bearbeiten",
+    "What do you want to create?": "Was möchtest du erstellen?",
+    "Measure what a change did. Compares your AI results before and after a date, against a control group of prompts you didn't change.":
+      "Miss, was eine Änderung bewirkt hat. Vergleicht deine AI-Ergebnisse vor und nach einem Datum mit einer Kontrollgruppe unveränderter Prompts.",
+    "Keep an eye on pages and domains. See which of them AI answers cite, across all your prompts, including new ones. No before-and-after test.":
+      "Behalte Seiten und Domains im Blick. Sieh, welche davon KI-Antworten zitieren, über alle deine Prompts, auch neue. Kein Vorher-Nachher-Test.",
+    "Step {n} of 3": "Schritt {n} von 3",
+    "e.g. Help center pages": "z. B. Seiten des Hilfecenters", "What do you want to keep an eye on?": "Was möchtest du im Blick behalten?",
+    "The type can't be changed later": "Die Art lässt sich später nicht ändern",
+    "Citation Tracking created": "Citation Tracking erstellt", "Created {date}": "Erstellt am {date}", "All active": "Alle aktiven",
+    "Measure what a change did with Event Tracking, or watch which of your pages AI answers cite with Citation Tracking.":
+      "Miss mit Event Tracking, was eine Änderung bewirkt hat, oder beobachte mit Citation Tracking, welche deiner Seiten KI-Antworten zitieren.",
+    "Pages and domains you watch. Global share is measured across all your active prompts.": "Seiten und Domains, die du beobachtest. Der Global Share wird über alle deine aktiven Prompts gemessen.",
+    "Global share, previous {n} days": "Global Share, vorherige {n} Tage", "Global share, last {n} days": "Global Share, letzte {n} Tage",
+    "No matching entries": "Keine passenden Einträge",
+    "Citation Tracking isn't available yet. Please try again later.": "Citation Tracking ist noch nicht verfügbar. Bitte versuche es später noch einmal.",
+    "Event Tracking measures what a change did, and Citation Tracking watches which of your pages AI answers cite. You choose when you create.":
+      "Event Tracking misst, was eine Änderung bewirkt hat, Citation Tracking beobachtet, welche deiner Seiten KI-Antworten zitieren. Du wählst beim Erstellen.",
+    "Two ways to track": "Zwei Arten zu tracken",
+    "Event Tracking compares before and after a date against a control group. Citation Tracking watches pages and domains across all your prompts, with no date. The tour continues with Event Tracking.":
+      "Event Tracking vergleicht vor und nach einem Datum mit einer Kontrollgruppe. Citation Tracking beobachtet Seiten und Domains über alle deine Prompts, ohne Datum. Die Tour geht mit Event Tracking weiter.",
+    "Experiments has two kinds. Event Tracking measures what a change did, such as a relaunch or a campaign: Upstreem compares your AI performance before and after its date.":
+      "Experimente gibt es in zwei Arten. Event Tracking misst, was eine Änderung bewirkt hat, etwa ein Relaunch oder eine Kampagne: Upstreem vergleicht deine AI Performance vor und nach dem Datum.",
+    "Citation Tracking watches pages and domains instead. It covers all your prompts, including new ones, and shows which of your pages AI answers cite and how their global share changes. It has no date and no comparison group.":
+      "Citation Tracking beobachtet dagegen Seiten und Domains. Es umfasst alle deine Prompts, auch neue, und zeigt, welche deiner Seiten KI-Antworten zitieren und wie sich ihr Global Share verändert. Es hat kein Datum und keine Vergleichsgruppe."
+  });
   if (UC.addMessages) UC.addMessages("de", {
     "Notify me": "Benachrichtige mich",
     "Get a note when a page is cited for the first time.": "Du bekommst eine Nachricht, wenn eine Seite zum ersten Mal zitiert wird.",
@@ -740,7 +786,7 @@
     "This topic was deleted after the event was created. Its prompts still count.":
       "Dieses Topic wurde nach dem Anlegen des Events gelöscht. Seine Prompts zählen weiter.",
     "vs. comparison": "vs. Vergleich", "Comparison group": "Vergleichsgruppe", "No comparison group": "Keine Vergleichsgruppe",
-    "How event analysis works": "So funktioniert die Event-Analyse",
+    "How event analysis works": "So funktioniert die Event-Analyse", "How Experiments work": "So funktionieren Experimente",
     "An event marks a change, such as a relaunch or a campaign. Upstreem compares your AI performance before and after its date.":
       "Ein Event markiert eine Änderung, etwa einen Relaunch oder eine Kampagne. Upstreem vergleicht deine AI Performance vor und nach dem Datum.",
     "Affected prompts are the prompts in the topics you chose. The comparison group is your other active prompts, which the event did not touch. They show what would have happened anyway.":
@@ -1124,6 +1170,9 @@
     uevAnalysis:     { fn: "cached_impact_event_analysis_v3", attr: "data-analysis-fn",  ms: 24000 },
     uevScopePreview: { fn: "preview_impact_event_scope_v2",   attr: "data-preview-fn",   ms: 20000 },
     uevCreate:       { fn: "create_impact_event_v3",          attr: "data-create-fn",    ms: 24000, schreibt: true },
+    /* Citation Tracking anlegen (19.10.): eigene Funktion statt eines Parameters p_kind an create_impact_event_v4 -- PostgREST lehnt
+       einen unbekannten Parameter ab, und die Event-Funktionen bleiben so unberuehrt. Antwort wie beim Event: das Detail. */
+    uevCreateWatch:  { fn: "create_impact_watch_v1",          attr: "", ms: 24000, schreibt: true, nurDirekt: true },
     uevUpdate:       { fn: "update_impact_event_v2",          attr: "data-update-fn",    ms: 24000, schreibt: true },
     /* Nur noch der Klick-Dummy (zielSenden): ausserhalb geht eine URL als url-Ziel an
        add_impact_event_target_v1. fn bleibt fuer den Rueckweg-Vertrag stehen, gerufen wird sie nie. */
@@ -1667,6 +1716,11 @@
           kam(kanal, { ok: false, status: 400, fehler: { code: "", message: "impact_event_tagmode_unavailable", hint: "p_tagmode", details: "" } }, kx);
           return;
         }
+        /* Citation Tracking (19.10.): die Funktion gibt es noch nicht -- ein Satz statt des allgemeinen Fehlers. */
+        if (!erg.ok && kanal === "uevCreateWatch" && funktionFehlt(erg)) {
+          kam(kanal, { ok: false, status: 400, fehler: { code: "", message: "impact_event_watch_unavailable", hint: "", details: "" } }, kx);
+          return;
+        }
         if (!erg.ok && funktionFehlt(erg) && !k.nurDirekt) {
           /* Die v2-Funktion ist noch nicht eingespielt: dieser Kanal geht fuer den Rest der
              Sitzung den alten Weg, ohne jedes Mal erst an der 404 vorbei. */
@@ -1764,7 +1818,7 @@
        Event gleichauf laufen und danach auseinandergehen -- genau das, was die Seite misst. */
     var seitenKarte = UC.makeExplain ? UC.makeExplain({ root: root, triggerSel: ".uev-seiteninfo", cls: "uev-explain-breit", getIsDark: isDark,
       html: function () {
-        return seiteZeichnung() + '<div class="up-explain-h">' + esc(t("How event analysis works")) + '</div>' +
+        return seiteZeichnung() + '<div class="up-explain-h">' + esc(t("How Experiments work")) + '</div>' +
           SEITE_SAETZE.map(function (x) { return '<div class="up-explain-t">' + esc(t(x)) + '</div>'; }).join("");
       } }) : null;
     /* Per Klick (Touch hat kein Zeigen): oeffnen, wenn zu; schliessen tut ein Druck daneben. */
@@ -1774,7 +1828,7 @@
       seitenKarte.hide();
     }, true);
     function seitenInfoKnopf() {
-      return '<button type="button" class="up-iconbtn uev-seiteninfo" aria-label="' + esc(t("How event analysis works")) + '">' + UC.icon("info", 2) + '</button>';
+      return '<button type="button" class="up-iconbtn uev-seiteninfo" aria-label="' + esc(t("How Experiments work")) + '">' + UC.icon("info", 2) + '</button>';
     }
     if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 760, vnarrowAt: 520 });
     var respInstanz = String(root.getAttribute("data-responses-instance") || "responses_events").trim();
@@ -1785,8 +1839,11 @@
     function gemerkt(k, sonst) { return saved && saved[k] != null ? saved[k] : sonst; }
     var state = {
       ansicht: "uebersicht", eventId: null,
-      suche: gemerkt("suche", ""), typen: gemerkt("typen", []),
-      sortFeld: gemerkt("sortFeld", "created"), sortRicht: gemerkt("sortRicht", "desc"),
+      /* Je Abschnitt der Uebersicht eigene Suche, Sortierung (und beim Event der Typ-Filter); die alten Felder gelten fuer Event Tracking. */
+      ue: gemerkt("ue", null) || {
+        event: { suche: gemerkt("suche", ""), typen: gemerkt("typen", []), sortFeld: gemerkt("sortFeld", "created"), sortRicht: gemerkt("sortRicht", "desc") },
+        watch: { suche: "", sortFeld: "created", sortRicht: "desc" }
+      },
       detail: gemerkt("detail", {}), detailLaden: false, detailFehler: false,
       analyse: gemerkt("analyse", {}), analyseLaden: false, analyseFehler: false,
       fenster: gemerkt("fenster", 30), seit: gemerkt("seit", false), metrik: gemerkt("metrik", "visibility"),
@@ -1798,7 +1855,7 @@
     };
     function persist() {
       if (root.isConnected === false) return;
-      STORE[instanceId] = { suche: state.suche, typen: state.typen, sortFeld: state.sortFeld, sortRicht: state.sortRicht, detail: state.detail, analyse: state.analyse,
+      STORE[instanceId] = { ue: state.ue, detail: state.detail, analyse: state.analyse,
         fenster: state.fenster, seit: state.seit, metrik: state.metrik, modelle: state.modelle, maerkte: state.maerkte,
         abd: state.abd, abdSeg: state.abdSeg };
     }
@@ -1838,7 +1895,7 @@
     root.innerHTML =
       '<div class="up-ph-top uev-pagehead">' +
         '<div class="up-ph-left">' +
-          '<h1 class="up-ph-heading">' + esc(t("Events")) + '</h1>' +
+          '<h1 class="up-ph-heading">' + esc(t("Experiments")) + '</h1>' +
           '<p class="up-ph-desc" data-i18n="Track important changes and understand how AI performance develops around them.">' +
             esc(t("Track important changes and understand how AI performance develops around them.")) + '</p>' +
         '</div>' +
@@ -1853,7 +1910,7 @@
       '<div class="uev-main"></div>';
     var elMain = root.querySelector(".uev-main"), elAktion = root.querySelector(".uev-kopfaktion");
     var krumen = UC.makePageCrumbs ? UC.makePageCrumbs(root, {
-      icon: "tickets", name: "Events", komponente: true,
+      icon: "tickets", name: "Experiments", komponente: true,
       klick: function () { zurUebersicht(true); },
       klickWenn: function () { return state.ansicht === "detail"; },
       stufen: function () {
@@ -1883,74 +1940,96 @@
     /* ============================================================================================
        Uebersicht
        ============================================================================================ */
-    var elListe = null, elZahl = null, elSucheIn = null, elSuche = null, sucheKit = null, typFilter = null;
+    /* ---- DIE UEBERSICHT: ZWEI ABSCHNITTE (19.10.) ------------------------------------------------------
+       Event Tracking (Events mit Datum, Topics und Kontrollgruppe) und Citation Tracking (Seiten und Domains beobachten) stehen
+       gestapelt untereinander, jeder mit eigener Leiste (Suche, Sortierung, beim Event zusaetzlich der Typ-Filter) und eigener
+       Liste. Ein Abschnitt ohne Eintraege ist gar nicht da; ohne jeden Eintrag steht ein gemeinsamer Leerzustand. Angelegt wird ueber
+       EINEN Knopf im Seitenkopf. */
+    var ABSCHNITTE = ["event", "watch"];
+    var ab = {};
+    function abschnitt(art) { return ab[art] || (ab[art] = { el: null, liste: null, zahl: null, suche: null, sucheIn: null, sucheKit: null, typFilter: null, sortPop: null }); }
+    function ue(art) { return state.ue[art]; }
+    function artVon(ev) { return istWatch(ev) ? "watch" : "event"; }
+    var ART_TITEL = { event: "Event Tracking", watch: "Citation Tracking" };
     function baueUebersicht() {
+      ab = {};
+      root.classList.remove("is-watch-ansicht");
       elAktion.innerHTML = anleitungKnopf() + seitenInfoKnopf() +
         '<button class="up-ph-addbtn up-export uev-anlegen" type="button">' + UC.icon("plus", 1.8) +
-          '<span data-i18n="Create event">' + esc(t("Create event")) + '</span></button>';
-      elMain.innerHTML =
-        '<div class="up-head uev-head">' +
-          '<span class="up-heading"><span class="up-head-label">' + esc(t("Events")) + '</span>' +
-            '<span class="up-head-sep"></span><span class="up-head-count uev-zahl"></span></span>' +
-          '<div class="up-head-tools">' +
-            /* Sortieren wie in den Tabellen: Knopf mit Sortierzeichen, davor die Suche (Reihenfolge der Leiste der anderen
-               Seiten), Menue aus UC.sortMenuHtml mit Feldern und Schalter "Descending". */
-            '<div class="up-sort uev-sort"><button class="up-sort-btn up-iconbtn" type="button" data-tip="' + esc(t("Sort")) + '" aria-label="' + esc(t("Sort")) + '">' + UC.icon("arrowUpDown", 2) + '</button>' +
-              '<div class="up-sort-menu" role="menu" aria-hidden="true"></div></div>' +
-            '<div class="up-search uev-suche">' +
-              '<button type="button" class="up-iconbtn up-search-btn" aria-label="' + esc(t("Search")) + '" data-tip="' + esc(t("Search")) + '">' + UC.icon("search", 2) + '</button>' +
-              '<div class="up-search-box">' +
-                '<input class="up-search-input" type="text" placeholder="' + esc(t("Search events…")) + '" autocomplete="off" spellcheck="false" aria-label="' + esc(t("Search events")) + '"/>' +
-                '<button type="button" class="up-search-clear" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2.2) + '</button>' +
+          '<span data-i18n="Create">' + esc(t("Create")) + '</span></button>';
+      elMain.innerHTML = ABSCHNITTE.map(function (art) {
+        return '<section class="uev-abschnitt" data-art="' + art + '">' +
+          '<div class="up-head uev-head">' +
+            '<span class="up-heading"><span class="up-head-label">' + esc(t(ART_TITEL[art])) + '</span>' +
+              '<span class="up-head-sep"></span><span class="up-head-count uev-zahl"></span></span>' +
+            '<div class="up-head-tools">' +
+              /* Sortieren wie in den Tabellen: Knopf mit Sortierzeichen, davor die Suche (Reihenfolge der Leiste der anderen
+                 Seiten), Menue aus UC.sortMenuHtml mit Feldern und Schalter "Descending". */
+              '<div class="up-sort uev-sort"><button class="up-sort-btn up-iconbtn" type="button" data-tip="' + esc(t("Sort")) + '" aria-label="' + esc(t("Sort")) + '">' + UC.icon("arrowUpDown", 2) + '</button>' +
+                '<div class="up-sort-menu" role="menu" aria-hidden="true"></div></div>' +
+              '<div class="up-search uev-suche">' +
+                '<button type="button" class="up-iconbtn up-search-btn" aria-label="' + esc(t("Search")) + '" data-tip="' + esc(t("Search")) + '">' + UC.icon("search", 2) + '</button>' +
+                '<div class="up-search-box">' +
+                  '<input class="up-search-input" type="text" placeholder="' + esc(t(art === "watch" ? "Search…" : "Search events…")) + '" autocomplete="off" spellcheck="false" aria-label="' + esc(t("Search")) + '"/>' +
+                  '<button type="button" class="up-search-clear" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2.2) + '</button>' +
+                '</div>' +
               '</div>' +
             '</div>' +
           '</div>' +
-        '</div>' +
-        '<div class="uev-liste"></div>';
-      elListe = elMain.querySelector(".uev-liste");
-      elZahl = elMain.querySelector(".uev-zahl");
+          '<div class="uev-liste"></div>' +
+        '</section>';
+      }).join("") + '<div class="uev-leer-gesamt" hidden></div>';
       respSichtbar(false);
-      elSuche = elMain.querySelector(".uev-suche");
-      elSucheIn = elMain.querySelector(".up-search-input");
-      elSucheIn.value = state.suche || "";
-      if (state.suche) elSuche.classList.add("is-open", "has-text");
-      sucheKit = UC.makeSearch ? UC.makeSearch({
-        root: root, box: elSuche, input: elSucheIn, state: { query: state.suche, page: 1 },
-        prefix: "uev", mobileMax: 560, onRender: function () {}, onFire: function () {}
+      ABSCHNITTE.forEach(function (art) { abschnittBauen(art); });
+      renderListe();
+    }
+    function abschnittBauen(art) {
+      var a = abschnitt(art), z = ue(art);
+      a.el = elMain.querySelector('.uev-abschnitt[data-art="' + art + '"]');
+      a.liste = a.el.querySelector(".uev-liste");
+      a.zahl = a.el.querySelector(".uev-zahl");
+      a.suche = a.el.querySelector(".uev-suche");
+      a.sucheIn = a.el.querySelector(".up-search-input");
+      a.sucheIn.value = z.suche || "";
+      if (z.suche) a.suche.classList.add("is-open", "has-text");
+      a.sucheKit = UC.makeSearch ? UC.makeSearch({
+        root: root, box: a.suche, input: a.sucheIn, state: { query: z.suche, page: 1 },
+        prefix: "uev-" + art, mobileMax: 560, onRender: function () {}, onFire: function () {}
       }) : null;
-      elSucheIn.addEventListener("input", function () {
-        state.suche = elSucheIn.value || "";
-        elSuche.classList.toggle("has-text", !!state.suche);
+      a.sucheIn.addEventListener("input", function () {
+        z.suche = a.sucheIn.value || "";
+        a.suche.classList.toggle("has-text", !!z.suche);
         persist(); renderListe();
       });
-      elSucheIn.addEventListener("keydown", function (e) { if (e.key === "Escape" && sucheKit) { e.stopPropagation(); sucheKit.toggle(); } });
-      elMain.querySelector(".up-search-btn").addEventListener("click", function (e) { e.stopPropagation(); if (sucheKit) sucheKit.toggle(); else elSuche.classList.toggle("is-open"); });
-      elMain.querySelector(".up-search-clear").addEventListener("click", function (e) {
+      a.sucheIn.addEventListener("keydown", function (e) { if (e.key === "Escape" && a.sucheKit) { e.stopPropagation(); a.sucheKit.toggle(); } });
+      a.el.querySelector(".up-search-btn").addEventListener("click", function (e) { e.stopPropagation(); if (a.sucheKit) a.sucheKit.toggle(); else a.suche.classList.toggle("is-open"); });
+      a.el.querySelector(".up-search-clear").addEventListener("click", function (e) {
         e.stopPropagation();
-        elSucheIn.value = ""; state.suche = ""; elSuche.classList.remove("has-text");
+        a.sucheIn.value = ""; z.suche = ""; a.suche.classList.remove("has-text");
         persist(); renderListe();
       });
       /* Der Typ-Filter ist der Marken-Filter der Tabellen (UC.makeAuswahlFilter, 03.10.: "alles
-         gleich wie im Selected Brands"). Er zeigt nur Typen, die es in der Liste gibt -- ein Filter
-         auf einen Typ ohne Event ist ein toter Eintrag; ein gewaehlter bleibt drin, auch wenn er
+         gleich wie im Selected Brands"). Nur beim Event Tracking: ein Citation Tracking hat keinen Typ. Er zeigt nur Typen, die es in
+         der Liste gibt -- ein Filter auf einen Typ ohne Event ist ein toter Eintrag; ein gewaehlter bleibt drin, auch wenn er
          gerade wegfiel. Eigene Typen (frei eingetippt) stehen hinter den festen. */
-      typFilter = UC.makeAuswahlFilter ? UC.makeAuswahlFilter({
-        klasse: "uev-typfilter", titel: "Event types", alle: "All Types", mehrere: "{n} Types",
-        suche: "Search types…", tip: "Event type", gewaehlt: state.typen,
-        items: filterTypen,
-        onChange: function (keys) { state.typen = keys; persist(); renderListe(); }
-      }) : null;
-      if (typFilter) elMain.querySelector(".up-head-tools").appendChild(typFilter.el);
-      sortBauen();
-      renderListe();
+      if (art === "event") {
+        a.typFilter = UC.makeAuswahlFilter ? UC.makeAuswahlFilter({
+          klasse: "uev-typfilter", titel: "Event types", alle: "All Types", mehrere: "{n} Types",
+          suche: "Search types…", tip: "Event type", gewaehlt: z.typen,
+          items: filterTypen,
+          onChange: function (keys) { z.typen = keys; persist(); renderListe(); }
+        }) : null;
+        if (a.typFilter) a.el.querySelector(".up-head-tools").appendChild(a.typFilter.el);
+      }
+      sortBauen(art);
     }
     /* ---- SORTIERUNG DER LISTE (18.10.): Felder, die die Liste schon hat, keine neue Abfrage. Standard: zuletzt
        erstellt zuerst. Der Stand lebt in state (persist), also ueber Seitenwechsel und Event-Wechsel hinweg. */
-    var SORT_FELDER = [{ key: "created", label: "Created" }, { key: "date", label: "Event date" }, { key: "name", label: "Name" }];
-    var sortPop = null;
-    function sortMenuFuellen() {
-      var m = elMain && elMain.querySelector(".uev-sort .up-sort-menu");
-      if (m && UC.sortMenuHtml) m.innerHTML = UC.sortMenuHtml(SORT_FELDER, state.sortFeld, state.sortRicht);
+    var SORT_FELDER = { event: [{ key: "created", label: "Created" }, { key: "date", label: "Event date" }, { key: "name", label: "Name" }],
+                        watch: [{ key: "created", label: "Created" }, { key: "name", label: "Name" }] };
+    function sortMenuFuellen(art) {
+      var m = abschnitt(art).el && abschnitt(art).el.querySelector(".uev-sort .up-sort-menu");
+      if (m && UC.sortMenuHtml) m.innerHTML = UC.sortMenuHtml(SORT_FELDER[art], ue(art).sortFeld, ue(art).sortRicht);
     }
     /* Das Menue haengt mit right: 0 am Knopf (core) und ragt nach links. Steht der Knopf am Telefon weniger als die Menuebreite
        vom linken Rand, schnitte es dort ab (gemessen 375 breit: 11px): dann um genau den Fehlbetrag plus 8px Rand nach rechts. */
@@ -1961,45 +2040,45 @@
       var l = m.getBoundingClientRect().left;
       if (l < 8) m.style.right = (l - 8) + "px";
     }
-    function sortBauen() {
-      var wrap = elMain.querySelector(".uev-sort");
+    function sortBauen(art) {
+      var a = abschnitt(art), wrap = a.el.querySelector(".uev-sort");
       if (!wrap) return;
-      sortMenuFuellen();
-      if (UC.makePopover) sortPop = UC.makePopover({ wrap: wrap, menu: wrap.querySelector(".up-sort-menu"), opener: wrap.querySelector(".up-sort-btn") });
+      sortMenuFuellen(art);
+      if (UC.makePopover) a.sortPop = UC.makePopover({ wrap: wrap, menu: wrap.querySelector(".up-sort-menu"), opener: wrap.querySelector(".up-sort-btn") });
       wrap.querySelector(".up-sort-btn").addEventListener("click", function (e) {
         e.stopPropagation();
-        if (!sortPop) return;
-        if (wrap.classList.contains("is-open")) sortPop.close(false); else { sortMenuFuellen(); sortPop.open(); sortLage(wrap); }
+        if (!a.sortPop) return;
+        if (wrap.classList.contains("is-open")) a.sortPop.close(false); else { sortMenuFuellen(art); a.sortPop.open(); sortLage(wrap); }
       });
       wrap.querySelector(".up-sort-menu").addEventListener("click", function (e) {
         e.stopPropagation();
-        var f = e.target.closest("[data-sortfield]"), r = e.target.closest("[data-sortdir]");
-        if (f) state.sortFeld = f.getAttribute("data-sortfield");
-        else if (r) state.sortRicht = state.sortRicht === "desc" ? "asc" : "desc";
+        var f = e.target.closest("[data-sortfield]"), r = e.target.closest("[data-sortdir]"), z = ue(art);
+        if (f) z.sortFeld = f.getAttribute("data-sortfield");
+        else if (r) z.sortRicht = z.sortRicht === "desc" ? "asc" : "desc";
         else return;
-        persist(); sortMenuFuellen(); renderListe();
+        persist(); sortMenuFuellen(art); renderListe();
       });
     }
     function filterTypen() {
       var da = {};
-      (UC.getEvents ? UC.getEvents() : []).forEach(function (ev) { if (!state.geloescht[ev.id]) da[typ(ev).key] = 1; });
-      state.typen.forEach(function (k) { da[k] = 1; });
+      (UC.getEvents ? UC.getEvents() : []).forEach(function (ev) { if (!state.geloescht[ev.id] && !istWatch(ev)) da[typ(ev).key] = 1; });
+      ue("event").typen.forEach(function (k) { da[k] = 1; });
       var typen = (UC.EVENT_TYPEN || []).filter(function (x) { return da[x.key]; });
       Object.keys(da).forEach(function (k) { var x = typ({ event_type: k }); if (x.eigen) typen.push(x); });
       return typen.map(function (x) { return { key: x.key, label: x.label, icon: x.icon }; });
     }
-    function gefiltert() {
-      var q = String(state.suche || "").trim().toLowerCase();
+    function gefiltert(art) {
+      var z = ue(art), q = String(z.suche || "").trim().toLowerCase();
       var l = (UC.getEvents ? UC.getEvents() : []).filter(function (ev) {
-        if (state.geloescht[ev.id]) return false;
-        if (state.typen.length && state.typen.indexOf(typ(ev).key) < 0) return false;
+        if (state.geloescht[ev.id] || artVon(ev) !== art) return false;
+        if (art === "event" && z.typen.length && z.typen.indexOf(typ(ev).key) < 0) return false;
         if (!q) return true;
         return (String(ev.name || "") + " " + String(ev.description || "")).toLowerCase().indexOf(q) >= 0;
       });
       /* Standard (18.10., Nutzer): zuletzt erstellt zuerst. Dazu Eventdatum und Name, jeweils mit Richtung; bei
          Gleichstand entscheidet die Anlage, zuletzt die Kennung, damit die Reihenfolge nie flackert. */
       function anlage(a, b) { return String(a.created_at || "").localeCompare(String(b.created_at || "")); }
-      var feld = state.sortFeld, mal = state.sortRicht === "asc" ? 1 : -1;
+      var feld = z.sortFeld, mal = z.sortRicht === "asc" ? 1 : -1;
       l.sort(function (a, b) {
         var d = 0;
         if (feld === "date") d = tagMs(a.event_date) - tagMs(b.event_date);
@@ -2030,9 +2109,9 @@
           '<button type="button" class="up-optrow" role="menuitem" data-aktion="edit" data-event-id="' + esc(ev.id) + '">' + UC.icon("squarePen", 2) + '<span class="up-aktionsmenue-lbl">' + esc(t("Edit")) + '</span></button>' +
           /* Am Telefon (is-vnarrow) steht das Anheften hier statt als Knopf im Kopf -- dort fehlt
              sonst der Platz fuer die Krume (gemessen 16.10.: "Overview" auf 9px gedrueckt). */
-          (wo === "kopf" && pinDa() ? '<button type="button" class="up-optrow uev-mehr-pin" role="menuitem" data-aktion="pin" data-event-id="' + esc(ev.id) + '">' + UC.icon("pin", 2) +
+          (wo === "kopf" && pinDa() && !istWatch(ev) ? '<button type="button" class="up-optrow uev-mehr-pin" role="menuitem" data-aktion="pin" data-event-id="' + esc(ev.id) + '">' + UC.icon("pin", 2) +
             '<span class="up-aktionsmenue-lbl">' + esc(t(istAngeheftet(ev.id) ? "Unpin from sidebar" : "Pin to sidebar")) + '</span></button>' : '') +
-          (wo === "kopf" ? notifyZeileHtml(ev) : '') +
+          (wo === "kopf" && !istWatch(ev) ? notifyZeileHtml(ev) : '') +
           (kannLoeschen ? '<div class="up-aktionsmenue-div"></div><button type="button" class="up-optrow is-gefahr" role="menuitem" data-aktion="delete" data-event-id="' + esc(ev.id) + '">' + UC.icon("trash", 2) + '<span class="up-aktionsmenue-lbl">' + esc(t("Delete")) + '</span></button>' : '') +
         '</div></span>';
     }
@@ -2059,7 +2138,7 @@
         '</div>' +
       '</article>';
     }
-    /* EIN WARTEN, DAS ENDET (Muster brand-detail: 25s, gezaehlt erst, wenn die Uebersicht zu sehen
+    /* EIN WABSCHNITTE, DAS ENDET (Muster brand-detail: 25s, gezaehlt erst, wenn die Uebersicht zu sehen
        ist). Kommt die Liste nie -- der Schritt im Seitenaufbau fehlt, der Workflow brach ab --,
        lief das Skelett sonst fuer immer, und das sieht aus wie "gleich da" (03.10. so gemeldet:
        "ich seh nur Skeleton Loader"). Im Klick-Dummy kommt die Liste aus der Datei, dort keine Uhr. */
@@ -2143,61 +2222,74 @@
        .up-heading -- ohne die Klasse blendet core ihn aus, und genau so stand er hier bisher
        unsichtbar im Markup (03.10. gemeldet). Beim Laden das Skelett aus core (.is-sk), danach die
        Zahl der gezeigten Events. */
-    function zahlSetzen(n, laedt) {
-      if (!elZahl) return;
-      var kopf = elZahl.closest(".up-heading");
-      elZahl.classList.toggle("is-sk", !!laedt);
-      elZahl.textContent = laedt || n == null ? "" : (UC.fmtTotal ? UC.fmtTotal(n) : String(n));
+    function zahlSetzen(art, n, laedt) {
+      var el = abschnitt(art).zahl;
+      if (!el) return;
+      var kopf = el.closest(".up-heading");
+      el.classList.toggle("is-sk", !!laedt);
+      el.textContent = laedt || n == null ? "" : (UC.fmtTotal ? UC.fmtTotal(n) : String(n));
       if (kopf) kopf.classList.toggle("has-count", !!laedt || n != null);
     }
+    function abschnittZeigen(art, an) { var a = abschnitt(art); if (a.el) a.el.hidden = !an; }
+    function gesamtLeer(html) {
+      var g = elMain && elMain.querySelector(".uev-leer-gesamt");
+      if (!g) return;
+      g.hidden = !html;
+      g.innerHTML = html || "";
+    }
     function renderListe() {
-      if (!elListe) return;
+      if (!abschnitt("event").liste) return;
       var stand = UC.eventsStand ? UC.eventsStand() : { geladen: true, fehler: false };
-      if (typFilter) typFilter.neu();
+      ABSCHNITTE.forEach(function (art) { var f = abschnitt(art).typFilter; if (f) f.neu(); });
+      /* Nicht geladen, Fehler oder Zeitablauf: EIN Zustand fuer die ganze Seite, im ersten Abschnitt; der zweite ist nicht da. */
+      function ganz(html, skelett) {
+        ABSCHNITTE.forEach(function (art) { zahlSetzen(art, null, skelett && art === "event"); abschnittZeigen(art, art === "event"); });
+        abschnitt("event").liste.className = "uev-liste";
+        abschnitt("event").liste.innerHTML = html;
+        gesamtLeer("");
+      }
       if (stand.fehler && !(UC.getEvents && UC.getEvents().length)) {
-        zahlSetzen(null);
-        elListe.className = "uev-liste";
-        elListe.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("the event list") : "";
+        ganz(UC.leseFehlerHtml ? UC.leseFehlerHtml("the event list") : "");
         return;
       }
       if (!stand.geladen) {
-        zahlSetzen(null, !state.listeZeitUm);
-        if (state.listeZeitUm) {
-          elListe.className = "uev-liste";
-          elListe.innerHTML = UC.leerHtml({ icon: "info", titel: "Events could not be loaded", text: "Please reload the page." });
-          return;
-        }
-        elListe.className = "uev-liste";
-        elListe.innerHTML = karteSkelett();
-        rasterSetzen(3);
+        if (state.listeZeitUm) { ganz(UC.leerHtml({ icon: "info", titel: "Events could not be loaded", text: "Please reload the page." })); return; }
+        ganz(karteSkelett(), true);
+        zahlSetzen("event", null, true);
+        rasterSetzen("event", 3);
         listeUhr();
         return;
       }
       var alle = (UC.getEvents ? UC.getEvents() : []).filter(function (ev) { return !state.geloescht[ev.id]; });
-      var l = gefiltert();
-      zahlSetzen(l.length);
-      elListe.className = "uev-liste";
       if (!alle.length) {
-        elListe.innerHTML = UC.leerHtml({ icon: "tickets", titel: "No events yet",
-          text: "Add important launches, content changes, campaigns or other changes to understand how your AI performance develops around them.",
-          knopf: "Create event", knopfAttr: "data-uev-create" });
+        ABSCHNITTE.forEach(function (art) { zahlSetzen(art, null); abschnittZeigen(art, false); });
+        gesamtLeer(UC.leerHtml({ icon: "tickets", titel: "Nothing here yet",
+          text: "Measure what a change did with Event Tracking, or watch which of your pages AI answers cite with Citation Tracking.",
+          knopf: "Create", knopfAttr: "data-uev-create" }));
         return;
       }
-      if (!l.length) {
-        elListe.innerHTML = UC.leerHtml({ gefiltert: true, was: "events" });
-        return;
-      }
-      /* Nicht l.map(karteHtml): map reicht den Index als zweites Argument durch, und das ist der
-         Schalter vorschau -- jede Karte ab der zweiten kam als nicht klickbare Vorschau heraus
-         (im Pruefstand am 03.10. gefunden: nur die erste Karte oeffnete das Detail). */
-      elListe.innerHTML = '<div class="uev-karten">' + l.map(function (ev) { return karteHtml(mitZielen(ev), false); }).join("") + '</div>';
-      rasterSetzen(l.length);
+      gesamtLeer("");
+      ABSCHNITTE.forEach(function (art) {
+        var a = abschnitt(art), da = alle.filter(function (ev) { return artVon(ev) === art; });
+        /* Ein Abschnitt ohne einen einzigen Eintrag ist nicht da -- auch nicht mit leerem Kopf. */
+        abschnittZeigen(art, da.length > 0);
+        if (!da.length) { zahlSetzen(art, null); return; }
+        var l = gefiltert(art);
+        zahlSetzen(art, l.length);
+        a.liste.className = "uev-liste";
+        if (!l.length) { a.liste.innerHTML = UC.leerHtml({ gefiltert: true, was: art === "watch" ? "entries" : "events" }); return; }
+        /* Nicht l.map(karteHtml): map reicht den Index als zweites Argument durch, und das ist der
+           Schalter vorschau -- jede Karte ab der zweiten kam als nicht klickbare Vorschau heraus
+           (im Pruefstand am 03.10. gefunden: nur die erste Karte oeffnete das Detail). */
+        a.liste.innerHTML = '<div class="uev-karten">' + l.map(function (ev) { return karteHtml(mitZielen(ev), false); }).join("") + '</div>';
+        rasterSetzen(art, l.length);
+      });
       liste3Holen();
     }
-    function rasterSetzen(n) {
-      var k = elListe && elListe.querySelector(".uev-karten, .uev-karten-sk");
+    function rasterSetzen(art, n) {
+      var a = abschnitt(art), k = a.liste && a.liste.querySelector(".uev-karten, .uev-karten-sk");
       if (!k) return;
-      k.style.setProperty("--uev-cols", spalten(elListe.clientWidth || root.clientWidth || 1200));
+      k.style.setProperty("--uev-cols", spalten(a.liste.clientWidth || root.clientWidth || 1200));
     }
     function karteSkelett() {
       /* Dieselbe Form wie die Karte: Band, Profilbild, Name, Angaben, Text, das Raster. */
@@ -2426,7 +2518,7 @@
           '</div>' +
         '</div>';
       elAktion.querySelector(".uev-kopfmehr").innerHTML = mehrMenue(d, "kopf");
-      pinKnopfSetzen(d);
+      pinKnopfSetzen(istWatch(d) ? null : d);
     }
 
     /* ---- AN DIE SEITENLEISTE HEFTEN (16.10. angefordert: "im Event-Detail oben in der Kopfleiste
@@ -3054,6 +3146,11 @@
     function beobachtung(o, still) {
       o = o || {};
       var st = o.status, txt, ja = true;
+      /* Citation Tracking (19.10.): es gibt keinen Event-Tag -- "zuerst zitiert" ist einfach das Datum, sonst "Not yet". */
+      if (istWatch(dasEvent())) {
+        ja = !!o.first_observed_day;
+        return '<span class="up-marke is-leise uev-beob' + (ja ? " is-ja" : "") + '">' + esc(ja ? datum(o.first_observed_day) : t("Not yet")) + '</span>';
+      }
       /* day_number zaehlt die Tage NACH dem Event (Vertrag 3.9: 0 = Event-Tag) -- darum "After 10
          days" und nicht "Day 10", das sich wie ein Wochentag oder ein Zaehler ab 1 las. */
       var n = num(o.day_number);
@@ -3139,10 +3236,12 @@
          sonst gleich da. Nur bei so einer Kollision zeigt die Zeile den Host genau (www., http://). */
       var gleich = {};
       urls.forEach(function (u) { var h = hostPfad(u.url), k = h.host + h.pfad; gleich[k] = (gleich[k] || 0) + 1; });
-      platz.innerHTML = sekKopf("URLs", "Pages, articles or external sources associated with this event. Global share is measured in the affected prompts.") +
+      var wz = istWatch(d), wtage = num(a && a.windows && a.windows.window_days) || state.fenster || 30;
+      platz.innerHTML = sekKopf("URLs", wz ? "Pages and domains you watch. Global share is measured across all your active prompts." : "Pages, articles or external sources associated with this event. Global share is measured in the affected prompts.") +
         '<div class="up-vartable uev-urls">' +
-          tabKopf({ t: "URL", s: "url" }, [{ t: "First cited", k: "uev-th-beob", info: "zitiert", s: "first" }, { t: "Global share before", s: "gsbefore" },
-            { t: "Global share after", s: "gsafter" }, { t: "Change", s: "change" }]) +
+          tabKopf({ t: "URL", s: "url" }, [{ t: "First cited", k: "uev-th-beob", info: wz ? null : "zitiert", s: "first" },
+            wz ? { t: ersetze(t("Global share, previous {n} days"), { n: wtage }), s: "gsbefore" } : { t: "Global share before", s: "gsbefore" },
+            wz ? { t: ersetze(t("Global share, last {n} days"), { n: wtage }), s: "gsafter" } : { t: "Global share after", s: "gsafter" }, { t: "Change", s: "change" }]) +
           '<div class="up-tbody up-vbody">' + urls.slice(ab.von, ab.bis).map(function (u) {
             var an = proId[u.id], hp = hostPfad(u.url), gs = an && an.global_share ? an.global_share : null;
             var hostTxt = gleich[hp.host + hp.pfad] > 1 ? hostGenau(u.url, hp) : hp.host;
@@ -4133,6 +4232,7 @@
     function modusStellen() {
       var box = elMain.querySelector(".uev-detail");
       if (!box || !UC.bandAus || state.ansicht !== "detail" || !state.eventId) return;
+      if (istWatch(dasEvent())) { modusWeg(); return; }
       var id = state.eventId, aus = !!(UC.bandAusGemerkt && UC.bandAusGemerkt(modusId(id)));
       var war = box.classList.contains("is-band-aus");
       UC.bandAus(box, aus, { id: "events_detail", wahlen: [{ label: "Full Event Overview" }, { label: "Citation Tracking only" }],
@@ -4157,6 +4257,10 @@
          abgeschlossene als Bericht. Ohne Teil B traegt kein Event einen Status -- alles wie bisher. */
       var ev = dasEvent();
       box.classList.toggle("is-geplant", istGeplant(ev));
+      /* Citation Tracking (19.10.): die Marken-Teile (Kennzahlen, Bericht, Chart, Marktbewegung, Hinweise, Umfang) gibt es nicht -- kein
+         Schalter, die Ansicht ist fest die Beobachtung der Seiten. */
+      box.classList.toggle("is-watch", istWatch(ev));
+      root.classList.toggle("is-watch-ansicht", istWatch(ev));   /* ohne Anleitung: ihre Detail-Schritte fuehren durch Teile, die es hier nicht gibt */
       box.classList.toggle("is-kampagne", kampagneDa() && mitEnde(ev) && !istGeplant(ev));
       box.classList.toggle("is-bericht", istFertig(ev));
       krumenNeu();
@@ -4280,7 +4384,7 @@
     function adresseLesen(spaet) {
       var id = adresseEvent();
       if (id) { if (!(state.ansicht === "detail" && state.eventId === id)) oeffnen(id, false, spaet); }
-      else if (state.ansicht !== "uebersicht" || !elListe) zurUebersicht(false);
+      else if (state.ansicht !== "uebersicht" || !abschnitt("event").liste) zurUebersicht(false);
     }
 
     /* ---- Klicks --------------------------------------------------------------------------- */
@@ -4300,18 +4404,21 @@
     }
     root.addEventListener("click", function (e) {
       if (!e.target.closest) return;
-      if (e.target.closest(".uev-anlegen, [data-uev-create]")) { e.preventDefault(); popupAnlegen(); return; }
+      if (e.target.closest(".uev-anlegen, [data-uev-create]")) { e.preventDefault(); popupArt(); return; }
       if (e.target.closest(".uev-zurueck")) { zurUebersicht(true); return; }
       if (e.target.closest(".uev-pinknopf")) { pinUmschalten(); return; }
       var si = e.target.closest(".uev-seiteninfo");
       if (si) { if (seitenKarte && !seitenKarte.el.classList.contains("is-on")) seitenKarte.show(si); return; }
       /* Der Knopf im gefilterten Leerzustand (UC.leerHtml traegt data-clearall): Suche und
          Typ-Filter zuruecksetzen. */
-      if (e.target.closest("[data-clearall]")) {
-        state.suche = ""; state.typen = [];
-        if (typFilter) typFilter.setGewaehlt([]);
-        if (elSucheIn) elSucheIn.value = "";
-        if (elSuche) elSuche.classList.remove("has-text");
+      var ca = e.target.closest("[data-clearall]");
+      if (ca) {
+        /* Der Abschnitt, in dem der Knopf steht: Suche und (beim Event) Typ-Filter zuruecksetzen. */
+        var sek = ca.closest(".uev-abschnitt"), kart = sek ? sek.getAttribute("data-art") : "event", za = abschnitt(kart);
+        ue(kart).suche = "";
+        if (kart === "event") { ue("event").typen = []; if (za.typFilter) za.typFilter.setGewaehlt([]); }
+        if (za.sucheIn) za.sucheIn.value = "";
+        if (za.suche) za.suche.classList.remove("has-text");
         persist(); renderListe();
         return;
       }
@@ -4858,6 +4965,12 @@
       klappen(kl, !!p.e.offen);
     }
     function detailFelder(e, mitDatum) {
+      /* Citation Tracking (19.10.): nur Name und Beschreibung -- kein Datum, kein Typ, kein Aussehen (keine Pins, keine Kohorte). */
+      if (e.art === "watch") {
+        return feld("Name", '<input type="text" class="up-topicmodal-name" data-feld="name" maxlength="' + NAME_MAX + '" autocomplete="off" spellcheck="false"' +
+            ' placeholder="' + esc(t("e.g. Help center pages")) + '" value="' + esc(e.name) + '"/>', false, "name") +
+          feld("Description", '<textarea class="up-topicmodal-name up-modal-text" data-feld="text" rows="3" placeholder="' + esc(t("What do you want to keep an eye on?")) + '">' + esc(e.text) + '</textarea>', true, "text");
+      }
       return feld("Name", '<input type="text" class="up-topicmodal-name" data-feld="name" maxlength="' + NAME_MAX + '" autocomplete="off" spellcheck="false"' +
           ' placeholder="' + esc(t("e.g. Website relaunch")) + '" value="' + esc(e.name) + '"/>', false, "name") +
         (mitDatum ? feld("Date", datumFeld(e), false, "datum") : "") +
@@ -4987,14 +5100,12 @@
       /* Immer genau EINE Stufe gewaehlt: ein Wert ausserhalb von topics/all (aus einem alten Stand)
          liesse beide Knoepfe ohne Streifen stehen und die Liste zu (17.10., Nutzer: "keine der beiden
          Optionen ausgewaehlt"). Topics ist der Vorgang des Anlegens. */
-      if (e.modus !== "all") e.modus = "topics";
+      /* Event Tracking misst gegen eine Kontrollgruppe -- die gibt es nur mit Topics (19.10.). "All active Prompts" ist weg: wer alle
+         Prompts beobachten will, legt ein Citation Tracking an. */
+      e.modus = "topics";
       return feld("Affected scope",
         '<div class="uev-umfang">' +
-          '<div class="up-seg uev-umfangseg" role="group">' +
-            '<button type="button" class="up-seg-btn' + (e.modus === "topics" ? " is-active" : "") + '" data-modus="topics">' + esc(t("Selected topics")) + '</button>' +
-            '<button type="button" class="up-seg-btn' + (e.modus === "all" ? " is-active" : "") + '" data-modus="all">' + esc(t("All active Prompts")) + '</button>' +
-          '</div>' +
-          '<div class="uev-klapp uev-umfang-klapp' + (e.modus === "topics" ? " is-offen" : "") + '"><div class="uev-klapp-in"><div class="uev-umfang-topics uev-topicbox">' +
+          '<div class="uev-klapp uev-umfang-klapp is-offen"><div class="uev-klapp-in"><div class="uev-umfang-topics uev-topicbox">' +
             (viele ? '<div class="up-ment-searchwrap uev-topicsuche-w">' +
               '<input class="up-ment-search uev-topicsuche" type="text" placeholder="' + esc(t("Search topics")) + '" autocomplete="off" spellcheck="false" aria-label="' + esc(t("Search topics")) + '"/>' +
               '<button class="up-ment-searchclear uev-topicsuche-x" type="button" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2) + '</button></div>' : '') +
@@ -5035,7 +5146,7 @@
     function sitemapDa() { return zieleDa() && SITEMAP_DA.stand !== false; }
     function artenFuer(p) {
       return ARTEN.filter(function (a) {
-        if (a.k === "marke") return p.art === "anlegen";
+        if (a.k === "marke") return p.art === "anlegen" && !(p.e && p.e.art === "watch");
         return a.k === "url" || zieleDa();
       });
     }
@@ -5180,6 +5291,7 @@
        Seitenleiste, dann was getrackt wird (kurz) und das Schloss. Der Bearbeiten-Dialog behaelt
        das offene Raster (coverFeld): er hat keine Vorschau, an der ein Knopf stehen koennte. */
     function pruefFelder(e) {
+      if (e.art === "watch") return '<div class="uev-vorschaublock"><div class="uev-pruef"></div></div>' + feld("Tracking", '<div class="uev-pruefziele"></div>') + gesperrtHinweis("The type can't be changed later");
       return '<div class="uev-vorschaublock"><div class="uev-pruef"></div>' + coverWahlHtml(e) + anheftenHtml(e) + notifySchalterHtml(e) + '</div>' +
         feld("Tracking", '<div class="uev-pruefziele"></div>') +
         gesperrtHinweis(startSatz(e));
@@ -6680,9 +6792,16 @@
     /* ---- Zeichnen in einem offenen Popup --------------------------------------------------- */
     function im(sel) { return popup ? popup.api.el.querySelector(sel) : null; }
     /* Vier Schritte seit 15.10.: die Ziele sind ein eigener Schritt, das Pruefen der letzte. */
+    /* Die Schritte eines Ablaufs: das Event hat vier, das Citation Tracking drei (ohne Schritt 2, die Topics). */
+    function reiheVon(p) { return p && p.e && p.e.art === "watch" ? [1, 3, 4] : [1, 2, 3, 4]; }
+    function vor(p, richtung) {
+      var r = reiheVon(p), i = r.indexOf(p.schritt) + richtung;
+      return r[Math.max(0, Math.min(r.length - 1, i))];
+    }
     function schrittText(n) {
       /* Beim Bearbeiten eines geplanten Events heisst der letzte Schritt "Check and save" (Audit EV-05). */
-      return ersetze(t("Step {n} of 4"), { n: n }) + ": " + t(["Details", "Prompts", "Tracking", popup && popup.planEventId ? "Check and save" : "Check and create"][n - 1]);
+      var r = reiheVon(popup), i = Math.max(0, r.indexOf(n));
+      return ersetze(t(r.length === 3 ? "Step {n} of 3" : "Step {n} of 4"), { n: i + 1 }) + ": " + t(["Details", "Prompts", "Tracking", popup && popup.planEventId ? "Check and save" : "Check and create"][n - 1]);
     }
     function typNeu() {
       var p = popup, tp = typVon(p.e.typ), b = im('[data-wahl="typ"]');
@@ -6939,7 +7058,7 @@
       var p = popup, el = im(".uev-pruef");
       if (!el || p.art !== "anlegen") return;
       var e = p.e, v = dieVorschau(p), mit = e.zielArt && e.zielArt !== "marke" ? e.ziele : [];
-      var ev = { id: "", name: e.name.trim() || t("Untitled event"), event_date: e.datum, event_type: e.typ,
+      var ev = { id: "", kind: e.art === "watch" ? "watch" : "event", name: e.name.trim() || t("Untitled event"), event_date: e.datum, event_type: e.typ,
         icon: e.icon, color: e.farbe, cover: e.cover, description: e.text.trim() || null, scope_mode: e.modus,
         selected_topic_count: e.modus === "topics" ? e.topics.length : null,
         affected_prompt_count: v && !v.fehler ? v.n : null,
@@ -6953,7 +7072,7 @@
         ev.status = e.datum > heuteIso() ? "planned" : "running";
       }
       el.innerHTML = '<span class="up-topicmodal-label">' + esc(t("Preview")) + '</span>' +
-        '<div class="uev-vorschau">' + karteHtml(ev, true) + coverKnopfHtml(p) + '</div>';
+        '<div class="uev-vorschau">' + karteHtml(ev, true) + (e.art === "watch" ? "" : coverKnopfHtml(p)) + '</div>';
       pruefZieleZeigen();
     }
     /* Schritt 3 ist bereit: eine Art ist gewaehlt, und ausser bei "Brand metrics only" steht ein
@@ -6975,6 +7094,7 @@
       var e = p.e;
       if (p.art === "ziel") return zieleOk(p);
       if (p.art === "bearbeiten") return !!e.name.trim() && laenge(e.text.trim()) <= TEXT_MAX;
+      if (p.schritt === 1 && e.art === "watch") return !!e.name.trim() && laenge(e.text.trim()) <= TEXT_MAX;
       if (p.schritt === 1) return !!e.name.trim() && !!e.datum && (!e.bereich || !!e.ende) && !!e.typ && laenge(e.text.trim()) <= TEXT_MAX;
       if (p.schritt === 2) {
         if (e.modus === "topics" && !e.topics.length) return false;
@@ -6997,7 +7117,7 @@
         if (z) z.hidden = p.schritt === 1;
         /* "Create without URLs?" (03.10.) ist seit 15.10. die ausdrueckliche Wahl "Brand metrics
            only" in Schritt 3 -- ein Event ohne Ziele entsteht nie mehr aus Versehen. */
-        var lbl = p.schritt === 4 ? (p.planEventId ? "Save" : "Create event") : "Continue", tx = b && b.querySelector(".up-modal-knopftxt");
+        var lbl = p.schritt === 4 ? (p.planEventId ? "Save" : p.e.art === "watch" ? "Create" : "Create event") : "Continue", tx = b && b.querySelector(".up-modal-knopftxt");
         if (tx) { tx.textContent = t(lbl); tx.setAttribute("data-i18n", lbl); }
       }
       if (anleitung && anleitung.laeuft()) anleitung.neu();
@@ -7014,7 +7134,7 @@
          nach dem naechsten Blick des Waechters da. */
       var box = p.api.body.querySelector('.uev-schritt[data-schritt="' + n + '"]');
       /* Vor dem Bau: die Kacheln zeigen das gewuerfelte Bild schon als gewaehlt. */
-      if (n === 4) coverZufall(p);
+      if (n === 4 && p.e.art !== "watch") coverZufall(p);
       if (box && !box.__uevGebaut) {
         box.__uevGebaut = 1;
         if (n === 2) { box.innerHTML = umfangFelder(p.e); topicsZeigen(); }
@@ -7022,7 +7142,7 @@
         if (n === 4) box.innerHTML = pruefFelder(p.e);
       }
       /* Der Satz unter der Vorschau folgt dem Datum, auch wenn der Schritt schon einmal gebaut war. */
-      if (n === 4 && box) { var gs = box.querySelector(".uev-gesperrt > span:last-child"); if (gs) gs.textContent = t(startSatz(p.e)); }
+      if (n === 4 && box && p.e.art !== "watch") { var gs = box.querySelector(".uev-gesperrt > span:last-child"); if (gs) gs.textContent = t(startSatz(p.e)); }
       var sub = p.api.el.querySelector(".up-topicmodal-sub");
       if (sub) sub.textContent = schrittText(n);
       if (n === 2) { umfangNeu(); vorschauAnfordern(); }
@@ -7208,6 +7328,17 @@
       /* Doppelklick: der Knopf ist busy, und ohne laufende Antwort geht nichts zweimal hinaus. */
       if (!p || p.warte) return;
       var e = p.e;
+      /* Citation Tracking (19.10.): eigene Funktion, nur Name, Beschreibung und Ziele -- keine Prompts-Wahl, kein Datum. */
+      if (e.art === "watch") {
+        var wb = { p_name: e.name.trim(), p_description: e.text.trim() || null };
+        var wmit = e.zielArt && e.zielArt !== "marke" ? e.ziele : [];
+        p.zielFehler = null; p.gesendet = wmit.slice();
+        wb.p_targets = wmit.map(zielKoerper);
+        if (!vorabPruefen(p, wb)) return;
+        warten(p, "anlegen");
+        rufen("uevCreateWatch", wb, { popup: p });
+        return;
+      }
       var b = {
         p_name: e.name.trim(), p_event_date: e.datum, p_scope_mode: e.modus,
         p_tag_ids: e.modus === "topics" ? e.topics.slice() : null,
@@ -7398,10 +7529,13 @@
       if (art === "anlegen") {
         /* Erst jetzt, mit der Kennung aus der Antwort, an die Leiste (Schalter in Schritt 4). Die
            Meldung nennt es mit, statt einen zweiten Toast zu zeigen. */
-        var angeheftet = !!p.e.anheften && eventAnheften(d, true);
-        if (meldDa() && p.e.notify === false && !p.notifyGesendet && id) notifySetzen(id, false, true);
+        var wa = p.e.art === "watch";
+        /* Ein Citation Tracking hat weder Pin noch Meldungen (19.10.). */
+        var angeheftet = !wa && !!p.e.anheften && eventAnheften(d, true);
+        if (wa) { /* nichts */ }
+        else if (meldDa() && p.e.notify === false && !p.notifyGesendet && id) notifySetzen(id, false, true);
         else if (meldDa() && id) MELD_AN[String(id)] = p.e.notify !== false;
-        if (UC.toast) UC.toast(t("Event created"), angeheftet ? { desc: t("Pinned to sidebar") } : undefined);
+        if (UC.toast) UC.toast(t(wa ? "Citation Tracking created" : "Event created"), angeheftet ? { desc: t("Pinned to sidebar") } : undefined);
         oeffnen(id, true, false, true);
         if (anlInsDetail) setTimeout(function () { anlInsDetail = false; anleitungZeige("d1"); }, 60);
       }
@@ -7541,7 +7675,67 @@
                zielArt: zl.length ? (kinds.every(function (k) { return k === kinds[0]; }) ? kinds[0] : "url") : "marke",
                unterdomains: zl.some(function (z) { return z.kind === "host_all"; }) || !zl.some(function (z) { return z.kind === "host"; }), ziele: zl, eingabe: "", artVonHand: true };
     }
-    function popupAnlegen(planEid) {
+    /* ---- SCHRITT 0: DIE ART (19.10.) -------------------------------------------------------------------
+       "Create" fragt zuerst, was angelegt wird: Event Tracking (Wirkung messen, mit Kontrollgruppe) oder Citation Tracking
+       (Seiten beobachten). Zwei Zeilen im Format der Zielarten (.uev-art), "Continue" bleibt gesperrt, bis eine gewaehlt ist. */
+    var KIND_WAHL = [
+      { k: "event", ic: "calendar", titel: "Event Tracking",
+        satz: "Measure what a change did. Compares your AI results before and after a date, against a control group of prompts you didn't change." },
+      { k: "watch", ic: "eye", titel: "Citation Tracking",
+        satz: "Keep an eye on pages and domains. See which of them AI answers cite, across all your prompts, including new ones. No before-and-after test." }
+    ];
+    function popupArt() {
+      if (popup) return;
+      if (!demo && listeGeladen() && (UC.getEvents ? UC.getEvents() : []).filter(function (x) { return !state.geloescht[x.id]; }).length >= EVENTS_MAX) {
+        if (UC.toast) UC.toast(fehlerText("impact_event_limit_reached"), { kind: "error" });
+        return;
+      }
+      var wahl = null;
+      function zeilen() {
+        return '<div class="uev-arten uev-kinds" role="radiogroup" aria-label="' + esc(t("What do you want to create?")) + '">' + KIND_WAHL.map(function (a, i) {
+          var an = a.k === wahl;
+          return '<div class="uev-art-w' + (an ? " is-on" : "") + '"><button type="button" class="uev-art' + (an ? " is-on" : "") + '" role="radio" aria-checked="' + an +
+            '" tabindex="' + (an || (!wahl && i === 0) ? 0 : -1) + '" data-kind="' + a.k + '">' +
+            '<span class="uev-art-punkt" aria-hidden="true"></span>' +
+            '<span class="uev-art-ic" aria-hidden="true">' + UC.icon(a.ic, 2) + '</span>' +
+            '<span class="uev-art-txt"><span class="uev-art-t">' + esc(t(a.titel)) + '</span><span class="uev-art-s">' + esc(t(a.satz)) + '</span></span>' +
+          '</button></div>';
+        }).join("") + '</div>';
+      }
+      var api = UC.makeModal({
+        titel: "Create", unter: t("What do you want to create?"), isDark: isDark,
+        inhaltHtml: '<div class="uev-schritt uev-kindwahl">' + zeilen() + '</div>',
+        knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
+                  { id: "weiter", text: "Continue", art: "pri", aktion: function () { weiter(); return false; } }],
+        onClose: popupZu, vorSchliessen: function () { return true; }
+      });
+      var p = { art: "art", api: api, e: {}, knopf: "weiter", pops: {} };
+      popup = p;
+      var box = api.body.querySelector(".uev-kindwahl");
+      function sync() {
+        box.innerHTML = zeilen();
+        var b = api.knopf("weiter"); if (b) b.disabled = !wahl;
+      }
+      function waehlen(k) { wahl = k; sync(); var f = box.querySelector('[data-kind="' + k + '"]'); if (f) f.focus(); }
+      function weiter() {
+        if (!wahl) return;
+        var k = wahl;
+        api.schliessen();
+        setTimeout(function () { popupAnlegen(null, k); }, 0);
+      }
+      box.addEventListener("click", function (ev) { var b = ev.target.closest("[data-kind]"); if (b) waehlen(b.getAttribute("data-kind")); });
+      box.addEventListener("keydown", function (ev) {
+        var b = ev.target.closest("[data-kind]");
+        if (!b) return;
+        var i = KIND_WAHL.map(function (x) { return x.k; }).indexOf(b.getAttribute("data-kind"));
+        if (ev.key === "ArrowDown" || ev.key === "ArrowRight") { ev.preventDefault(); waehlen(KIND_WAHL[(i + 1) % KIND_WAHL.length].k); }
+        else if (ev.key === "ArrowUp" || ev.key === "ArrowLeft") { ev.preventDefault(); waehlen(KIND_WAHL[(i + KIND_WAHL.length - 1) % KIND_WAHL.length].k); }
+        else if (ev.key === " " || ev.key === "Enter") { ev.preventDefault(); if (wahl === b.getAttribute("data-kind")) weiter(); else waehlen(b.getAttribute("data-kind")); }
+      });
+      sync();
+      if (anleitung && anleitung.laeuft()) anleitungZeige("art");
+    }
+    function popupAnlegen(planEid, art) {
       if (popup) return;
       var planEv = planEid != null ? (state.detail[planEid] || listeEvent(planEid)) : null;
       if (planEid != null && !planEv) return;
@@ -7549,15 +7743,15 @@
         if (UC.toast) UC.toast(fehlerText("impact_event_limit_reached"), { kind: "error" });
         return;
       }
-      var e = planEv ? planVorlage(planEv) : { name: "", datum: heuteIso(), ende: null, bereich: false, wahlEnde: false, monat: null, typ: "", text: "", icon: null, farbe: null, cover: null, offen: null,
+      var e = planEv ? planVorlage(planEv) : { art: art === "watch" ? "watch" : "event", name: "", datum: heuteIso(), ende: null, bereich: false, wahlEnde: false, monat: null, typ: "", text: "", icon: null, farbe: null, cover: null, offen: null,
                 modus: "topics", topics: [], tagModus: "or", zielArt: null, unterdomains: true, ziele: [], eingabe: "", artVonHand: false };
       var api = UC.makeModal({
-        titel: planEv ? "Edit event" : "Create event", unter: schrittText(1), breit: true, isDark: isDark,
+        titel: planEv ? "Edit event" : e.art === "watch" ? "Create Citation Tracking" : "Create Event Tracking", unter: schrittText(1), breit: true, isDark: isDark,
         inhaltHtml: '<div class="uev-schritt" data-schritt="1">' + detailFelder(e, true) + '</div>' +
           '<div class="uev-schritt" data-schritt="2" hidden></div>' +
           '<div class="uev-schritt" data-schritt="3" hidden></div>' +
           '<div class="uev-schritt" data-schritt="4" hidden></div>',
-        knoepfe: [{ id: "zurueck", text: "Back", art: "sec", aktion: function () { schritt(popup.schritt - 1); return false; } },
+        knoepfe: [{ id: "zurueck", text: "Back", art: "sec", aktion: function () { schritt(vor(popup, -1)); return false; } },
                   { id: "weiter", text: "Continue", art: "pri", aktion: function () { weiterImPopup(); return false; } }],
         onClose: popupZu, vorSchliessen: popupDarfZu
       });
@@ -7570,6 +7764,7 @@
       sucheBauen(p);
       popupAufbauen(p);
       schritt(1);
+      if (e.art === "watch") { var wsub = api.el.querySelector(".up-topicmodal-sub"); if (wsub) wsub.textContent = schrittText(1); }
       p.start = popupStand(p);
       verfuegbarkeitHolen(function () {
         var b3 = p.api.body.querySelector('.uev-schritt[data-schritt="3"]');
@@ -7577,7 +7772,7 @@
       });
       /* Beim ERSTEN Anlegen laeuft die Anleitung von selbst mit (gemerkt je Nutzer), ohne den
          Fokus aus dem Namensfeld zu nehmen. */
-      if (!planEv && !demo && !anleitungGesehen() && !(anleitung && anleitung.laeuft())) { anleitungMerken(); anleitungStarten("w1", false); }
+      if (!planEv && !demo && e.art !== "watch" && !anleitungGesehen() && !(anleitung && anleitung.laeuft())) { anleitungMerken(); anleitungStarten("w1", false); }
     }
     /* "Continue" (und Next der Anleitung): im Schritt der Ziele zuerst die Eingabe uebernehmen --
        was im Feld steht, geht nicht verloren. */
@@ -7586,7 +7781,7 @@
       if (!p || p.art !== "anlegen") return;
       if (p.schritt === 3 && p.e.zielArt && p.e.zielArt !== "marke" && String(p.e.eingabe || "").trim() && !eingabeUebernehmen(p)) return;
       if (!schrittOk(p)) return;
-      if (p.schritt < 4) { schritt(p.schritt + 1); return; }
+      if (p.schritt < 4) { schritt(vor(p, 1)); return; }
       anlegenSenden();
     }
     /* Die Verfuegbarkeit kam, nachdem Schritt 3 schon stand: Wahl und Eingabe neu bauen, die
@@ -7619,7 +7814,7 @@
         if (!(state.detail[eid] && isArr(state.detail[eid].targets) && isArr(state.detail[eid].topics))) { planOffenNach = String(eid); oeffnen(eid); return; }
         popupAnlegen(eid); return;
       }
-      var e = { name: String(ev.name || ""), typ: typ(ev).key, text: String(ev.description || ""),
+      var e = { art: istWatch(ev) ? "watch" : "event", name: String(ev.name || ""), typ: typ(ev).key, text: String(ev.description || ""),
                 icon: iconAusDb(ev.icon), farbe: farbe(ev) || null, cover: coverVon(ev) ? ev.cover : null, offen: null, urls: [] };
       /* Eine laufende Kampagne: das Ende laesst sich verlaengern oder auf heute verkuerzen
          (Vertrag B.3); eine abgeschlossene nicht mehr. Ob man es darf (Ersteller, owner, admin),
@@ -7628,9 +7823,10 @@
       if (endeFrei) { e.ende = String(ev.end_date).slice(0, 10); e.start = String(ev.event_date).slice(0, 10); e.endeMonat = null; }
       var alt = { name: e.name, typ: e.typ, text: e.text, icon: e.icon, farbe: e.farbe, cover: e.cover, ende: e.ende || null };
       var api = UC.makeModal({
-        titel: "Edit event", breit: true, isDark: isDark,
-        inhaltHtml: '<div class="uev-schritt">' + detailFelder(e, false) + (endeFrei ? feld("End date", endeFeld(e), false, "datum") : '') + coverFeld(e) +
-          gesperrtHinweis(endeFrei ? "Start date and scope can't be changed" : "Date and scope can't be changed") + '</div>',
+        titel: e.art === "watch" ? "Edit Citation Tracking" : "Edit event", breit: true, isDark: isDark,
+        inhaltHtml: '<div class="uev-schritt">' + detailFelder(e, false) + (endeFrei ? feld("End date", endeFeld(e), false, "datum") : '') + (e.art === "watch" ? "" : coverFeld(e)) +
+          (e.art === "watch" ? gesperrtHinweis("The type can't be changed later")
+            : gesperrtHinweis(endeFrei ? "Start date and scope can't be changed" : "Date and scope can't be changed")) + '</div>',
         knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
                   { id: "speichern", text: "Save", art: "pri", aktion: function () { if (schrittOk(popup)) speichern(); return false; } }],
         onClose: popupZu, vorSchliessen: popupDarfZu
@@ -8121,7 +8317,7 @@
     function anlImPopup(id) { return { mount: popupKarte, rahmen: popupKarte, seiten: ["rechts", "links"],
       weiter: function () { weiterImPopup(); },
       weiterAus: function () { return !popup || popup.art !== "anlegen" || !!popup.warte || !schrittOk(popup); },
-      zurueck: id === "w1" ? false : function () { if (popup) schritt(popup.schritt - 1); } }; }
+      zurueck: id === "w1" ? false : function () { if (popup) schritt(vor(popup, -1)); } }; }
     function anlSchritt(o, extra) { for (var k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) o[k] = extra[k]; return o; }
     /* SCHRITT w1 WANDERT ZUM OFFENEN FELD (16.10. spaet, Nutzer: "Wenn man den Namen eingegeben hat,
        kann man nicht auf Weiter klicken"). Pflicht sind Name, Datum und Typ; das Datum steht von Haus
@@ -8151,10 +8347,19 @@
     var ANL_SCHRITTE = [
       { id: "kopf", seiten: ["unten", "links"], zurueck: false,
         ziel: function () { return elAktion.querySelector(".uev-anlegen"); },
-        titel: "Create an event",
-        text: "An event marks a change, such as a relaunch or a campaign, and Upstreem compares your AI results before and after it.",
-        vis: function () { return anlZeile("tickets", t("Website relaunch")) + anlZeile("calendar", datum(heuteIso())); },
-        weiter: function () { popupAnlegen(); } },
+        titel: "Create",
+        text: "Event Tracking measures what a change did, and Citation Tracking watches which of your pages AI answers cite. You choose when you create.",
+        vis: function () { return anlZeile("calendar", t("Event Tracking")) + anlZeile("eye", t("Citation Tracking")); },
+        weiter: function () { popupArt(); } },
+      /* Die Wahl der Art (19.10.): beide Arten in einer Karte. Danach geht die Anleitung mit Event Tracking weiter, der Art mit
+         den vier Schritten; Citation Tracking hat drei einfache und braucht keine Fuehrung. */
+      anlSchritt({ id: "art", ziel: function () { return im(".uev-kinds"); },
+        titel: "Two ways to track",
+        text: "Event Tracking compares before and after a date against a control group. Citation Tracking watches pages and domains across all your prompts, with no date. The tour continues with Event Tracking.",
+        vis: function () { return anlZeile("calendar", t("Event Tracking")) + anlZeile("eye", t("Citation Tracking")); } },
+        { mount: popupKarte, rahmen: popupKarte, seiten: ["rechts", "links"], zurueck: false,
+          weiter: function () { if (popup && popup.art === "art") { popup.api.schliessen(); setTimeout(function () { popupAnlegen(null, "event"); }, 0); } },
+          weiterAus: function () { return !popup || popup.art !== "art"; } }),
       anlSchritt({ id: "w1", ziel: anlW1Ziel,
         titel: "Name, date and type",
         text: function () { return anlW1Feld() === "typ" && !popup.e.typ ? "Pick the type that fits. It sets the icon, and you can filter your events by type."
@@ -8240,12 +8445,13 @@
     }
     /* Das Popup hat den Schritt gewechselt (Continue, Back, ein Fehler): die Anleitung folgt. */
     function anleitungFolgen() {
-      if (!anleitung || !anleitung.laeuft() || !popup || popup.art !== "anlegen") return;
+      if (!anleitung || !anleitung.laeuft() || !popup || popup.art !== "anlegen" || popup.e.art === "watch") return;
       anleitungZeige("w" + popup.schritt);
     }
     function anleitungImDetail() { return anlInsDetail; }
     function anleitungUmschalten() {
       if (anleitung && anleitung.laeuft()) { anleitung.stop("aus"); return; }
+      if (popup && popup.art === "anlegen" && popup.e.art === "watch") return;
       if (popup && popup.art === "anlegen") anleitungStarten("w" + popup.schritt, true);
       else if (state.ansicht === "detail") anleitungStarten("d1", true);
       else anleitungStarten("kopf", true);
@@ -8295,9 +8501,11 @@
       if (state.ansicht === "detail") renderChart();
     });
     if (UC.onResize) UC.onResize(root, function () {
-      if (state.ansicht === "uebersicht" && elListe) {
-        var n = elListe.querySelectorAll(".uev-karte:not(.is-sk)").length;
-        rasterSetzen(n || 3);
+      if (state.ansicht === "uebersicht" && abschnitt("event").liste) {
+        ABSCHNITTE.forEach(function (art) {
+          var n = abschnitt(art).liste ? abschnitt(art).liste.querySelectorAll(".uev-karte:not(.is-sk)").length : 0;
+          rasterSetzen(art, n || 3);
+        });
       }
     });
 

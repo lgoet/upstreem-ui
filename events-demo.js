@@ -42,6 +42,11 @@
   function mitSchema(u) { u = String(u || "").trim(); return /^https?:\/\//i.test(u) ? u : "https://" + u; }
 
   var ids = DATEN.ids, liste = kopie(DATEN.liste), details = kopie(DATEN.details), CTX = {};
+  /* Ein Citation Tracking (kind "watch", 19.10.): ohne Datum der Wirkung, ohne Topics, alle Prompts; sein Detail wird wie das jedes
+     Events aus der Zeile abgeleitet. Die Zahl der URLs folgt der Zeile. */
+  liste.unshift({ id: "9c5b4a7f-eeee-4da2-8ebf-0000000000e5", kind: "watch", event_date: heute(), name: "Ratgeber im Blick", description: "Alle Seiten unter ratgeber.beispiel.de.",
+    event_type: "other", icon: null, color: null, scope_mode: "all", selected_topic_count: null, affected_prompt_count: 84, comparison_prompt_count: 0,
+    affected_url_count: 3, created_by: "3f2a9c1e-7b44-4d0a-9e61-2c8d5f1a0b77", created_at: new Date().toISOString(), can_delete: true });
   function zeile(id) { for (var i = 0; i < liste.length; i++) if (String(liste[i].id) === String(id)) return liste[i]; return null; }
   /* Ein Event, das nur im Store der Seite steht (etwa aus einem Beispiel-Schritt fuer die Pins),
      bekommt ebenfalls ein Detail -- aus seiner Zeile abgeleitet wie das vierte Event. */
@@ -101,7 +106,7 @@
   }
   function zeileAus(d) {
     return { id: d.id, event_date: d.event_date, name: d.name, description: d.description, event_type: d.event_type,
-      icon: d.icon, color: d.color, cover: d.cover || null, scope_mode: d.scope_mode, selected_topic_count: d.selected_topic_count,
+      kind: d.kind || "event", icon: d.icon, color: d.color, cover: d.cover || null, scope_mode: d.scope_mode, selected_topic_count: d.selected_topic_count,
       affected_prompt_count: d.affected_prompt_count, comparison_prompt_count: d.comparison_prompt_count,
       affected_url_count: (d.urls || []).length, created_by: d.created_by, created_at: d.created_at, can_delete: d.can_delete };
   }
@@ -141,9 +146,27 @@
     if (name === "uevScopePreview") {
       return { vorschau: { affected_prompt_count: b.p_scope_mode === "all" ? 84 : ((b.p_tag_ids || []).length ? 47 : 0) } };
     }
+    if (name === "uevCreateWatch") {
+      if (!String(b.p_name || "").trim()) return { fehler: "impact_event_name_required" };
+      var aw = details[ids.A] || {}, jw = new Date().toISOString();
+      d = { id: uuid(), kind: "watch", team_id: aw.team_id, name: String(b.p_name).trim(), description: b.p_description || null,
+        event_type: "other", event_date: heute(), icon: null, color: null, cover: null, scope_mode: "all",
+        created_by: aw.created_by, created_at: jw, updated_at: jw, can_delete: true, topics: [], selected_topic_count: null,
+        affected_prompt_count: 84, comparison_prompt_count: 0, urls: [] };
+      var gw = {};
+      (b.p_targets || []).forEach(function (z) {
+        var k = urlSchluessel(z.input);
+        if (!k || gw[k]) return;
+        gw[k] = 1;
+        d.urls.push({ id: uuid(), url: mitSchema(z.input).replace(/[?#].*$/, ""), url_input: z.input, team_kannte_url: false, created_at: jw });
+      });
+      d.affected_url_count = d.urls.length;
+      details[d.id] = d; zeileErneuern(d);
+      return { detail: d, liste: kopie(liste) };
+    }
     if (name === "uevCreate") {
       if (!String(b.p_name || "").trim()) return { fehler: "impact_event_name_required" };
-      if (b.p_scope_mode === "topics" && !(b.p_tag_ids || []).length) return { fehler: "impact_event_topics_required" };
+      if (b.p_scope_mode !== "topics" || !(b.p_tag_ids || []).length) return { fehler: "impact_event_topics_required" };
       if ((b.p_urls || []).length > 100) return { fehler: "impact_event_too_many_urls" };
       var a0 = details[ids.A] || {}, jetzt = new Date().toISOString(), alle = b.p_scope_mode === "all";
       d = { id: uuid(), team_id: a0.team_id, name: String(b.p_name).trim(), description: b.p_description || null,

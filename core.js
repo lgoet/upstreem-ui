@@ -803,6 +803,8 @@
     "Sentiment": "Sentiment",
     /* Der Name des Bretts -- er steht in der App ueberall so und wird nicht uebersetzt. */
     "Opportunities": "Opportunities",
+    /* Die Seite der Events (19.10.): Event Tracking und Citation Tracking stehen als Eigennamen der Abschnitte, nur die Seite wird uebersetzt. */
+    "Experiments": "Experimente",
     "Markets": "Märkte",
     "Model": "Modell",
     "Models": "Modelle",
@@ -19892,7 +19894,8 @@
       if (getPref("event_markers") !== "on") return [];
       /* Kampagnen (17.10.): ende fuer das Band; geplante (status "planned", Start in der Zukunft)
          gar nicht -- es ist noch nichts passiert, auf das sich ein Verlauf beziehen koennte. */
-      return getEvents().filter(function(e){ return e.status !== "planned"; }).map(function(e){
+      /* Citation Tracking (kind "watch", 19.10.) hat weder Datum noch Pin: keine Marker in den Charts. */
+      return getEvents().filter(function(e){ return e.status !== "planned" && e.kind !== "watch"; }).map(function(e){
         return { id: e.id, date: e.event_date, ende: e.end_date || null, name: e.name, type: e.event_type, color: e.color };
       });
     }

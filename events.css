@@ -909,3 +909,15 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-detail.is-band-aus :is([data-sek="kpis"], [data-sek="bericht"], .uev-sek-chart, [data-sek="markt"]) { display: none; }
 /* Wie core fuer .up-ph-addbtn (core.css, :has(.up-bandsw)): schmal gibt der Hinzufuegen-Knopf sein Wort her, das Zeichen bleibt. */
 .uev-root.is-vnarrow .uev-kopfaktion:has(.up-bandsw) .uev-addurl-txt { display: none; }
+
+/* ---- ZWEI ABSCHNITTE DER UEBERSICHT (19.10.): Event Tracking und Citation Tracking, gestapelt, je mit eigener Leiste. Ein Abschnitt
+   ohne Eintraege ist gar nicht da (hidden), der Abstand steht nur zwischen zwei sichtbaren. */
+.uev-abschnitt[hidden], .uev-leer-gesamt[hidden] { display: none; }
+.uev-abschnitt:not([hidden]) ~ .uev-abschnitt:not([hidden]) { margin-top: 40px; }
+/* Der Auswahldialog "Create": zwei Zeilen im Format der Zielarten, die Beschreibung darf umbrechen. */
+.uev-kinds .uev-art { align-items: flex-start; padding: 12px 10px; }
+.uev-kinds .uev-art-punkt, .uev-kinds .uev-art-ic { margin-top: 2px; }
+/* Citation Tracking im Detail (19.10.): ohne Marken-Teile. Ausgeblendet wird wie im Modus "nur Zitierungen" (is-band-aus), dazu Hinweise,
+   Umfang und der geplante Zustand -- sie gehoeren zur Kohorte und zum Datum, die es hier nicht gibt. */
+.uev-detail.is-watch :is([data-sek="kpis"], [data-sek="bericht"], .uev-sek-chart, [data-sek="markt"], [data-sek="scope"], [data-sek="hinweise"], [data-sek="geplant"]) { display: none; }
+.uev-root.is-watch-ansicht .uev-anl-toggle { display: none; }
