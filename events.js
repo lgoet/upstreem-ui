@@ -2145,8 +2145,29 @@
       /* Citation Tracking: bei genau EINER beobachteten Seite deren Favicon statt des Zeichens (erst wenn es geladen ist, bis dahin und bei einem Fehler steht das Zeichen da);
          bei mehreren das Zeichen. */
       var wh = istWatch(ev) ? watchHosts(ev) : null, fav = wh && wh.n === 1 && wh.hosts.length === 1 ? wh.hosts[0] : "";
-      return '<span class="uev-avatar' + (groesse ? " is-" + groesse : "") + '"' + (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + ' aria-hidden="true">' + UC.icon(zeichen(ev), 2) +
-        (fav ? '<img class="uev-avatar-fav" src="' + esc(hostFavicon(fav)) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onload="this.parentNode.classList.add(\'has-fav\')" onerror="this.remove()"/>' : '') + '</span>';
+      /* Das Favicon erscheint nur als GEPRUEFTES Bild (19.10., Nutzer: Zeichen und Platzhalter-Globus standen nebeneinander und
+         flackerten): bis es geprueft ist, und bei Googles Platzhalter, steht allein das Zeichen. Je Host einmal gefragt (avatarFav),
+         danach tragen es alle Avatare dieses Hosts sofort -- auch nach jedem Neuzeichnen. */
+      var fsrc = fav ? avatarFavHolen(fav) : "";
+      return '<span class="uev-avatar' + (groesse ? " is-" + groesse : "") + (fsrc ? " has-fav" : "") + '"' + (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + (fav ? ' data-fav-host="' + esc(fav) + '"' : '') + ' aria-hidden="true">' + UC.icon(zeichen(ev), 2) +
+        (fsrc ? avatarFavImg(fsrc) : '') + '</span>';
+    }
+    var avatarFav = {};
+    function avatarFavImg(src) { return '<img class="uev-avatar-fav" src="' + esc(src) + '" alt="" referrerpolicy="no-referrer" onerror="var p=this.parentNode;this.remove();if(p)p.classList.remove(\'has-fav\')"/>'; }
+    function avatarFavHolen(h) {
+      if (avatarFav[h] != null) return avatarFav[h];
+      avatarFav[h] = "";
+      favSuchen(h, function (src) {
+        avatarFav[h] = src || "";
+        if (!src) return;
+        var l = document.querySelectorAll('.uev-avatar[data-fav-host="' + h.replace(/"/g, "") + '"]');
+        for (var i = 0; i < l.length; i++) {
+          if (l[i].classList.contains("has-fav")) continue;
+          l[i].insertAdjacentHTML("beforeend", avatarFavImg(src));
+          l[i].classList.add("has-fav");
+        }
+      });
+      return "";
     }
     function mehrMenue(ev, wo) {
       var kannLoeschen = ev.can_delete === true;

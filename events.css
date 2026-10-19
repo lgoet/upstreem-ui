@@ -952,7 +952,8 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-zielmetrik { position: absolute; top: 12px; right: 12px; z-index: 2; }
 .uev-detail.is-watch.is-band-aus :is(.uev-zielkpis, .uev-zielchart) { display: none; }
 /* Profilbild eines Citation Tracking mit Favicon (19.10.): das Bild sitzt an der Stelle des Zeichens (22), das Zeichen bleibt als Rueckfall darunter. */
-.uev-avatar.has-fav > svg { display: none; }
+/* Das Zeichen weicht nur, solange das Bild wirklich da ist (:has): faellt es aus, steht das Zeichen wieder -- nie ein leerer Kreis. */
+.uev-avatar.has-fav:has(> .uev-avatar-fav) > svg { display: none; }
 .uev-avatar > .uev-avatar-fav { width: 24px; height: 24px; object-fit: contain; border-radius: var(--up-r-xs); display: block; }
 .uev-avatar.is-gross > .uev-avatar-fav { width: 32px; height: 32px; border-radius: var(--up-r-s); }
 /* Die Unterueberschriften der Seiteninfo (19.10.): je Art eine, kleiner als die Ueberschrift der Karte. */
