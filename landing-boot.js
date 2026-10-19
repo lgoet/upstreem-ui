@@ -32,6 +32,18 @@
 
   var base = basisAusEigenerAdresse() || basisAusAttribut();
 
+  /* CHART.JS SOFORT UND PARALLEL (19.10., Trace: die Datei wurde erst angefragt, als core sie beim
+     ersten Chart brauchte, und kam ~4 s spaeter an; bis dahin stand das Fenster leer). Mit der
+     Marke data-upstreem-chartjs findet core (loadChartJs) das Skript und wartet nur noch darauf,
+     statt ein zweites zu holen. Reihenfolge ist egal: async, core ruft chartAbsichern selbst. */
+  if (!window.Chart && !document.querySelector("script[data-upstreem-chartjs]") && base){
+    var cj = document.createElement("script");
+    cj.src = base + "vendor/chart-4.4.4/chart.umd.js"; cj.async = true;
+    cj.setAttribute("data-upstreem-chartjs", "1");
+    cj.onerror = function(){ if (cj.parentNode) cj.parentNode.removeChild(cj); };
+    document.head.appendChild(cj);
+  }
+
   /* Einmal pro Dateiname, nicht pro URL -- dieselbe Buchfuehrung wie in den Bubble-Ladern. Auf der
      Landingpage gibt es zwar nur eine Sektion, aber Framer baut ein Embed bei jeder Navigation neu
      ein, und ohne die Sperre haengen nach ein paar Seitenwechseln vierzehn Kopien im Kopf. */

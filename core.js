@@ -18009,6 +18009,27 @@
     document.body.removeChild(probe);
     return w;
   }
+  /* Viele Texte auf einmal messen (Balkenlisten). Einzeln hielt jeder Aufruf das Layout an: die
+     Probe kam ins Dokument, offsetWidth zwang ein volles Layout, und die naechste Zeile begann
+     wieder bei einem schmutzigen Baum. Gemessen im Trace der Landingpage: 14 Aufrufe frassen
+     ~1,3 s. Hier lesen wir erst ALLE Stile (ein Neuberechnen), haengen dann alle Proben in EINEN
+     Kasten und lesen die Breiten danach in einem Zug (ein Layout). Gleiche Probe, gleiches Ergebnis. */
+  function measureTexts(els){
+    var out = new Array(els.length), i, cs, probes = [], box = document.createElement("div");
+    for (i = 0; i < els.length; i++){
+      if (!els[i]){ probes.push(null); continue; }
+      cs = window.getComputedStyle(els[i]);
+      var p = document.createElement("span");
+      p.textContent = els[i].textContent;
+      p.style.cssText = "position:absolute;left:-9999px;top:-9999px;white-space:nowrap;visibility:hidden;" +
+        "font-family:" + cs.fontFamily + ";font-size:" + cs.fontSize + ";font-weight:" + cs.fontWeight + ";letter-spacing:" + cs.letterSpacing + ";";
+      probes.push(p); box.appendChild(p);
+    }
+    document.body.appendChild(box);
+    for (i = 0; i < probes.length; i++) out[i] = probes[i] ? probes[i].offsetWidth : 0;
+    document.body.removeChild(box);
+    return out;
+  }
   function truncate(s, n){ s = String(s == null ? "" : s); return s.length > n ? s.slice(0, n-1) + "…" : s; }
   var MONTHS_LONG = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   /* Monats- und Wochentagsnamen der Kalender in der Sprache der App (QS-08). Der Browser kennt sie
@@ -18968,11 +18989,12 @@
       /* Logo oder Zeichen-Platte vor dem Namen zaehlen mit (04.10.): measureText misst nur den
          Text, und so blieb "Kaufland" mit Platte im Balken stehen und wurde abgeschnitten, statt
          nach aussen zu ruecken -- 15px Platte plus 6px Abstand fehlten in der Rechnung. */
-      var masse = rows.map(function(row){
+      var maNamen = measureTexts(rows.map(function(row){ return row.querySelector(".up-bar-name"); }));
+      var maPcts = measureTexts(rows.map(function(row){ return row.querySelector(".up-bar-pct-in"); }));
+      var masse = rows.map(function(row, i){
         var name = row.querySelector(".up-bar-name"), lg = name && name.querySelector(".up-bar-logo, .up-bar-flagge");
         var lgW = lg ? lg.getBoundingClientRect().width + (parseFloat(getComputedStyle(name).columnGap) || 0) : 0;
-        return { nameW: measureText(name) + lgW,
-                 pctW:  measureText(row.querySelector(".up-bar-pct-in")) };
+        return { nameW: maNamen[i] + lgW, pctW: maPcts[i] };
       });
       /* Passt die Beschriftung in den Balken, steht sie drin; sonst rueckt sie daneben. Dieselbe
          Rechnung wie in renderBars -- Text plus Innenabstand plus etwas Luft. */
@@ -21341,9 +21363,9 @@
           row.addEventListener("click", function(){ cfg.onSliceClick(row.getAttribute("data-type-key")); });
         });
       }
-      var metrics = rows.map(function(row){
-        return { nameW: measureText(row.querySelector(".up-bar-name")), pctW: measureText(row.querySelector(".up-bar-pct-in")) };
-      });
+      var namen = measureTexts(rows.map(function(row){ return row.querySelector(".up-bar-name"); }));
+      var pcts = measureTexts(rows.map(function(row){ return row.querySelector(".up-bar-pct-in"); }));
+      var metrics = rows.map(function(row, i){ return { nameW: namen[i], pctW: pcts[i] }; });
       /* labels sit inside the bar when it's wide enough, otherwise they move outside next to it */
       function placeRow(row, m){
         var fill = row.querySelector(".up-bar-fill"), name = row.querySelector(".up-bar-name"),

@@ -6063,6 +6063,23 @@
 
   /* ---------- Daten hineingeben ----------------------------------------------------------- */
 
+  /* Arbeit, die das erste Bild nicht braucht: wartet auf is-inhalt (das Fenster zeigt Chart und
+     Zitate), gibt dem Hauptstrang danach einen Atemzug und laeuft im Leerlauf. Nach 9 s geht es in
+     jedem Fall los, damit nichts darunter leer bleibt, wenn der Inhalt nie fertig meldet. */
+  function nachDemFenster(root, fn){
+    var t0 = Date.now(), lauf = false;
+    function los(){
+      if (lauf) return; lauf = true;
+      var ric = window.requestIdleCallback;
+      if (ric) ric(function(){ fn(); }, { timeout: 1500 }); else setTimeout(fn, 0);
+    }
+    (function warte(){
+      if (lauf) return;
+      if (root.classList.contains("is-inhalt")){ setTimeout(los, 250); return; }
+      if (Date.now() - t0 > 9000){ los(); return; }
+      setTimeout(warte, 100);
+    })();
+  }
   function fuellen(){
     /* DAS UPSTREEM-BRANDING IN DER LEISTE IST AUS (21.09. angefordert: "so wie vorher, bzw. wie
        in der Hauptapp, wenn man in den Preferences Branding anzeigen ausstellt").
@@ -6216,15 +6233,24 @@
          400 KB) sollen nicht um die Leitung der Komponenten konkurrieren. Shopping kommt erst nach
          rund 20s, die Ad-Karte liegt unter dem Falz -- 1.2s spaeter ist frueh genug. */
       setTimeout(bilderVorladen, 1200);
-      visLinieFuellen(w);
-      /* Die dritte Reihe: Band und Bahnen werden gebaut und danach in Bewegung gesetzt. */
-      visSprachenFuellen(w);
-      visModelleFuellen(w);
-      visBalkenFuellen(w);
-      visEventKurveFuellen(w);
-      visReiseFuellen(w);
-      ulhTakt(w);
-      quellFuellen();
+      /* DIE ABSCHNITTE UNTER DEM FENSTER KOMMEN NACH DEM FENSTER (19.10., Trace: dieses eine
+         fuellen() hielt den Hauptstrang 2,8 s, davon 1,5 s fuer die Karten und die Quellen-Sektion
+         darunter -- und bis dahin stand das Fenster leer, weil Chart und Zitate dahinter warteten).
+         Beim ersten Lauf erst, wenn das Fenster seinen Inhalt zeigt (is-inhalt) und der Hauptstrang
+         Luft hat; in den Runden danach sofort, da steht alles schon. */
+      var unten = function(){
+        visLinieFuellen(w);
+        /* Die dritte Reihe: Band und Bahnen werden gebaut und danach in Bewegung gesetzt. */
+        visSprachenFuellen(w);
+        visModelleFuellen(w);
+        visBalkenFuellen(w);
+        visEventKurveFuellen(w);
+        visReiseFuellen(w);
+        ulhTakt(w);
+        quellFuellen();
+      };
+      if (w.__ulhUntenDa) unten();
+      else { w.__ulhUntenDa = true; nachDemFenster(w, unten); }
       /* NUR BEIM ERSTEN FUELLEN (28.09. gemessen): fuellen() laeuft am Ende JEDES Zyklus erneut
          (neustart), und beide starten etwas, das nie endet -- auftritte eine eigene
          requestAnimationFrame-Schleife, hellBewachen einen eigenen Beobachter. Neu gestartet
@@ -8473,13 +8499,23 @@
   function shopLieferant(){
     if (shopLieferant.an) return;
     shopLieferant.an = true;
-    window.shopOverview = function(){ shopLiefern(); };
+    /* Beim ersten Mal nach dem Fenster und den Karten darunter (Trace 19.10.: die Antwort baute die
+       ganze Shopping-Seite im ersten Lauf, ~0,65 s, obwohl sie erst nach rund 20 s dran ist). Die
+       Seite hat die Anfrage gestellt und wartet; ihr 25-s-Wecker laeuft ab da, die Antwort kommt
+       lange davor. */
+    window.shopOverview = function(){
+      var w = document.querySelector(WURZEL);
+      if (!w || w.__ulhShopFrei) { shopLiefern(); return; }
+      if (w.__ulhShopWartet) return;
+      w.__ulhShopWartet = true;
+      nachDemFenster(w, function(){ setTimeout(function(){ w.__ulhShopFrei = true; shopLiefern(); }, 1500); });
+    };
     window.shopProductDetail = function(){
       if (!window.setShoppingProductDetail) return;
       try { window.setShoppingProductDetail(ID.ush, JSON.stringify(shopDetailDaten(SHOP_PRODUKT)), ""); }
       catch (e){ if (window.console) console.warn("[landing-hero] Shopping-Detail:", e); }
     };
-    shopLiefern();           /* die Anfrage vom Aufbau der Seite, die schon unterwegs ist */
+    window.shopOverview();   /* die Anfrage vom Aufbau der Seite, die schon unterwegs ist */
   }
   function shopFuellen(root){
     shopModelle();
