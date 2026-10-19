@@ -9364,12 +9364,12 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up
   --vc-inverse-sub: #a0a0a0;
   --vc-inverse-glanz: rgba(255,255,255,.09);
   /* Die umgekehrte Auswahlkarte (events.js, "Track an Event", 19.10.): Seitengrund, Feld und Schrift des ANDEREN Themas. Im Hellen also die des Dunkels. */
-  --up-wk-invers-bg: #0a0a0a; --up-wk-invers-feld: #1f1f1f; --up-wk-invers-ink: #ededed; --up-wk-invers-rand: #2e2e2e;
+  --up-wk-invers-bg: #0a0a0a; --up-wk-invers-feld: #1f1f1f; --up-wk-invers-ink: #ededed;
 }
 [data-theme="dark"], .up-root[data-theme="dark"] {
   --vc-inverse-sub: #5f636b;
   --vc-inverse-glanz: rgba(255,255,255,.75);
-  --up-wk-invers-bg: #f2f2f2; --up-wk-invers-feld: #ffffff; --up-wk-invers-ink: #171717; --up-wk-invers-rand: #dcdbdd;
+  --up-wk-invers-bg: #f2f2f2; --up-wk-invers-feld: #ffffff; --up-wk-invers-ink: #171717;
 }
 
 /* DIE KLEINEN UMSCHALTER AM TELEFON 32 HOCH (18.10., Nutzer): unter 500 (is-vnarrow) sind sie mit 24 bis 26 zu klein fuer
