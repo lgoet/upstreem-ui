@@ -9026,6 +9026,13 @@
     (function warte(){
       if (bereit()){
         root.__ulhBereitNach = n;
+        try { performance.mark("ulh-bereit"); } catch (e){}
+        /* DAS ERSCHEINEN VOR DEM FUELLEN (19.10., Trace: fuellen() hielt den Hauptstrang ueber 2 s, und
+           erscheinen() stand dahinter -- Leiste und Hintergrund waren da, der Text kam 5-7 s spaeter).
+           Die Animationen sind CSS (Deckkraft, Transform) und laufen mit ihren Verzoegerungen los;
+           das Fenster selbst steigt erst nach 970 ms, und bis dahin ist gefuellt. */
+        mass(root);
+        erscheinen(root);
         try { fuellen(); root.__ulhGefuellt = true; }
         catch (e){
           root.__ulhGefuellt = false;
@@ -9177,6 +9184,7 @@
       if (fertig) return;
       fertig = true;
       root.classList.add("is-inhalt");
+      try { performance.mark("ulh-inhalt"); } catch (e){}
       miraAnsetzen(root, INHALT_MS + MIRA_WARTEN);
     }
     (function warten(){
