@@ -163,6 +163,15 @@
         "cd /private/tmp/uprt/nx/app_flk && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3133"
       ],
       "port": 3133
+    },
+    {
+      "name": "PRUEFSTAND-shop-3153",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app_shop && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3153"
+      ],
+      "port": 3153
     }
   ]
 }
