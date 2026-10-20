@@ -1999,6 +1999,8 @@
     function ue(art) { return state.ue[art]; }
     function artVon(ev) { return istWatch(ev) ? "watch" : "event"; }
     var ART_TITEL = { event: "Event Tracking", watch: "Citation Tracking" };
+    /* Dieselben Zeichen wie auf den Karten im Dialog "Create" (KIND_WAHL): cells fuer Event Tracking, globe fuer Citation Tracking. */
+    var ABSCHNITT_ZEICHEN = { event: "cells", watch: "globe" };
     function baueUebersicht() {
       ab = {};
       root.classList.remove("is-watch-ansicht");
@@ -2008,7 +2010,7 @@
       elMain.innerHTML = ABSCHNITTE.map(function (art) {
         return '<section class="uev-abschnitt" data-art="' + art + '">' +
           '<div class="up-head uev-head">' +
-            '<span class="up-heading"><span class="up-head-label">' + esc(t(ART_TITEL[art])) + '</span>' +
+            '<span class="up-heading"><span class="uev-head-ic" aria-hidden="true">' + UC.icon(ABSCHNITT_ZEICHEN[art], 1.8) + '</span><span class="up-head-label">' + esc(t(ART_TITEL[art])) + '</span>' +
               '<span class="up-head-sep"></span><span class="up-head-count uev-zahl"></span></span>' +
             '<div class="up-head-tools">' +
               /* Sortieren wie in den Tabellen: Knopf mit Sortierzeichen, davor die Suche (Reihenfolge der Leiste der anderen

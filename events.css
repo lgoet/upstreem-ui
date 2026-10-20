@@ -36,6 +36,8 @@
 
 /* ---- Uebersicht ------------------------------------------------------------------------------ */
 .uev-head { margin-bottom: 16px; }
+.uev-head .uev-head-ic { display: inline-flex; flex: none; margin-right: 8px; }
+.uev-head .uev-head-ic svg { width: 16px; height: 16px; }
 
 /* DIE KARTE (03.10., nach der Vorlage des Nutzers, einer Profilkarte). Nach Kole Jain: Luft,
    die gruppiert (20px zum Rand, 20px zwischen den Karten), Hierarchie ueber Groesse und Lage statt

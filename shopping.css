@@ -33,6 +33,9 @@
    (--up-band-luft, 20.10.; Nutzer: Kennzahlen und Chart gehoeren zusammen, auf allen Seiten gleich): der Rand gleicht den Stapel der Gruppe (32,
    in der Leiste-Wurzel 0) auf 16 aus. Ohne Chart (Umschalter "Table only") bleibt der Abstand zur Tabelle, wie er war. */
 .ush-gruppe > .ush-kpis + .up-band { margin-top: calc(var(--up-band-luft, 16px) - var(--up-stapel-luft, 0px)); }
+/* Ueber den Kennzahlen dieselben 16 (20.10.): Zusammenfassung und Kennzahlen standen 32 auseinander, Kennzahlen und Chart 16 -- ungleich ueber und unter der Leiste.
+   Nur wenn die Zusammenfassung Inhalt hat; leer bleibt der Stapel, wie er war. */
+.ush-gruppe > [data-sek="summary"]:not(:empty) + .ush-kpis { margin-top: calc(var(--up-band-luft, 16px) - var(--up-stapel-luft, 0px)); }
 /* Der Umschalter Chart und Tabelle im Seitenkopf (UC.bandAus) steht hier direkt im Kopf, und core rueckt ihn dort mit -8 nach rechts, weil der Kopf
    der anderen Seiten rechts 8 Polster hat -- dieser Kopf endet 8 ueber der Wurzel und hat keins: der Schalter stand am Fensterrand statt auf der
    Kante des Exports (gemessen bei 1024: Schalter 1024, Export 1008). +8 bringt ihn auf dieselbe Kante. */
