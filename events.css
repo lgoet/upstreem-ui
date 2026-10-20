@@ -152,6 +152,8 @@
    .uss-main: "Unten 64"). Am Bereich, nicht am Detail: Uebersicht und Detail teilen ihn. */
 .uev-root .uev-main { padding-bottom: 64px; }
 .uev-steuerblock { display: flex; flex-direction: column; gap: 16px; }
+/* Kennzahlen und Chart gehoeren zusammen: 16 statt der 40 zwischen den Abschnitten (20.10., Nutzer: auf allen Seiten gleich). */
+.uev-detail > .uev-steuerblock + .uev-sek-chart { margin-top: -24px; }
 /* DER KOPF DES DETAILS (03.10. neu): dieselbe Sprache wie die Karte, eine Nummer groesser --
    Band 96, Profilbild 64, Name in der groessten Stufe der App (Dashboards: hoechstens 22-24px).
    Datum und Typ als zwei Angaben mit Zeichen, der Umfang darunter. */

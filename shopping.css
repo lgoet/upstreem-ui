@@ -29,9 +29,10 @@
    (wie .ubr-filterzeile.is-in-tabelle in brands-page.css); der Export steht dann rechts in den Werkzeugen, ohne eigenen Rand. */
 .ush-filterzeile.is-in-tabelle { display: contents; }
 /* Kennzahlen und Chart stehen in der Leiste-Wurzel (bandUnterLeiste): core stellt dort den Stapel auf 0 (--up-stapel-luft, die Leiste haelt ihre 16
-   selbst), und damit sass die Kennzahlenleiste in der Gruppe direkt auf der Oberkante des Charts. Zwischen Kennzahlen und Chart wieder 16
-   (--up-band-luft, 20.10.); ohne Chart (Umschalter "Table only") bleibt der Abstand zur Tabelle, wie er war. */
-.ush-tab.has-leistenband > .ush-gruppe { gap: var(--up-band-luft, 16px); }
+   selbst), und damit sass die Kennzahlenleiste in der Gruppe direkt auf der Oberkante des Charts. Zwischen Kennzahlen und Chart 16
+   (--up-band-luft, 20.10.; Nutzer: Kennzahlen und Chart gehoeren zusammen, auf allen Seiten gleich): der Rand gleicht den Stapel der Gruppe (32,
+   in der Leiste-Wurzel 0) auf 16 aus. Ohne Chart (Umschalter "Table only") bleibt der Abstand zur Tabelle, wie er war. */
+.ush-gruppe > .ush-kpis + .up-band { margin-top: calc(var(--up-band-luft, 16px) - var(--up-stapel-luft, 0px)); }
 /* Der Umschalter Chart und Tabelle im Seitenkopf (UC.bandAus) steht hier direkt im Kopf, und core rueckt ihn dort mit -8 nach rechts, weil der Kopf
    der anderen Seiten rechts 8 Polster hat -- dieser Kopf endet 8 ueber der Wurzel und hat keins: der Schalter stand am Fensterrand statt auf der
    Kante des Exports (gemessen bei 1024: Schalter 1024, Export 1008). +8 bringt ihn auf dieselbe Kante. */
@@ -259,12 +260,12 @@
   transition: color var(--up-t-1) var(--up-ease); }
 .ush-mehr:hover { color: var(--vc-text); }
 .ush-mehr:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: 2px; border-radius: var(--up-r-xs); }
-.ush-mehr svg, .ush-antwort svg { width: 14px; height: 14px; display: block; }
-.ush-antwort { height: var(--up-h-seg); padding: 0 10px; white-space: nowrap; }
-/* Auf dem Telefon nur das Zeichen: die Spalte misst sich nach ihrem Inhalt (UC.makeAktionsSpur) und
-   wird damit von selbst schmal. Quadratisch in der Hoehe des Knopfs. */
-.ush-root.is-vnarrow .ush-antwort { width: var(--up-h-seg); padding: 0; justify-content: center; }
-.ush-root.is-vnarrow .ush-antwort span { display: none; }
+.ush-mehr svg { width: 14px; height: 14px; display: block; }
+/* Der Prompt in Recent Appearances: zwei Zeilen, in der Schrift der Responses-Tabelle (.urt-prompt-text), mit Skala-Stufen statt 13.5; kompakt eine Zeile. */
+.ush-td-prompt { min-width: 0; }
+.ush-prompt-text { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); letter-spacing: -0.01em;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ush-root .is-dense .ush-prompt-text { -webkit-line-clamp: 1; }
 /* 3 statt 6 (05.10.: "die Abstaende zwischen Typ und Zahl halbieren"). */
 .ush-seg-zahl { margin-left: 3px; color: var(--vc-third); font-variant-numeric: tabular-nums; }
 .up-seg-btn.is-active .ush-seg-zahl { color: var(--vc-muted); }

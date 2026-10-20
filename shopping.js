@@ -432,7 +432,9 @@
        core statt eines festen Werts (17.10.). */
     function grau(i) { return UC.balkenGrau ? UC.balkenGrau(i, isDark()) : getComputedStyle(root).getPropertyValue("--vc-text").trim(); }
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
-    if (UC.makeTooltips) UC.makeTooltips(root, isDark);
+    var tooltips = UC.makeTooltips ? UC.makeTooltips(root, isDark) : null;
+    /* Der gekuerzte Prompt zeigt nach kurzer Verweildauer seinen ganzen Text, wie in der Responses-Tabelle. */
+    if (tooltips && UC.makeClipTip) UC.makeClipTip(root, tooltips, ".ush-td-prompt", ".ush-prompt-text");
 
     /* Die Erklaerkarte aus core, an jedem Info-Zeichen der Seite, im Format der Spaltenkoepfe
        (brands-overview, 05.10. angefordert: "im gewohnten Format"): oben auf der hellen Platte ein
@@ -1714,13 +1716,15 @@
         sp("price", "Price", 160, 1.2, 70, 60, { info: "price" })] },
       /* Recent Appearances: die erste Spalte ist ein Datum (120 Untergrenze). Dahinter die
          Knopfspalte "View Response", gemessen (UC.makeAktionsSpur) statt geschaetzt. */
-      detail: { erste: { label: "Date", min: 120, sk: 60 }, aktion: true, spalten: [
+      /* Recent Appearances (20.10.): wie die Responses-Tabelle -- vorn der Prompt, hinten das Datum, die Zeile oeffnet die Antwort (kein Knopf mehr). */
+      detail: { erste: { label: "Prompt", min: 280, sk: { w: 220 } }, spalten: [
         sp("model", "Model", 150, 1.2, 90, { w: 70, logo: true }),
         sp("market", "Market", 90, 0.7, 50, 30),
         sp("topic", "Topic", 160, 1.4, 40, 80),
         sp("position", "Position", 100, 0.8, 70, 30, { info: "pos", flach: 106 }),
         sp("price", "Price", 110, 0.9, 60, 40, { info: "price" }),
-        sp("merchant", "Merchant", 180, 1.4, 80, { w: 90, logo: true })] }
+        sp("merchant", "Merchant", 180, 1.4, 80, { w: 90, logo: true }),
+        sp("date", "Date", 120, 0.9, 20, 60)] }
     };
     function kopfAus(name) {
       var d = TABELLEN[name];
@@ -2992,8 +2996,10 @@
            zeigt danach einen Fehler, den der Nutzer nicht verursacht hat. */
         var pr = str(r.prompt_run_id).trim();
         if (!/^[A-Za-z0-9_-]{6,80}$/.test(pr)) pr = "";
-        return '<div class="up-row ush-zeile is-statisch">' +
-          '<div class="up-td"><span class="up-num">' + esc(datum(r.run_at || r.day)) + '</span></div>' +
+        var promptText = str(r.prompt_text).trim();
+        /* Die ganze Zeile oeffnet die Antwort (Drawer wie in der Responses-Tabelle); ohne gueltige Id steht sie still. */
+        return '<div class="up-row ush-zeile' + (pr ? '' : ' is-statisch') + '"' + (pr ? ' data-antwort="' + esc(pr) + '" role="link" tabindex="0"' : '') + '>' +
+          '<div class="up-td ush-td-prompt">' + (promptText ? '<span class="ush-prompt-text">' + esc(promptText) + '</span>' : '<span class="up-num is-empty">–</span>') + '</div>' +
           td("model", r.model ? (UC.modelChip ? UC.modelChip(str(r.model)) : esc(str(r.model))) : '<span class="up-num is-empty">–</span>') +
           td("market", /^[A-Za-z]{2}$/.test(str(r.market).trim()) && UC.marketChip ? UC.marketChip(str(r.market).trim()) : (marktCode(r.market) ? esc(marktCode(r.market)) : '<span class="up-num is-empty">–</span>')) +
           /* Topics als der Chip aus core (06.10.: "ueberall die uebliche Topic-Darstellung"), Farbe und
@@ -3007,9 +3013,9 @@
           td("position", pos != null ? '<span class="up-rank-group">' + HASH + '<span class="up-num">' + esc(ganz(pos)) + '</span></span>' : posLeer ? '<span class="ush-unter">' + esc(t("Single card")) + '</span>' : '<span class="up-num is-empty">–</span>') +
           td("price", preis ? '<span class="up-num">' + esc(preis) + '</span>' : '<span class="up-num is-empty">–</span>') +
           td("merchant", haendlerHtml(r.merchant_name)) +
-          '<div class="up-td ush-td-aktion">' + (pr ? '<button type="button" class="up-btn-sec ush-antwort" data-antwort="' + esc(pr) + '" aria-label="' + esc(t("View Response")) + '"><span>' + esc(t("View Response")) + '</span>' + UC.icon("arrowUpRight", 2) + '</button>' : '') + '</div>' +
+          td("date", '<span class="up-num">' + esc(datum(r.run_at || r.day)) + '</span>') +
         '</div>';
-      }).join(""), "ush-auftritte");
+      }).join(""), "ush-auftritte ush-klickbar");
       vorige.auf = html; vorige.aufTotal = gesamt(ap.total_count, state.auftritte, rows.length); vorige.aufProdukt = state.produktId; vorige.aufFilter = filterSig();
       zaehlerSetzen(vorige.aufTotal);
       tabInhalt(html, false, vorige.aufTotal);
@@ -3145,6 +3151,7 @@
        Haendler die Produkte, die er fuehrt (Entwurf). "Andere" ist nicht klickbar. */
     function zeileOeffnen(zeile) {
       if (zeile.hasAttribute("data-produkt")) { produktOeffnen(zeile.getAttribute("data-produkt")); return; }
+      if (zeile.hasAttribute("data-antwort")) { if (UC.drawerOeffnen) UC.drawerOeffnen("response", zeile.getAttribute("data-antwort"), "shopping"); return; }
       if (zeile.hasAttribute("data-marke")) {
         seiteOeffnen("products", true, { marke: { id: zeile.getAttribute("data-marke"), name: zeile.getAttribute("data-marke-name") || "" }, haendler: null, seg: "all" });
         return;
