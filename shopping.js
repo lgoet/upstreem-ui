@@ -1565,10 +1565,12 @@
     /* Suchtreffer markiert wie in jeder Tabelle der App (UC.highlight, .up-hl) -- 05.10. gemeldet:
        "bei den Suchfunktionen fehlen ueberall die Highlights". q leer: nur escapen. */
     function hl(text, q) { return q && UC.highlight ? UC.highlight(text, q) : esc(text); }
-    function markeName(m, q) {
+    /* zelle: der Name steht in der ersten Zelle einer Tabelle -- dann der Kern-Stil .up-zeilenname (14/500 wie in der Brands Overview), sonst wie bisher. */
+    function markeName(m, q, zelle) {
       m = m || {};
-      if (m.type === "other" || !str(m.name).trim()) return '<span class="up-varname ush-andere">' + esc(t("Other (unassigned)")) + '</span>';
-      return '<span class="up-varname">' + hl(str(m.name).trim(), q) + '</span>';
+      var kl = "up-varname" + (zelle ? " up-zeilenname" : "");
+      if (m.type === "other" || !str(m.name).trim()) return '<span class="' + kl + ' ush-andere">' + esc(t("Other (unassigned)")) + '</span>';
+      return '<span class="' + kl + '">' + hl(str(m.name).trim(), q) + '</span>';
     }
     /* Die Marke als Chip (05.10.: "unsere gewohnten Chips fuer die Logos, der Name dahinter
        kleiner"): UC.markenChip, 18px-Logo und 13px-Name wie der Modell-Chip. "You" dahinter. */
@@ -1587,8 +1589,8 @@
       /* Nur das Zeichen, ohne Platte (06.10. angefordert: "einfach nur ein Icon"). Haendler haben
          kein Logo, die Platte versprach eines. Zeichen und Name in einer eigenen Gruppe mit 6px
          statt den 10px der Zelle -- sie gehoeren zusammen wie Logo und Name im Marken-Chip. */
-      if (!name) return '<span class="ush-haendlerpaar"><span class="ush-haendler-ic is-leise">' + UC.icon("store", 2) + '</span><span class="up-varname ush-andere">' + esc(t("Unknown")) + '</span></span>';
-      return '<span class="ush-haendlerpaar"><span class="ush-haendler-ic">' + UC.icon("store", 2) + '</span><span class="up-varname" title="' + esc(name) + '">' + hl(name, q) + '</span></span>';
+      if (!name) return '<span class="ush-haendlerpaar"><span class="ush-haendler-ic is-leise">' + UC.icon("store", 2) + '</span><span class="up-varname up-zeilenname ush-andere">' + esc(t("Unknown")) + '</span></span>';
+      return '<span class="ush-haendlerpaar"><span class="ush-haendler-ic">' + UC.icon("store", 2) + '</span><span class="up-varname up-zeilenname" title="' + esc(name) + '">' + hl(name, q) + '</span></span>';
     }
     function bildHtml(url, klasse) {
       /* Gesperrte Hosts ueber die eigene Adresse (core, bildUrl). */
@@ -1765,6 +1767,8 @@
       if (!UC.makeColumns || !wurzel) return null;
       var d = TABELLEN[name], st = { cols: {}, widths: {}, dense: false, rowHeight: "default" }, aktPx = 0;
       var mitMenue = !!wurzel.querySelector(".up-cols-menu");
+      /* Brands und Merchants: Default 55, Compact 34 (shopping.css, ush-rh) statt 72/55. */
+      if (name === "brands" || name === "merchants") wurzel.classList.add("ush-rh");
       /* DAS MENUE AM ZAHNRAD IST "Display" (15.10., wie Prompt- und Responses-Tabelle): oben die
          Zeilenhoehe als beschriftete Knoepfe, darunter die Spalten als Chips (makeColumns
          cfg.form "chips"), unten der Schalter der Gesamtzeile. Die Zeilenhoehe kommt dort nur ueber
@@ -2077,7 +2081,7 @@
     function markeZeileOv(b, meta) {
       var sos = kz(b.share_of_shelf), andere = b.type === "other" || !b.company_id;
       return '<div class="up-row ush-zeile' + (andere ? " is-andere" : "") + '"' + (andere ? '' : ' data-marke="' + esc(b.company_id) + '" data-marke-name="' + esc(str(b.name).trim()) + '" role="link" tabindex="0"') + '>' +
-        '<div class="up-td">' + markeLogo(b) + markeName(b) + duMarke(b, meta) + '</div>' +
+        '<div class="up-td">' + markeLogo(b) + markeName(b, "", true) + duMarke(b, meta) + '</div>' +
         '<div class="up-td up-td-share up-var-sov">' + ringHtml(sos.v) + '</div>' +
         td("presence", pctHtml(kz(b.presence).v)) +
         td("products", ganzHtml(b.products)) +
@@ -2618,7 +2622,7 @@
       var tp = b.top_product && typeof b.top_product === "object" && str(b.top_product.source_product_id).trim() ? b.top_product : null;
       return '<div class="up-row ush-zeile' + (andere ? " is-andere" : "") + (angepinnt ? " is-angepinnt" : "") + '"' +
           (andere ? '' : ' data-marke="' + esc(b.company_id) + '" data-marke-name="' + esc(str(b.name).trim()) + '" role="link" tabindex="0"') + '>' +
-        '<div class="up-td">' + markeLogo(b) + markeName(b, q) + duMarke(b, meta) + '</div>' +
+        '<div class="up-td">' + markeLogo(b) + markeName(b, q, true) + duMarke(b, meta) + '</div>' +
         '<div class="up-td up-td-share up-var-sov">' + ringHtml(sos.v) + '</div>' +
         td("presence", pctHtml(kz(b.presence).v)) +
         td("products", ganzHtml(b.products)) +

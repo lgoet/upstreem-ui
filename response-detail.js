@@ -1261,7 +1261,7 @@
     /* Ein Titel, der nur die URL wiederholt, ist kein Titel -- dann steht die Anzeigeform der URL
        da, die wenigstens lesbar ist. Kommt bei google.com/searchviewer-Quellen vor. */
     function titelOf(c) {
-      var t = String((c && c.title) || "").trim();
+      var t = UC.htmlText((c && c.title) || "").trim();
       var u = String((c && c.url) || "").trim();
       if (!t || t === u) return UC.rbShowUrl(u);
       return t;
@@ -1269,7 +1269,7 @@
     /* Die Beschreibungen der RPC tragen teils den Titel und angehaengte Rohdaten ("— title: ...").
        Der Teil ab dem Gedankenstrich mit "title:" dahinter ist Schrott und wird abgeschnitten. */
     function descOf(c) {
-      var d = String((c && c.description) || "").trim();
+      var d = UC.htmlText((c && c.description) || "").trim();
       var i = d.indexOf("— title:");
       if (i > 0) d = d.slice(0, i).trim();
       return d;

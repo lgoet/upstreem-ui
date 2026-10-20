@@ -6243,6 +6243,9 @@
    instead of jittering. urls-table/domains-table always had this on their own .uut-num/.udt-num;
    visibility-chart's .vt-num never did, and extracting THAT one into .up-num quietly spread the
    omission to prompts-table. Fixing it here fixes both at once. */
+.up-zeilenname { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* DER NAME IN DER ERSTEN ZELLE EINER TABELLE (20.10.): ein Kern-Stil fuer Marke, Haendler, Werbetreibender -- 14/500 wie .up-num daneben, vorher erbte jede Tabelle ihre eigene
+   Groesse (Shopping und Ads: .up-varname ohne Schrift, also 16/400; Brands Overview: 13.5/500). Das Logo davor ist .up-logo-box (24, Polster 1). */
 .up-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
 /* In einer Tabellenzelle darf die Zahl schrumpfen und kuerzt dann mit Auslassungspunkten (06.10.).
    Die Zelle schneidet erst an ihrem POLSTERRAND ab (overflow hidden), nicht am Inhalt -- ein
@@ -7164,6 +7167,9 @@
    Marke wie .up-topicchip, 4x10, Radius 2), beim Intent sein Zeichen. Radius 5 = 6 minus 1
    (konzentrisch in der 7.6er-Ecke des Chips mit 5 Polster, gerundet). */
 .up-feldchip.up-entchip.is-lifted { height: 28px; gap: 7px; padding: 0 4px 0 5px; color: var(--vc-text); vertical-align: middle; }
+/* Der Chip IM Feld (20.10.): weiss wie das Feld (--up-feld-bg, im Dunkeln dessen dunkler Ton) und der kleinste Schatten der Skala (--up-e-1) statt des gehobenen Chip-Schattens
+   --up-e-chip: er liegt auf einem Feld, nicht ueber der Seite. Gilt fuer Prompt Research und Ask Mira (.am-pick-tag). */
+.up-feldchip.up-entchip.is-lifted { background: var(--up-feld-bg); box-shadow: var(--up-e-1); }
 .up-feldchip-av { width: 18px; height: 18px; flex: 0 0 auto; border-radius: var(--up-r-xs); overflow: hidden;
   background: var(--vc-heading-bg); display: flex; align-items: center; justify-content: center; color: var(--vc-third); }
 .up-feldchip-av svg { width: 12px; height: 12px; display: block; }

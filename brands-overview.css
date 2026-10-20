@@ -223,14 +223,14 @@
    `border-left`, i.e. the vertical gridlines, and so this one table looked fundamentally unlike
    every other one. Nothing table-shaped gets redeclared here again; only the two genuinely
    component-specific things below (row height, and the index/actions cells) are local. */
-.ubo-root .up-row { height: 56px; flex: 0 0 56px; }
-/* Der Leerzustand (UC.tabelleLeerHtml, 15.10.) rechnet in DIESEN Zeilen: sieben Skelettzeilen zu 56. */
-.up-root.ubo-root .ubo-table > .up-tab-leer { --up-tab-leer-zeile: 56px; }
+.ubo-root .up-row { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }   /* 55 wie Brands/Merchants/Advertisers in Shopping und Ads (20.10., vorher 56) */
+/* Der Leerzustand (UC.tabelleLeerHtml, 15.10.) rechnet in DIESEN Zeilen: sieben Skelettzeilen zu 55. */
+.up-root.ubo-root .ubo-table > .up-tab-leer { --up-tab-leer-zeile: var(--up-h-row); }
 /* Die drei Regeln fuer die "#"-Spalte stehen jetzt in core.css (.up-th-idx / .up-td-idx),
    seit discover-brands als zweite Tabelle dieselbe Spalte hat. */
 .ubo-root .up-th-act, .ubo-root .up-td-act { padding: 0; justify-content: center; }
-.ubo-brand-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* Schrift und Kuerzung kommen aus core (.up-zeilenname, 20.10.): derselbe Name wie in den Tabellen von Shopping und Ads. */
+.ubo-brand-name { min-width: 0; }
 .ubo-deact { font-size: 13px; color: var(--vc-muted); white-space: nowrap; }
 
 /* Der Edit-Knopf je Zeile steht seit dem 31.08. in core.css als .up-rowbtn -- mit .ubo-editbtn in

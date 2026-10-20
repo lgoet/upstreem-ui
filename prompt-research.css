@@ -180,6 +180,8 @@
 /* Die Klasse bleibt als Griff (Klick-Selektor im JS, und .contract_diff.py liest Klassennamen aus
    der CSS): nur, dass der Chip nicht schrumpft. */
 .upr-chip { flex: 0 0 auto; }
+/* Die Topics der Vorschlagsliste tragen den Grund eines Feldes (20.10., hell weiss); Hover und gewaehlt behalten ihre Toene aus core. */
+.up-topicchip.upr-chip:not(.is-on):not(:hover) { background: var(--up-feld-bg); }
 .upr-showmore {
   height: 28px; padding: 0 10px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-muted);

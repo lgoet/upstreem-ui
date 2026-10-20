@@ -5402,6 +5402,16 @@
       .replace(/&amp;/g, "&");
   }
 
+  /* Text aus fremden Seiten (Titel, Beschreibung einer zitierten Quelle) kommt mit HTML-Entitaeten an ("&amp;", "&#39;"), die esc() danach zu sichtbarem
+     "&amp;amp;" macht. Entschluesselt ueber ein textarea: das parst Entitaeten, fuehrt aber nichts aus und liefert nur Text. */
+  function htmlText(s){
+    var t = String(s == null ? "" : s);
+    if (t.indexOf("&") < 0) return t;
+    var ta = document.createElement("textarea");
+    ta.innerHTML = t.replace(/</g, "&lt;");
+    return ta.value;
+  }
+
   var RB_CITE_MAX = 30;
   function rbChip(url, idx){
     /* roh = nur die Markdown-Maskierung zurueckgenommen, sonst NICHTS. Dieser Wert geht als
@@ -30300,7 +30310,7 @@
     zieht: zieht,
     brandToggleHtml: brandToggleHtml,
     respBody: respBody,
-    rbShowUrl: rbShowUrl,
+    rbShowUrl: rbShowUrl, htmlText: htmlText,
     rbCleanUrl: rbCleanUrl,
     stackFit: stackFit,
     skeletonRows: skeletonRows,

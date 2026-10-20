@@ -1228,15 +1228,14 @@
   .am-cat-card {
     position: relative; overflow: hidden;
     text-align: left; border-radius: var(--up-r-2xl);
-    /* OHNE Grund, dafuer ein Rahmen mit halber Deckkraft (09.09.). color-mix statt opacity:
-       opacity haette das ganze Element durchsichtig gemacht, samt Zeichen und Text. */
-    border: 1px solid color-mix(in srgb, var(--vc-border) 50%, transparent);
-    background: transparent; padding: 13px 14px 13px 60px; cursor: pointer;
+    /* 20.10.: der normale Rahmen (--vc-border) und der Grund der Karte (--am-card = --vc-bg, hell weiss) -- bis dahin ein halbdurchsichtiger Rahmen eigener Art ohne
+       Grund, und die Kategorie-Karten waren die einzigen Karten der App, die so aussahen. */
+    border: 1px solid var(--vc-border);
+    background: var(--am-card); padding: 13px 14px 13px 60px; cursor: pointer;
     display: flex; align-items: center; gap: 11px; min-width: 0;
     color: var(--am-text); font-size: 14px; font-weight: 500; line-height: 1.4;
     transition: background 200ms ease;
   }
-  #ask-mira[data-theme="dark"] .am-cat-card { background: transparent; }
   .am-cat-card-full { width: 100%; margin-bottom: 10px; }
   /* the Reporting category card is styled exactly like a report card (taller, with a subheading) */
   .am-cat-card-report { padding: 12px 13px 12px 76px; align-items: center; }
@@ -1275,7 +1274,7 @@
      auseinanderlaufen kann -- der Mix bleibt an demselben Token haengen. */
   .am-cat-card:hover { background: var(--vc-heading-bg); }
   #ask-mira[data-theme="dark"] .am-cat-card:hover {
-    background: color-mix(in srgb, var(--vc-heading-bg) 40%, transparent);
+    background: color-mix(in srgb, var(--vc-heading-bg) 40%, var(--am-card));
   }
   /* leading = a left-tilted little "document" tile, larger than the row so it bleeds past the bottom
      and is clipped by the card (same logic as the report cards); absolute -> no extra card height */

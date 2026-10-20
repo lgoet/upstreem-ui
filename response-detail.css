@@ -202,12 +202,15 @@
 /* Der Titel ist der Wert der Karte: zwei Zeilen, dann gekuerzt. */
 .urd-cc-title { font-size: var(--up-ueb-abschnitt-gr); font-weight: var(--up-ueb-abschnitt-gew); color: var(--vc-text); line-height: var(--up-ueb-abschnitt-zeile);
   letter-spacing: var(--up-ueb-abschnitt-spur); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  overflow: hidden; margin-bottom: 4px; }
+  overflow: hidden; margin-bottom: 4px;
+  /* Ein Titel aus einer Adresse (google.com/searchviewer, 90 Zeichen ohne Umbruchstelle) ragte ueber den Kartenrand und wurde dort ohne Punkte abgeschnitten (20.10.):
+     anywhere bricht ihn, die Klammer auf zwei Zeilen kuerzt dann mit "…". */
+  overflow-wrap: anywhere; min-width: 0; }
 /* Die Beschreibung nimmt, was uebrig ist: sie ist Vorschau und darf als erstes weichen. */
 /* v2: eine Zeile -- die Kachel ist eine Quelle, keine Vorschau ihres Inhalts. */
 .urd-cc-desc { font-size: var(--up-ueb-unter-gr); font-weight: var(--up-ueb-unter-gew); color: var(--vc-muted); line-height: var(--up-ueb-unter-zeile);
   display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
-  flex: 1 1 auto; }
+  overflow-wrap: anywhere; min-width: 0; flex: 1 1 auto; }
 /* Die Marken stehen rechts unten -- wie im Fuss der Antwortkarten. */
 /* Rechtsbuendig wie im Fuss der Antwortkarten, und links bleiben 32px frei (Vorgabe): UC.stackFit
    rechnet diesen Rand mit und zeigt nur so viele Marken, wie davor Platz haben. */

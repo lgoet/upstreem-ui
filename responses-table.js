@@ -1547,7 +1547,14 @@
       if (kind === "citations") return '<span class="up-explain-row" style="gap:0">' +
         '<span class="up-explain-dot">S</span><span class="up-explain-dot" style="margin-left:-4px">A</span>' +
         '<span class="up-explain-dot up-explain-more" style="margin-left:-4px">+5</span></span>';
-      if (kind === "model") return '<span class="up-explain-row">ChatGPT</span>';
+      /* Das Modell so, wie die Zelle es zeigt: Logo vor dem Namen (modelChip). Das Beispiel ist ChatGPT aus der Liste der Modelle, mit der Schreibweise
+         der Zelle; fehlt es dort, bleibt der Name allein. */
+      if (kind === "model"){
+        var cg = (state.models || []).concat((UC.getModels ? UC.getModels() : null) || []).filter(function(m){
+          return m && /chatgpt/i.test(String(m.display_name || m.short_name || m.key || ""));
+        })[0];
+        return '<span class="up-explain-row">' + (cg ? modelChip(cg.key || cg.model) : "ChatGPT") + '</span>';
+      }
       return "";
     }
     var THINFO_COLS = { sentiment: "up-th-sentiment", rank: "up-th-rank", brands: "up-th-brands", citations: "up-th-citations", model: "up-th-model" };

@@ -1120,7 +1120,7 @@
       var h = '<div class="up-row" data-id="' + esc(id) + '">' +
         '<div class="up-td up-td-idx">' + pos + '</div>' +
         '<div class="up-td up-td-brand">' + logoHtml(r.logo_url || r.favicon_url) +
-          '<span class="ubo-brand-name">' + highlight(r.name == null ? "" : r.name, state.query) + '</span>' +
+          '<span class="ubo-brand-name up-zeilenname">' + highlight(r.name == null ? "" : r.name, state.query) + '</span>' +
           /* Loest genau dasselbe Ereignis aus wie der Eintrag "Edit" im Kebab-Menue
              (data-edit-fn/uboEdit) -- ein zweiter Weg zur gleichen Aktion, keine neue.
              Er kommt beim Hover SOFORT und blendet in 200ms ein. Vorher sass er im geteilten
@@ -1139,7 +1139,7 @@
     function inactiveRowHtml(r){
       return '<div class="up-row" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
         '<div class="up-td up-td-brand">' + logoHtml(r.logo_url || r.favicon_url) +
-          '<span class="ubo-brand-name">' + highlight(r.name == null ? "" : r.name, state.query) + '</span></div>' +
+          '<span class="ubo-brand-name up-zeilenname">' + highlight(r.name == null ? "" : r.name, state.query) + '</span></div>' +
         '<div class="up-td up-td-deactivated"><span class="ubo-deact">' + esc(UC.fmtDate(r.deactivated_at) || "–") + '</span></div>' +
         actionsCell() + '</div>';
     }

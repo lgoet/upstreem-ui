@@ -1100,7 +1100,8 @@
     document.body.appendChild(explain);
     function explainVisual(kind){
       if (kind === "type"){
-        return ["article","comparison","listicle"].map(function(k){
+        /* Je ein Typ aus jeder Farbfamilie (20.10.): Article, Comparison und Listicle sind alle Redaktionell und damit drei Blautoene -- der Tooltip zeigte nur Blau. */
+        return ["product_service","article","directory"].map(function(k){
           var t = URL_TYPE[k];
           return '<span class="uut-explain-chip" style="' + chipStil(UC.typeStyle("url", k, isDark)) + '">' + esc(t.label) + '</span>';
         }).join("");

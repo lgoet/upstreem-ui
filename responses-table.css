@@ -61,6 +61,8 @@
    pair). KEINE Huelle mehr drumherum (09.10. angefordert: "den Container um das LLM-Logo in der
    Spalte weg, also das Padding, Border und so") -- jetzt dieselbe Form wie .up-model-chip in core,
    die in Response Detail und Co. ohne Rahmen steht. */
+/* Im Erklaer-Tooltip steht der Chip auf der umgekehrten Platte (.up-explain-vis): Namensfarbe von dort, nicht die Textfarbe der Tabelle. */
+.up-explain-vis .urt-model-chip .up-ment-name { color: inherit; }
 .urt-model-chip { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
 .urt-model-ltr { font-size: 10px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
 .up-ment-logo.has-img .urt-model-ltr { display: none; }
@@ -225,6 +227,9 @@
    (KARTEN_LUECKE). */
 .urt-cards { display: none; grid-template-columns: repeat(var(--urt-cols, 1), 1fr); gap: 16px; }
 .up-root.is-cards-view .urt-cards { display: grid; }
+/* Luft unter der klebenden Leiste (20.10.): ohne sie stand die erste Kartenreihe auf der Unterkante der Leiste, und beim Hover (.up-karte-klick hebt um 2px)
+   rutschte die Karte unter die Leiste und wurde oben abgeschnitten. Dieselben 16 wie ueber und unter der Leiste auf allen Seiten (--up-band-luft). */
+.up-root.is-cards-view .urt-cards { margin-top: var(--up-band-luft, 16px); }
 .up-root.is-cards-view .up-box { display: none; }   /* .up-box wraps .up-thead + .up-tbody */
 /* Flache Tabelle (core, data-flach): der Fuss laeuft links mit dem Kasten aus und beginnt auf der
    Kante der ersten Zelle. In der Kartenansicht gibt es keinen Kasten, die Karten stehen auf der

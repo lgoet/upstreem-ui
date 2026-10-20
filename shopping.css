@@ -51,6 +51,16 @@
    endet) gleicht core das auf --up-band-luft aus, die Zeile darunter steht 16 unter der Linie wie
    in Prompt Insights (core.css "DIE ZEILE UNTER DEM BAND"). Die Gruppe setzt die Variable nicht --
    sie liest so die 32 ihres Stapels. */
+/* Zwischen dem Diagramm der Gruppe und dem naechsten Abschnitt (Markenlandschaft) stehen 32 wie zwischen allen Abschnitten (20.10.). Die Regel in core ("DIE ZEILE UNTER DEM BAND")
+   rueckt ein Band auf 16 an die Zeile einer TABELLE darunter -- hier folgt aber ein eigener Abschnitt, und die Haelfte des Abstands liess ihn am Diagramm kleben. Spezifitaet
+   statt Ladereihenfolge: das :has der core-Regel zaehlt mit, darum die Klassenkette. */
+/* ZEILENHOEHE BRANDS UND MERCHANTS (20.10.): Default ist die bisherige Compact (55, --up-h-row), Compact die kleinste Tabellenzeile der App (34, wie die Protokoll-Tabelle .up-logtab).
+   Gilt nur fuer diese beiden Tabellen (ush-rh in spaltenFuer); die Vorschauen der Uebersicht bleiben dicht bei 55. Die Klassenkette schlaegt .up-root.is-dense .up-row aus core. */
+.up-root.ush-rh .up-row:not(.up-thead) { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }
+.up-root.ush-rh.is-dense .up-row:not(.up-thead) { height: 34px; flex: 0 0 34px; }
+.up-root.ush-rh { --up-tab-leer-zeile: var(--up-h-row); }
+.up-root.ush-rh.is-dense { --up-tab-leer-zeile: 34px; }
+.ush-seite[data-seite="overview"] > .ush-gruppe:has(> .up-band:last-child):has(+ .ush-sek) { margin-bottom: 0; }
 .ush-seite { display: flex; flex-direction: column; --up-stapel-luft: 32px; gap: var(--up-stapel-luft); min-width: 0; }
 .ush-gruppe { display: flex; flex-direction: column; gap: var(--up-stapel-luft, 32px); min-width: 0; }
 .ush-sek { display: flex; flex-direction: column; min-width: 0; }

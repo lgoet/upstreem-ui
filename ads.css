@@ -41,6 +41,14 @@
    endet) gleicht core das auf --up-band-luft aus, die Zeile darunter steht 16 unter der Linie wie
    in Prompt Insights (core.css "DIE ZEILE UNTER DEM BAND"). Die Gruppe setzt die Variable nicht --
    sie liest so die 32 ihres Stapels. */
+/* Zwischen dem Band (Kennzahlen/Diagramme) und dem naechsten Abschnitt (Recent Ads) stehen 32 wie zwischen allen Abschnitten (20.10.): die Regel in core ("DIE ZEILE UNTER DEM BAND")
+   gilt einer Tabelle darunter und liess hier die Haelfte stehen. Klassenkette statt Ladereihenfolge, das :has der core-Regel zaehlt mit. */
+/* ZEILENHOEHE ADVERTISERS (20.10.): wie bei Brands und Merchants in Shopping -- Default 55, Compact 34 (Protokoll-Tabelle). */
+.up-root.uad-rh .up-row:not(.up-thead) { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }
+.up-root.uad-rh.is-dense .up-row:not(.up-thead) { height: 34px; flex: 0 0 34px; }
+.up-root.uad-rh { --up-tab-leer-zeile: var(--up-h-row); }
+.up-root.uad-rh.is-dense { --up-tab-leer-zeile: 34px; }
+.uad-seite > .uad-zwei.uad-band.up-band:has(+ .uad-sek) { margin-bottom: 0; }
 .uad-seite { display: flex; flex-direction: column; --up-stapel-luft: 32px; gap: var(--up-stapel-luft); min-width: 0; }
 .uad-gruppe { display: flex; flex-direction: column; gap: var(--up-stapel-luft, 32px); min-width: 0; }
 /* Kennzahlen und Chart gehoeren zusammen: 16 (--up-band-luft) statt der 32 des Stapels, wie in Shopping (20.10., Nutzer: auf allen Seiten gleich). */

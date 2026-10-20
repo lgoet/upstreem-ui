@@ -1528,6 +1528,8 @@
       /* Topics with Ads IMMER kompakt (06.10. abends: "ohne komfortablen Modus") -- das Zahnrad
          zeigt dort nur die Spalten, keine Zeilenhoehe. */
       var immerDicht = name === "topics";
+      /* Advertisers: Default 55, Compact 34 (ads.css, uad-rh) statt 72/55. */
+      if (name === "advertisers") wurzel.classList.add("uad-rh");
       /* DAS MENUE AM ZAHNRAD IST "Display" (15.10., wie Prompt- und Responses-Tabelle): oben die
          Zeilenhoehe als beschriftete Knoepfe, darunter die Spalten als Chips (makeColumns
          cfg.form "chips"), unten der Schalter der Gesamtzeile. Die Zeilenhoehe kommt dort nur ueber
@@ -1894,7 +1896,7 @@
         var formate = (isArr(x.ad_formats) ? x.ad_formats : []).map(function (f) { f = str(f).trim(); return FORMAT_KURZ[f] ? t(FORMAT_KURZ[f]) : f; }).filter(Boolean);
         var r = str(x.relationship).trim();
         return '<div class="up-row uad-zeile" data-advertiser="' + esc(n) + '" role="link" tabindex="0">' +
-          '<div class="up-td">' + advLogo(n, x.logo_url, x.company_id) + '<span class="up-varname" title="' + esc(n) + '">' + hl(n, q) + '</span>' + beziehungsMarke(r) + '</div>' +
+          '<div class="up-td">' + advLogo(n, x.logo_url, x.company_id) + '<span class="up-varname up-zeilenname" title="' + esc(n) + '">' + hl(n, q) + '</span>' + beziehungsMarke(r) + '</div>' +
           '<div class="up-td up-td-share up-var-sov">' + ringHtml(x.ad_share_pct) + '</div>' +
           td("n", ganzHtml(x.ad_appearances)) +
           td("prompts", ganzHtml(x.prompt_count)) +
