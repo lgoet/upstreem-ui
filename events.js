@@ -3614,6 +3614,13 @@
           : UC.kpiKarte({ label: "New URLs", wertHtml: zahlWert(z.new_urls_after), fussHtml: neuFuss(esc(t("First cited after the event"))), klasse: "uev-kpi" })
       ].join("");
       var tage = isArr(z.daily) ? z.daily : [];
+      /* Citation Tracking (20.10.): die DB liefert die Tage beider Fenster (vorher und letzte, bei 30 Tagen 61), die Kennzahlen und die Tabelle
+         vergleichen sie. Die Linie zeigt nur das gewaehlte Fenster: unter "30 days" stehen 30 Tage auf der Achse, nicht 60. Der Beginn
+         kommt aus der Analyse (actual_first_after), sonst die letzten wtage Tage. */
+      if (wz) {
+        var ab = String(a && a.windows && (a.windows.actual_first_after || a.windows.requested_after_from) || "").slice(0, 10);
+        tage = ab ? tage.filter(function (p) { return String(p.day).slice(0, 10) >= ab; }) : tage.slice(-wtage);
+      }
       if (linie2) {
         /* Ohne Tage oder nur mit Tagen ohne Lauf (alles null): der Leerzustand der Charts, nicht ein
            leeres Achsenkreuz (wie renderChart). */
