@@ -6340,6 +6340,33 @@
 .up-colscroll .up-thead > .up-th:first-child { background: var(--vt-head-bg); }
 .up-colscroll .up-row > .up-td:first-child { background: var(--vc-bg); }
 .up-colscroll .up-row:hover > .up-td:first-child { background: var(--vt-row-hover); }
+/* KOPF UND GESAMTZEILE DES SCROLLKASTENS KLEBEN AN DER SEITE (20.10., UC.colscrollTeilen): sie stehen in eigenen Haltern vor und hinter dem
+   Kasten im selben .up-box, damit sie an der Seite kleben koennen (ein Scrollkasten ist in beiden Achsen ein Scroller, siehe core.js).
+   overflow clip statt hidden: kein Scroller, und der Schatten der Gesamtzeile nach oben bleibt sichtbar; waagerecht schneidet clip an der
+   Kante des Halters. Das Innere fahrt um --up-cs-x mit dem Kasten, die stehende erste Spalte nimmt das wieder zurueck. */
+.up-colscroll.up-cs-kopf, .up-colscroll.up-cs-fuss { overflow-x: clip; overflow-y: visible; }
+.up-cs-kopf > .up-colscroll-innen, .up-cs-fuss > .up-colscroll-innen { transform: translateX(calc(-1 * var(--up-cs-x, 0px))); }
+.up-cs-kopf .up-thead > .up-th:first-child, .up-cs-fuss .up-sumrow > .up-sumzelle:first-child { transform: translateX(var(--up-cs-x, 0px)); }
+/* Der Kopf klebt als Ganzes unter der Leiste, mit denselben Massen wie der Kopf einer Tabelle ohne Scrollkasten (oben: .up-sticky .up-thead und
+   die flache Tabelle, 1px tiefer wegen der Linie darueber); der Kopf im Halter selbst klebt nicht mehr. */
+.up-sticky .up-cs-kopf { position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 5; }
+.up-sticky .up-cs-kopf .up-thead { position: static; }
+.up-root.up-root[data-flach="yes"].up-sticky:not(.is-festhoehe) .up-cs-kopf { top: calc(var(--up-sticky-top) + var(--up-thead-off) + 1px); box-shadow: 0 -1px 0 var(--vc-border); }
+.up-root.up-root[data-flach="yes"].up-sticky:not(.is-festhoehe) .up-cs-kopf .up-thead { box-shadow: inset 0 -1px 0 var(--vc-border); }
+/* Die Gesamtzeile im Halter: Kleben, Fahrt und Schatten des klebenden Fusses (unten, "DER KLEBENDE FUSS") gelten fuer den Halter, nicht fuer die
+   Zeile darin -- dort waere sie ein Kind eines Kastens ohne Hoehe, an dem nichts klebt, und die Fahrt schnitte sie am Halter ab. */
+.up-root[data-kleb-fuss="yes"] .up-box .up-cs-fuss { position: relative; transition: transform var(--up-t-3) var(--up-ease-expo), opacity var(--up-t-2) var(--up-ease-expo); }
+.up-root[data-kleb-fuss="yes"].is-fuss-an .up-box .up-cs-fuss { position: sticky; bottom: var(--up-fuss-unter, 0px); z-index: 4; }
+.up-root[data-kleb-fuss="yes"].is-fuss-weg .up-box .up-cs-fuss { transform: translateY(var(--up-fuss-weg, 120px)); opacity: 0; }
+.up-root[data-kleb-fuss="yes"].is-fuss-still .up-box .up-cs-fuss { transition: none; }
+.up-root[data-kleb-fuss="yes"] .up-box .up-cs-fuss .up-sumrow,
+.up-root[data-kleb-fuss="yes"].is-fuss-weg .up-box .up-cs-fuss .up-sumrow { transform: none; opacity: 1; transition: none; }
+.up-root[data-kleb-fuss="yes"] .up-box .up-cs-fuss::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none;
+  box-shadow: var(--up-e-1); transform: scaleY(-1); opacity: 0; transition: opacity var(--up-t-2) var(--up-ease-expo);
+}
+.up-root[data-kleb-fuss="yes"].is-fuss-klebt .up-box .up-cs-fuss::before { opacity: 1; }
+.up-root[data-kleb-fuss="yes"] .up-box .up-cs-fuss .up-sumrow::before { content: none; }
 
 /* DIE KLICKBARE KARTE (13.10.): EIN Zustand fuer Hover, Druck und Fokus jeder Karte, die man
    anklicken kann ("alle Cards sollen die gleichen Hover/Klick-States kriegen wie die im
@@ -9286,9 +9313,8 @@ html[data-usn-modus="hint"] .up-ph-heading.is-knapp > .up-ph-crumb:first-child:n
 .up-sumchev { display: inline-flex; align-items: center; flex: 0 0 12px; width: 12px; height: var(--up-h-seg); color: var(--vc-fourth); }
 .up-sumchev svg { width: 12px; height: 12px; display: block; }
 /* "+ Calculation": eine Spalte ohne gewaehlte Berechnung. Als Knopf (.up-sumknopf.up-sumadd), wo die
-   Tabelle Berechnungen anbietet -- er oeffnet dasselbe Menue wie ein gewaehlter Wert. Wo sie noch
-   keine hat, steht dasselbe Bild als blosser Text (span.up-sumadd, "erstmal nur ein + icon,
-   dahinter ein Add"): kein Ueberfahren, kein Zeiger, weil kein Klick etwas taete. Zeichen 12 wie
+   Tabelle Berechnungen anbietet -- er oeffnet dasselbe Menue wie ein gewaehlter Wert. Wo sie keine
+   hat, steht seit 20.10. ein Minus (.up-sumkeine) statt des Texts: kein Ueberfahren, kein Zeiger, weil kein Klick etwas taete. Zeichen 12 wie
    das Zeichen am Knopf, Schrift wie die Bezeichnung eines Paars. */
 .up-sumadd {
   display: inline-flex; align-items: center; gap: 4px; min-width: 0; white-space: nowrap;
@@ -9304,6 +9330,13 @@ span.up-sumadd { height: var(--up-h-seg); cursor: default; }
   font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-fourth);
 }
 .up-sumknopf.up-sumadd::before { content: none; }
+/* "+ Calculation" kuerzt mit "…", wenn die Zelle zu schmal ist (20.10.: vorher schnitt der Knopf rechts hart ab). Das Zeichen bleibt ganz, der Text
+   weicht; bei noch weniger Platz steht nur das "+". Die Mindestbreiten der Spalten bleiben, wie sie sind. */
+.up-sumadd > .up-sumadd-t { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.up-sumknopf.up-sumadd { max-width: calc(100% + 12px); }
+/* Eine Spalte ohne Berechnung: ein Minus in der Farbe jeder leeren Zelle, kein Knopf, kein Zeiger. */
+.up-sumkeine { display: inline-flex; align-items: center; justify-content: center; height: var(--up-h-seg); color: var(--vc-fourth); cursor: default; }
+.up-sumkeine svg { width: 14px; height: 14px; display: block; }
 /* Das Menue klappt nach OBEN auf: die Zeile steht unten, darunter kommt nur noch die Pagination.
    Es haengt an der Zeile (eine Zeile, ein Menue), die Lage links setzt makeSumZeile an den Knopf.
    Zwei und drei Klassen gegen .up-menu / .up-menu.is-shown -- nie die Ladereihenfolge. Liegt es

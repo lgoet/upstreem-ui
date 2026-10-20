@@ -16439,9 +16439,28 @@
   function fussEnde(w, footH, rand){
     return footH > 0 ? w.marke.getBoundingClientRect().top + footH : w.box.getBoundingClientRect().bottom - rand;
   }
+  /* Schreibt eine Seite ihren Kasten je Zeichnen neu (Shopping, Ads: innerHTML der Tabelle), steht in w.box ein abgehaengter Kasten, und alles
+     darunter (Kopf, Gesamtzeile) ist der alte Stand: der Fuss blieb "aus". Dann der neue Kasten. */
+  /* Der Kasten der TABELLE, nicht irgendeiner: steht ein Chart mit .up-box davor (Shopping unter der Leiste), ist der erste Kasten der Chart --
+     dessen Ende ist nicht das der Tabelle, und der Fuss blieb "ohne Summe". */
+  function fussKastenVon(root){
+    var boxen = root.querySelectorAll(".up-box");
+    for (var i = 0; i < boxen.length; i++) if (boxen[i].querySelector(".up-thead")) return boxen[i];
+    /* Eine Kartenansicht (Ad Library im Grid, .up-adgrid) hat keine Tabelle: das Raster der Karten ist der Kasten, die Pagination klebt unten. */
+    return root.querySelector(".up-adgrid") || boxen[0] || null;
+  }
+  function fussKastenHolen(w){
+    /* Der gemerkte Kasten gilt, solange er steht und eine Tabelle traegt: je Bild genuegt eine Abfrage in ihm. */
+    if (w.box && w.box.isConnected && (w.box.querySelector(".up-thead") || w.box.classList.contains("up-adgrid"))) return;
+    var nb = fussKastenVon(w.root);
+    if (!nb || nb === w.box) return;
+    w.box = nb; w.sum = null; w.thead = null; w.table = null;
+    if (w.ro) w.ro.observe(nb);
+  }
   function fussMessen(w){
     var r = w.root;
     if (!r.isConnected) return;
+    fussKastenHolen(w);
     if (!w.foot || !w.foot.isConnected) w.foot = r.querySelector(":scope > .up-foot");
     if (!w.sum || !w.sum.isConnected) w.sum = w.box.querySelector(".up-sumrow");
     fussMarkeStellen(w);
@@ -16470,7 +16489,7 @@
   }
   function klebFuss(root){
     for (var i = 0; i < FUSS_WURZELN.length; i++) if (FUSS_WURZELN[i].root === root) return FUSS_WURZELN[i];
-    var box = root.querySelector(".up-box");
+    var box = fussKastenVon(root);
     if (!box || !box.parentNode) return null;
     var marke = document.createElement("div");
     marke.className = "up-fuss-marke";
@@ -16496,11 +16515,12 @@
     var breit = klebBreit();
     return FUSS_WURZELN.map(function(w){
       var r = w.root, nichts = { w: w, fuellt: false, unten: false, bereit: false };
+      fussKastenHolen(w);
       if (!breit || !r.classList.contains("up-sticky") || !(w.sumH > 0 || w.footH > 0)) return nichts;
-      if (!w.thead || !w.thead.isConnected){ w.thead = w.box.querySelector(".up-thead"); w.table = w.thead && w.thead.parentElement; }
+      if (!w.thead || !w.thead.isConnected){ w.thead = w.box.querySelector(".up-thead"); w.table = w.thead ? w.thead.parentElement : w.box; }
       /* Ein ausgeblendeter Kasten (Kartenansicht der Responses, Reiter zu) hat das Rechteck 0 --
          das hiesse "ganz oben" und klebte den Fuss an eine Tabelle, die es nicht zu sehen gibt. */
-      if (!w.thead || !w.table || !w.box.getClientRects().length) return nichts;
+      if (!w.table || !w.box.getClientRects().length) return nichts;
       fussScrollerHolen(w);
       var oben, unterkante;
       if (w.sc){ var s = w.sc.getBoundingClientRect(); oben = s.top + (w.sc.clientTop || 0); unterkante = oben + w.sc.clientHeight - w.scPolster; }
@@ -16676,6 +16696,61 @@
      das direkte Kind .up-head ist (Brands: der Kopf der Tabelleneinheit wandert nach oben).
      Bewegt nur, was nicht schon steht. Wandert das Band zu einer anderen Tabelle (Reiterwechsel in
      Citations), verliert die alte ihre Klasse. */
+  /* DIE TABELLE MIT WAAGERECHTEM SCROLLKASTEN KLEBT TROTZDEM (20.10., Shopping und Ads). Ein Scrollkasten (.up-colscroll, overflow-x: auto) ist
+     in BEIDEN Achsen ein Scroller: ein Spaltenkopf oder eine Gesamtzeile darin klebt nur an ihm, nie an der Seite -- darum klebte dort nichts.
+     Hier werden Kopf und Gesamtzeile aus dem Kasten gehoben, jeder in einen eigenen Halter (.up-cs-kopf oben, .up-cs-fuss unten) im selben
+     .up-box; die Halter tragen dieselben Spalten (min-width am Inneren, das Raster aus --up-cols), kleben als Ganzes (core.css) und laufen
+     waagerecht mit dem Kasten mit: sein scroll-Ereignis setzt --up-cs-x am Halter, das Innere faehrt per translateX um diesen Wert und die
+     erste Spalte gleicht es wieder aus (sie steht). Kein eigener Scroller im Halter (overflow clip), sonst waere er wieder einer, an dem
+     der Kopf klebt, und der Schatten der Gesamtzeile nach oben bliebe abgeschnitten. Das Rad ueber ihnen schiebt den Kasten. Der Kasten wird je Zeichnen neu geschrieben: der Aufruf ist
+     wiederholbar (ein Kopf, der schon im Halter steht, bleibt) und gehoert hinter jedes Zeichnen und hinter das Einhaengen der Gesamtzeile
+     (die als letztes Kind des Inneren ankommt und hier nach unten wandert). */
+  function colscrollTeilen(box){
+    if (!box || !box.querySelector) return;
+    var cs = box.querySelector(":scope > .up-colscroll");
+    if (!cs) return;
+    var innen = cs.querySelector(":scope > .up-colscroll-innen");
+    if (!innen) return;
+    function halter(klasse, vorher){
+      var h = document.createElement("div");
+      h.className = "up-colscroll " + klasse;
+      var i = document.createElement("div");
+      i.className = "up-colscroll-innen";
+      h.appendChild(i);
+      box.insertBefore(h, vorher);
+      return h;
+    }
+    var kh = box.querySelector(":scope > .up-cs-kopf"), fh = box.querySelector(":scope > .up-cs-fuss");
+    var kopf = innen.querySelector(":scope > .up-thead");
+    if (kopf){
+      if (!kh) kh = halter("up-cs-kopf", cs);
+      kh.firstChild.appendChild(kopf);
+    }
+    var summe = innen.querySelector(":scope > .up-sumrow");
+    if (summe){
+      if (!fh) fh = halter("up-cs-fuss", cs.nextSibling);
+      fh.firstChild.appendChild(summe);
+    }
+    function sync(){
+      var x = cs.scrollLeft + "px";
+      if (kh) kh.style.setProperty("--up-cs-x", x);
+      if (fh) fh.style.setProperty("--up-cs-x", x);
+    }
+    if (!cs.__upTeilen){
+      cs.__upTeilen = true;
+      cs.addEventListener("scroll", sync, { passive: true });
+    }
+    [kh, fh].forEach(function(h){
+      if (!h || h.__upRad) return;
+      h.__upRad = true;
+      /* Das Rad (waagerechte Wischgeste) ueber Kopf und Gesamtzeile schiebt den Kasten; senkrecht laeuft es an der Seite vorbei. */
+      h.addEventListener("wheel", function(e){
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)){ cs.scrollLeft += e.deltaX; e.preventDefault(); }
+      }, { passive: false });
+    });
+    sync();
+  }
+
   function bandUnterLeiste(root, band, o){
     o = o || {};
     if (!root || !band) return false;
@@ -29417,8 +29492,8 @@
      TABELLE").
      "+ Calculation" hat zwei Formen: mit spec.zellen[i].menu ein Knopf, der das Menue der Spalte
      oeffnet (die Tabelle setzt dann keinen html und menu.wahl auf ihre "keine"-Wahl); ohne menu ein
-     blosser Text -- die Spalte hat noch keine Berechnung, und ein Knopf, der nichts tut, waere
-     einer zu viel. Ganz leer bleibt eine Zelle nur mit leer: true.
+     Minus (.up-sumkeine, seit 20.10.; vorher der Text "+ Calculation", der wie ein toter Knopf aussah) --
+     die Spalte hat keine Berechnung, und ein Knopf, der nichts tut, waere einer zu viel. Ganz leer bleibt eine Zelle nur mit leer: true.
      JEDE ZELLE LAEDT FUER SICH (zellen[i].laedt): eine Berechnung vom Server haengt nie an der
      Tabelle -- sie hat ihr eigenes Skelett, und die Zeilen warten nicht auf sie.
      WAS DIE TABELLE NICHT RECHNET: sie kennt nur ihre Seite (hoechstens 100 Zeilen). Gewichtete
@@ -29448,6 +29523,7 @@
     "Prompts below 50": "Prompts unter 50",
     "Prompts without topic": "Prompts ohne Topic",
     "Calculation": "Berechnung",
+    "No calculation for this column": "Für diese Spalte gibt es keine Berechnung",
     "Choose a calculation": "Berechnung wählen",
     /* Bezeichnungen, die mehrere Tabellen fuer ihre Berechnungen brauchen (15.10. spaet): hier
        EINMAL, damit keine Komponente sie neu eintraegt (addMessages ist app-weit). Menue gross,
@@ -29569,7 +29645,7 @@
       return true;
     }
     function skBalken(w){ return w ? '<span class="up-tsk-bar" style="width:' + Math.round(w) + 'px"></span>' : ""; }
-    var ADD_INNEN = icon("plus", 2) + '<span>' + esc(t_("Calculation")) + '</span>';
+    var ADD_INNEN = icon("plus", 2) + '<span class="up-sumadd-t">' + esc(t_("Calculation")) + '</span>';
     function zellenHtml(s){
       var sicht = s.sichtbar || null;
       var out = '<div class="up-sumzelle up-sumzelle-erste">' +
@@ -29586,8 +29662,10 @@
         } else if (z.html && !s.laedt) inhalt = z.html;
         else if (z.menu){
           inhalt = '<button type="button" class="up-sumknopf up-sumadd" data-sum-menu="' + esc(z.key) + '" aria-haspopup="menu" aria-expanded="false"' +
-            ' aria-label="' + esc(t_("Choose a calculation")) + '">' + ADD_INNEN + '</button>';
-        } else inhalt = '<span class="up-sumadd">' + ADD_INNEN + '</span>';
+            ' aria-label="' + esc(t_("Choose a calculation")) + '" data-tip="' + esc(t_("Choose a calculation")) + '">' + ADD_INNEN + '</button>';
+        /* Eine Spalte, fuer die es keine Berechnung gibt (20.10.): ein Minus statt des Texts "+ Calculation" -- der sah aus wie ein Knopf und tat
+           nichts ("soll man das riechen?"). Kein Knopf, kein Hover; der Tooltip sagt, warum. */
+        } else inhalt = '<span class="up-sumkeine" data-tip="' + esc(t_("No calculation for this column")) + '" aria-label="' + esc(t_("No calculation for this column")) + '">' + icon("minus", 2) + '</span>';
         out += '<div class="up-sumzelle up-sum-td-' + esc(z.key) + '"' +
           (!sicht || sicht[z.key] ? "" : ' style="display:none"') + '>' + inhalt + '</div>';
       });
@@ -30220,7 +30298,7 @@
     makeFestHoehe: makeFestHoehe,
     makeLeistenFilter: makeLeistenFilter,
     bandTeile: bandTeile, bandAus: bandAus, bandAusGemerkt: bandAusGemerkt, bandAusMerken: bandAusMerken,
-    bandUnterLeiste: bandUnterLeiste, klebFuss: klebFuss,
+    bandUnterLeiste: bandUnterLeiste, klebFuss: klebFuss, colscrollTeilen: colscrollTeilen,
     /* Aufklapper in Tabellen (Drilldown, Gruppe): die angeklickte Zeile bleibt stehen. */
     zeileHalten: zeileHalten,
     bandSchalterHtml: bandSchalterHtml, thSortHtml: thSortHtml,
