@@ -28,6 +28,12 @@
 /* EXPORT (16.10.): .up-export aus core, rechts aussen in der Zeile wie in der Leiste von Prompt
    Insights. margin-left: auto schiebt ihn auch in einer umgebrochenen Zeile an den rechten Rand. */
 .uad-filterzeile > .uad-export { margin-left: auto; }
+/* In der einen Leiste der Tabelle (ads.js leisteStellen) loest sich die Zeile auf: Kalender und Filter stehen einzeln in .up-leiste-scope (wie
+   .ubr-filterzeile.is-in-tabelle in brands-page.css), der Export steht rechts in den Werkzeugen. */
+.uad-filterzeile.is-in-tabelle { display: contents; }
+/* Die Tabelle steht in einer eigenen .up-root (.uad-tabwurzel), und jede .up-root setzt --up-sticky-top: 171px und --up-thead-off: 32px neu:
+   der Spaltenkopf klebte so zu tief (gemessen in Shopping 20.10., gleicher Aufbau). Die Werte des Abschnitts gelten durch. */
+.uad-tab > .uad-tabwurzel { --up-sticky-top: inherit; --up-thead-off: inherit; --up-sticky-cover: inherit; }
 /* Die Luft ueber und unter .uad-main steht in core ("DIE LUFT UNTER DEM SEITENKOPF"): 16 unter der
    Filterzeile wie ueber ihr, 64 unten. */
 

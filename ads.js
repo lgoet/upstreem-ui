@@ -1197,10 +1197,49 @@
       else if (s === "library") zeichneLibrary();
     }
     function aufraeumen() {
+      filterzeileZurueck();
+      tabKleber = null;
       if (linie && linie.destroy) { try { linie.destroy(); } catch (e) {} }
       linie = null; pager = {}; sucheKit = {}; sortKit = {}; balken = null; spalten = {}; zaehl = {};
     }
     function sek(name) { return elMain.querySelector('[data-sek="' + name + '"]'); }
+    /* DIE EINE LEISTE (20.10., Vorbild: Brands und Citations, Variante A; dieselbe Fassung wie in shopping.js): auf Advertisers und in der Ad Library
+       ist der Kopf der Tabelle die Leiste der Seite. Links, was die Daten aendert (in der Library zuerst der Umschalter Ads/Prompts, dann die
+       Filterzeile mit Kalender und Filtern), rechts die Ansicht: Grid/List, Suche, Table Settings und Export. Sie klebt (core makeSticky, ab
+       1000 breit), der Spaltenkopf direkt darunter, Gesamtzeile und Pagination unten (data-kleb-fuss). Bewegt werden die vorhandenen
+       Elemente; das Geruest wird je Seite neu gebaut, darum kommt die Filterzeile vorher zurueck (filterzeileZurueck). Auf der Overview und im
+       Advertiser-Detail bleibt sie ueber dem Inhalt. */
+    var elFilterzeile = root.querySelector(".uad-filterzeile"), tabKleber = null;
+    function filterzeileZurueck() {
+      if (!elFilterzeile) return;
+      var ex = root.querySelector(".uad-export");
+      if (ex && ex.parentNode !== elFilterzeile) elFilterzeile.appendChild(ex);
+      elFilterzeile.classList.remove("is-in-tabelle");
+      if (elFilterzeile.parentNode !== root || elFilterzeile.nextElementSibling !== elMain) root.insertBefore(elFilterzeile, elMain);
+    }
+    function leisteStellen() {
+      var tabEl = sek("tabelle"), kopf = tabEl && tabEl.querySelector(":scope > .up-head");
+      if (!elFilterzeile || !kopf || tabEl.getAttribute("data-leiste") !== "yes") return;
+      var scope = kopf.querySelector(":scope > .up-leiste-scope");
+      if (!scope) {
+        scope = document.createElement("div");
+        scope.className = "uad-scope up-leiste-scope";
+        kopf.insertBefore(scope, kopf.firstChild);
+      }
+      scope.appendChild(elFilterzeile);
+      elFilterzeile.classList.add("is-in-tabelle");
+      var werkz = kopf.querySelector(".up-head-tools"), ex = elFilterzeile.querySelector(".uad-export");
+      if (werkz && ex) werkz.appendChild(ex);
+      tabEl.setAttribute("data-kleb-fuss", "yes");
+      if (!tabEl.getAttribute("data-sticky-top")) tabEl.setAttribute("data-sticky-top", "16");
+      var kleber = UC.makeSticky ? UC.makeSticky(tabEl, kopf) : null;
+      tabKleber = kleber;
+      if (kleber) {
+        if (UC.aufResize) UC.aufResize(kleber.applySticky);
+        else window.addEventListener("resize", UC.rafThrottle ? UC.rafThrottle(kleber.applySticky) : kleber.applySticky);
+        kleber.applySticky();
+      }
+    }
     /* Der Abschnittskopf des Entwurfs ist die Werkzeugzeile aus core (.up-head): Ueberschrift 14/500,
        Punkt und Zahl (.up-heading.has-count), Werkzeuge rechts (Komponenten-Abbildung im Entwurf). */
     function kopf(titel, o) {
@@ -1367,6 +1406,7 @@
       });
       var tab = sek("tabelle");
       if (tab) tabelleVerdrahten(tab);
+      if (s === "advertisers" || s === "library") leisteStellen();
       var tsek = s === "overview" ? sek("topics") : null;
       if (tsek) topicsVerdrahten(tsek);
     }
@@ -1886,6 +1926,10 @@
       w.classList.toggle("is-reloading", !!dimmen);
       w.querySelector(".uad-tabelle").innerHTML = html;
       zaehlEinhaengen(tbName(), sek("tabelle"), w, zahl);
+      /* Kopf und Gesamtzeile aus dem Scrollkasten in ihre Halter, damit sie an der Seite kleben (core colscrollTeilen). */
+      if (UC.colscrollTeilen) UC.colscrollTeilen(w.querySelector(".up-box"));
+      /* Der klebende Fuss braucht den Kasten der Tabelle (core klebFuss sucht ihn beim Einrichten): er kommt erst mit den Daten, also danach noch einmal. */
+      if (tabKleber) tabKleber.applySticky();
     }
     /* DIE GESAMTZEILE (15.10. abends, core UC.makeZaehlZeile): unter den Zeilen jeder ganzen
        Tabelle (Advertisers, die Liste und die Prompts der Library; NICHT Topics with Ads, siehe
