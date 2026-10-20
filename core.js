@@ -19828,7 +19828,8 @@
     var n = toNum(ev.new_cited_count) || 0, urls = isArr(ev.new_cited_urls) ? ev.new_cited_urls.filter(function(u){ return typeof u === "string" && u; }) : [];
     var h = "";
     if (n === 1 && urls.length){
-      h += '<span class="up-toast-d">' + esc(t_("{url} cited for the first time").replace("{url}", evmKurz(urls[0], true))) + '</span>';
+      /* Die Adresse in der Primaerfarbe des Toasts, der Rest des Satzes in der leisen (20.10., Nutzer: "die URL in primaer Fontcolor"). */
+      h += '<span class="up-toast-d">' + esc(t_("{url} cited for the first time").replace("{url}", "\u0001")).replace("\u0001", '<span class="up-toast-urlwort">' + esc(evmKurz(urls[0], true)) + '</span>') + '</span>';
     } else if (n > 0){
       /* Eine Zahl ohne Adresse (Ueberlauf: ab 500 neuen URLs am Tag listet die Datenbank nicht mehr,
          zaehlt aber weiter) -- nie "1 pages" (Audit EV-04). */
@@ -19921,7 +19922,9 @@
       EVM.stand = true;
       var d = erg.daten && typeof erg.daten === "object" ? erg.daten : null;
       var liste = d && isArr(d.events) ? d.events.filter(function(ev){
-        return ev && typeof ev === "object" && ev.event_id != null && String(ev.event_id) &&
+        /* Kein Toast fuer ein abgeschlossenes Event (20.10., Nutzer: "richtig scheisse"): status "completed" heisst Enddatum in der Vergangenheit
+           (_impact_event_status_v1). Die Meldungen bleiben in der Datenbank ungelesen, nur das Zeigen faellt weg. */
+        return ev && typeof ev === "object" && ev.event_id != null && String(ev.event_id) && ev.status !== "completed" &&
           ((toNum(ev.new_cited_count) || 0) > 0 || ev.completed === true);
       }) : null;
       if (!liste){ console.error("[events] notices could not be read"); return false; }

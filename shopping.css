@@ -28,6 +28,14 @@
 /* In der einen Leiste der Tabelle (shopping.js leisteStellen) loest sich die Zeile auf: Kalender und Filter stehen einzeln in .up-leiste-scope
    (wie .ubr-filterzeile.is-in-tabelle in brands-page.css); der Export steht dann rechts in den Werkzeugen, ohne eigenen Rand. */
 .ush-filterzeile.is-in-tabelle { display: contents; }
+/* Kennzahlen und Chart stehen in der Leiste-Wurzel (bandUnterLeiste): core stellt dort den Stapel auf 0 (--up-stapel-luft, die Leiste haelt ihre 16
+   selbst), und damit sass die Kennzahlenleiste in der Gruppe direkt auf der Oberkante des Charts. Zwischen Kennzahlen und Chart wieder 16
+   (--up-band-luft, 20.10.); ohne Chart (Umschalter "Table only") bleibt der Abstand zur Tabelle, wie er war. */
+.ush-tab.has-leistenband > .ush-gruppe { gap: var(--up-band-luft, 16px); }
+/* Der Umschalter Chart und Tabelle im Seitenkopf (UC.bandAus) steht hier direkt im Kopf, und core rueckt ihn dort mit -8 nach rechts, weil der Kopf
+   der anderen Seiten rechts 8 Polster hat -- dieser Kopf endet 8 ueber der Wurzel und hat keins: der Schalter stand am Fensterrand statt auf der
+   Kante des Exports (gemessen bei 1024: Schalter 1024, Export 1008). +8 bringt ihn auf dieselbe Kante. */
+.ush-root .ush-pagehead > .up-bandsw { margin-right: 8px; }
 /* Die Tabelle steht in einer eigenen .up-root (.ush-tabwurzel, Wurzel fuer das Spaltenkit), und jede .up-root setzt --up-sticky-top: 171px und
    --up-thead-off: 32px neu: der Spaltenkopf klebte so bei 204 statt direkt unter der Leiste (gemessen 20.10.). Die Werte des Abschnitts
    gelten durch, den die Leiste (makeSticky) setzt. */

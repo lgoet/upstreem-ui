@@ -5527,7 +5527,8 @@
     .up-toast-liste { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; min-width: 0; }
     .up-toast-zeile { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--up-fs-s); line-height: 16px; color: var(--vc-toast-sub); }
     .up-toast-fav { flex: 0 0 14px; width: 14px; height: 14px; border-radius: calc(var(--up-r-xs) - 1px); }
-    .up-toast-url { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .up-toast-url { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--vc-toast-ink); }
+    .up-toast-urlwort { color: var(--vc-toast-ink); }
     .up-toast-mehr { margin-top: 4px; padding-left: 22px; font-size: var(--up-fs-s); line-height: 16px; color: var(--vc-toast-sub); }
     .up-toast-d.up-toast-fertig { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--vc-toast-ink); }
     .up-toast-fertig svg { flex: 0 0 14px; width: 14px; height: 14px; }
