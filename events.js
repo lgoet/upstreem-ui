@@ -3926,11 +3926,11 @@
        Die Reiter "All | Cited | Not cited yet": "All" ist der Standard und kommt mit der Abdeckung selbst
        (p_filter "all"), die anderen zwei holt der erste Klick (p_filter "cited" bzw. "not_cited"). */
     var ABD_FILTER = { alle: "all", zitiert: "cited", offen: "not_cited" };
-    /* DIE SUCHE IN DER SITEMAP-LISTE (20.10.): get_impact_event_coverage_v2 (coverage_v2.sql, p_query: Teilstring der URL ueber ALLE
+    /* DIE SUCHE IN DER SITEMAP-LISTE (20.10.): get_impact_event_coverage_v1 mit p_query (coverage_suche.sql, Teilstring der URL ueber ALLE
        Seiten der Quelle). Mit Suche steht eine flache Trefferliste statt des Baums (je 50, "Show more"). Je Ziel, Reiter und Suchtext ein
        Eintrag; er gilt nur fuer den Stand der Abdeckung, aus dem er kam (gen). Fehlt die Funktion (PGRST202), filtert der Browser die
        schon geladenen Seiten und sagt es. */
-    var ABD_V2 = { stand: null }, abdSucheSt = {}, abdSuche = {};
+    var ABD_Q = { stand: null }, abdSucheSt = {}, abdSuche = {};
     function abdSucheRec(zt, tab, q) {
       var e = state.abd[state.eventId], key = state.eventId + "|" + zt.id + "|" + tab + "|" + q.toLowerCase(), rec = abdSuche[key];
       if (rec && e && rec.gen !== e.daten) { delete abdSuche[key]; rec = null; }
@@ -3941,7 +3941,7 @@
       if (!e) return;
       var rec = abdSuche[key] || (abdSuche[key] = { pages: [], total: null, laedt: false, fehler: false, lokal: false, gen: e.daten });
       if (rec.laedt) return;
-      if (ABD_V2.stand === false || demo) {
+      if (ABD_Q.stand === false || demo) {
         var ds = abdDaten(e, tab), z = ds ? abdZiel(ds, zt.id, zt.value) : null, mm = e.mehr && e.mehr[tab] && e.mehr[tab][zt.id];
         var fk = q.toLowerCase(), alle = z ? (isArr(z.pages) ? z.pages : []).concat(mm && isArr(mm.pages) ? mm.pages : []) : [];
         rec.pages = alle.filter(function (p) { return p && String(p.url || "").toLowerCase().indexOf(fk) >= 0; });
@@ -3949,11 +3949,11 @@
         return;
       }
       rec.laedt = true; rec.fehler = false;
-      abdRpc("get_impact_event_coverage_v2", { p_event_id: eid, p_target_id: zt.id, p_filter: ABD_FILTER[tab], p_limit: ABD_MEHR, p_offset: mehr ? rec.pages.length : 0, p_query: q }).then(function (erg) {
+      abdRpc("get_impact_event_coverage_v1", { p_event_id: eid, p_target_id: zt.id, p_filter: ABD_FILTER[tab], p_limit: ABD_MEHR, p_offset: mehr ? rec.pages.length : 0, p_query: q }).then(function (erg) {
         rec.laedt = false;
-        if (fehltFn(erg)) { ABD_V2.stand = false; delete abdSuche[key]; if (root.isConnected !== false && state.eventId === eid) abdAlle(); return; }
+        if (fehltFn(erg)) { ABD_Q.stand = false; delete abdSuche[key]; if (root.isConnected !== false && state.eventId === eid) abdAlle(); return; }
         var z2 = erg.ok && abdLesbar(erg.daten) ? abdZiel(erg.daten, zt.id, null) : null;
-        if (z2 && isArr(z2.pages)) { ABD_V2.stand = true; rec.pages = (mehr ? rec.pages : []).concat(z2.pages); rec.total = num(z2.pages_total); rec.fehler = false; }
+        if (z2 && isArr(z2.pages)) { ABD_Q.stand = true; rec.pages = (mehr ? rec.pages : []).concat(z2.pages); rec.total = num(z2.pages_total); rec.fehler = false; }
         else if (mehr) { if (UC.toast) UC.toast(fehlerText(String((erg.fehler || {}).message || ""), ""), { kind: "error" }); }
         else rec.fehler = true;
         if (root.isConnected !== false && state.eventId === eid) abdAlle();
