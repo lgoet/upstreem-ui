@@ -3416,12 +3416,12 @@
     }
     /* Die Suche aus core (UC.makeSearch, .up-search) in einer Hinweiszeile: Lupe, die sich zum Feld oeffnet, Esc leert zuerst und schliesst dann,
        eine neue Eingabe beginnt wieder bei Seite 1. st: der Stand der Tabelle (page, query), zeichnen: die Neuanfrage. Genau wie die Suche der
-       Werkzeugleisten der Tabellen; keine Uebernahme der Zeile (mobileMax 0). */
+       Werkzeugleisten der Tabellen, mit den Vorgaben des Kerns (ab 2 Zeichen, 400 ms); keine Uebernahme der Zeile (mobileMax 0). */
     function suchenAnlegen(box, st, zeichnen) {
       if (!box) return;
       var input = box.querySelector(".up-search-input");
       st.query = st.query || "";
-      var kit = UC.makeSearch ? UC.makeSearch({ root: root, box: box, input: input, state: st, minChars: 1, debounceMs: 300, mobileMax: 0, prefix: "uevz",
+      var kit = UC.makeSearch ? UC.makeSearch({ root: root, box: box, input: input, state: st, mobileMax: 0, prefix: "uevz",
         onRender: function () {}, onFire: function () { zeichnen(); } }) : null;
       if (!kit) { box.hidden = true; return; }
       box.addEventListener("click", function (e) {
@@ -3521,7 +3521,7 @@
         var sek = null, alle = host.querySelectorAll(".uev-zielsek");
         for (var j = 0; j < alle.length; j++) if (alle[j].getAttribute("data-ziel-id") === String(zt.id)) sek = alle[j];
         if (!sek) sek = zielSekAnlegen(host, zt);
-        else host.appendChild(sek);
+        else if (host.querySelectorAll(".uev-zielsek")[i] !== sek) host.appendChild(sek);   // nur umhaengen, wenn die Reihenfolge es braucht: ein Umhaengen nimmt dem Suchfeld den Fokus
         zielFuellen(sek, zt, zielAuswertung(a, zt, i, liste), a);
         abdFuellen(sek, zt);
       });
@@ -3692,12 +3692,12 @@
         return num(u.citations_after);
       });
       var ab = seitenStand(n, urls.length);
-      platz.innerHTML = urlTabelleHtml(kopf, urls.slice(ab.von, ab.bis), wz, evTag);
+      platz.innerHTML = urlTabelleHtml(kopf, urls.slice(ab.von, ab.bis), wz, evTag, frage);
       sortSync(n);
     }
     function zahlWert(v) { v = num(v); return v == null ? '<span class="up-num is-empty">\u2013</span>' : '<span class="up-num">' + esc(zahl(v)) + '</span>'; }
     /* Die Zeilen und die Tabelle der URLs einer Regel -- gleich im Browser- und im Serverweg. */
-    function urlTabelleHtml(kopf, zeilen, wz, evTag) {
+    function urlTabelleHtml(kopf, zeilen, wz, evTag, q) {
       return '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
         zeilen.map(function (u) {
           var hp = hostPfad(u.url), tag = String(u.first_observed_day || "").slice(0, 10), neu = !wz && !!tag && !!evTag && tag > evTag;
@@ -3706,8 +3706,8 @@
              das Event-Detail gar nicht mehr: sie steht im Drawer der URL. */
           return '<div class="up-row up-vrow uev-zitzeile" role="link" tabindex="0" data-url="' + esc(u.url || "") + '">' +
             '<div class="up-td up-var-name uev-td-url"><span class="up-fav up-logo-box has-img"><img src="' + esc(favicon(u.url)) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>' +
-              '<span class="uev-url-txt"><span class="uev-url-haupt" title="' + esc(u.url || "") + '">' + esc(pfadText(hp)) + '</span>' +
-              '<span class="uev-url-host">' + esc(hp.host) + '</span></span></div>' +
+              '<span class="uev-url-txt"><span class="uev-url-haupt" title="' + esc(u.url || "") + '">' + UC.highlight(pfadText(hp), q) + '</span>' +
+              '<span class="uev-url-host">' + UC.highlight(hp.host, q) + '</span></span></div>' +
             '<div class="up-td uev-td-zahl uev-td-beob">' + (tag ? '<span class="up-marke is-leise uev-beob' + (neu ? " is-ja" : "") + '">' + esc(datum(tag)) + '</span>' : '<span class="up-num is-empty">–</span>') + '</div>' +
             '<div class="up-td uev-td-zahl">' + zahlWert(u.citations_after) + '</div>' +
             '<div class="up-td uev-td-zahl">' + zahlWert(u.prompts_after) + '</div>' +
@@ -3727,7 +3727,7 @@
       var hin = sek.querySelector(".uev-ziel-hinweis"), info = sek.querySelector(".uev-ziel-info"), suche = sek.querySelector(".uev-ziel-suche");
       if (!hin || !info) return;
       var filter = sek.__filterZeile || "";
-      if (!o) { hin.hidden = !filter; info.innerHTML = filter; if (suche) suche.hidden = true; return; }
+      if (!o) { hin.hidden = !filter && !(suche && (suche.classList.contains("has-text") || suche.contains(document.activeElement))); info.innerHTML = filter; if (suche && !suche.classList.contains("has-text") && !suche.contains(document.activeElement)) suche.hidden = true; return; }
       var text = o.frage ? ersetze(t("{n} of {m} URLs"), { n: zahl(o.total), m: zahl(o.alle) })
         : o.gekappt ? ersetze(t("Showing the newest {n} URLs"), { n: zahl(o.alle) })
         : ersetze(t(o.total === 1 ? "{n} URL" : "{n} URLs"), { n: zahl(o.total) });
@@ -3780,7 +3780,7 @@
       seitenStand(c.n, total);
       /* Die Seite lag hinter dem Ende (die Suche hat weniger Treffer): der Pager hat sie zurueckgesetzt, die Liste holt die richtige. */
       if (s && num(d.offset) !== (s.page - 1) * s.pageSize && !rec.laedt) { urlServerZeigen(c.sek, c.zt, c.n, c.platz, c.kopf, c.wz, c.evTag, rec.a); return; }
-      c.platz.innerHTML = urlTabelleHtml(c.kopf, d.urls, c.wz, c.evTag);
+      c.platz.innerHTML = urlTabelleHtml(c.kopf, d.urls, c.wz, c.evTag, frage);
       sortSync(c.n);
     }
     /* ---- SEITENABDECKUNG JE REGEL (17.10., Auftrag Teil C, Vorbild: "Seitenindexierung" der
@@ -3969,7 +3969,7 @@
       return '<div class="uev-abd-leise">' + esc(ersetze(t(total === 1 ? "{n} matching page" : "{n} matching pages"), { n: zahl(total) })) +
           (rec.lokal ? " " + esc(t("Only the pages loaded so far were searched.")) : "") + '</div>' +
         '<div class="uev-abd-seiten">' + rec.pages.map(function (p) {
-          return abdSeiteHtml(zt, p, { tiefe: 0, name: null, spur: tab === "offen" ? "datum" : "zitat", zitate: zitate, tab: tab });
+          return abdSeiteHtml(zt, p, { tiefe: 0, name: null, spur: tab === "offen" ? "datum" : "zitat", zitate: zitate, tab: tab, q: q });
         }).join("") + '</div>' +
         (rest > 0 ? '<button type="button" class="up-quietbtn uev-abd-mehr uev-abd-such-mehr" data-ziel-id="' + esc(zt.id) + '"' + (rec.laedt ? ' disabled' : '') + '>' +
           (rec.laedt ? UC.icon("loader", 2) : '') + '<span>' + esc(ersetze(t("Show {n} more"), { n: zahl(Math.min(ABD_MEHR, rest)) })) + '</span></button>' : '');
@@ -4073,11 +4073,11 @@
     }
     /* Der Link einer Seite der Sitemap (18.10.): die echte Adresse in einem neuen Tab, Unterstreichen beim Ueberfahren
        (events.css). Ohne Schema wird https ergaenzt; ohne Adresse gibt es keinen Link, nur den Text. */
-    function abdLinkHtml(url, text) {
+    function abdLinkHtml(url, text, q) {
       var u = String(url || "").trim();
-      if (!u) return esc(text);
+      if (!u) return UC.highlight(text, q);
       if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) u = "https://" + u.replace(/^\/+/, "");
-      return '<a class="uev-abd-link" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(text) + '</a>';
+      return '<a class="uev-abd-link" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + UC.highlight(text, q) + '</a>';
     }
     /* opt.tiefe/opt.name: im Baum steht die Seite eingerueckt und mit dem Teil des Pfads nach dem Ordner.
        opt.spur: "zitat" (Reiter All und Cited: bei einer zitierten Seite rechts die Zahl der Zitate, bei einer
@@ -4111,7 +4111,7 @@
       var offen = zit ? ' is-zitiert" role="link" tabindex="0" data-url="' + esc(treffer && treffer.url ? treffer.url : p.url || "") : "";
       return '<div class="uev-abd-seite' + (opt.name != null ? " is-im-baum" : "") + (weg ? " is-weg" : "") + offen + '"' + (zit ? "" : ' data-abd-seite="1" data-url="' + esc(p.url || "") + '"') + (opt.tiefe ? ' style="--uev-tiefe:' + opt.tiefe + '"' : '') + '>' +
         zielFavKlein(p.url || "", '<span class="uev-abd-fav0">' + UC.icon("globe", 2) + '</span>') +
-        '<span class="uev-abd-pfad" title="' + esc(p.url || "") + '">' + abdLinkHtml(p.url, pfad) + '</span>' +
+        '<span class="uev-abd-pfad" title="' + esc(p.url || "") + '">' + abdLinkHtml(p.url, pfad, opt.q) + '</span>' +
         marke +
         (weg ? '<span class="up-marke is-leise uev-abd-marke">' + esc(t("No longer in sitemap")) + '</span>' : '') +
         rechts +
@@ -4246,7 +4246,7 @@
       if (!wurzel) return;
       var kopf = wurzel.querySelector(".uev-abd-kopf"), meld = wurzel.querySelector(".uev-abd-satz"), seg = wurzel.querySelector(".uev-abd-seg"), liste = wurzel.querySelector(".uev-abd-liste");
       var suchBox = wurzel.querySelector(".uev-abd-suche");
-      if (suchBox) suchBox.hidden = true;
+      if (suchBox && !suchBox.classList.contains("has-text") && !suchBox.contains(document.activeElement)) suchBox.hidden = true;   // mit Text oder Fokus bleibt sie stehen
       var e = state.eventId ? state.abd[state.eventId] : null, d = e && e.daten, z = d ? abdZiel(d, zt.id, zt.value) : null;
       function nurKopf(html, meldHtml) { kopf.innerHTML = html; meld.innerHTML = meldHtml || ""; meld.hidden = !meldHtml; seg.innerHTML = ""; liste.innerHTML = ""; liste.classList.remove("is-laedt"); }
       if (!e || ABD_DA.stand === false || (d && !z)) { wurzel.hidden = true; kopf.innerHTML = ""; meld.innerHTML = ""; seg.innerHTML = ""; liste.innerHTML = ""; return; }
