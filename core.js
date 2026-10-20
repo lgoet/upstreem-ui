@@ -20642,7 +20642,13 @@
                    /* Die Einheit kommt vom Aufrufer. Rang und Sentiment sind KEINE Prozente --
                       ein hart verdrahtetes "%" schrieb an jede Achse ein Zeichen, das dort nicht
                       hingehoert. Ohne Angabe bleibt es Prozent, das ist der haeufigste Fall. */
-                   ticks: { color: tc.muted, callback: function(v){ return Math.round(v) + einheit(); } },
+                   ticks: { color: tc.muted, callback: function(v, i, tk){
+                     /* Liegt ein Schritt der Achse unter 1 (Share von 0,8 Prozent: Schritte von 0,2), rundete die Beschriftung auf "0, 0, 1, 1".
+                        Dann so viele Stellen, wie der Schritt braucht (hoechstens zwei); ab einem Schritt von 1 wie bisher ganz. */
+                     var st = tk && tk.length > 1 ? Math.abs(tk[1].value - tk[0].value) : 1;
+                     var dz = st >= 1 || !isFinite(st) || st <= 0 ? 0 : Math.min(2, Math.ceil(-Math.log10(st) - 1e-9));
+                     return (dz && v !== 0 ? (Math.round(v * Math.pow(10, dz)) / Math.pow(10, dz)).toFixed(dz) : Math.round(v)) + einheit();
+                   } },
                    grid: { display:false }, border: { display:false } }
             },
             elements: { point: { radius: 0 } }

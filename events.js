@@ -3499,7 +3499,9 @@
         wrap: lw, canvas: lw.querySelector("canvas"), legend: sek.querySelector(".uev-legende"),
         isDark: isDark, gran: function () { return "day"; },
         unit: function () { return zielShare() ? "%" : ""; }, decimals: function () { return zielShare() ? 1 : 0; },
-        yOhneDeckel: true, yGanz: true, legendeImmer: true,
+        /* yGanz nur fuer die Zahl der Zitate: der Share in Prozent mit einer Stelle skaliert auf seinen Hoechstwert (20.10.: bei 0,8 Prozent stand
+           die Achse sonst bis 4, die Linie lag platt am Boden -- yGanz hebt den Hoechstwert auf ein Vielfaches von 4). */
+        yOhneDeckel: true, yGanz: function () { return !zielShare(); }, legendeImmer: true,
         tipLabel: function () { return ""; },
         markers: chartMarker,
         markerDimmen: true,
