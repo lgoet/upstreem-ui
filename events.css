@@ -964,3 +964,15 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    der Karten heben sich nur von Grau ab. Im Dunkeln gilt der Grund aller Popups. */
 .up-modal.uev-kind-karte, .up-modal.uev-kind-karte > .up-topicmodal-head { background: var(--up-seite-grau); }
 .up-topicmodal-backdrop[data-theme="dark"] .up-modal.uev-kind-karte, .up-topicmodal-backdrop[data-theme="dark"] .up-modal.uev-kind-karte > .up-topicmodal-head { background: var(--up-popup-bg); }
+
+/* ---- SUCHE IN DEN URL-LISTEN (20.10.) ----------------------------------------------------------------------------------
+   Die Hinweiszeile ueber der URL-Tabelle einer Regel (links Zahl und Filterhinweis, rechts die Lupe aus core) und die Zeile der Sitemap-Liste
+   (links die Reiter, rechts die Lupe): dieselbe Suche wie in den Werkzeugleisten der Tabellen. */
+.uev-ziel-hinweis { justify-content: space-between; flex-wrap: nowrap; min-width: 0; }
+.uev-ziel-info { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 16px; min-width: 0; flex: 1 1 auto; }
+.uev-ziel-suche[hidden], .uev-abd-suche[hidden] { display: none; }
+.uev-ziel-suche, .uev-abd-suche { flex: 0 0 auto; margin-left: auto; }
+.uev-abd-zeile { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; min-width: 0; }
+.uev-abd-zeile .uev-abd-seg { margin-bottom: 0; }
+.uev-abd-zeile .uev-abd-seg:empty { display: none; }
+.uev-zielsek .uev-tabinhalt.is-laedt { opacity: .55; transition: opacity var(--up-t-1) var(--up-ease); }

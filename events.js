@@ -1016,6 +1016,9 @@
     "All {n} pages are covered by {ziel}.": "Alle {n} Seiten sind durch {ziel} abgedeckt.",
     "The page is covered by {ziel}.": "Die Seite ist durch {ziel} abgedeckt.",
     "your targets": "deine Ziele",
+    "{n} of {m} URLs": "{n} von {m} URLs", "The URLs couldn't be loaded.": "Die URLs konnten nicht geladen werden.",
+    "{n} matching page": "{n} passende Seite", "{n} matching pages": "{n} passende Seiten",
+    "Only the pages loaded so far were searched.": "Durchsucht wurden nur die bisher geladenen Seiten.",
     "Show {n} more": "{n} weitere zeigen", "No matching pages": "Keine passenden Seiten", "Add selection": "Auswahl übernehmen",
     /* 17.10.: nichts mehr zu waehlen, weil alles schon getrackt ist (smHoechstens) */
     "Everything in this sitemap is already added.": "Alles aus dieser Sitemap ist bereits hinzugefügt.",
@@ -3411,6 +3414,30 @@
       }
       if (UC.segJetzt) { var sg = elMain.querySelectorAll(".uev-zielmetrik"); for (var j = 0; j < sg.length; j++) { try { UC.segJetzt(sg[j]); } catch (e) {} } }
     }
+    /* Die Suche aus core (UC.makeSearch, .up-search) in einer Hinweiszeile: Lupe, die sich zum Feld oeffnet, Esc leert zuerst und schliesst dann,
+       eine neue Eingabe beginnt wieder bei Seite 1. st: der Stand der Tabelle (page, query), zeichnen: die Neuanfrage. Genau wie die Suche der
+       Werkzeugleisten der Tabellen; keine Uebernahme der Zeile (mobileMax 0). */
+    function suchenAnlegen(box, st, zeichnen) {
+      if (!box) return;
+      var input = box.querySelector(".up-search-input");
+      st.query = st.query || "";
+      var kit = UC.makeSearch ? UC.makeSearch({ root: root, box: box, input: input, state: st, minChars: 1, debounceMs: 300, mobileMax: 0, prefix: "uevz",
+        onRender: function () {}, onFire: function () { zeichnen(); } }) : null;
+      if (!kit) { box.hidden = true; return; }
+      box.addEventListener("click", function (e) {
+        if (e.target.closest(".up-search-clear")) {
+          input.value = ""; st.query = ""; box.classList.remove("has-text");
+          kit.cancel(); kit.run();
+          try { input.focus(); } catch (x) {}
+          return;
+        }
+        if (e.target.closest(".up-search-btn")) kit.toggle();
+      });
+      input.addEventListener("input", function () { kit.onInput(); });
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && !input.value) { e.stopPropagation(); if (box.classList.contains("is-open")) kit.toggle(); }
+      });
+    }
     function zielSekAnlegen(host, zt) {
       var sek = document.createElement("section");
       var x = zielAusDb(zt) || { zeigen: String(zt.value || "") };
@@ -3435,7 +3462,14 @@
                   '<button type="button" class="up-seg-btn" data-zm="abs">' + esc(t("Citations")) + '</button></div>' : '') +
             '<div class="up-line-wrap uev-linewrap uev-ziel-linie"><canvas></canvas></div><div class="up-legend uev-legende"></div></div>' +
           /* cited_urls_truncated (15.10.): die Tabelle traegt hoechstens 200 URLs, die neuesten. */
-          '<div class="uev-hinweise uev-ziel-hinweis" hidden></div>' +
+          '<div class="uev-hinweise uev-ziel-hinweis" hidden><div class="uev-ziel-info"></div>' +
+            '<div class="up-search uev-ziel-suche" hidden>' +
+              '<button class="up-iconbtn up-search-btn" type="button" data-tip="' + esc(t("Search URLs")) + '" aria-label="' + esc(t("Search URLs")) + '">' + UC.icon("search", 2) + '</button>' +
+              '<div class="up-search-box">' +
+                '<input class="up-search-input" type="text" autocomplete="off" spellcheck="false" placeholder="' + esc(t("Search URLs")) + '">' +
+                '<button class="up-search-clear" type="button" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2) + '</button>' +
+              '</div>' +
+            '</div></div>' +
           '<div class="uev-ziel-tab"><div class="uev-tabinhalt"></div>' + fussHtml() + '</div>' +
           /* Der Leerzustand des ganzen Ziels (zielFuellen, is-leer am Block): statt Kennzahlen,
              Verlauf und Tabelle. Die drei bleiben stehen, nur verborgen -- das Diagramm ueberlebt so
@@ -3446,10 +3480,20 @@
            Blocks -- auch eine Regel ohne ein Zitat (is-leer) hat Seiten, die noch nicht zitiert sind. Verborgen,
            solange die DB die Abdeckung nicht liefert. */
         '<section class="uev-abd-sek" hidden><div class="uev-abd-kopf"></div><div class="uev-abd-satz" hidden></div>' +
-          '<div class="uev-abd-seg"></div><div class="uev-abd-liste"></div></section>';
+          '<div class="uev-abd-zeile"><div class="uev-abd-seg"></div>' +
+            '<div class="up-search uev-abd-suche" hidden>' +
+              '<button class="up-iconbtn up-search-btn" type="button" data-tip="' + esc(t("Search pages")) + '" aria-label="' + esc(t("Search pages")) + '">' + UC.icon("search", 2) + '</button>' +
+              '<div class="up-search-box">' +
+                '<input class="up-search-input" type="text" autocomplete="off" spellcheck="false" placeholder="' + esc(t("Search pages")) + '">' +
+                '<button class="up-search-clear" type="button" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2) + '</button>' +
+              '</div>' +
+            '</div></div>' +
+          '<div class="uev-abd-liste"></div></section>';
       host.appendChild(sek);
       var n = "ziel-" + zt.id;
       pagerAnlegen(sek.querySelector(".uev-ziel-tab"), n, function () { renderZiele(); });
+      suchenAnlegen(sek.querySelector(".uev-ziel-suche"), seiten[n].st, function () { renderZiele(); });
+      suchenAnlegen(sek.querySelector(".uev-abd-suche"), abdSucheSt[String(zt.id)] || (abdSucheSt[String(zt.id)] = { query: "", page: 1, loading: false }), function () { abdAlle(); });
       var lw = sek.querySelector(".uev-ziel-linie");
       zielLinien[zt.id] = UC.makeLine ? UC.makeLine({
         wrap: lw, canvas: lw.querySelector("canvas"), legend: sek.querySelector(".uev-legende"),
@@ -3495,14 +3539,10 @@
       var kpis = sek.querySelector(".uev-zielkpis"), linie2 = zielLinien[zt.id], platz = sek.querySelector(".uev-tabinhalt");
       if (istWatch(dieDetail() || listeEvent(state.eventId))) zielMetrikSetzen();
       var n = "ziel-" + zt.id, hinweis = sek.querySelector(".uev-ziel-hinweis");
-      var mehr = !!(z && z.cited_urls_truncated === true && isArr(z.cited_urls) && z.cited_urls.length);
       /* EV-10: mit gesetztem Filter dazu die leise Zeile, dass "First cited" und "New URLs" ihn nicht
          kennen -- nur, wo die Tabelle und die Kachel auch stehen (nicht im Leerzustand, siehe unten). */
-      var filterZeile = z && !zielOhneZitate(z, zt) ? filterHinweisHtml() : "";
-      if (hinweis) {
-        hinweis.hidden = !mehr && !filterZeile;
-        hinweis.innerHTML = (mehr ? '<span class="uev-angabe">' + UC.icon("info", 2) + '<span>' + esc(ersetze(t("Showing the newest {n} URLs"), { n: zahl(z.cited_urls.length) })) + '</span></span>' : "") + filterZeile;
-      }
+      sek.__filterZeile = z && !zielOhneZitate(z, zt) ? filterHinweisHtml() : "";
+      if (hinweis) hinweis.hidden = !sek.__filterZeile;
       var wz = istWatch(dieDetail() || listeEvent(state.eventId)), wtage = num(a && a.windows && a.windows.window_days) || state.fenster || 30;
       /* Citation Tracking: "nachher" gibt es nicht, es gibt das letzte Fenster. */
       var kopf = tabKopf({ t: "URL", s: "url" }, [{ t: "First cited", k: "uev-th-beob", s: "first" },
@@ -3548,7 +3588,6 @@
           : { icon: zeichen, titel: "No cited pages yet", text: "Pages that match this rule appear here as soon as an AI cites them." }));
         return;
       }
-      function zahlWert(v) { v = num(v); return v == null ? '<span class="up-num is-empty">\u2013</span>' : '<span class="up-num">' + esc(zahl(v)) + '</span>'; }
       /* Der Fuss der Kachel "New URLs": mit gesetztem Filter sagt der Zeiger, dass er sie nicht
          einschraenkt (EV-10). */
       function neuFuss(html) { return analyseGefiltert() ? '<span data-tip="' + esc(t("Not affected by your filters")) + '">' + html + '</span>' : html; }
@@ -3613,16 +3652,38 @@
       }
       var urls = isArr(z.cited_urls) ? z.cited_urls : [];
       urls.forEach(function (u) { if (u && u.url) sek.__zitate[abdUrlSchluessel(u.url)] = { c: u.citations_after, url: u.url }; });
+      var ev = dieDetail() || {}, evTag = String(ev.event_date || "").slice(0, 10);
+      var sst = seiten[n] ? seiten[n].st : null, frage = sst ? String(sst.query || "").trim() : "";
+      var gesamt = z.cited_urls_total != null ? num(z.cited_urls_total) : urls.length;
+      /* DIE LISTE KOMMT SEITENWEISE AUS DER DB (20.10.): get_impact_event_urls_v1 -- Suche und Sortierung ueber ALLE URLs der Regel,
+         nur die gezeigte Seite im Netz. Solange es die Funktion nicht gibt (PGRST202) oder in der Vorfuehrung rechnet der Browser
+         wie bisher mit den URLs der Analyse. */
+      if (urls.length && !demo && UC.rpc && URL_SRV.stand !== false && gesamt > 0) {
+        urlServerZeigen(sek, zt, n, platz, kopf, wz, evTag, a);
+        return;
+      }
       if (!urls.length) {
         /* Zitate im Zeitraum, aber keine einzelne Seite in der Liste (selten -- ohne jedes Zitat
            steht oben schon der Leerzustand des Ziels): die Mini-Form aus core, im Kasten an der
            Stelle der Tabelle, damit sie nicht frei unter dem Diagramm schwebt. */
+        urlInfo(sek, null);
         seitenStand(n, null);
         platz.innerHTML = '<div class="up-box uev-leerbox">' + UC.leerHtml({ mini: true, titel: "No cited pages yet" }) + '</div>';
         return;
       }
-      /* Sortiert nach dem Kopf (Standard: Citations after absteigend); First cited ist der Tag der ersten
-         Beobachtung, Models die Zahl der Modelle nach dem Event. */
+      /* Im Browser: Suche (URL, ohne Gross/Klein), dann sortiert nach dem Kopf (Standard: Citations after absteigend);
+         First cited ist der Tag der ersten Beobachtung, Models die Zahl der Modelle nach dem Event. */
+      var alle = urls.length;
+      if (frage) {
+        var fk = frage.toLowerCase();
+        urls = urls.filter(function (u) { return String(u && u.url || "").toLowerCase().indexOf(fk) >= 0; });
+      }
+      urlInfo(sek, { total: urls.length, alle: alle, frage: frage, gekappt: z.cited_urls_truncated === true });
+      if (!urls.length) {
+        seitenStand(n, null);
+        platz.innerHTML = '<div class="up-box uev-leerbox">' + UC.leerHtml({ mini: true, gefiltert: true, was: "URLs" }) + '</div>';
+        return;
+      }
       urls = sortiere(n, urls, function (u, f) {
         if (f === "url") return String(u.url || "");
         if (f === "first") { var tg = String(u.first_observed_day || "").slice(0, 10); return tg ? tagMs(tg) : null; }
@@ -3630,10 +3691,15 @@
         if (f === "models") return isArr(u.models_after) ? u.models_after.length : null;
         return num(u.citations_after);
       });
-      var ab = seitenStand(n, urls.length), ev = dieDetail() || {};
-      var evTag = String(ev.event_date || "").slice(0, 10);
-      platz.innerHTML = '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
-        urls.slice(ab.von, ab.bis).map(function (u) {
+      var ab = seitenStand(n, urls.length);
+      platz.innerHTML = urlTabelleHtml(kopf, urls.slice(ab.von, ab.bis), wz, evTag);
+      sortSync(n);
+    }
+    function zahlWert(v) { v = num(v); return v == null ? '<span class="up-num is-empty">\u2013</span>' : '<span class="up-num">' + esc(zahl(v)) + '</span>'; }
+    /* Die Zeilen und die Tabelle der URLs einer Regel -- gleich im Browser- und im Serverweg. */
+    function urlTabelleHtml(kopf, zeilen, wz, evTag) {
+      return '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
+        zeilen.map(function (u) {
           var hp = hostPfad(u.url), tag = String(u.first_observed_day || "").slice(0, 10), neu = !wz && !!tag && !!evTag && tag > evTag;
           var modelle = isArr(u.models_after) ? u.models_after : [];
           /* Die Zeile oeffnet das URL-Detail, wie in der Tabelle der URLs (Beschluss 2). Eine Antwort zeigt
@@ -3642,13 +3708,80 @@
             '<div class="up-td up-var-name uev-td-url"><span class="up-fav up-logo-box has-img"><img src="' + esc(favicon(u.url)) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>' +
               '<span class="uev-url-txt"><span class="uev-url-haupt" title="' + esc(u.url || "") + '">' + esc(pfadText(hp)) + '</span>' +
               '<span class="uev-url-host">' + esc(hp.host) + '</span></span></div>' +
-            '<div class="up-td uev-td-zahl uev-td-beob">' + (tag ? '<span class="up-marke is-leise uev-beob' + (neu ? " is-ja" : "") + '">' + esc(datum(tag)) + '</span>' : '<span class="up-num is-empty">\u2013</span>') + '</div>' +
+            '<div class="up-td uev-td-zahl uev-td-beob">' + (tag ? '<span class="up-marke is-leise uev-beob' + (neu ? " is-ja" : "") + '">' + esc(datum(tag)) + '</span>' : '<span class="up-num is-empty">–</span>') + '</div>' +
             '<div class="up-td uev-td-zahl">' + zahlWert(u.citations_after) + '</div>' +
             '<div class="up-td uev-td-zahl">' + zahlWert(u.prompts_after) + '</div>' +
             '<div class="up-td uev-td-zahl"' + (modelle.length ? ' data-tip="' + esc(modelle.map(modellName).join(", ")) + '"' : '') + '>' + zahlWert(modelle.length) + '</div>' +
           '</div>';
         }).join("") + '</div></div>';
-      sortSync(n);
+    }
+    /* ---- DIE URL-LISTE JE REGEL AUS DER DB (20.10.) --------------------------------------------------------------------
+       get_impact_event_urls_v1 (bubble/events_urls_20_10/urls_v1.sql): eine Seite, Suche (URL und Titel) und Sortierung ueber ALLE
+       URLs der Regel, mit den Filtern der Analyse (analyseKoerper). Je Tabelle (ziel-<id>) ein Stand: die letzte Anfrage (sig),
+       ihre Antwort und ein Zaehler, damit eine langsame frueher gestellte Antwort eine neuere nie ueberschreibt. URL_SRV.stand:
+       null unbekannt, true die Funktion gibt es, false sie fehlt (PGRST202) -- dann rechnet der Browser mit den URLs der Analyse. */
+    var URL_SRV = { stand: null }, urlAnf = {};
+    /* Die Hinweiszeile ueber der Tabelle: links die Zahl (oder "n von m" bei einer Suche) und der Filterhinweis, rechts die Suche. o null:
+       keine Tabelle -- dann nur der Filterhinweis, die Suche ist weg. */
+    function urlInfo(sek, o) {
+      var hin = sek.querySelector(".uev-ziel-hinweis"), info = sek.querySelector(".uev-ziel-info"), suche = sek.querySelector(".uev-ziel-suche");
+      if (!hin || !info) return;
+      var filter = sek.__filterZeile || "";
+      if (!o) { hin.hidden = !filter; info.innerHTML = filter; if (suche) suche.hidden = true; return; }
+      var text = o.frage ? ersetze(t("{n} of {m} URLs"), { n: zahl(o.total), m: zahl(o.alle) })
+        : o.gekappt ? ersetze(t("Showing the newest {n} URLs"), { n: zahl(o.alle) })
+        : ersetze(t(o.total === 1 ? "{n} URL" : "{n} URLs"), { n: zahl(o.total) });
+      info.innerHTML = '<span class="uev-angabe">' + (o.gekappt ? UC.icon("info", 2) : "") + '<span>' + esc(text) + '</span></span>' + filter;
+      hin.hidden = false;
+      if (suche) suche.hidden = false;
+    }
+    function urlServerZeigen(sek, zt, n, platz, kopf, wz, evTag, a) {
+      var rec = urlAnf[n] || (urlAnf[n] = { seq: 0, sig: null, daten: null, laedt: false, fehler: false, a: null });
+      rec.ctx = { sek: sek, zt: zt, n: n, platz: platz, kopf: kopf, wz: wz, evTag: evTag };
+      var s = seiten[n] ? seiten[n].st : { page: 1, pageSize: SEITEN_GROESSE, query: "" }, so = sortVon(n), body = analyseKoerper();
+      body.p_target_id = zt.id;
+      body.p_query = String(s.query || "").trim() || null;
+      body.p_sort = so.sortField; body.p_dir = so.sortDir;
+      body.p_limit = s.pageSize; body.p_offset = (s.page - 1) * s.pageSize;
+      var sig = JSON.stringify(body);
+      if (rec.sig !== sig || rec.a !== a) {
+        rec.sig = sig; rec.a = a; rec.laedt = true; rec.fehler = false;
+        var seq = ++rec.seq;
+        abdRpc("get_impact_event_urls_v1", body).then(function (erg) {
+          if (seq !== rec.seq) return;
+          rec.laedt = false;
+          if (fehltFn(erg)) { URL_SRV.stand = false; rec.sig = null; if (root.isConnected !== false && state.ansicht === "detail") renderZiele(); return; }
+          var d = erg.ok && erg.daten && isArr(erg.daten.urls) ? erg.daten : null;
+          if (d) { URL_SRV.stand = true; rec.daten = d; rec.fehler = false; } else rec.fehler = true;
+          if (root.isConnected !== false && state.ansicht === "detail") urlZeichnen(rec);
+        });
+      }
+      urlZeichnen(rec);
+    }
+    function urlZeichnen(rec) {
+      var c = rec.ctx, d = rec.daten, s = seiten[c.n] ? seiten[c.n].st : null;
+      if (!c || !c.platz.isConnected) return;
+      if (s) s.loading = false;
+      c.platz.classList.toggle("is-laedt", !!rec.laedt);
+      if (!d) {
+        urlInfo(c.sek, null);
+        seitenStand(c.n, null);
+        c.platz.innerHTML = rec.fehler ? '<div class="up-fehlerzeile is-on"><span>' + esc(t("The URLs couldn't be loaded.")) + '</span></div>' : '<span class="uev-sk uev-abd-sk"></span>';
+        return;
+      }
+      var total = num(d.total) || 0, alle = num(d.total_all) || 0, frage = String(d.query || "");
+      urlInfo(c.sek, { total: total, alle: alle, frage: frage, gekappt: false });
+      if (!total) {
+        seitenStand(c.n, null);
+        c.platz.innerHTML = '<div class="up-box uev-leerbox">' + (frage ? UC.leerHtml({ mini: true, gefiltert: true, was: "URLs" })
+          : UC.leerHtml({ mini: true, titel: "No cited pages yet" })) + '</div>';
+        return;
+      }
+      seitenStand(c.n, total);
+      /* Die Seite lag hinter dem Ende (die Suche hat weniger Treffer): der Pager hat sie zurueckgesetzt, die Liste holt die richtige. */
+      if (s && num(d.offset) !== (s.page - 1) * s.pageSize && !rec.laedt) { urlServerZeigen(c.sek, c.zt, c.n, c.platz, c.kopf, c.wz, c.evTag, rec.a); return; }
+      c.platz.innerHTML = urlTabelleHtml(c.kopf, d.urls, c.wz, c.evTag);
+      sortSync(c.n);
     }
     /* ---- SEITENABDECKUNG JE REGEL (17.10., Auftrag Teil C, Vorbild: "Seitenindexierung" der
        Google Search Console) ------------------------------------------------------------------
@@ -3793,6 +3926,54 @@
        Die Reiter "All | Cited | Not cited yet": "All" ist der Standard und kommt mit der Abdeckung selbst
        (p_filter "all"), die anderen zwei holt der erste Klick (p_filter "cited" bzw. "not_cited"). */
     var ABD_FILTER = { alle: "all", zitiert: "cited", offen: "not_cited" };
+    /* DIE SUCHE IN DER SITEMAP-LISTE (20.10.): get_impact_event_coverage_v2 (coverage_v2.sql, p_query: Teilstring der URL ueber ALLE
+       Seiten der Quelle). Mit Suche steht eine flache Trefferliste statt des Baums (je 50, "Show more"). Je Ziel, Reiter und Suchtext ein
+       Eintrag; er gilt nur fuer den Stand der Abdeckung, aus dem er kam (gen). Fehlt die Funktion (PGRST202), filtert der Browser die
+       schon geladenen Seiten und sagt es. */
+    var ABD_V2 = { stand: null }, abdSucheSt = {}, abdSuche = {};
+    function abdSucheRec(zt, tab, q) {
+      var e = state.abd[state.eventId], key = state.eventId + "|" + zt.id + "|" + tab + "|" + q.toLowerCase(), rec = abdSuche[key];
+      if (rec && e && rec.gen !== e.daten) { delete abdSuche[key]; rec = null; }
+      return rec || null;
+    }
+    function abdSucheHolen(zt, tab, q, mehr) {
+      var eid = state.eventId, e = state.abd[eid], key = eid + "|" + zt.id + "|" + tab + "|" + q.toLowerCase();
+      if (!e) return;
+      var rec = abdSuche[key] || (abdSuche[key] = { pages: [], total: null, laedt: false, fehler: false, lokal: false, gen: e.daten });
+      if (rec.laedt) return;
+      if (ABD_V2.stand === false || demo) {
+        var ds = abdDaten(e, tab), z = ds ? abdZiel(ds, zt.id, zt.value) : null, mm = e.mehr && e.mehr[tab] && e.mehr[tab][zt.id];
+        var fk = q.toLowerCase(), alle = z ? (isArr(z.pages) ? z.pages : []).concat(mm && isArr(mm.pages) ? mm.pages : []) : [];
+        rec.pages = alle.filter(function (p) { return p && String(p.url || "").toLowerCase().indexOf(fk) >= 0; });
+        rec.total = rec.pages.length; rec.lokal = true;
+        return;
+      }
+      rec.laedt = true; rec.fehler = false;
+      abdRpc("get_impact_event_coverage_v2", { p_event_id: eid, p_target_id: zt.id, p_filter: ABD_FILTER[tab], p_limit: ABD_MEHR, p_offset: mehr ? rec.pages.length : 0, p_query: q }).then(function (erg) {
+        rec.laedt = false;
+        if (fehltFn(erg)) { ABD_V2.stand = false; delete abdSuche[key]; if (root.isConnected !== false && state.eventId === eid) abdAlle(); return; }
+        var z2 = erg.ok && abdLesbar(erg.daten) ? abdZiel(erg.daten, zt.id, null) : null;
+        if (z2 && isArr(z2.pages)) { ABD_V2.stand = true; rec.pages = (mehr ? rec.pages : []).concat(z2.pages); rec.total = num(z2.pages_total); rec.fehler = false; }
+        else if (mehr) { if (UC.toast) UC.toast(fehlerText(String((erg.fehler || {}).message || ""), ""), { kind: "error" }); }
+        else rec.fehler = true;
+        if (root.isConnected !== false && state.eventId === eid) abdAlle();
+      });
+    }
+    function abdSucheHtml(zt, tab, q, zitate) {
+      var rec = abdSucheRec(zt, tab, q);
+      if (!rec) { abdSucheHolen(zt, tab, q, false); rec = abdSucheRec(zt, tab, q); }
+      if (!rec || (rec.laedt && !rec.pages.length)) return '<span class="uev-sk uev-abd-sk"></span>';
+      if (rec.fehler) return '<div class="up-fehlerzeile is-on"><span>' + esc(t("Page coverage couldn't be loaded.")) + '</span></div>';
+      if (!rec.pages.length) return '<div class="up-box uev-leerbox">' + UC.leerHtml({ mini: true, gefiltert: true, was: "pages" }) + '</div>';
+      var total = rec.total != null ? rec.total : rec.pages.length, rest = total - rec.pages.length;
+      return '<div class="uev-abd-leise">' + esc(ersetze(t(total === 1 ? "{n} matching page" : "{n} matching pages"), { n: zahl(total) })) +
+          (rec.lokal ? " " + esc(t("Only the pages loaded so far were searched.")) : "") + '</div>' +
+        '<div class="uev-abd-seiten">' + rec.pages.map(function (p) {
+          return abdSeiteHtml(zt, p, { tiefe: 0, name: null, spur: tab === "offen" ? "datum" : "zitat", zitate: zitate, tab: tab });
+        }).join("") + '</div>' +
+        (rest > 0 ? '<button type="button" class="up-quietbtn uev-abd-mehr uev-abd-such-mehr" data-ziel-id="' + esc(zt.id) + '"' + (rec.laedt ? ' disabled' : '') + '>' +
+          (rec.laedt ? UC.icon("loader", 2) : '') + '<span>' + esc(ersetze(t("Show {n} more"), { n: zahl(Math.min(ABD_MEHR, rest)) })) + '</span></button>' : '');
+    }
     function abdTab(zid) { var w = state.abdSeg[zid]; return w === "zitiert" || w === "offen" ? w : "alle"; }
     /* Der Datensatz (Antwort der Abdeckung) zu einem Reiter, oder null, solange er nicht da ist. */
     function abdDaten(e, tab) { return tab === "alle" ? e.daten : (e.filt && e.filt[tab]) || null; }
@@ -3881,7 +4062,7 @@
          (.up-fehlerzeile, kein Kasten). Ein gescheiterter Refresh sagt es auch so. */
       var lesefehler = st && st !== "ok" && st !== "pending";
       var satzFehler = fs && fs.art === "fehler" && !e.neuLaeuft ? t("The sitemap couldn't be refreshed. Please try again later.")
-        : lesefehler ? t("We couldn't read your sitemap. We'll try again tomorrow.") : "";
+        : lesefehler ? (st === "timeout" ? t("The website took too long to answer. Please try again later.") : t("We couldn't read your sitemap. We'll try again tomorrow.")) : "";
       if (satzFehler) aus += '<div class="up-fehlerzeile is-on uev-abd-fehler"><span>' + esc(satzFehler) + '</span></div>';
       return aus;
     }
@@ -4064,6 +4245,8 @@
       var wurzel = sek.querySelector(".uev-abd-sek");
       if (!wurzel) return;
       var kopf = wurzel.querySelector(".uev-abd-kopf"), meld = wurzel.querySelector(".uev-abd-satz"), seg = wurzel.querySelector(".uev-abd-seg"), liste = wurzel.querySelector(".uev-abd-liste");
+      var suchBox = wurzel.querySelector(".uev-abd-suche");
+      if (suchBox) suchBox.hidden = true;
       var e = state.eventId ? state.abd[state.eventId] : null, d = e && e.daten, z = d ? abdZiel(d, zt.id, zt.value) : null;
       function nurKopf(html, meldHtml) { kopf.innerHTML = html; meld.innerHTML = meldHtml || ""; meld.hidden = !meldHtml; seg.innerHTML = ""; liste.innerHTML = ""; liste.classList.remove("is-laedt"); }
       if (!e || ABD_DA.stand === false || (d && !z)) { wurzel.hidden = true; kopf.innerHTML = ""; meld.innerHTML = ""; seg.innerHTML = ""; liste.innerHTML = ""; return; }
@@ -4112,7 +4295,15 @@
       seg.innerHTML = '<div class="up-seg uev-abd-schalter" role="group" aria-label="' + esc(t("Pages")) + '">' +
         knopf("alle", "All ({n})", pc) + knopf("zitiert", "Cited ({n})", cc) + knopf("offen", "Not cited yet ({n})", nicht) + '</div>';
       if (UC.segJetzt) { try { UC.segJetzt(seg.querySelector(".up-seg")); } catch (x) {} }
+      if (suchBox) suchBox.hidden = false;
       liste.classList.toggle("is-laedt", laeuft);
+      /* Mit Suchtext: die flache Trefferliste statt des Baums. */
+      var sq = String((abdSucheSt[String(zt.id)] || {}).query || "").trim();
+      if (sq) {
+        (abdSucheSt[String(zt.id)] || {}).loading = false;
+        liste.innerHTML = abdSucheHtml(zt, tab, sq, sek.__zitate || {});
+        return;
+      }
       var ds = abdDaten(e, tab), zz = ds ? abdZiel(ds, zt.id, zt.value) : null;
       if (!ds) {
         abdFilterHolen(state.eventId, tab);
@@ -4413,9 +4604,9 @@
       detailUhr();
       rufen("uevDetail", { p_event_id: state.eventId }, { eventId: state.eventId }, spaet);
     }
-    function analyseAnfordern(spaet) {
-      state.analyseLaden = true; state.analyseFehler = false;
-      detailUhr();
+    /* Die Filter der Analyse als Parameter (Fenster, Modelle, Maerkte, Intent): dieselben gehen an die URL-Liste je Regel
+       (get_impact_event_urls_v1), damit beide dieselben Zahlen rechnen. */
+    function analyseKoerper() {
       var body = { p_event_id: state.eventId, p_window_days: state.fenster,
                    p_models: state.modelle && state.modelle.length ? state.modelle : null,
                    p_markets: state.maerkte && state.maerkte.length ? state.maerkte : null };
@@ -4427,6 +4618,12 @@
          ohne Fensterlaenge. Bei einer Kampagne ignoriert v4 p_window_days (Vertrag B.2). */
       kampagneMerken(dasEvent());
       if (seitAktiv(dasEvent())) { body.p_window_days = null; body.p_window = "since"; }
+      return body;
+    }
+    function analyseAnfordern(spaet) {
+      state.analyseLaden = true; state.analyseFehler = false;
+      detailUhr();
+      var body = analyseKoerper();
       state.analyseSigLief = analyseSig();
       rufen("uevAnalysis", body, { sig: state.analyseSigLief }, spaet);
     }
@@ -4573,6 +4770,13 @@
       if (asg) { abdSegWaehlen(asg.getAttribute("data-ziel-id"), asg.getAttribute("data-abd-seg")); return; }
       var anu = e.target.closest(".uev-abd-neu");
       if (anu) { abdAktualisieren(); return; }
+      var asm = e.target.closest(".uev-abd-such-mehr");
+      if (asm) {
+        var azid = asm.getAttribute("data-ziel-id"), azt = regelZiele(dieDetail()).filter(function (x) { return String(x.id) === azid; })[0];
+        var aq = String((abdSucheSt[azid] || {}).query || "").trim();
+        if (azt && aq) { abdSucheHolen(azt, abdTab(azid), aq, true); abdAlle(); }
+        return;
+      }
       var amh = e.target.closest(".uev-abd-mehr");
       if (amh) { abdMehr(amh.getAttribute("data-ziel-id")); return; }
       /* Der Baum der Seiten (17.10.): Ordner auf und zu, "Show more" je Ebene. */
@@ -7179,7 +7383,8 @@
         selected_topic_count: e.modus === "topics" ? e.topics.length : null,
         affected_prompt_count: v && !v.fehler ? v.n : null,
         affected_url_count: mit.filter(function (z) { return z.kind === "url"; }).length,
-        targets: mit.map(function (z) { return { kind: z.kind }; }) };
+        /* host: das Favicon des Avatars (Citation Tracking, genau eine Domain) steht schon in der Vorschau, nicht erst nach dem Anlegen. */
+        targets: mit.map(function (z) { return { kind: z.kind, host: zielHost(z) }; }) };
       /* Eine Kampagne zeigt in der Vorschau ihren Zeitraum und ihren Stand, wie die Karte danach
          (Audit EV-05: nur der Starttag stand da). Der Stand nur mit v4 -- sonst kennt die Karte
          keinen Status. Tag x von y rechnet statusInfo aus den Daten, solange kein day_number da ist. */

@@ -328,7 +328,7 @@
 /* ---------- list mode ---------- */
 .uo-list { padding-right: 2px; }
 .uo-list-section { margin-bottom: 16px; }
-.uo-list-sechead { display: flex; align-items: center; gap: 8px; padding: 4px 4px 12px; }
+.uo-list-sechead { display: flex; align-items: center; gap: 8px; padding: 4px 4px 8px; }
 /* Same job the lane header does on the board: the status you are scrolling through stays labelled.
    Each heading pins inside its own .uo-list-section, so it hands over to the next one instead of
    stacking. Extra top padding only while pinned, so the rows have something to disappear behind
@@ -341,7 +341,8 @@
   position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 4;
   background: var(--up-surface); padding-top: 10px;
 }
-.uo-list-rows { display: flex; flex-direction: column; gap: 8px; }
+/* 4 oben: die erste Zeile hebt sich beim Hover um 2px (.up-karte-klick) und lief sonst unter die klebende Gruppenueberschrift -- ihre Oberkante war abgeschnitten. */
+.uo-list-rows { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
 .uo-row {
   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl);
