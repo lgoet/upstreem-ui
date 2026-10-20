@@ -5550,6 +5550,20 @@
     @media (max-width: 499px) {
       html:has(.up-modal-backdrop.is-shown) .up-toast.is-bleibt { visibility: hidden; }
     }
+    /* DIE KARTE (20.10., Meldung "X is cited" bei Events; Vorbild: Mitteilungskarte des Nutzers): links eine Kachel 44 mit dem Bild der ersten
+       zitierten Seite, rechts der Name des Events und eine Zeile Text. Die Farben sind die des Toasts (umgekehrt: dunkel im hellen Thema, hell im
+       dunklen), dazu eine Haarlinie aus der Flaeche des Toasts. Radius 16 (Kartenstufe gross), die Kachel 12. */
+    .up-toast.is-karte { align-items: center; gap: 14px; padding: 14px; border-radius: var(--up-r-3xl); border: 1px solid var(--vc-toast-flaeche); }
+    .up-toast-bild {
+      flex: 0 0 44px; width: 44px; height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;
+      border-radius: var(--up-r-2xl); border: 1px solid var(--vc-toast-flaeche-hover); background: var(--vc-toast-flaeche);
+      color: var(--up-karte-zeichen, var(--vc-toast-ink));
+    }
+    .up-toast-bild img { width: 24px; height: 24px; border-radius: var(--up-r-m); object-fit: contain; display: block; }
+    .up-toast-bild svg { width: 20px; height: 20px; display: block; }
+    .up-toast.is-karte .up-toast-txt { gap: 2px; }
+    .up-toast.is-karte .up-toast-t { font-size: var(--up-fs-l); line-height: 20px; }
+    .up-toast.is-karte .up-toast-x { align-self: flex-start; margin: -6px -6px 0 0; }
     .up-toast.is-klick { cursor: pointer; }
     .up-toast.is-klick:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
     /* Die Adressen: eine Zeile je Seite, Favicon 14 vor dem gekuerzten Text, leiser als der Satz

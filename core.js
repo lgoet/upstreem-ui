@@ -14338,12 +14338,20 @@
       var klick = typeof opts.onClick === "function" ? opts.onClick : null;
       var zFarbe = /^#[0-9a-f]{6}$/i.test(String(opts.zeichenFarbe || "")) ? String(opts.zeichenFarbe) : "";
       var el = document.createElement("div");
-      el.className = "up-toast is-" + art + (bleibt ? " is-bleibt" : "") + (inhalt ? " is-reich" : "") + (klick ? " is-klick" : "");
+      /* DIE KARTE (20.10., "X is cited" bei Events): eine eigene Form neben dem Toast, nach dem Vorbild der Mitteilungskarte des Nutzers -- links eine
+         Kachel mit dem Bild der Seite, rechts Titel und eine Zeile Text, umgekehrte Farben wie jeder Toast. Stapel, Ort, Schliessen und Warteschlange
+         sind die des Toasts; opts.karte = { bildUrl, zeichen (Fallback), zeichenFarbe }, der Text kommt als opts.inhalt. */
+      var karte = opts.karte && typeof opts.karte === "object" ? opts.karte : null;
+      el.className = "up-toast is-" + art + (bleibt ? " is-bleibt" : "") + (inhalt ? " is-reich" : "") + (klick ? " is-klick" : "") + (karte ? " is-karte" : "");
       el.setAttribute("role", art === "error" ? "alert" : "status");
-      el.innerHTML =
-        '<span class="up-toast-ic" aria-hidden="true"' + (zFarbe ? ' style="color:' + zFarbe + '"' : '') + '>' +
+      var kopfHtml = karte
+        ? '<span class="up-toast-bild" aria-hidden="true"' + (karte.zeichenFarbe && /^#[0-9a-f]{6}$/i.test(String(karte.zeichenFarbe)) ? ' style="--up-karte-zeichen:' + karte.zeichenFarbe + '"' : '') + '>' +
+            (karte.bildUrl ? '<img src="' + esc(karte.bildUrl) + '" alt="" width="24" height="24" loading="lazy" referrerpolicy="no-referrer"/>' : (karte.zeichen || icon("globe", 1.8))) + '</span>' +
+          '<span class="up-toast-txt"><span class="up-toast-t"></span>' + inhalt + '</span>'
+        : '<span class="up-toast-ic" aria-hidden="true"' + (zFarbe ? ' style="color:' + zFarbe + '"' : '') + '>' +
           (typeof opts.zeichen === "string" && opts.zeichen ? opts.zeichen : icon(TOAST_ZEICHEN[art], 2)) + '</span>' +
-        '<span class="up-toast-txt"><span class="up-toast-t"></span>' + (desc ? '<span class="up-toast-d"></span>' : '') + inhalt + '</span>' +
+        '<span class="up-toast-txt"><span class="up-toast-t"></span>' + (desc ? '<span class="up-toast-d"></span>' : '') + inhalt + '</span>';
+      el.innerHTML = kopfHtml +
         (aktion ? '<button type="button" class="up-toast-act"></button>' : '') +
         (art === "error" || bleibt ? '<button type="button" class="up-toast-x" aria-label="' + esc(t_("Close")) + '">' + icon("x", 2.2) + '</button>' : '');
       /* Durch den Katalog (12.10.): Bausteine, die englischen Text direkt uebergeben, standen im
@@ -19876,6 +19884,19 @@
     }
     return h;
   }
+  /* Der Text der Karte: eine Zeile (zwei, wenn das Event zugleich abgeschlossen ist). Bei einer Seite die Adresse, sonst die Zahl; die Liste der
+     Toast-Fassung entfaellt, die Karte zeigt das Bild der ersten Seite. */
+  function evmKarteText(ev){
+    var n = toNum(ev.new_cited_count) || 0, urls = isArr(ev.new_cited_urls) ? ev.new_cited_urls.filter(function(u){ return typeof u === "string" && u; }) : [];
+    var h = "";
+    if (n === 1 && urls.length){
+      h += '<span class="up-toast-d">' + esc(t_("{url} cited for the first time").replace("{url}", "\u0001")).replace("\u0001", '<span class="up-toast-urlwort">' + esc(evmKurz(urls[0], true)) + '</span>') + '</span>';
+    } else if (n > 0){
+      h += '<span class="up-toast-d">' + esc(t_("{n} pages cited for the first time").replace("{n}", String(n))) + '</span>';
+    }
+    if (ev.completed === true) h += '<span class="up-toast-d">' + esc(t_("Campaign completed, your report is ready")) + '</span>';
+    return h;
+  }
   function evmGelesen(id){
     return rpc("mark_impact_event_notices_read_v1", { p_team: APP.team, p_event_id: id }, { timeoutMs: 15000 }).then(function(erg){
       if (!erg || !erg.ok) console.error("[events] notice could not be marked as read:", id, erg && erg.fehler ? erg.fehler.message : "");
@@ -19903,8 +19924,9 @@
     EVM.offen++;
     toast(String(ev.name || ""), {
       kind: "neutral", bleibt: true, roh: true, schluessel: "evm-" + id,
-      zeichen: icon(evmZeichen(ev), 2), zeichenFarbe: ev.color,
-      inhalt: evmInhalt(ev),
+      karte: { bildUrl: (isArr(ev.new_cited_urls) && ev.new_cited_urls[0] && faviconUrl(String(ev.new_cited_urls[0]), 64)) || "",
+               zeichen: icon(evmZeichen(ev), 1.8), zeichenFarbe: ev.color },
+      inhalt: evmKarteText(ev),
       onClick: function(){ eventOeffnen(id); },
       onClose: function(){
         evmGelesen(id);
