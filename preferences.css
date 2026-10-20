@@ -64,7 +64,7 @@ html[data-up-dunkel="geist"] .ums-backdrop[data-theme="dark"] .ums-aside { backg
 /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
    Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
 .ums-navhead {
-  padding: 10px 10px 6px; font-size: 12px; font-weight: 600; color: var(--vc-third);
+  padding: 10px 10px 6px; font-size: var(--up-ueb-gruppe-gr); font-weight: var(--up-ueb-gruppe-gew); color: var(--vc-muted);
 }
 .ums-navhead + .ums-navhead, .ums-nav + .ums-navhead { margin-top: 10px; }
 /* Die Zeile ist .up-optrow aus core -- dieselbe Hoehe, dieselbe Hoverflaeche, derselbe Radius wie
@@ -141,8 +141,8 @@ html[data-up-dunkel="geist"] .ums-backdrop[data-theme="dark"] .ums-aside .ums-na
 .ums-sub { font-size: var(--up-fs-l); font-weight: 400; color: var(--vc-muted); line-height: 20px; }
 
 .ums-sec + .ums-sec { margin-top: 30px; }
-.ums-sectitle { font-size: 16px; font-weight: 500; color: var(--vc-text); margin: 0 0 4px; line-height: 1.3; }
-.ums-secsub { font-size: 13px; font-weight: 400; color: var(--vc-third); margin: 0 0 6px; line-height: 1.45; }
+.ums-sectitle { font-size: var(--up-ueb-abschnitt-gr); font-weight: var(--up-ueb-abschnitt-gew); letter-spacing: var(--up-ueb-abschnitt-spur); color: var(--vc-text); margin: 0 0 var(--up-ueb-luft); line-height: var(--up-ueb-abschnitt-zeile); }
+.ums-secsub { font-size: var(--up-ueb-unter-gr); font-weight: var(--up-ueb-unter-gew); color: var(--vc-muted); margin: 0 0 6px; line-height: var(--up-ueb-unter-zeile); }
 /* Die Trennlinie unter dem Abschnittstitel, wie in der Vorlage. Nur EINE -- unter der letzten
    Zeile steht keine, sonst schwebt der Abschnitt in einem halben Kasten. */
 .ums-secline { height: 1px; background: var(--vc-border); margin: 10px 0 2px; }

@@ -25,7 +25,7 @@
 .combo-unit-right { flex: 0 0 35%; max-width: 35%; }
 
 .combo-head { display: flex; align-items: center; height: 32px; margin-bottom: 16px; padding: 0; }
-.combo-heading { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.combo-heading { font-size: var(--up-ueb-abschnitt-gr); font-weight: var(--up-ueb-abschnitt-gew); letter-spacing: var(--up-ueb-abschnitt-spur); color: var(--vc-text); line-height: var(--up-ueb-abschnitt-zeile); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .combo-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 
 /* Kein Nachbau von .up-iconbtn, sondern die Absicht von oben an der Stelle, an der der Waechter
@@ -120,7 +120,7 @@
 .combo-filter-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 9px 6px; margin-bottom: 4px; }
 /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
    Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
-.combo-filter-title { font-size: 12px; font-weight: 600; color: var(--vc-third); }
+.combo-filter-title { font-size: var(--up-ueb-gruppe-gr); font-weight: var(--up-ueb-gruppe-gew); color: var(--vc-muted); }
 .combo-filter-toggle { border: 0; background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: var(--up-r-s); }
 /* --vc-text wie .up-pop-action in core, NICHT --cc-primary. Das Mintgruen ist die Farbe der
    Chart-Linie dieses Bauteils und hat mit einer Interaktion nichts zu tun -- "Auswahl

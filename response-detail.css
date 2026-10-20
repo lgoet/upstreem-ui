@@ -200,12 +200,12 @@
 .urd-cc-domain:focus-visible, .urd-cr-domain:focus-visible { outline: 2px solid var(--vc-text);
   outline-offset: 2px; border-radius: var(--up-r-xs); }
 /* Der Titel ist der Wert der Karte: zwei Zeilen, dann gekuerzt. */
-.urd-cc-title { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.4;
-  letter-spacing: -0.01em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+.urd-cc-title { font-size: var(--up-ueb-abschnitt-gr); font-weight: var(--up-ueb-abschnitt-gew); color: var(--vc-text); line-height: var(--up-ueb-abschnitt-zeile);
+  letter-spacing: var(--up-ueb-abschnitt-spur); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden; margin-bottom: 4px; }
 /* Die Beschreibung nimmt, was uebrig ist: sie ist Vorschau und darf als erstes weichen. */
 /* v2: eine Zeile -- die Kachel ist eine Quelle, keine Vorschau ihres Inhalts. */
-.urd-cc-desc { font-size: 13px; font-weight: 400; color: var(--vc-muted); line-height: 1.45;
+.urd-cc-desc { font-size: var(--up-ueb-unter-gr); font-weight: var(--up-ueb-unter-gew); color: var(--vc-muted); line-height: var(--up-ueb-unter-zeile);
   display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
   flex: 1 1 auto; }
 /* Die Marken stehen rechts unten -- wie im Fuss der Antwortkarten. */

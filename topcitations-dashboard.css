@@ -31,7 +31,7 @@
 .tcd-head { display: flex; align-items: center; height: 32px; margin-bottom: 16px; padding: 0; }
 .tcd-unit-left .tcd-head { padding-right: 0; }
 .tcd-root.is-max .tcd-unit-left .tcd-head, .tcd-root.is-narrow .tcd-unit-left .tcd-head { padding-right: 0; }
-.tcd-heading { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tcd-heading { font-size: var(--up-ueb-abschnitt-gr); font-weight: var(--up-ueb-abschnitt-gew); letter-spacing: var(--up-ueb-abschnitt-spur); color: var(--vc-text); line-height: var(--up-ueb-abschnitt-zeile); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tcd-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 .tcd-box {
   /* 487 = 1 Rand + 45 Tabellenkopf + 8 x 55 Zeilen + 1 Rand (13.10.: acht Eintraege; mit 430 waren

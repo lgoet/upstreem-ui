@@ -176,7 +176,7 @@
 /* Same 14px/500 as .up-heading -- a column title is a heading, and the standalone version's
    13.5px/600 was the single biggest reason the board read as a different app. */
 /* 15 statt 14 (08.09. angefordert: einen Punkt groesser). */
-.uo-col-title { font-size: 15px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+.uo-col-title { font-size: var(--up-ueb-block-gr); font-weight: var(--up-ueb-block-gew); letter-spacing: var(--up-ueb-block-spur); color: var(--vc-text); white-space: nowrap; }
 /* Die Zahl neben dem Spaltentitel ist seit dem 11.10. der Zaehler-Chip aus core (.up-zaehler,
    grauer Grund) wie neben jeder anderen Ueberschrift der App -- vorher 16px/400 ohne Grund.
    Abstand gibt die Kopfzeile (gap 8); der alte Name bleibt als Anker (Vertrag). */
@@ -474,7 +474,7 @@
    and a dropdown's "SORT BY" read as the same class of label. */
 /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
    Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
-.uo-m-section-title { margin: 28px 0 12px; font-size: 12px; font-weight: 600; color: var(--vc-third); }
+.uo-m-section-title { margin: 28px 0 12px; font-size: var(--up-ueb-gruppe-gr); font-weight: var(--up-ueb-gruppe-gew); color: var(--vc-muted); }
 
 /* Der Performance-Block ist DIESELBE Tabelle wie Details darunter -- Zeile fuer Zeile,
    Beschriftung links, Wert rechts, eine Linie dazwischen. Vorher waren es fuenf gerahmte Kacheln

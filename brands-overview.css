@@ -16,7 +16,7 @@
 .ubo-unit { display: flex; flex-direction: column; min-width: 0; }
 
 .ubo-head { display: flex; align-items: center; gap: 8px; min-height: 32px; margin-bottom: 16px; }
-.ubo-heading { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2;
+.ubo-heading { font-size: var(--up-ueb-abschnitt-gr); font-weight: var(--up-ueb-abschnitt-gew); letter-spacing: var(--up-ueb-abschnitt-spur); color: var(--vc-text); line-height: var(--up-ueb-abschnitt-zeile);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ubo-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 /* Reihenfolge in der Kopfzeile ueber flex order und NICHT ueber das Markup: das Markup steckt im

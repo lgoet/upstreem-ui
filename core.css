@@ -69,6 +69,20 @@
                           sondern abgelesen. Heute nur .upt-kpi-quota-used; ask-mira.css
                           traegt dieselbe Rolle auf 34px und zieht nach, wenn die Datei
                           drankommt.                                     (prompts-table) */
+  /* DIE VIER UEBERSCHRIFTEN (20.10., Audit gegen Geist: vorher sieben Varianten von Titel plus Unterzeile, Titel in 12, 14, 15, 16 und
+     Unterzeilen in 12, 12.5, 13, 14). Werte nach Geist (vercel.com/geist/typography, gemessen): heading-16 16/24/600/-0.32,
+     heading-14 14/20/600/-0.28, copy-13 13/18, label-12 12/16; auf unserer Skala (--up-fs-*). Jede Komponente liest diese Tokens, keine
+     eigene Groesse mehr.
+       Abschnitt   steht ueber einer Komponente, mit oder ohne Unterzeile oder Zahl, auch in Drawern und Einstellungen (.up-heading, .up-dk-h2, *-sectitle)
+       Unterzeile  erklaert den Abschnitt, muted                                                               (.up-sec-sub, .up-dk-unter, *-secsub)
+       Block       Titel einer Spalte oder eines Eintrags INNERHALB einer Karte (Kanban-Spalte, Verlaufseintrag)  (.uo-col-title, .upr-history-headline)
+       Gruppe      kleine Beschriftung ueber einer Gruppe, kein Titel, keine Versalien                        (.up-blockhead, .up-label, .up-pop-head)
+     Abstand Titel zu Unterzeile 4: Geist hat 8 unter einem heading-24; unter 16 sind 4 verhaeltnisgleich. */
+  --up-ueb-abschnitt-gr: var(--up-fs-xl); --up-ueb-abschnitt-gew: 600; --up-ueb-abschnitt-zeile: 24px; --up-ueb-abschnitt-spur: -0.32px;
+  --up-ueb-unter-gr: var(--up-fs-m);      --up-ueb-unter-gew: 400;     --up-ueb-unter-zeile: 18px;
+  --up-ueb-block-gr: var(--up-fs-l);      --up-ueb-block-gew: 600;     --up-ueb-block-zeile: 20px;     --up-ueb-block-spur: -0.28px;
+  --up-ueb-gruppe-gr: var(--up-fs-s);     --up-ueb-gruppe-gew: 500;    --up-ueb-gruppe-zeile: 16px;
+  --up-ueb-luft: 4px;
   /* AUSSERHALB DER SKALA, mit Grund: neun font-size in clamp() (auth-page, onboarding,
      ask-mira, prompt-research). Das sind Ueberschriften auf ganzseitigen Flaechen, die mit
      dem Fenster mitwachsen -- dieselbe Ueberlegung wie bei der Landingpage: eine ganze Seite
@@ -1865,7 +1879,9 @@
 
     /* ---------- toolbar ---------- */
     .up-head { display: flex; align-items: center; height: 32px; margin-bottom: 16px; gap: 8px; }
-    .up-heading { display: inline-flex; align-items: center; font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; }
+    /* .up-heading ist der ABSCHNITTSTITEL, auch in der Kopfzeile einer Tabelle oder eines Charts, mit Zahl ("Event Tracking 1") oder ohne: 16/600 wie
+       .up-sec-h und .up-dk-h2 (20.10.; die erste Fassung gab ihm den kleineren Block-Titel, und neben "Merchants" 16 stand "Recent Appearances" 14). */
+    .up-heading { display: inline-flex; align-items: center; font-size: var(--up-ueb-abschnitt-gr); font-weight: var(--up-ueb-abschnitt-gew); letter-spacing: var(--up-ueb-abschnitt-spur); color: var(--vc-text); line-height: var(--up-ueb-abschnitt-zeile); white-space: nowrap; }
     /* DER ZAEHLER ALS CHIP (11.10., vom Nutzer so bestellt: "Separator weg, den Count in einen
        Chip mit grauem Background"). Vorher "Ueberschrift . 42" mit einem 4px-Punkt. Der Chip ist
        EIN Baustein fuer jede Zahl neben einer Ueberschrift -- .up-zaehler frei stehend,
@@ -2299,9 +2315,11 @@
        allen vier Kanten. Steht sie hier, kann das keiner Seite mehr passieren. */
     .up-varsec { padding: 16px; }
     .up-sec-head { display: flex; align-items: center; gap: 12px; min-height: 32px; margin-bottom: 14px; }
-    .up-sec-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+    .up-sec-titles { display: flex; flex-direction: column; gap: var(--up-ueb-luft); min-width: 0; flex: 1 1 auto; }
     .up-sec-h { flex: 0 0 auto; }
-    .up-sec-sub { font-size: 12px; font-weight: 400; color: var(--vc-muted); }
+    /* Der Abschnittstitel: .up-heading mit .up-sec-h (shopping, ads, events, performance sekKopf); (0,2,0) schlaegt den Block-Titel (0,1,0). */
+    .up-heading.up-sec-h { font-size: var(--up-ueb-abschnitt-gr); font-weight: var(--up-ueb-abschnitt-gew); letter-spacing: var(--up-ueb-abschnitt-spur); line-height: var(--up-ueb-abschnitt-zeile); }
+    .up-sec-sub { font-size: var(--up-ueb-unter-gr); font-weight: var(--up-ueb-unter-gew); line-height: var(--up-ueb-unter-zeile); color: var(--vc-muted); }
     /* 16px wie jeder andere Container mit Rahmen in dieser App (.up-box). Vorher 10 -- ein
        kleinerer Innenradius wirkt nur dort richtig, wo ein groesserer Rahmen direkt aussen
        anliegt; hier liegt Polsterung dazwischen, und dann liest sich die Abweichung als Fehler. */
@@ -3695,7 +3713,7 @@
     .up-pop-sub,
     .up-blockhead,
     .up-filter-title,
-    .up-topicmodal-label { font-size: 12px; font-weight: 600; color: var(--vc-third); }
+    .up-topicmodal-label { font-size: var(--up-ueb-gruppe-gr); font-weight: var(--up-ueb-gruppe-gew); line-height: var(--up-ueb-gruppe-zeile); color: var(--vc-muted); }
     /* Waagerecht 0, aus demselben Grund wie .up-filter-head: die Ueberschrift steht buendig
        mit der Kante der Zeilen darunter (deren Hoverflaeche beginnt an der Polsterkante des
        Menues), nicht eingerueckt gegen sie. */
@@ -6614,10 +6632,10 @@
   color: var(--vc-text); font-variant-numeric: tabular-nums; }
 .up-dk-zahl-n:empty { display: none; }
 /* Abschnittskopf: Ueberschrift ueber der Unterzeile, 16/600 und 13. */
-.up-dk-h2 { font-size: var(--up-fs-xl); font-weight: 600; letter-spacing: -0.01em; color: var(--vc-text); }
+.up-dk-h2 { font-size: var(--up-ueb-abschnitt-gr); font-weight: var(--up-ueb-abschnitt-gew); letter-spacing: var(--up-ueb-abschnitt-spur); line-height: var(--up-ueb-abschnitt-zeile); color: var(--vc-text); }
 /* Die Unterzeile in der DRITTEN Textstufe (12.10. angefordert): sie erklaert die Ueberschrift
    und tritt hinter den Inhalt des Abschnitts zurueck. */
-.up-dk-unter { font-size: var(--up-fs-m); font-weight: 400; line-height: 1.45; color: var(--vc-third); }
+.up-dk-unter { font-size: var(--up-ueb-unter-gr); font-weight: var(--up-ueb-unter-gew); line-height: var(--up-ueb-unter-zeile); color: var(--vc-muted); }
 /* DER KOPF MIT BILD (13.10. aus brand-drawer.css hierher, seit der Domain-Drawer ihn auch traegt):
    Logo oder Favicon links, daneben der Titel (.up-dk-titel) und darunter eine leise Zeile. Die
    Kachel ist .up-logo-box aus core in Kopfgroesse, genau die des Kopfes von performance-detail und

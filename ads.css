@@ -256,7 +256,7 @@
    also weiter. */
 .uad-root [data-flach="yes"] .uad-auf { padding-right: calc(16px + var(--up-flach-aus)); }
 .uad-auf-kopf { display: flex; align-items: center; gap: 12px; padding-top: 8px; min-width: 0; }
-.uad-auf-titel { font-size: var(--up-fs-s); font-weight: 600; color: var(--vc-third); white-space: nowrap; }
+.uad-auf-titel { font-size: var(--up-ueb-gruppe-gr); font-weight: var(--up-ueb-gruppe-gew); color: var(--vc-muted); white-space: nowrap; }
 .uad-auf-kopf .up-quietbtn { margin-left: auto; }
 .uad-auf-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 8px; }
 /* Hover, Druck und Fokus: .up-karte-klick aus core (13.10.), wie jede klickbare Karte. Das Skelett
@@ -290,7 +290,7 @@
 .uad-dr-desc { margin: 0; font-size: var(--up-fs-l); line-height: 1.55; color: var(--vc-muted); overflow-wrap: anywhere; }
 .uad-dr-preis { font-size: var(--up-fs-xl); font-weight: 600; color: var(--vc-text); font-variant-numeric: tabular-nums; }
 .uad-dr-gruppe { display: flex; flex-direction: column; }
-.uad-dr-titel { padding-bottom: 8px; font-size: var(--up-fs-s); font-weight: 600; color: var(--vc-third); }
+.uad-dr-titel { padding-bottom: 8px; font-size: var(--up-ueb-gruppe-gr); font-weight: var(--up-ueb-gruppe-gew); color: var(--vc-muted); }
 .uad-dr-box { border: 1px solid var(--vc-border); border-radius: var(--up-r-xl); overflow: hidden; }
 .uad-dr-zeile { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 12px; align-items: center; min-height: 40px;
   padding: 8px 12px; box-sizing: border-box; }

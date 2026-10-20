@@ -38,7 +38,7 @@
 /* 4px Radius wie das Logo in der Meta-Zeile der Seitenkoepfe -- dasselbe Bauteil, dieselbe Kante. */
 .ubd-logo { width: 18px; height: 18px; border-radius: var(--up-r-xs); object-fit: cover; flex: 0 0 auto; display: block; }
 .ubd-heading {
-  font-size: 14px; font-weight: 500; color: var(--vc-text);
+  font-size: var(--up-ueb-abschnitt-gr); font-weight: var(--up-ueb-abschnitt-gew); letter-spacing: var(--up-ueb-abschnitt-spur); color: var(--vc-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .ubd-head .vc-gran { flex: 0 0 auto; }
