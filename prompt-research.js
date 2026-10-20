@@ -1191,6 +1191,12 @@
       e.stopPropagation();
       setDropdownValue(dd, option);
     });
+    /* Das Esc-Schild leert das Feld (20.10.). */
+    var sx = dd.querySelector('.upr-dd-searchx');
+    if (sx && search) sx.addEventListener('click', function(e){
+      e.stopPropagation(); search.value = ''; search.dispatchEvent(new Event('input', { bubbles: true }));
+      try { search.focus({ preventScroll: true }); } catch(err){}
+    });
     if (search && list) search.addEventListener('input', function(){
       var q = search.value.trim().toLowerCase(), visibleCount = 0;
       getOptions().forEach(function(option){

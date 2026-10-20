@@ -501,18 +501,16 @@
    has no rule under it but shares the value so the panel's internal rhythm stays even. */
 .upt-topichead { display: flex; align-items: center; gap: 8px; padding: 0 0 var(--upt-sep-gap); }
 .upt-topicsearch-wrap { flex: 1 1 auto; min-width: 0; display: flex; align-items: center;
-  height: 32px; padding: 0 4px 0 10px; border-radius: var(--up-r-m);
+  height: var(--up-h-btn); padding: 0 6px 0 12px; border-radius: var(--up-r-m);
   border: 1px solid var(--vc-border); background: transparent; }
 .upt-topicsearch-wrap:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
 .upt-topicsearch-in { flex: 1 1 auto; min-width: 0; height: 100%; padding: 0;
   border: 0; background: transparent; outline: none;
-  font-family: inherit; font-size: 13px; color: var(--vc-text); }
+  font-family: inherit; font-size: var(--up-fs-l); font-weight: var(--up-fw-n); color: var(--vc-text); }
 /* Slot always reserved (visibility, not display) so the field's width doesn't shift when the x
    appears — same trick as the main table's own search box. */
 /* Aussehen kommt aus core (Zeichenknopf, leise Fassung, Groessenstufe) -- hier nur das Oertliche. */
-.upt-topicsearch-clear { flex: 0 0 20px; margin-left: 4px; visibility: hidden; }
-.upt-topicsearch-clear svg { width: 13px; height: 13px; display: block; }
-.upt-topicsearch-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+.upt-topicsearch-clear { flex: 0 0 auto; margin-left: 4px; visibility: hidden; display: inline-flex; align-items: center; justify-content: center; border: 0; cursor: pointer; }
 .upt-topichead.has-text .upt-topicsearch-clear { visibility: visible; }
 /* Same rest/hover idiom as every other button in here (transparent -> --vc-heading-bg on hover,
    e.g. .up-iconbtn/.upt-topicsearch-clear) — it used to sit permanently grey with only its text
@@ -846,14 +844,12 @@
 .upt-grp-sidehead.is-searching .upt-grp-sidehead-lbl,
 .upt-grp-sidehead.is-searching .upt-grp-sidetools { display: none; }
 .upt-grp-sidehead.is-searching .upt-grp-sidesearch-box { display: flex; }
-.upt-grp-sidesearch-in { flex: 1 1 auto; min-width: 0; height: 32px; padding: 0;
-  border: 0; background: transparent; color: var(--vc-text); font: inherit; font-size: 13px; outline: 0; }
+.upt-grp-sidesearch-in { flex: 1 1 auto; min-width: 0; height: var(--up-h-btn); padding: 0;
+  border: 0; background: transparent; color: var(--vc-text); font: inherit; font-size: var(--up-fs-l); font-weight: var(--up-fw-n); outline: 0; }
 .upt-grp-sidesearch-in::placeholder { color: var(--vc-third); }
 /* Slot always reserved (visibility, not display) so nothing shifts when the x appears/disappears. */
 /* Aussehen kommt aus core (Zeichenknopf, leise Fassung, Groessenstufe) -- hier nur das Oertliche. */
-.upt-grp-sidesearch-clear { flex: 0 0 20px; margin-left: 4px; }
-.upt-grp-sidesearch-clear svg { width: 13px; height: 13px; display: block; }
-.upt-grp-sidesearch-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+.upt-grp-sidesearch-clear { flex: 0 0 auto; margin-left: 4px; display: inline-flex; align-items: center; justify-content: center; border: 0; cursor: pointer; }
 .upt-grp-sidelist { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0;
   overflow-y: auto; overflow-x: hidden; }
 /* Same look/hover/open treatment as .upt-grp-head (the inline view's own group row), just

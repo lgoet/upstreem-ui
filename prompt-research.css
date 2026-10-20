@@ -497,11 +497,14 @@
 .up-root[data-theme="dark"] .upr-dd-menu { background: var(--up-menu-bg); }
 .upr-dd-search-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 8px; }
 .upr-dd-search-wrap { position: relative; }
-.upr-dd-search-wrap svg { position: absolute; right: 10px; top: 9px; width: 16px; height: 16px; color: var(--vc-third); pointer-events: none; }
+.upr-dd-search-wrap svg { position: absolute; right: 10px; top: 8px; width: 16px; height: 16px; color: var(--vc-third); pointer-events: none; }
 .upr-dd-search {
-  width: 100%; height: 34px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
-  background: var(--up-feld-bg); color: var(--vc-text); padding: 0 32px 0 10px; font-size: 12.5px; outline: none;
+  width: 100%; height: var(--up-h-btn); border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
+  background: var(--up-feld-bg); color: var(--vc-text); padding: 0 48px 0 12px; font-size: var(--up-fs-l); font-weight: var(--up-fw-n); outline: none;
 }
+/* Das Esc-Schild (core: .up-ment-searchclear) ersetzt die Lupe, sobald Text im Feld steht (20.10.). */
+.upr-dd-search:not(:placeholder-shown) ~ .up-ment-searchclear { display: inline-flex; }
+.upr-dd-search-wrap:has(.upr-dd-search:not(:placeholder-shown)) > svg { display: none; }
 /* outline: none ohne Ersatz war eine Sackgasse: prompt-research.js fokussiert dieses Feld 80ms
    nach dem Trigger-Klick, der Cursor steht also darin und das Feld sieht unveraendert aus.
    Derselbe Fehler war in add-prompts.css schon einmal behoben. */

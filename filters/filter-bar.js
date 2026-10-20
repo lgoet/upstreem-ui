@@ -1100,9 +1100,20 @@
         k.classList.add("ufb-wert-bild");
         return k.outerHTML;
       }
+      var TYP_CHIPS = { dtypes: 1, ucittypes: 1, uurltypes: 1 };
+      function typChip(f, id) {
+        var w = eingezogen[f.key], row = null;
+        if (!w) return "";
+        try { row = w.querySelector(f.opt + '[' + f.keyAttr + '="' + cssEsc(id) + '"] .up-ff-chip'); } catch (e) { row = null; }
+        return row ? row.innerHTML : "";
+      }
       function wertHtml(f) {
         var ids = auswahl(f), nm = namen(f);
         var teile = ids.slice(0, CHIP_NAMEN).map(function (id, i) {
+          /* Typ-Filter: im Chip steht derselbe farbige Typ-Chip wie in der Zeile der Liste (Zeile der
+             Auswahl liefert ihn als .up-ff-chip), nicht der blosse Name. */
+          var typ = TYP_CHIPS[f.key] ? typChip(f, id) : "";
+          if (typ) return '<span class="ufb-wert-eins ufb-wert-typ">' + typ + '</span>';
           return '<span class="ufb-wert-eins">' + wertBild(f, id) + '<span class="ufb-wert-name">' + esc(nm[i] || id) + '</span></span>';
         });
         if (ids.length > CHIP_NAMEN) teile.push('<span class="ufb-wert-mehr">+' + (ids.length - CHIP_NAMEN) + '</span>');

@@ -255,7 +255,7 @@
 .uto-label { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; }
 .uto-hint { font-size: 12.5px; font-weight: 400; color: var(--vc-third); line-height: 1.4; }
 .uto-in {
-  width: 100%; height: 44px; padding: 0 12px; box-sizing: border-box;
+  width: 100%; height: var(--up-h-gross); padding: 0 12px; box-sizing: border-box;
   border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
   background: var(--up-feld-bg); color: var(--vc-text);
   font-family: inherit; font-size: 14px; font-weight: 400; outline: 0;

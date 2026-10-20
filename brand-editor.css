@@ -48,9 +48,9 @@
    Browserfeld: 2px inset, kein Radius, eigene Schrift. Die Werte sind die des 40px-Feldes der
    App (.uau-input in auth-page): 1px Rahmen, Radius 12, Grund --vc-bg, 14px Text. */
 .ube-feld {
-  height: 40px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
-  background: var(--up-feld-bg); padding: 0 14px; color: var(--vc-text);
-  font-family: inherit; font-size: 14px; outline: none;
+  height: var(--up-h-gross); border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
+  background: var(--up-feld-bg); padding: 0 12px; color: var(--vc-text);
+  font-family: inherit; font-size: var(--up-fs-l); outline: none;
   transition: border-color .16s ease, box-shadow .16s ease;
 }
 .ube-feld::placeholder { color: var(--vc-third); }

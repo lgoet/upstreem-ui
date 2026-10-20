@@ -159,7 +159,7 @@
 .uca-input-row { display: flex; gap: 8px; }
 .uca-input-wrap { position: relative; flex: 1 1 auto; min-width: 0; }
 .uca-input {
-  width: 100%; height: 40px; padding: 0 38px 0 14px;
+  width: 100%; height: var(--up-h-gross); padding: 0 38px 0 12px;
   border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--up-feld-bg);
   color: var(--vc-text); font-size: 14px; outline: none;
   transition: border-color .14s ease, background .14s ease;
@@ -371,7 +371,7 @@
 .uca-bld-explain { flex: 0 0 auto; font-size: 12px; line-height: 1.5; color: var(--vc-muted); margin-bottom: 14px; }
 .uca-bld-search { flex: 0 0 auto; display: flex; gap: 8px; margin-bottom: 12px; }
 .uca-bld-input {
-  flex: 1 1 auto; min-width: 0; height: 40px; padding: 0 14px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
+  flex: 1 1 auto; min-width: 0; height: var(--up-h-gross); padding: 0 12px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
   background: var(--up-feld-bg); color: var(--vc-text); font-size: 14px; outline: none;
   transition: border-color .14s ease, background .14s ease;
 }

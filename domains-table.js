@@ -1256,6 +1256,7 @@
       },
       dtypes: {
         label: function(){ return ffT("Citation type"); }, chip: function(){ return ffT("Citation type"); }, leer: "All",
+        suche: true, ohneLogo: true, titel: "Citation type", suchePlatz: "Search types...", sucheAria: "Search types", sucheLeerAria: "Clear type search", keineTreffer: "No matching types",
         optionen: function(){ return ALL_CITATION_TYPES.map(function(k){ return { key: k, name: UC.typLabel(k, "citation"), chipHtml: filterChipHtml(k) }; }); },
         auswahl: function(){ return gewaehlt(state.appliedSel); },
         setzen: function(l){ state.filterSel = satzVon(l); submitFilter(); }

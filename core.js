@@ -923,6 +923,10 @@
     "Filter for brand mentions": "Nach Brand-Erwähnungen filtern",
     "Search brands...": "Brands suchen...",
     "Clear brand search": "Brand-Suche löschen",
+    "Search types...": "Typen suchen...",
+    "Search types": "Typen suchen",
+    "Clear type search": "Typ-Suche löschen",
+    "No matching types": "Keine passenden Typen",
     "Search markets": "Märkte suchen",
     "Select a market": "Markt wählen",
     "No matches": "Keine Treffer",
@@ -8981,13 +8985,23 @@
      EINMAL am Dokument und in der Erfassungsphase, nicht in makeSearch: jede Komponente haengt
      ihren eigenen keydown an das Feld (Escape = schliessen), und manche Suchfelder stehen in
      Vorlagen ohne makeSearch-Lauf. Die Erfassung am Dokument laeuft vor allen. */
+  var SCHILD_SEL = ".up-ment-searchclear, .up-ddsearch-x, .udt-sub-search-x, .upt-topicsearch-clear, .upt-grp-sidesearch-clear, .upt-gm-clear, .up-cgm-clear";
   if (!window.__upSucheEscLeert){
     window.__upSucheEscLeert = true;
     document.addEventListener("keydown", function(e){
       if (e.key !== "Escape" || e.isComposing) return;
       var t = e.target;
-      if (!t || !t.classList || !t.classList.contains("up-search-input") || !t.value) return;
-      var feld = t.closest(".up-search"), x = feld && feld.querySelector(".up-search-clear");
+      if (!t || !t.classList || !t.value) return;
+      var x = null;
+      if (t.classList.contains("up-search-input")){
+        var feld = t.closest(".up-search");
+        x = feld && feld.querySelector(".up-search-clear");
+      } else if (t.tagName === "INPUT"){
+        /* Die Suchfelder in Menues, Filtern und Listen (20.10.): das Esc-Schild steht als Geschwister oder in der Huelle des Felds. */
+        x = (t.parentNode && t.parentNode.querySelector(SCHILD_SEL)) ||
+            (t.parentNode && t.parentNode.parentNode && t.parentNode.parentNode.querySelector(SCHILD_SEL));
+        if (x && (!x.getClientRects().length || getComputedStyle(x).visibility === "hidden")) x = null;
+      }
       if (!x) return;
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -14958,6 +14972,18 @@
        row.offsetTop und die Schale beziehen sich auf dasselbe Elternteil (das Panel ist das
        naechste positionierte), also ist die Rechnung dieselbe wie das frueher feste
        top: calc(-1 * var(--up-dd-pad)) an der Zeile. */
+    /* Die Schale darf nicht unter dem Bildrand enden: sonst stehen die letzten Zeilen einer langen
+       Liste (Typ-Filter) ausserhalb und sind nicht erreichbar. Sie rutscht so weit nach oben, wie
+       der Ueberstand reicht, aber nie ueber die Oberkante des Bildes (8px Rand). */
+    function klemmen(top){
+      var op = SHELL.offsetParent;
+      if (!op) return top;
+      var r = op.getBoundingClientRect(), h = SHELL.offsetHeight, rand = 8;
+      var unten = r.top + top + h, frei = window.innerHeight - rand;
+      if (unten > frei) top -= unten - frei;
+      if (r.top + top < rand) top = rand - r.top;
+      return top;
+    }
     function schaleStellen(key, animieren){
       if (!SHELL) return;
       var row = zeileVon(key);
@@ -14987,12 +15013,12 @@
            da gewesen. Die Dauern aus der CSS bleiben ueber die Reihenfolge zugeordnet:
            opacity und transform stehen dort als erste zwei. */
         SHELL.style.transitionProperty = "opacity, transform";
-        SHELL.style.top = (row.offsetTop - polster()) + "px";
+        SHELL.style.top = klemmen(row.offsetTop - polster()) + "px";
         void SHELL.offsetHeight;
         SHELL.style.transitionProperty = "";
         return;
       }
-      SHELL.style.top = (row.offsetTop - polster()) + "px";
+      SHELL.style.top = klemmen(row.offsetTop - polster()) + "px";
       SHELL.style.height = "auto";
       var neuH = SHELL.offsetHeight;
       if (neuH === altH){ SHELL.style.height = ""; return; }
@@ -17046,8 +17072,8 @@
               '<button class="up-pop-action" type="button" data-ff-alle>' + esc(tt("Select all")) + '</button></div>' : '') +
             (a.suche
               /* Suchfeld und Leerzeile der Markenliste aus core (mentFilter sucht darin). */
-              ? '<div class="up-ment-searchwrap"><input class="up-ment-search up-ff-search-in" type="text" placeholder="' + esc(tt("Search brands...")) + '" autocomplete="off" spellcheck="false" aria-label="' + esc(tt("Search brands")) + '"/>' +
-                '<button class="up-ment-searchclear up-ff-search-x" type="button" aria-label="' + esc(tt("Clear brand search")) + '">' + icon("x", 2.2) + '</button></div>'
+              ? '<div class="up-ment-searchwrap"><input class="up-ment-search up-ff-search-in" type="text" placeholder="' + esc(tt(a.suchePlatz || "Search brands...")) + '" autocomplete="off" spellcheck="false" aria-label="' + esc(tt(a.sucheAria || "Search brands")) + '"/>' +
+                '<button class="up-ment-searchclear up-ff-search-x" type="button" aria-label="' + esc(tt(a.sucheLeerAria || "Clear brand search")) + '">' + icon("x", 2.2) + '</button></div>'
               : '') +
             (a.panel ? '<div class="up-ff-panel"></div>' : '') +
             '<div class="up-filter-list up-ff-list' + (a.suche ? " up-ment-list" : "") + (a.panel ? " is-panel" : "") + ' is-fill-checked" role="listbox"' + (a.einzeln ? "" : ' aria-multiselectable="true"') + '></div>' +
@@ -17110,13 +17136,13 @@
           return '<div class="up-filter-item up-ff-opt" role="option" tabindex="0" aria-selected="false" data-key="' + esc(o.key) + '"' +
               (a.suche ? ' data-brand="' + esc(o.key) + '" data-name="' + esc(String(o.name).toLowerCase()) + '"' : "") + '>' +
             '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
-            (a.suche ? '<span class="up-ment-logo">' + (o.logo ? '<img src="' + esc(o.logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/>' : "") + '</span>' : "") +
+            (a.suche && !a.ohneLogo ? '<span class="up-ment-logo">' + (o.logo ? '<img src="' + esc(o.logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/>' : "") + '</span>' : "") +
             /* o.chipHtml (17.10.): ein Typ steht im Dropdown als derselbe Chip wie in der Tabelle, nicht als
                Text ("bitte die Eintraege so stylen, wie die Type Chips in den Tabellen"). Der Name bleibt
                der Text darin, die Zeile der Leiste liest ihn weiter aus .up-ff-name. */
             '<span class="up-ff-name' + (a.suche ? " up-ment-name" : "") + (o.chipHtml ? " up-ff-chip" : "") + '">' + (o.chipHtml || esc(o.name)) + '</span>' +
           '</div>';
-        }).join("") + (a.suche ? '<div class="up-ment-noresult" style="display:none">' + esc(tt("No matches")) + '</div>' : "");
+        }).join("") + (a.suche ? '<div class="up-ment-noresult" style="display:none">' + esc(tt(a.keineTreffer || "No matches")) + '</div>' : "");
         if (a.suche) mentFilter(w, "");
       }
       Array.prototype.forEach.call(liste.querySelectorAll(".up-ff-opt"), function(r){

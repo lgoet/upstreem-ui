@@ -996,12 +996,14 @@
       },
       ucittypes: {
         label: function(){ return ffT("Citation type"); }, chip: function(){ return ffT("Citation type"); }, leer: "All",
+        suche: true, ohneLogo: true, titel: "Citation type", suchePlatz: "Search types...", sucheAria: "Search types", sucheLeerAria: "Clear type search", keineTreffer: "No matching types",
         optionen: function(){ return ALL_CITATION_TYPES.map(function(k){ return { key: k, name: UC.typLabel(k, "citation"), chipHtml: filterChipHtml("citation", k) }; }); },
         auswahl: function(){ return gewaehlt(state.appliedSel); },
         setzen: function(l){ typenSetzen("citation", l); }
       },
       uurltypes: {
         label: function(){ return ffT("URL type"); }, chip: function(){ return ffT("URL type"); }, leer: "All",
+        suche: true, ohneLogo: true, titel: "URL type", suchePlatz: "Search types...", sucheAria: "Search types", sucheLeerAria: "Clear type search", keineTreffer: "No matching types",
         optionen: function(){ return ALL_URL_TYPES.map(function(k){ return { key: k, name: urlTypeInfo(k).label, chipHtml: filterChipHtml("url", k) }; }); },
         auswahl: function(){ return gewaehlt(state.appliedUrlSel); },
         setzen: function(l){ typenSetzen("url", l); }

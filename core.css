@@ -2292,7 +2292,7 @@
     .up-search.is-open:focus-within { box-shadow: 0 0 0 1px var(--up-focus), 0 0 0 4px var(--up-focus-ring); }
     @media (pointer: fine) {
       .up-search .up-search-clear {
-        flex: 0 0 auto; width: auto; height: var(--up-h-btn); margin-left: 0; padding: 0 10px 0 6px;
+        flex: 0 0 auto; width: auto; height: var(--up-h-btn); margin-left: 0; padding: 0 6px;
         border-radius: 0 var(--up-r-m) var(--up-r-m) 0; color: var(--vc-muted);
       }
       .up-search .up-search-clear svg { display: none; }
@@ -2744,25 +2744,24 @@
     .up-portal { display: contents; }   /* carries the theme + CSS vars to the portaled menus */
     /* Brand search inside the dropdown, plus a capped list so ~10.5 rows show and the 11th peeks. */
     .up-ment-search {
-      width: 100%; height: 32px; margin: 2px 0 6px; padding: 0 10px; box-sizing: border-box; flex: 0 0 auto;
+      width: 100%; height: var(--up-h-btn); margin: 2px 0 6px; padding: 0 12px; box-sizing: border-box; flex: 0 0 auto;
       border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--up-feld-bg);
-      color: var(--vc-text); font: inherit; font-size: 13px; outline: 0;
+      color: var(--vc-text); font: inherit; font-size: var(--up-fs-l); font-weight: var(--up-fw-n); outline: 0;
     }
     .up-ment-search::placeholder { color: var(--vc-third); }
     .up-ment-search:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
     .up-ment-searchwrap { position: relative; margin: 0 0 8px; flex: 0 0 auto; }
     /* 34 statt 30: das X sitzt 6px vom Rand und ist 20px breit, es endet also bei 26. Mit 30 stand
    der letzte Buchstabe direkt an seiner Kante und wirkte, als liefe der Text darunter. */
-    .up-ment-searchwrap .up-ment-search { margin: 0; padding-right: 34px; }
+    .up-ment-searchwrap .up-ment-search { margin: 0; padding-right: 48px; }
     .up-ment-searchclear {
       position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-      width: 20px; height: 20px; border: 0; border-radius: var(--up-r-s); background: transparent;
-      color: var(--vc-muted); cursor: pointer; padding: 0; display: none; align-items: center; justify-content: center;
+      border: 0; cursor: pointer; display: none; align-items: center; justify-content: center;
     }
-    .up-ment-searchclear svg { width: 13px; height: 13px; display: block; }
-    .up-ment-searchclear:hover { color: var(--vc-text); }
     .up-ment-search:not(:placeholder-shown) + .up-ment-searchclear { display: inline-flex; }
     .up-ment-list { max-height: 336px; }   /* ~10.5 rows -> the 11th peeks and signals scrolling */
+    /* Typ-Filter (Citation/URL type): dieselbe feste Hoehe wie die Topics-Liste (.utf-list), damit beide Menues gleich hoch sind. */
+    .up-ff-ucittypes .up-ment-list, .up-ff-uurltypes .up-ment-list, .up-ff-dtypes .up-ment-list { max-height: 244px; overflow-y: auto; }
     .up-ment-noresult { padding: 12px; font-size: 12px; color: var(--vc-muted); text-align: center; }
     /* ---- "Not listed? Add your own" unten im Menue (03.10. nach core) --------------------------
        Die Bauart der Branche in Your Brand (settings-brand, dort noch .usb-ddcustom-*), Wert fuer
@@ -3042,10 +3041,10 @@
        zweites Bedienelement daneben auftaucht. */
     .up-ddsearch { position: relative; flex: 1 1 auto; min-width: 0; }
     .up-ddsearch-in {
-      width: 100%; height: 32px; box-sizing: border-box; padding: 0 36px 0 11px;
+      width: 100%; height: var(--up-h-btn); box-sizing: border-box; padding: 0 48px 0 12px;
       border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
       background: var(--up-feld-bg); color: var(--vc-text);
-      font-family: inherit; font-size: 12.5px; outline: none;
+      font-family: inherit; font-size: var(--up-fs-l); font-weight: var(--up-fw-n); outline: none;
       transition: border-color 150ms ease, background 150ms ease;
     }
     .up-ddsearch-in::placeholder { color: var(--vc-third); }
@@ -3057,7 +3056,7 @@
     }
     .up-ddsearch-ic svg { width: 15px; height: 15px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .up-ddsearch-x {
-      position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
       display: none; place-items: center; width: 20px; height: 20px; padding: 0;
       border: 0; border-radius: var(--up-r-xs); background: transparent; color: var(--vc-third); cursor: pointer;
     }
@@ -3065,6 +3064,20 @@
     .up-ddsearch-x:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
     .up-ddsearch.has-text .up-ddsearch-ic { display: none; }
     .up-ddsearch.has-text .up-ddsearch-x { display: grid; }
+
+    /* ---- DAS SUCHFELD UND SEIN ESC-SCHILD (20.10.) ----
+       Jedes Suchfeld der App (Menues, Popover, Filter, Listen) ist 32 hoch, 14/400, Radius 6, Polster 12 (Geist Small; die Toolbar ist 32, ihre Knoepfe
+       auch). Rechts steht, sobald Inhalt drin steht, das Tastenschild "Esc" -- DASSELBE Schild wie in der Toolbar-Suche (.up-search-clear), das X gibt es
+       nicht mehr. Es leert; die Taste Escape tut dasselbe (core.js, __upSucheEscLeert). 20 hoch in einem 32 hohen Feld: oben, unten und rechts je 6.
+       Das Feld haelt rechts 48 frei (6 + Schild 30 + 12 Luft), damit kein Text darunter laeuft. Nur Suchfelder; Formularfelder tragen das Schild nicht. */
+    .up-ment-searchclear, .up-ddsearch-x, .udt-sub-search-x, .upt-topicsearch-clear, .upt-grp-sidesearch-clear, .upt-gm-clear, .up-cgm-clear {
+      width: auto; min-width: 20px; height: 20px; padding: 0 4px; box-sizing: border-box;
+      border-radius: var(--up-r-xs); background: var(--vc-bg); box-shadow: 0 0 0 1px var(--vc-border);
+      color: var(--vc-muted); font-size: var(--up-fs-s); font-weight: var(--up-fw-m); line-height: 1;
+    }
+    .up-ment-searchclear svg, .up-ddsearch-x svg, .udt-sub-search-x svg, .upt-topicsearch-clear svg, .upt-grp-sidesearch-clear svg, .upt-gm-clear svg, .up-cgm-clear svg { display: none; }
+    .up-ment-searchclear::before, .up-ddsearch-x::before, .udt-sub-search-x::before, .upt-topicsearch-clear::before, .upt-grp-sidesearch-clear::before, .upt-gm-clear::before, .up-cgm-clear::before { content: "Esc"; }
+    .up-ment-searchclear:hover, .up-ddsearch-x:hover, .udt-sub-search-x:hover, .upt-topicsearch-clear:hover, .upt-grp-sidesearch-clear:hover, .upt-gm-clear:hover, .up-cgm-clear:hover { background: var(--vc-bg); color: var(--vc-text); }
 
     /* ---------- topic chip ----------
        ONE topic chip for the whole app. It lived only in prompts-table.css, so the first other
@@ -3523,9 +3536,9 @@
     .up-es-label { font-size: 12px; font-weight: 600; color: var(--vc-muted); }
     .up-es-label + * { margin-top: 7px; }
     .up-es-input {
-      height: 40px; width: 100%; padding: 0 14px;
+      height: var(--up-h-gross); width: 100%; padding: 0 12px;
       border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--up-feld-bg);
-      font-family: inherit; font-size: 14px; color: var(--vc-text); outline: none;
+      font-family: inherit; font-size: var(--up-fs-l); color: var(--vc-text); outline: none;
       transition: border-color var(--up-t-2) var(--up-ease), box-shadow var(--up-t-2) var(--up-ease);
     }
     .up-es-input::placeholder { color: var(--vc-third); }
@@ -7596,7 +7609,7 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
    die sechste auf rgb(107,111,120). Eine zweite Deklaration derselben Rolle ist genau die
    Sorte Abweichung, gegen die der ganze Umbau laeuft.
    Sechs Verwender in drei Dialogen: Name, Appearance, Topics, Group name, Prompt, Topics. */
-.up-topicmodal-name { height: 36px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
+.up-topicmodal-name { height: var(--up-h-gross); padding: 0 12px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
   background: var(--up-feld-bg); color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; width: 100%; }
 .up-topicmodal-name:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
@@ -8648,15 +8661,12 @@ html[data-usn-modus="hint"] .up-ph-heading.is-knapp > .up-ph-crumb:first-child:n
 .upt-gm-more, .up-cgm-more { width: 100%; height: 30px; border: 0; border-radius: var(--up-r-m); background: transparent;
   color: var(--vc-muted); font-family: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
 .upt-gm-more:hover, .up-cgm-more:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
-.upt-gm-search-in, .up-cgm-search-in { flex: 1 1 auto; height: 36px; padding: 0 34px 0 12px; border: 1px solid var(--vc-border);
-  border-radius: var(--up-r-m); background: var(--up-feld-bg); color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; }
+.upt-gm-search-in, .up-cgm-search-in { flex: 1 1 auto; height: var(--up-h-btn); padding: 0 48px 0 12px; border: 1px solid var(--vc-border);
+  border-radius: var(--up-r-m); background: var(--up-feld-bg); color: var(--vc-text); font: inherit; font-size: var(--up-fs-l); font-weight: var(--up-fw-n); outline: 0; }
 .upt-gm-search-in:focus, .up-cgm-search-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
-.upt-gm-clear, .up-cgm-clear { position: absolute; right: 6px; width: 20px; height: 20px; border: 0; border-radius: var(--up-r-s);
-  padding: 0; background: transparent; color: var(--vc-muted); cursor: pointer;
+.upt-gm-clear, .up-cgm-clear { position: absolute; right: 6px; border: 0; cursor: pointer;
   display: none; align-items: center; justify-content: center; }
 .upt-gm-clear.is-on, .up-cgm-clear.is-on { display: inline-flex; }
-.upt-gm-clear svg, .up-cgm-clear svg { width: 13px; height: 13px; display: block; }
-.upt-gm-clear:hover, .up-cgm-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
 .upt-gm-list, .up-cgm-list { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .upt-gm-namerow, .up-cgm-namerow { display: flex; align-items: center; gap: 8px; }
