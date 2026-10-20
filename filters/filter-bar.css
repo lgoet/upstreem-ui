@@ -574,3 +574,9 @@
 .ufb-gesp-feld { display: flex; align-items: center; gap: 6px; padding: 4px 9px 2px; }
 .ufb-gesp-feld .ufb-gesp-name { flex: 1 1 auto; min-width: 0; margin: 0; }
 .ufb-gesp-feld .ufb-gesp-sichern { flex: 0 0 auto; }
+
+/* Der unsichtbare Behaelter der Branded-Zeile (filter-bar.js, brandedBereitstellen) stand als Flex-Kind NEBEN der Leiste: das hidden-Attribut
+   verliert gegen display der .up-root, er war 0 hoch, brach in eine zweite Zeile um und machte mit dem Zeilenabstand 8px zwischen Filterknopf und
+   Inhalt zu viel (gemessen am Dashboard: Knopf bis Box 24 statt 16, 20.10.). Absolut gesetzt nimmt er an der Zeile nicht mehr teil; seine
+   Kinder (das Panel) bleiben, wo sie waren. */
+.ufb-brandedhost[hidden] { position: absolute; display: block; width: 0; height: 0; overflow: visible; pointer-events: none; }
