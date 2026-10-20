@@ -24,7 +24,7 @@
 .vot-head { display: flex; align-items: center; height: 32px; margin-bottom: 16px; padding: 0; }
 .vot-unit-left .vot-head { padding-right: 0; }
 .vot-root.is-max .vot-unit-left .vot-head, .vot-root.is-narrow .vot-unit-left .vot-head { padding-right: 0; }
-.vot-heading { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vot-heading { font-size: var(--up-ueb-abschnitt-gr); font-weight: var(--up-ueb-abschnitt-gew); letter-spacing: var(--up-ueb-abschnitt-spur); color: var(--vc-text); line-height: var(--up-ueb-abschnitt-zeile); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vot-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 
 /* 487 = 1 Rand + 45 Tabellenkopf + 8 x 55 Zeilen + 1 Rand (13.10.: acht Eintraege). Mit 427 sah

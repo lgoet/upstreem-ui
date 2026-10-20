@@ -69,7 +69,7 @@
 /* Der Kopf ist flacher als der der Seite: das ist eine Abschnittsueberschrift, keine Seitenkopfzeile.
    .up-head bringt display:flex und die Ausrichtung mit, hier bleibt die Hoehe. */
 .utm-cg-head { min-height: 32px; margin-bottom: 12px; }
-.utm-cg-head .up-head-label { font-size: 14px; }
+.utm-cg-head .up-head-label { font-size: var(--up-ueb-abschnitt-gr); }
 /* Klebt nur die Toolbar oben (28.09.). core macht mit .up-sticky .up-head JEDEN Kopf der Wurzel
    klebend, mit deckender Flaeche und dem Deckstreifen darueber (::before, --up-sticky-top hoch).
    Dieser zweite Kopf steht mitten in der Seite; klebend deckte er die Themenliste darueber zu

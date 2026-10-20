@@ -887,7 +887,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-phase { display: flex; flex-direction: column; gap: 12px; padding: 16px; min-width: 0; }
 .uev-phase + .uev-phase { border-left: 1px solid var(--vc-border); }
 .uev-phase-kopf { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.uev-phase-titel { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--vc-text); }
+.uev-phase-titel { font-size: var(--up-ueb-block-gr); font-weight: var(--up-ueb-block-gew); letter-spacing: var(--up-ueb-block-spur); color: var(--vc-text); }
 .uev-phase-zeit { font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; }
 .uev-phase-werte { display: flex; flex-direction: column; gap: 8px; margin: 0; }
 .uev-phase-zeile { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: var(--up-h-chip); }
