@@ -25,6 +25,13 @@
 /* EXPORT (16.10.): .up-export aus core, rechts aussen in der Zeile wie in der Leiste von Prompt
    Insights. margin-left: auto schiebt ihn auch in einer umgebrochenen Zeile an den rechten Rand. */
 .ush-filterzeile > .ush-export { margin-left: auto; }
+/* In der einen Leiste der Tabelle (shopping.js leisteStellen) loest sich die Zeile auf: Kalender und Filter stehen einzeln in .up-leiste-scope
+   (wie .ubr-filterzeile.is-in-tabelle in brands-page.css); der Export steht dann rechts in den Werkzeugen, ohne eigenen Rand. */
+.ush-filterzeile.is-in-tabelle { display: contents; }
+/* Die Tabelle steht in einer eigenen .up-root (.ush-tabwurzel, Wurzel fuer das Spaltenkit), und jede .up-root setzt --up-sticky-top: 171px und
+   --up-thead-off: 32px neu: der Spaltenkopf klebte so bei 204 statt direkt unter der Leiste (gemessen 20.10.). Die Werte des Abschnitts
+   gelten durch, den die Leiste (makeSticky) setzt. */
+.ush-tab > .ush-tabwurzel { --up-sticky-top: inherit; --up-thead-off: inherit; --up-sticky-cover: inherit; }
 /* Die Luft ueber und unter .ush-main steht in core ("DIE LUFT UNTER DEM SEITENKOPF"): 16 unter der
    Filterzeile wie ueber ihr, 64 unten. */
 

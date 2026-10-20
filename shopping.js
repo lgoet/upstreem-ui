@@ -826,6 +826,7 @@
       return { kanal: "detail", body: b, sig: sigVon(b) };
     }
     var ME_VORGABE = { suche: "", order: "observations_desc", page: 1, pageSize: 15 };
+    var ME_BALKEN = 10;
     function meAnfrage(tb) {
       var b = mit(grundBody(), { p_search: suchText(tb.suche), p_order: orderOf("merchants", tb), p_limit: limitOf(tb), p_offset: offsetOf(tb) });
       return { kanal: "merchants", body: b, sig: sigVon(b) };
@@ -1274,10 +1275,70 @@
     }
 
     function aufraeumen() {
+      filterzeileZurueck();
+      tabKleber = null;
       if (linie && linie.destroy) { try { linie.destroy(); } catch (e) {} }
       linie = null; pager = {}; sucheKit = {}; sortKit = {}; balken = {}; spalten = {}; zaehl = null;
     }
     function sek(name) { return elMain.querySelector('[data-sek="' + name + '"]'); }
+    /* DIE EINE LEISTE (20.10., Vorbild: Brands und Citations, Variante A): auf Products, Brands und Merchants ist der Kopf der Tabelle die
+       Leiste der Seite. Links, was die Daten aendert (die Filterzeile mit Kalender und Filtern wandert in .up-leiste-scope), rechts die
+       Ansicht: Suche, Table Settings und Export, in dieser Reihenfolge und in EINER Zeile. Sie klebt (core makeSticky, ab 1000 breit),
+       der Spaltenkopf direkt darunter, Gesamtzeile und Pagination unten (data-kleb-fuss). Brands und Merchants tragen Kennzahlen und
+       Chart darunter, zwischen Leiste und Tabelle (core bandUnterLeiste). Bewegt werden die vorhandenen Elemente: Kalender, Filter und
+       Export behalten Zustand und Handler. Das Geruest wird je Reiter neu gebaut: vorher kommt die Filterzeile zurueck an ihren Platz
+       (filterzeileZurueck), sonst ginge sie mit dem alten Abschnitt unter. Overview und Detail haben keine solche Tabelle und behalten
+       die Filterzeile ueber dem Inhalt. */
+    var elFilterzeile = root.querySelector(".ush-filterzeile"), tabKleber = null;
+    function filterzeileZurueck() {
+      if (!elFilterzeile) return;
+      var ex = root.querySelector(".ush-export");
+      if (ex && ex.parentNode !== elFilterzeile) elFilterzeile.appendChild(ex);
+      elFilterzeile.classList.remove("is-in-tabelle");
+      if (elFilterzeile.parentNode !== root || elFilterzeile.nextElementSibling !== elMain) root.insertBefore(elFilterzeile, elMain);
+    }
+    function leisteStellen(name) {
+      var tabEl = sek("tabelle"), kopf = tabEl && tabEl.querySelector(":scope > .up-head");
+      if (!elFilterzeile || !kopf || tabEl.getAttribute("data-leiste") !== "yes") return;
+      var scope = kopf.querySelector(":scope > .up-leiste-scope");
+      if (!scope) {
+        scope = document.createElement("div");
+        scope.className = "ush-scope-leiste up-leiste-scope";
+        kopf.insertBefore(scope, kopf.firstChild);
+      }
+      scope.appendChild(elFilterzeile);
+      elFilterzeile.classList.add("is-in-tabelle");
+      var werkz = kopf.querySelector(".up-head-tools"), ex = elFilterzeile.querySelector(".ush-export");
+      if (werkz && ex) werkz.appendChild(ex);
+      tabEl.setAttribute("data-kleb-fuss", "yes");
+      if (!tabEl.getAttribute("data-sticky-top")) tabEl.setAttribute("data-sticky-top", "16");
+      var gruppe = name === "products" ? null : elMain.querySelector(":scope > .ush-seite > .ush-gruppe");
+      if (gruppe && UC.bandUnterLeiste) UC.bandUnterLeiste(tabEl, gruppe, { kopf: kopf });
+      var kleber = UC.makeSticky ? UC.makeSticky(tabEl, kopf) : null;
+      tabKleber = kleber;
+      if (kleber) {
+        if (UC.aufResize) UC.aufResize(kleber.applySticky);
+        else window.addEventListener("resize", UC.rafThrottle ? UC.rafThrottle(kleber.applySticky) : kleber.applySticky);
+        kleber.applySticky();
+      }
+    }
+    /* DER UMSCHALTER IM SEITENKOPF (20.10., wie Brands und Citations): "Chart and table" / "Table only" blendet die Charts der Seite aus (die
+       Linie der Overview und der Brands, die Balken der Merchants) und wieder ein. Kennzahlen und Tabellen bleiben. Gemerkt im Browser
+       (UC.bandAusMerken), ein Schalter fuer die ganze Seite; auf Products, wo es keinen Chart gibt, ist er verborgen. */
+    function bandSchalten(name) {
+      var band = name === "overview" || name === "brands" ? sek("chart") : name === "merchants" ? sek("balken") : null;
+      var sw = root.querySelector('.up-bandsw[data-band="' + instanceId + '"]');
+      if (!band || !UC.bandAus) { if (sw) sw.hidden = true; return; }
+      var aus = !!(UC.bandAusGemerkt && UC.bandAusGemerkt(instanceId)), war = band.classList.contains("is-band-aus");
+      UC.bandAus(band, aus, { id: instanceId, setzen: function (neu) {
+        if (UC.bandAusMerken) UC.bandAusMerken(instanceId, !!neu);
+        bandSchalten(state.seite);
+      } });
+      sw = root.querySelector('.up-bandsw[data-band="' + instanceId + '"]');
+      if (sw) sw.hidden = false;
+      /* Wieder eingeblendet: ein Canvas, das ausgeblendet gemessen wurde, hat Breite 0. */
+      if (war && !aus && linie && linie.resize) setTimeout(function () { try { linie.resize(); linie.relayoutLegend && linie.relayoutLegend(); } catch (e) {} }, 60);
+    }
     /* Abschnittskopf aus core (.up-sec-head), wie im Event-Detail. */
     /* .up-band-head: im offenen Band die Ueberschriftzeile aus core (core.css "DAS OFFENE BAND";
        mit Unterzeile zweizeilig, 16 ueber der Schrift). Ausserhalb eines Bandes greift die Klasse
@@ -1468,6 +1529,8 @@
       });
       var tab = sek("tabelle");
       if (tab) tabelleVerdrahten(s, tab);
+      if (s === "products" || s === "brands" || s === "merchants") leisteStellen(s);
+      bandSchalten(s);
       var kb = sek("verteilung") || sek("balken");
       if (kb && UC.makeBarList) {
         /* Die Balkenliste aus core (Domain Detail, Model Breakdown) -- dieselbe CSS, dasselbe
@@ -2260,6 +2323,10 @@
       w.querySelector(".ush-tabelle").innerHTML = html;
       zaehlStand = zahl === undefined ? null : zahl;
       zaehlEinhaengen(w);
+      /* Kopf und Gesamtzeile aus dem Scrollkasten in ihre Halter, damit sie an der Seite kleben (core colscrollTeilen). */
+      if (UC.colscrollTeilen) UC.colscrollTeilen(w.querySelector(".up-box"));
+      /* Der klebende Fuss braucht den Kasten der Tabelle (core klebFuss sucht ihn beim Einrichten): er kommt erst mit den Daten, also danach noch einmal. */
+      if (tabKleber) tabKleber.applySticky();
     }
     /* DIE GESAMTZEILE (15.10. abends, core UC.makeZaehlZeile): unter den Zeilen jeder ganzen
        Tabelle (Products, Brands, Merchants, Recent Appearances) vorerst nur die Anzahl links --
@@ -2599,6 +2666,9 @@
          zeigt den Haendler trotzdem. */
       var l = (isArr(d.merchants) ? d.merchants : []).filter(function (m) { return m && typeof m === "object" && anteilWert(kz(m.share).v) != null; });
       if (!l.length) { balken.me.render([], { leer: { titel: "No merchants yet" } }); return; }
+      /* Hoechstens ME_BALKEN Balken (20.10., Nutzer: der Chart "bedeckt fast die ganze Seite", er soll "so 10 Eintraege" zeigen): die Haendler
+         danach stehen in der Tabelle darunter und als Rest-Balken ("{n} weitere Haendler", unten gerechnet aus den gezeigten). */
+      l = l.slice(0, ME_BALKEN);
       var items = l.map(function (m, i) {
         var n = haendlerName(m.merchant_name);
         return { key: n, name: n || t("Unknown"), share: anteilWert(kz(m.share).v), color: grau(i), zeichen: UC.icon("store", 2) };
