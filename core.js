@@ -23369,6 +23369,16 @@
       .replace(/\s+/g, " ").trim();
     var neu = t ? "upstreem | " + t : "upstreem";
     try { if (document.title !== neu) document.title = neu; } catch(e){}
+    /* HALTEN (20.10., Nutzer: der Reiter zeigt wieder nur "upstreem"): die Next-App schreibt ihren Titel aus den Metadaten bei jedem Wechsel der
+       Adresse neu (Ansichtswechsel ueber ?view=), und der Standard dort ist die blosse Marke. Mit Team im Titel wacht ein Beobachter darueber und setzt ihn
+       zurueck, sobald etwas anderes dasteht. Ohne Team (feste Seiten, Landingpage) kein Beobachter. */
+    APP.seitenTitel = t ? neu : "";
+    if (t && !APP.titelWache && typeof MutationObserver === "function"){
+      APP.titelWache = new MutationObserver(function(){
+        if (APP.seitenTitel && document.title !== APP.seitenTitel){ try { document.title = APP.seitenTitel; } catch(e){} }
+      });
+      APP.titelWache.observe(document.head || document.documentElement, { childList: true, subtree: true, characterData: true });
+    }
     return neu;
   }
   /* Aktive Prompts des Teams, die Zahl neben "Prompt Insights". null/undefined: nichts setzen -- die
