@@ -154,8 +154,10 @@
    .uss-main: "Unten 64"). Am Bereich, nicht am Detail: Uebersicht und Detail teilen ihn. */
 .uev-root .uev-main { padding-bottom: 64px; }
 .uev-steuerblock { display: flex; flex-direction: column; gap: 16px; }
-/* Kennzahlen und Chart gehoeren zusammen: 16 statt der 40 zwischen den Abschnitten (20.10., Nutzer: auf allen Seiten gleich). */
-.uev-detail > .uev-steuerblock + .uev-sek-chart { margin-top: -24px; }
+/* FENSTER UND FILTER (21.10., Nutzer: "das Gap nach oben und nach unten auf 16"): die Steuerzeile ist die Leiste des Details, ueber und
+   unter ihr dieselbe Luft wie ueber und unter der Leiste jeder Seite (--up-band-luft, 16) statt der 40 zwischen den Abschnitten. Damit stehen
+   auch Kennzahlen und Chart eines Events 16 unter ihr (vorher eine eigene Regel fuer .uev-sek-chart). */
+.uev-detail > .uev-steuerblock { margin-top: calc(var(--up-band-luft, 16px) - 40px); margin-bottom: calc(var(--up-band-luft, 16px) - 40px); }
 /* DER KOPF DES DETAILS (03.10. neu): dieselbe Sprache wie die Karte, eine Nummer groesser --
    Band 96, Profilbild 64, Name in der groessten Stufe der App (Dashboards: hoechstens 22-24px).
    Datum und Typ als zwei Angaben mit Zeichen, der Umfang darunter. */
@@ -790,6 +792,39 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    "Refresh" als .up-btn-sec wie "Remove" oben im Kopf der Regel. Darunter nur, wenn es etwas zu sagen
    gibt, ein Satz (Pause, Kuerzung, Fehler), dann die Reiter und die Liste. */
 .uev-abd-sek { display: flex; flex-direction: column; margin-top: 40px; min-width: 0; }
+/* ---- URLS UND SITEMAP IN EINEM KASTEN (21.10., events.js zielSekAnlegen/quellenStellen) -----------------------------------------
+   .up-box aus core (Rand, Radius 12, Grund). Kopfzeile wie die Ueberschriftzeile im Band-Kasten: 48 hoch, 16 Polster, links der Umschalter
+   (.up-seg, "Cited URLs 8 | Sitemap 8 of 30"), rechts die Suche der URLs. Unter dem Kopf eine Haarlinie, darunter randlos der eine Teil:
+   die Tabelle ohne eigenen Kasten (ihre Zeilen tragen die Linien), oder der Abschnitt Sitemap mit 16 Polster und Baumzeilen von Kante
+   zu Kante. 16 unter dem Chart wie vorher die Tabelle (Abstand im Block). */
+.uev-quellen { margin-top: 16px; min-width: 0; }
+.uev-quellen[hidden] { display: none; }
+.uev-quellen-kopf { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 0 16px; box-sizing: border-box; }
+.uev-quellen-seg .up-seg-btn[hidden] { display: none; }
+.uev-quellen-n { margin-left: 6px; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+.uev-quellen-n:empty { display: none; }
+.uev-quellen-teil { border-top: 1px solid var(--vc-border); min-width: 0; }
+.uev-quellen[data-pane="urls"] > [data-teil="sm"], .uev-quellen[data-pane="sm"] > [data-teil="urls"] { display: none; }
+.uev-quellen[data-pane="sm"] .uev-ziel-suche { display: none; }
+/* URLs: die Tabelle ohne Kasten, die Hinweiszeile (Suchtreffer, Kappung, Filter) und der Fuss mit 16 Polster. */
+.uev-quellen .up-vartable.uev-zielurls { border: 0; border-radius: 0; }
+.uev-quellen .uev-ziel-hinweis { padding: 12px 16px; border-bottom: 1px solid var(--vc-border); }
+.uev-quellen .uev-ziel-hinweis[hidden] { display: none; }
+.uev-quellen .uev-ziel-tab .uev-foot { padding: 12px 16px; margin: 0; border-top: 1px solid var(--vc-border); }
+.uev-quellen .uev-leerbox { border: 0; border-radius: 0; }
+/* Sitemap: der Titel steht am Reiter, der Satz darunter bleibt (mit "Refresh" rechts); Satz, Reiter und Suche 16 eingerueckt. */
+.uev-quellen .uev-abd-sek { margin-top: 0; padding-top: 16px; }
+.uev-quellen .uev-abd-kopf .up-sec-h { display: none; }
+.uev-quellen .uev-abd-kopf, .uev-quellen .uev-abd-satz, .uev-quellen .uev-abd-zeile { padding-left: 16px; padding-right: 16px; }
+.uev-quellen .uev-abd-kopf .up-sec-sub { margin-top: 0; }
+/* Satz und "Refresh" auf einer Linie; darunter 12 bis zur Meldung und zu Reitern und Suche (statt 14 der Abschnittskoepfe). */
+.uev-quellen .uev-abd-kopf .up-sec-head { align-items: center; margin-bottom: 12px; }
+.uev-quellen .uev-abd-satz { margin: 0 0 12px; }
+.uev-quellen .uev-abd-seiten > .uev-abd-ordner { padding-left: calc(16px + var(--uev-tiefe, 0) * 20px); padding-right: 16px; }
+.uev-quellen .uev-abd-seiten > .uev-abd-seite { padding-left: calc(16px + var(--uev-tiefe, 0) * 20px); padding-right: 16px; }
+.uev-quellen .uev-abd-seiten > .uev-abd-seite.is-im-baum { padding-left: calc(16px + 22px + var(--uev-tiefe, 0) * 20px); }
+.uev-quellen .uev-abd-seiten > :last-child { border-bottom: 0; }
+.uev-quellen .uev-abd-lb, .uev-quellen .uev-abd-liste > .up-box, .uev-quellen .uev-abd-liste > .up-fehlerzeile, .uev-quellen .uev-abd-liste > .uev-sk { margin: 0 16px 16px; }
 .uev-abd-sek[hidden] { display: none; }
 .uev-abd-satz { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: -2px 0 14px; font-size: var(--up-fs-s); color: var(--vc-third); }
 .uev-abd-satz[hidden] { display: none; }
@@ -955,6 +990,9 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .up-root.is-narrow .uev-zielkpis.is-3 { --up-kpiband-n: 1; }
 .uev-zielchart { position: relative; }
 .uev-zielmetrik { position: absolute; top: 12px; right: 12px; z-index: 2; }
+/* Schmal (21.10.): drei Modi (Overall Share, Overall Citations, URL Share) sind breiter als der Platz neben der Achse -- oben rechts lag der
+   Umschalter ueber dem Chart. Dann steht er in der Zeile ueber dem Chart, 12 darunter. */
+.up-root.is-narrow .uev-zielmetrik { position: static; display: flex; width: fit-content; margin: 0 0 12px auto; }
 .uev-detail.is-watch.is-band-aus :is(.uev-zielkpis, .uev-zielchart) { display: none; }
 /* Profilbild eines Citation Tracking mit Favicon (19.10.): das Bild sitzt an der Stelle des Zeichens (22), das Zeichen bleibt als Rueckfall darunter. */
 /* Das Zeichen weicht nur, solange das Bild wirklich da ist (:has): faellt es aus, steht das Zeichen wieder -- nie ein leerer Kreis. */

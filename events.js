@@ -761,6 +761,8 @@
     "Full overview": "Gesamtübersicht", "Pages only": "Nur Seiten",
     "Previous and last {n} days": "Vorherige und letzte {n} Tage", "Citations ({n}d)": "Zitate ({n} T)",
     "Chart shows": "Chart zeigt",
+    "Overall Share": "Anteil gesamt", "Overall Citations": "Zitate gesamt", "URL Share": "Anteil je URL", "{n} of {m}": "{n} von {m}",
+    "The URL lines couldn't be loaded.": "Die Linien je URL ließen sich nicht laden.", "No URL was cited in this period.": "In diesem Zeitraum wurde keine URL zitiert.",
     "Before this period": "Vor diesem Zeitraum",
     "Track an Event measures what a change did, Track Citations watches which of your pages AI answers cite. You choose when you create.":
       "Event tracken misst, was eine Änderung bewirkt hat, Zitate tracken beobachtet, welche deiner Seiten KI-Antworten zitieren. Du wählst beim Erstellen.",
@@ -1899,7 +1901,9 @@
          und Analyse, damit ein Neuaufbau (Thema) kein Skelett zeigt. */
       abd: gemerkt("abd", {}), abdSeg: gemerkt("abdSeg", {}),
       /* Citation Tracking: was die Charts der Ziele zeigen, "share" (Anteil an allen Zitaten, Standard) oder "abs" (Zahl der Zitate). */
-      zielMetrik: gemerkt("zielMetrik", "share")
+      zielMetrik: gemerkt("zielMetrik", "share"),
+      /* Welcher Teil im Kasten URLs/Sitemap je Ziel steht ("urls" oder "sm"), nur fuer diesen Seitenaufruf. */
+      quelle: {}
     };
     function persist() {
       if (root.isConnected === false) return;
@@ -3407,12 +3411,16 @@
       var s = zielFavUrl(adresse);
       return s ? '<img class="uev-fav" src="' + esc(s) + '" width="16" height="16" alt="" loading="lazy" referrerpolicy="no-referrer"/>' : rueckfall;
     }
-    function zielShare() { var d = dieDetail() || listeEvent(state.eventId); return istWatch(d) && state.zielMetrik !== "abs"; }
+    /* Die drei Modi des Charts im Citation Tracking (21.10.): "share" (Overall Share, Standard), "abs" (Overall Citations), "urls" (URL Share:
+       eine Linie je URL, wie Domain Detail "Domain Share"). "urls" nur, solange es get_impact_event_url_series_v1 gibt (URLSER.stand). */
+    function zielModus() { var m = state.zielMetrik; return m === "abs" ? "abs" : (m === "urls" && URLSER.stand !== false ? "urls" : "share"); }
+    function zielShare() { var d = dieDetail() || listeEvent(state.eventId); return istWatch(d) && zielModus() !== "abs"; }
     function zielMetrikSetzen() {
-      var bs = elMain.querySelectorAll(".uev-zielmetrik [data-zm]");
+      var bs = elMain.querySelectorAll(".uev-zielmetrik [data-zm]"), m = zielModus();
       for (var i = 0; i < bs.length; i++) {
-        var an = bs[i].getAttribute("data-zm") === (state.zielMetrik === "abs" ? "abs" : "share");
+        var w = bs[i].getAttribute("data-zm"), an = w === m;
         bs[i].classList.toggle("is-active", an); bs[i].setAttribute("aria-pressed", String(an));
+        if (w === "urls") bs[i].hidden = URLSER.stand === false;
       }
       if (UC.segJetzt) { var sg = elMain.querySelectorAll(".uev-zielmetrik"); for (var j = 0; j < sg.length; j++) { try { UC.segJetzt(sg[j]); } catch (e) {} } }
     }
@@ -3460,11 +3468,26 @@
             /* Citation Tracking (19.10.): der Share ist die Hauptzahl, die Zahl der Zitate die Option -- bei mehr Prompts steigt sie, ohne dass die Seite besser wird. */
             (istWatch(dieDetail() || listeEvent(state.eventId))
               ? '<div class="up-seg uev-zielmetrik" role="group" aria-label="' + esc(t("Chart shows")) + '">' +
-                  '<button type="button" class="up-seg-btn" data-zm="share">' + esc(t("Share")) + '</button>' +
-                  '<button type="button" class="up-seg-btn" data-zm="abs">' + esc(t("Citations")) + '</button></div>' : '') +
+                  '<button type="button" class="up-seg-btn" data-zm="share">' + esc(t("Overall Share")) + '</button>' +
+                  '<button type="button" class="up-seg-btn" data-zm="abs">' + esc(t("Overall Citations")) + '</button>' +
+                  '<button type="button" class="up-seg-btn" data-zm="urls"' + (URLSER.stand === false ? " hidden" : "") + '>' + esc(t("URL Share")) + '</button></div>' : '') +
             '<div class="up-line-wrap uev-linewrap uev-ziel-linie"><canvas></canvas></div><div class="up-legend uev-legende"></div></div>' +
-          /* cited_urls_truncated (15.10.): die Tabelle traegt hoechstens 200 URLs, die neuesten. */
-          '<div class="uev-hinweise uev-ziel-hinweis" hidden><div class="uev-ziel-info"></div>' +
+          /* Der Leerzustand des ganzen Ziels (zielFuellen, is-leer am Block): statt Kennzahlen,
+             Verlauf und Tabelle. Die drei bleiben stehen, nur verborgen -- das Diagramm ueberlebt so
+             den Wechsel zurueck, sobald das erste Zitat kommt. */
+          '<div class="up-box uev-leerbox uev-zielleer"></div>' +
+        '</div>' +
+        /* URLS UND SITEMAP IN EINEM KASTEN (21.10., Nutzer: "in einen packen mit einem Switch oben"): Kopfzeile wie die Ueberschriftzeile im
+           Band-Kasten (48, Polster 16), links der Umschalter "Cited URLs n | Sitemap x of y", rechts die Suche der URLs; darunter randlos die
+           Tabelle oder der Abschnitt "Sitemap" (abdFuellen). Ausserhalb des Blocks -- auch eine Regel ohne ein Zitat (is-leer) hat Seiten, die
+           noch nicht zitiert sind; welcher Teil da ist, entscheidet quellenStellen. Die Sitemap ist verborgen, solange die DB die Abdeckung
+           nicht liefert. */
+        '<div class="up-box uev-quellen" data-pane="urls" hidden>' +
+          '<div class="uev-quellen-kopf">' +
+            '<div class="up-seg uev-quellen-seg" role="group" aria-label="' + esc(t("Show")) + '">' +
+              '<button type="button" class="up-seg-btn is-active" data-quelle="urls" aria-pressed="true">' + esc(t("Cited URLs")) + '<span class="uev-quellen-n" data-n="urls"></span></button>' +
+              '<button type="button" class="up-seg-btn" data-quelle="sm" aria-pressed="false">' + esc(t("Sitemap")) + '<span class="uev-quellen-n" data-n="sm"></span></button></div>' +
+            /* cited_urls_truncated (15.10.): die Tabelle traegt hoechstens 200 URLs, die neuesten. */
             '<div class="up-search uev-ziel-suche" hidden>' +
               '<button class="up-iconbtn up-search-btn" type="button" data-tip="' + esc(t("Search URLs")) + '" aria-label="' + esc(t("Search URLs")) + '">' + UC.icon("search", 2) + '</button>' +
               '<div class="up-search-box">' +
@@ -3472,15 +3495,10 @@
                 '<button class="up-search-clear" type="button" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2) + '</button>' +
               '</div>' +
             '</div></div>' +
-          '<div class="uev-ziel-tab"><div class="uev-tabinhalt"></div>' + fussHtml() + '</div>' +
-          /* Der Leerzustand des ganzen Ziels (zielFuellen, is-leer am Block): statt Kennzahlen,
-             Verlauf und Tabelle. Die drei bleiben stehen, nur verborgen -- das Diagramm ueberlebt so
-             den Wechsel zurueck, sobald das erste Zitat kommt. */
-          '<div class="up-box uev-leerbox uev-zielleer"></div>' +
-        '</div>' +
-        /* DER ABSCHNITT "SITEMAP" (Beschluss 10, abdFuellen): direkt unter der URL-Tabelle, ausserhalb des
-           Blocks -- auch eine Regel ohne ein Zitat (is-leer) hat Seiten, die noch nicht zitiert sind. Verborgen,
-           solange die DB die Abdeckung nicht liefert. */
+          '<div class="uev-quellen-teil" data-teil="urls">' +
+            '<div class="uev-hinweise uev-ziel-hinweis" hidden><div class="uev-ziel-info"></div></div>' +
+            '<div class="uev-ziel-tab"><div class="uev-tabinhalt"></div>' + fussHtml() + '</div></div>' +
+          '<div class="uev-quellen-teil" data-teil="sm">' +
         '<section class="uev-abd-sek" hidden><div class="uev-abd-kopf"></div><div class="uev-abd-satz" hidden></div>' +
           '<div class="uev-abd-zeile"><div class="uev-abd-seg"></div>' +
             '<div class="up-search uev-abd-suche" hidden>' +
@@ -3490,7 +3508,7 @@
                 '<button class="up-search-clear" type="button" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2) + '</button>' +
               '</div>' +
             '</div></div>' +
-          '<div class="uev-abd-liste"></div></section>';
+          '<div class="uev-abd-liste"></div></section></div></div>';
       host.appendChild(sek);
       var n = "ziel-" + zt.id;
       pagerAnlegen(sek.querySelector(".uev-ziel-tab"), n, function () { renderZiele(); });
@@ -3500,7 +3518,7 @@
       zielLinien[zt.id] = UC.makeLine ? UC.makeLine({
         wrap: lw, canvas: lw.querySelector("canvas"), legend: sek.querySelector(".uev-legende"),
         isDark: isDark, gran: function () { return "day"; },
-        unit: function () { return zielShare() ? "%" : ""; }, decimals: function () { return zielShare() ? 1 : 0; },
+        unit: function () { return zielShare() ? "%" : ""; }, decimals: function () { return zielShare() ? (zielModus() === "urls" ? 2 : 1) : 0; },
         /* yGanz nur fuer die Zahl der Zitate: der Share in Prozent mit einer Stelle skaliert auf seinen Hoechstwert (20.10.: bei 0,8 Prozent stand
            die Achse sonst bis 4, die Linie lag platt am Boden -- yGanz hebt den Hoechstwert auf ein Vielfaches von 4). */
         yOhneDeckel: true, yGanz: function () { return !zielShare(); }, legendeImmer: true,
@@ -3528,6 +3546,7 @@
         else if (host.querySelectorAll(".uev-zielsek")[i] !== sek) host.appendChild(sek);   // nur umhaengen, wenn die Reihenfolge es braucht: ein Umhaengen nimmt dem Suchfeld den Fokus
         zielFuellen(sek, zt, zielAuswertung(a, zt, i, liste), a);
         abdFuellen(sek, zt);
+        quellenStellen(sek);
       });
       /* Entfernte Ziele: Abschnitt, Diagramm und Pager weg. */
       [].slice.call(host.querySelectorAll(".uev-zielsek")).forEach(function (sek) {
@@ -3645,8 +3664,9 @@
           var ohneLauf = function (p) { return num(p.runs) === 0; };
           /* Citation Tracking: die Linie ist der Share je Tag (Zitate der Seiten durch alle Zitate der Prompts an diesem Tag) oder, als Option,
              die Zahl der Zitate -- keine Linie "New URLs". Ein Tag ohne Nenner hat keine Zahl, die Linie bricht dort ab. */
-          if (wz) {
-            var alsShare = state.zielMetrik !== "abs";
+          if (wz && zielModus() === "urls") urlReiheZeigen(zt, tage, linie2);
+          else if (wz) {
+            var alsShare = zielModus() !== "abs";
             linie2.render({ labels: tage.map(function (p) { return String(p.day).slice(0, 10); }), datasets: [
               alsShare
                 ? { label: t("Share of all citations"), __id: "share", __baseColor: tinte, borderColor: tinte, __luecken: true, data: tage.map(function (p) {
@@ -3708,6 +3728,68 @@
     }
     function zahlWert(v) { v = num(v); return v == null ? '<span class="up-num is-empty">\u2013</span>' : '<span class="up-num">' + esc(zahl(v)) + '</span>'; }
     /* Die Zeilen und die Tabelle der URLs einer Regel -- gleich im Browser- und im Serverweg. */
+    /* ---- URL SHARE: EINE LINIE JE URL (21.10.) -----------------------------------------------------------------------------
+       get_impact_event_url_series_v1 (bubble/events_urls_21_10/url_series_v1.sql) liefert die Zitate je URL und Tag fuer die staerksten
+       URLREIHE_MAX URLs, mit den Filtern der Analyse (analyseKoerper). Den Share rechnet der Browser mit dem Nenner der Ziel-Linie
+       (daily[].total_citations): die Summe aller URL-Linien ist so genau "Overall Share". Farben wie Domain Detail (UC.chartFamilie, ab
+       der sechsten URL von vorn). URLSER.stand: null unbekannt, true gibt es, false fehlt (PGRST202) -- dann verschwindet der Modus. */
+    var URLSER = { stand: null }, urlReihen = {}, URLREIHE_MAX = 10;
+    function urlReiheZeigen(zt, tage, linie) {
+      var rec = urlReihen[zt.id] || (urlReihen[zt.id] = { seq: 0, sig: null, daten: null, laedt: false, fehler: false });
+      var body = analyseKoerper();
+      body.p_target_id = zt.id; body.p_limit = URLREIHE_MAX;
+      var sig = JSON.stringify(body);
+      if (rec.sig !== sig) {
+        rec.sig = sig; rec.laedt = true; rec.fehler = false;
+        var seq = ++rec.seq;
+        abdRpc("get_impact_event_url_series_v1", body).then(function (erg) {
+          if (seq !== rec.seq) return;
+          rec.laedt = false;
+          if (fehltFn(erg)) { URLSER.stand = false; rec.sig = null; zielMetrikSetzen(); }
+          else {
+            var d = erg.ok && erg.daten && isArr(erg.daten.urls) && isArr(erg.daten.points) ? erg.daten : null;
+            if (d) { URLSER.stand = true; rec.daten = d; rec.fehler = false; } else rec.fehler = true;
+          }
+          if (root.isConnected !== false && state.ansicht === "detail") renderZiele();
+        });
+      }
+      if (!rec.daten) { if (rec.fehler) linie.meldung(t("The URL lines couldn't be loaded.")); else linie.skeleton(); return; }
+      var d = rec.daten;
+      if (!d.urls.length) { linie.empty({ text: t("No URL was cited in this period.") }); return; }
+      var je = {};
+      d.points.forEach(function (p) { if (!p) return; var u = String(p.url || ""); (je[u] || (je[u] = {}))[String(p.day || "").slice(0, 10)] = num(p.citations) || 0; });
+      var fam = UC.chartFamilie ? UC.chartFamilie(isDark()) : [token("--vc-text")];
+      linie.render({ labels: tage.map(function (p) { return String(p.day).slice(0, 10); }), datasets: d.urls.map(function (u, i) {
+        var url = String(u && u.url || ""), farbe = fam[i % fam.length], m = je[url] || {};
+        return { label: pfadText(hostPfad(url)) || url, __id: "u" + i, __baseColor: farbe, borderColor: farbe, __luecken: true,
+          data: tage.map(function (p) {
+            var g = num(p.total_citations);
+            /* Ein Tag ohne Lauf oder ohne Nenner hat keine Zahl -- die Linie bricht dort ab, wie die Linie des Ziels. */
+            return num(p.runs) === 0 || !g ? null : Math.round((m[String(p.day).slice(0, 10)] || 0) * 10000 / g) / 100;
+          }) };
+      }) });
+    }
+    /* Der Kasten URLs/Sitemap: welcher Teil da ist (URLs nicht im Leerzustand des Ziels, Sitemap nur mit Abdeckung), welcher steht (die Wahl
+       je Ziel, sonst URLs), und ob der Kasten ueberhaupt steht. Nach jedem Zeichnen beider Teile. */
+    function quellenStellen(sek) {
+      var box = sek && sek.querySelector(".uev-quellen");
+      if (!box) return;
+      var block = sek.querySelector(".uev-ziel-block"), abd = sek.querySelector(".uev-abd-sek");
+      /* URLs nur mit Inhalt: im Lesefehler der Analyse bleibt die Tabelle leer (Kennzahlen und Chart sagen den Fehler) -- dann kein Kasten mit leerem Kopf. */
+      var platz = sek.querySelector(".uev-tabinhalt");
+      var urlsDa = !!block && !block.classList.contains("is-leer") && !!platz && platz.innerHTML !== "", smDa = !!abd && !abd.hidden;
+      box.hidden = !urlsDa && !smDa;
+      var w = state.quelle[sek.getAttribute("data-ziel-id")] === "sm" ? "sm" : "urls";
+      if (w === "sm" && !smDa) w = "urls";
+      if (w === "urls" && !urlsDa) w = "sm";
+      box.setAttribute("data-pane", w);
+      [].forEach.call(box.querySelectorAll("[data-quelle]"), function (b) {
+        var q = b.getAttribute("data-quelle"), an = q === w;
+        b.classList.toggle("is-active", an); b.setAttribute("aria-pressed", String(an));
+        b.hidden = q === "sm" ? !smDa : !urlsDa;
+      });
+      if (UC.segJetzt) { try { UC.segJetzt(box.querySelector(".uev-quellen-seg")); } catch (e) {} }
+    }
     function urlTabelleHtml(kopf, zeilen, wz, evTag, q) {
       return '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
         zeilen.map(function (u) {
@@ -3743,7 +3825,10 @@
         : o.gekappt ? ersetze(t("Showing the newest {n} URLs"), { n: zahl(o.alle) })
         : ersetze(t(o.total === 1 ? "{n} URL" : "{n} URLs"), { n: zahl(o.total) });
       info.innerHTML = '<span class="uev-angabe">' + (o.gekappt ? UC.icon("info", 2) : "") + '<span>' + esc(text) + '</span></span>' + filter;
-      hin.hidden = false;
+      /* Im Kasten URLs/Sitemap steht die Zahl am Reiter ("Cited URLs 8"); die Zeile darunter nur, wenn sie mehr sagt: Suchtreffer, Kappung, Filter. */
+      var un = sek.querySelector('.uev-quellen-n[data-n="urls"]');
+      if (un) un.textContent = zahl(o.alle != null ? o.alle : o.total);
+      hin.hidden = un ? !(filter || o.frage || o.gekappt) : false;
       if (suche) suche.hidden = false;
     }
     function urlServerZeigen(sek, zt, n, platz, kopf, wz, evTag, a) {
@@ -3866,7 +3951,7 @@
       if (!host || !d) return;
       regelZiele(d).forEach(function (zt) {
         var sek = host.querySelector('.uev-zielsek[data-ziel-id="' + String(zt.id).replace(/"/g, "") + '"]');
-        if (sek) abdFuellen(sek, zt);
+        if (sek) { abdFuellen(sek, zt); quellenStellen(sek); }
       });
     }
     /* Die Sperr-Uhr: solange irgendein "Refresh" gesperrt ist, hoechstens eine Minute bis zum Neuzeichnen, am Ende
@@ -4299,6 +4384,8 @@
         return;
       }
       var tab = abdTab(zt.id), nicht = Math.max(0, pc - cc);
+      var smN = sek.querySelector('.uev-quellen-n[data-n="sm"]');
+      if (smN) smN.textContent = ersetze(t("{n} of {m}"), { n: zahl(cc), m: zahl(pc) });
       function knopf(w, txt, n) {
         return '<button class="up-seg-btn' + (tab === w ? " is-active" : "") + '" type="button" data-abd-seg="' + w + '" data-ziel-id="' + esc(zt.id) + '">' +
           esc(ersetze(t(txt), { n: zahl(n) })) + '</button>';
@@ -4727,7 +4814,9 @@
       if (e.target.closest(".uev-anlegen, [data-uev-create]")) { e.preventDefault(); popupArt(); return; }
       if (e.target.closest(".uev-zurueck")) { zurUebersicht(true); return; }
       var zm = e.target.closest("[data-zm]");
-      if (zm) { state.zielMetrik = zm.getAttribute("data-zm") === "abs" ? "abs" : "share"; persist(); zielMetrikSetzen(); renderZiele(); return; }
+      if (zm) { var zw = zm.getAttribute("data-zm"); state.zielMetrik = zw === "abs" || zw === "urls" ? zw : "share"; persist(); zielMetrikSetzen(); renderZiele(); return; }
+      var qb = e.target.closest("[data-quelle]");
+      if (qb) { var qs = qb.closest(".uev-zielsek"); if (qs) { state.quelle[qs.getAttribute("data-ziel-id")] = qb.getAttribute("data-quelle") === "sm" ? "sm" : "urls"; quellenStellen(qs); } return; }
       if (e.target.closest(".uev-pinknopf")) { pinUmschalten(); return; }
       var si = e.target.closest(".uev-seiteninfo");
       if (si) { if (seitenKarte && !seitenKarte.el.classList.contains("is-on")) seitenKarte.show(si); return; }
