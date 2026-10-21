@@ -1193,6 +1193,44 @@
     "{n} prompt was measured on different models before and after the event. It is not part of the before and after numbers.": "{n} Prompt wurde vor und nach dem Event mit verschiedenen Modellen gemessen. Er zählt nicht in die Zahlen vorher und nachher.",
     "{n} prompts were measured on different models before and after the event. They are not part of the before and after numbers.": "{n} Prompts wurden vor und nach dem Event mit verschiedenen Modellen gemessen. Sie zählen nicht in die Zahlen vorher und nachher."
   });
+  /* Page Audit aus Impact (21.10.). "View" steht in core als Substantiv ("Ansicht") -- darum heisst die Aktion im Toast
+     "View audit" wie "View events" in core, nicht "View" (Katalog-Kollision). */
+  if (UC.addMessages) UC.addMessages("de", {
+    "Run audit": "Audit starten",
+    "Audit started": "Audit gestartet",
+    "Audit already running": "Audit läuft schon",
+    "View audit": "Audit ansehen",
+    "Reachable {n} of {m}": "Erreichbar {n} von {m}",
+    "Reachable for {n} of {m} AI platforms in the last audit": "Beim letzten Audit für {n} von {m} KI-Plattformen erreichbar",
+    "Audit queued": "Audit wartet",
+    "Audit running": "Audit läuft",
+    "Audit failed": "Audit fehlgeschlagen",
+    "Audit cancelled": "Audit abgebrochen",
+    "The audit couldn't be started": "Das Audit ließ sich nicht starten",
+    "Page audits aren't included in your plan": "Page Audits sind in deinem Tarif nicht enthalten",
+    "Choose a plan with page audits to run one.": "Wähl einen Tarif mit Page Audits, um eins zu starten.",
+    "Your team has used all {n} audits for this week": "Dein Team hat alle {n} Audits dieser Woche verbraucht",
+    "Your team has used all audits for this week": "Dein Team hat alle Audits dieser Woche verbraucht",
+    "New audits are available on {date}.": "Neue Audits gibt es ab {date}.",
+    "Your team has started {n} audits in the last hour": "Dein Team hat in der letzten Stunde {n} Audits gestartet",
+    "You can start the next one at {time}.": "Das nächste kannst du ab {time} starten.",
+    "{n} audits are already waiting to run": "{n} Audits warten schon auf ihren Lauf",
+    "You can start more once some of them have finished.": "Sobald einige fertig sind, kannst du weitere starten.",
+    "This website has been audited too often in the last hour": "Diese Website wurde in der letzten Stunde zu oft geprüft",
+    "You can audit {host} again at {time}.": "Ab {time} kannst du {host} wieder prüfen.",
+    "You're starting audits too quickly": "Du startest Audits zu schnell hintereinander",
+    "This page can't be audited": "Diese Seite lässt sich nicht prüfen",
+    "The address isn't valid.": "Die Adresse ist ungültig.",
+    "The address is too long.": "Die Adresse ist zu lang.",
+    "Only http and https addresses can be audited.": "Prüfen lassen sich nur Adressen mit http oder https.",
+    "Addresses with a # part can't be audited.": "Adressen mit einem #-Teil lassen sich nicht prüfen.",
+    "Addresses with a username or password can't be audited.": "Adressen mit Nutzername oder Passwort lassen sich nicht prüfen.",
+    "Addresses with a custom port can't be audited.": "Adressen mit eigener Portnummer lassen sich nicht prüfen.",
+    "Only public websites can be audited.": "Prüfen lassen sich nur öffentliche Websites.",
+    "Addresses that contain an access token can't be audited.": "Adressen mit einem Zugangsschlüssel lassen sich nicht prüfen.",
+    "You don't have access to this team.": "Du hast keinen Zugang zu diesem Team.",
+    "This team no longer exists.": "Dieses Team gibt es nicht mehr."
+  });
 
   /* Spaltenzahl der Karten: nach dem PLATZ (wie response-detail.spalten -- dieselben Schwellen,
      dieselbe Begruendung: ein springendes Raster ist schlimmer als eine kurze letzte Reihe). */
@@ -3828,6 +3866,8 @@
         b.hidden = q === "sm" ? !smDa : !urlsDa;
       });
       if (UC.segJetzt) { try { UC.segJetzt(box.querySelector(".uev-quellen-seg")); } catch (e) {} }
+      /* Die Audits der Zeilen: nur fuer den Teil, der zu sehen ist (auch nach einem Wechsel des Umschalters). */
+      if (!box.hidden) paLesen(box.querySelector('.uev-quellen-teil[data-teil="' + w + '"]'));
     }
     /* BRANDED ONLY (22.10., Fall lee-up.de/cedric-leenen): eine Seite, die nur Branded-Prompts zitiert haben. Die zaehlen in
        keiner Kennzahl (Vorgabe der App, Absprache 13.10.); ohne Marke stand die Seite mit 0 neben "heute" in der Tabelle und
@@ -3848,10 +3888,13 @@
           var modelle = isArr(u.models_after) ? u.models_after : [];
           /* Die Zeile oeffnet das URL-Detail, wie in der Tabelle der URLs (Beschluss 2). Eine Antwort zeigt
              das Event-Detail gar nicht mehr: sie steht im Drawer der URL. */
-          return '<div class="up-row up-vrow uev-zitzeile" role="link" tabindex="0" data-url="' + esc(u.url || "") + '">' +
+          /* Page Audit (21.10.): die Angabe zum Audit der URL steht in der leisen zweiten Zeile hinter dem Host (die erste Zelle traegt schon den
+             Zeilenknopf, eine dritte Angabe in der Zeile liesse vom Pfad bei 1024 Breite kaum etwas uebrig); "Run audit" ist der Zeilenknopf. */
+          return '<div class="up-row up-vrow uev-zitzeile" role="link" tabindex="0" data-url="' + esc(u.url || "") + '"' + (u.url ? ' data-pa-url="' + esc(u.url) + '"' : '') + '>' +
             '<div class="up-td up-var-name uev-td-url"><span class="up-fav up-logo-box has-img"><img src="' + esc(favicon(u.url)) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>' +
               '<span class="uev-url-txt"><span class="uev-url-haupt" title="' + esc(u.url || "") + '">' + UC.highlight(pfadText(hp), q) + '</span>' +
-              '<span class="uev-url-host">' + UC.highlight(hp.host, q) + '</span></span></div>' +
+              '<span class="uev-url-unter"><span class="uev-url-host">' + UC.highlight(hp.host, q) + '</span>' + (u.url ? paAngabeHtml(u.url) : '') + '</span></span>' +
+              (u.url ? paKnopfHtml() : '') + '</div>' +
             '<div class="up-td uev-td-zahl uev-td-beob">' + beob + '</div>' +
             '<div class="up-td uev-td-zahl">' + zahlWert(u.citations_after) + '</div>' +
             '<div class="up-td uev-td-zahl">' + zahlWert(u.prompts_after) + '</div>' +
@@ -3929,6 +3972,205 @@
       if (s && num(d.offset) !== (s.page - 1) * s.pageSize && !rec.laedt) { urlServerZeigen(c.sek, c.zt, c.n, c.platz, c.kopf, c.wz, c.evTag, rec.a); return; }
       c.platz.innerHTML = urlTabelleHtml(c.kopf, d.urls, c.wz, c.evTag, frage);
       sortSync(c.n);
+      paLesen(c.platz);
+    }
+    /* ---- PAGE AUDIT AUS IMPACT (21.10., bubble/page_audit_21_10/UMSETZUNGSPLAN.md Abschnitt 2 "Platzierung") -----------------------------
+       In den Zeilen von Cited URLs und der Sitemap (Seiten, nicht Ordner): "Run audit" als Zeilenknopf und, wo es zur URL schon ein Audit gibt,
+       eine leise Angabe mit Link ins Audit. Ein Start von hier ist ein NORMALER Start (create_page_audit_v1, ohne Herkunft): ein Audit gehoert
+       dem Team und der URL, die Verbindung laeuft nur ueber die URL -- darum zeigt jede Zeile jedes Audit ihrer URL, egal wo es gestartet wurde.
+       PA.stand: null unbekannt, true die Funktionen gibt es, false sie fehlen (PGRST202: DB noch nicht eingespielt) -- dann gibt es weder Knopf
+       noch Angabe, ohne Meldung. Der Knopf steht erst mit true da (has-pa an der Wurzel): ein Knopf, der nichts kann, waere einer zu viel.
+       Gefragt wird je gezeichneter SICHTBARER Liste einmal (get_page_audit_urls_v1, hoechstens PA_MAX URLs, die Grenze der DB), und nur nach URLs
+       ohne frischen Stand; die Antwort setzt die Angaben an Ort und Stelle (paZeilen), die Liste wird nicht neu gezeichnet. PA.je: Stand je Team
+       und URL ({ t, z }, z die Zeile der DB oder null = kein Audit), PA.fragt: URLs, nach denen gerade gefragt wird, PA.start: laufende Starts. */
+    var PA = { stand: null, je: {}, fragt: {}, start: {} }, PA_MAX = 500, PA_ZEICHEN = null;
+    /* Wie lange ein Stand gilt: ein wartendes oder laufendes Audit aendert sich bald (ein Lauf dauert hoechstens 180 s), ein fertiges selten.
+       Ein Lesefehler wird erst nach einer Minute wieder gefragt -- die Liste zeichnet sich bei jeder Minute der Sperr-Uhr neu. */
+    var PA_AKTIV_MS = 30000, PA_RUHE_MS = 300000, PA_FEHLER_MS = 60000;
+    function paAn() { return !demo && !!UC.rpc && PA.stand !== false; }
+    function paSchluessel(url) { return team() + "|" + String(url); }
+    function paAktiv(z) { var s = String(z && z.last_status || ""); return s === "queued" || s === "running"; }
+    /* Das Zeichen von Page Audit (dna01, legt die Seite Page Audit in core an). Einmal je Seite gefragt: fehlt es (vor dem Zusammenfuehren), steht
+       kein leeres Zeichen da, und core meldet das fehlende Zeichen nur einmal statt bei jeder Zeile. */
+    function paZeichen() { if (PA_ZEICHEN === null) PA_ZEICHEN = (UC.icon && UC.icon("dna01", 2)) || ""; return PA_ZEICHEN; }
+    function paDa() { if (PA.stand === false) return; PA.stand = true; root.classList.add("has-pa"); }
+    function paAus() {
+      PA.stand = false; root.classList.remove("has-pa");
+      [].forEach.call(root.querySelectorAll(".uev-pa-start, .uev-pa-angabe"), function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
+    }
+    /* Die Adresse des Audits: dieselbe Form wie ?view=events&event= -- ein echter Link, damit Strg/Cmd-Klick und "In neuem Tab oeffnen" gehen;
+       die App liest ?view= beim Laden. Der einfache Klick geht ueber paOeffnen. */
+    function paHref(pageId) {
+      try { return window.location.pathname + "?view=audits&page_id=" + encodeURIComponent(pageId); } catch (e) { return "?view=audits&page_id=" + encodeURIComponent(pageId); }
+    }
+    /* VERTRAG MIT DER SEITE PAGE AUDIT: window.upstreemPageAuditOpen(pageId), wenn es sie gibt. Sonst wie UC.eventOeffnen: page_id in die Adresse,
+       dann die Ansicht "audits" ueber die Seitenleiste (UC.ansichtWechseln, derselbe Weg wie ein Klick dort). */
+    function paOeffnen(pageId) {
+      pageId = String(pageId == null ? "" : pageId).trim();
+      if (!pageId) return;
+      if (typeof window.upstreemPageAuditOpen === "function") { try { window.upstreemPageAuditOpen(pageId); } catch (e) {} return; }
+      try {
+        var u = new URL(window.location.href);
+        u.searchParams.set("page_id", pageId);
+        window.history.pushState(window.history.state, "", u.pathname + u.search + u.hash);
+      } catch (e) {}
+      if (UC.ansichtWechseln) UC.ansichtWechseln("audits");
+    }
+    function paUuid() {
+      try { if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID(); } catch (e) {}
+      var b = new Uint8Array(16);
+      try { window.crypto.getRandomValues(b); } catch (e) { for (var i = 0; i < 16; i++) b[i] = Math.floor(Math.random() * 256); }
+      b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+      var h = [].map.call(b, function (x) { return (x + 256).toString(16).slice(1); }).join("");
+      return h.slice(0, 8) + "-" + h.slice(8, 12) + "-" + h.slice(12, 16) + "-" + h.slice(16, 20) + "-" + h.slice(20);
+    }
+    /* Die leise Angabe: laeuft ein Audit, sagt sie das (die neueste Nachricht); sonst die Hauptzahl des letzten brauchbaren Laufs
+       (last_reachable_count/last_profile_count, completed oder partial); ohne einen solchen der Ausgang des letzten Laufs. Kein Urteil in Farbe:
+       Page Audit hat keinen Score (Plan Abschnitt 2), nur das Laufende steht in der Akzent-Tinte wie der laufende Status eines Events. */
+    function paAngabe(url) {
+      var c = paAn() ? PA.je[paSchluessel(url)] : null, z = c && c.z;
+      if (!z || z.page_id == null || z.page_id === "") return { sig: "", html: '<span class="uev-pa-angabe" data-pa-sig="" hidden></span>' };
+      var st = String(z.last_status || ""), n = num(z.last_reachable_count), m = num(z.last_profile_count), text, tip = "", laeuft = paAktiv(z);
+      if (laeuft) text = t(st === "queued" ? "Audit queued" : "Audit running");
+      else if (n != null && m > 0) { text = ersetze(t("Reachable {n} of {m}"), { n: zahl(n), m: zahl(m) }); tip = ersetze(t("Reachable for {n} of {m} AI platforms in the last audit"), { n: zahl(n), m: zahl(m) }); }
+      else if (st === "failed") text = t("Audit failed");
+      else if (st === "cancelled") text = t("Audit cancelled");
+      else text = t("View audit");
+      var sig = String(z.page_id) + "|" + text + "|" + (laeuft ? 1 : 0);
+      return { sig: sig, html: '<a class="uev-pa-angabe' + (laeuft ? " is-laeuft" : "") + '" href="' + esc(paHref(z.page_id)) + '" data-pa-oeffnen="' + esc(z.page_id) + '" data-pa-sig="' + esc(sig) + '"' +
+        (tip ? ' data-tip="' + esc(tip) + '"' : '') + '>' + paZeichen() + '<span>' + esc(text) + '</span></a>' };
+    }
+    function paAngabeHtml(url) { return paAngabe(url).html; }
+    /* Der Zeilenknopf: .up-btn-sec.up-rowbtn aus core wie "Remove"; beim Starten der Standard-Spinner der App im Knopf (.up-btn-spin), gesperrt. */
+    function paKnopfHtml() {
+      if (!paAn()) return "";
+      return '<button type="button" class="up-btn-sec up-rowbtn uev-pa-start" data-pa-start>' +
+        '<span class="up-btn-spin" aria-hidden="true"></span>' + paZeichen() + '<span>' + esc(t("Run audit")) + '</span></button>';
+    }
+    /* Angaben und Knoepfe der Zeilen in el auf den Stand bringen, an Ort und Stelle. Eine Angabe wird nur ersetzt, wenn sich ihr Inhalt
+       aendert (data-pa-sig) -- sonst verloere ein fokussierter Link bei jeder Antwort den Fokus. */
+    function paZeilen(el) {
+      if (!el) return;
+      [].forEach.call(el.querySelectorAll("[data-pa-url]"), function (z) {
+        var url = z.getAttribute("data-pa-url"), alt = z.querySelector(".uev-pa-angabe"), neu = paAngabe(url);
+        if (alt && alt.getAttribute("data-pa-sig") !== neu.sig) {
+          var fokus = alt === document.activeElement;
+          alt.insertAdjacentHTML("afterend", neu.html);
+          var ersatz = alt.nextElementSibling;
+          alt.parentNode.removeChild(alt);
+          if (fokus && ersatz && ersatz.focus) { try { ersatz.focus({ preventScroll: true }); } catch (e) {} }
+        }
+        /* Gesperrt wird ueber aria-disabled, nicht disabled: ein deaktivierter Knopf verliert den Fokus, und wer mit Enter gestartet hat,
+           stuende danach am Anfang der Seite (gemessen). Einen zweiten Start verhindert PA.start. */
+        var kn = z.querySelector(".uev-pa-start");
+        if (kn) {
+          var an = !!PA.start[paSchluessel(url)];
+          kn.classList.toggle("is-busy", an);
+          if (an) { kn.setAttribute("aria-busy", "true"); kn.setAttribute("aria-disabled", "true"); }
+          else { kn.removeAttribute("aria-busy"); kn.removeAttribute("aria-disabled"); }
+        }
+      });
+    }
+    /* EIN Aufruf je gezeichneter Liste: alle URLs ihrer Zeilen, die noch keinen frischen Stand haben und nach denen nicht schon gefragt wird. */
+    function paLesen(el) {
+      if (!paAn() || !el || !el.isConnected) return;
+      var box = el.closest(".uev-quellen"), teil = el.closest(".uev-quellen-teil");
+      if (box && (box.hidden || (teil && teil.getAttribute("data-teil") !== box.getAttribute("data-pane")))) return;
+      paZeilen(el);
+      var jetzt = Date.now(), urls = [], keys = [], da = {};
+      [].forEach.call(el.querySelectorAll("[data-pa-url]"), function (z) {
+        var u = z.getAttribute("data-pa-url"), k = paSchluessel(u), c = PA.je[k];
+        if (!u || da[k] || PA.fragt[k] || urls.length >= PA_MAX) return;
+        da[k] = 1;
+        if (c && jetzt - c.t < (c.fehler ? PA_FEHLER_MS : c.z && paAktiv(c.z) ? PA_AKTIV_MS : PA_RUHE_MS)) return;
+        urls.push(u); keys.push(k);
+      });
+      if (!urls.length) return;
+      keys.forEach(function (k) { PA.fragt[k] = 1; });
+      abdRpc("get_page_audit_urls_v1", { p_urls: urls }).then(function (erg) {
+        keys.forEach(function (k) { delete PA.fragt[k]; });
+        if (fehltFn(erg)) { paAus(); return; }
+        var rows = erg.ok && erg.daten && isArr(erg.daten.rows) ? erg.daten.rows : null, t0 = Date.now();
+        /* Die Funktion gibt es, sobald sie selbst antwortet (auch mit einem Fehler); nur Netz und Anmeldung lassen es offen. */
+        if (erg.ok || (erg.status >= 400 && erg.status !== 401)) paDa();
+        if (!rows) {
+          /* Lesefehler: keine Angaben (eine falsche waere schlimmer als keine), der Knopf bleibt; in einer Minute fragt die Liste wieder. */
+          keys.forEach(function (k) { if (!PA.je[k]) PA.je[k] = { t: t0, z: null, fehler: true }; else PA.je[k].t = t0 - PA_RUHE_MS + PA_FEHLER_MS; });
+          return;
+        }
+        var nach = {};
+        rows.forEach(function (r) { if (r && r.input != null) nach[String(r.input)] = r; });
+        urls.forEach(function (u, i) { PA.je[keys[i]] = { t: t0, z: nach[u] || null }; });
+        if (root.isConnected !== false) paZeilen(root);
+      });
+    }
+    /* Ein Zeitpunkt aus "Sekunden bis wieder Platz ist" (hint der Grenzen), als Uhrzeit wie bei der Sitemap (heute nur die Zeit). */
+    function paUm(hint) { var s = num(hint); return s != null && s > 0 ? abdUm(Date.now() + s * 1000) : ""; }
+    function paDetail(f) { try { var d = JSON.parse(String(f && f.details || "")); return d && typeof d === "object" ? d : {}; } catch (e) { return {}; } }
+    /* Der Tag, an dem das Kontingent neu beginnt (resets_at), als Kalendertag des Browsers. */
+    function paTag(iso) {
+      var ms = Date.parse(String(iso || ""));
+      if (!isFinite(ms)) return "";
+      var d = new Date(ms);
+      return datum(d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"));
+    }
+    /* Jeder Fehler des Anlegens als Satz fuer Nutzer, ohne Code und ohne interne Namen: Titel ohne Punkt, darunter der naechste Schritt.
+       Codes und hints aus 02_rpcs_v1.sql (Kopf) und den Zugangsbausteinen (_set_require_v1, _app_gate_v1, _pi_rate_limit_v1). */
+    var PA_URL_GRUND = { empty: "The address isn't valid.", invalid: "The address isn't valid.", too_long: "The address is too long.",
+      scheme: "Only http and https addresses can be audited.", fragment: "Addresses with a # part can't be audited.",
+      credentials: "Addresses with a username or password can't be audited.", port: "Addresses with a custom port can't be audited.",
+      host: "Only public websites can be audited.", ip_literal: "Only public websites can be audited.", local_host: "Only public websites can be audited.",
+      credentialed_query: "Addresses that contain an access token can't be audited." };
+    function paFehler(erg, url) {
+      var f = (erg && erg.fehler) || {}, c = String(f.message || ""), h = String(f.hint || "").trim(), d = paDetail(f), um = paUm(h);
+      var nicht = t("The audit couldn't be started");
+      if (!erg || erg.status === 0) return { titel: nicht, desc: t("Check your connection and try again.") };
+      if (c === "page_audit_invalid_url") return { titel: t("This page can't be audited"), desc: t(PA_URL_GRUND[h] || PA_URL_GRUND.invalid) };
+      if (c === "page_audit_quota_exhausted") {
+        if (num(d.allowance) === 0) return { titel: t("Page audits aren't included in your plan"), desc: t("Choose a plan with page audits to run one.") };
+        var tag = paTag(d.resets_at) || (num(h) > 0 ? paTag(new Date(Date.now() + num(h) * 1000).toISOString()) : "");
+        return { titel: num(d.allowance) > 0 ? ersetze(t("Your team has used all {n} audits for this week"), { n: zahl(d.allowance) }) : t("Your team has used all audits for this week"),
+          desc: tag ? ersetze(t("New audits are available on {date}."), { date: tag }) : "" };
+      }
+      if (c === "page_audit_hourly_limit") return { titel: ersetze(t("Your team has started {n} audits in the last hour"), { n: zahl(num(d.limit) || 10) }),
+        desc: um ? ersetze(t("You can start the next one at {time}."), { time: um }) : t("Please wait a moment and try again.") };
+      if (c === "page_audit_pending_limit") return { titel: ersetze(t("{n} audits are already waiting to run"), { n: zahl(num(d.limit) || 10) }), desc: t("You can start more once some of them have finished.") };
+      if (c === "page_audit_domain_rate_limited") return { titel: t("This website has been audited too often in the last hour"),
+        desc: um ? ersetze(t("You can audit {host} again at {time}."), { host: String(d.host || hostPfad(url).host), time: um }) : t("Please wait a moment and try again.") };
+      if (/_rate_limited$/.test(c)) return { titel: t("You're starting audits too quickly"), desc: t("Please wait a moment and try again.") };
+      if (/^team_access_/.test(c)) return { titel: nicht, desc: fehlerText(c, h) };
+      if (erg.status === 401 || c === "settings_not_authenticated") return { titel: nicht, desc: t("Please sign in again.") };
+      if (c === "team_forbidden" || c === "forbidden") return { titel: nicht, desc: t("You don't have access to this team.") };
+      if (c === "team_deleted") return { titel: nicht, desc: t("This team no longer exists.") };
+      return { titel: nicht, desc: t("Please try again.") };
+    }
+    function paStarten(knopf) {
+      var zeile = knopf.closest("[data-pa-url]"), url = zeile ? zeile.getAttribute("data-pa-url") : "", k = paSchluessel(url);
+      if (!url || PA.start[k] || !paAn()) return;
+      PA.start[k] = 1;
+      paZeilen(root);
+      abdRpc("create_page_audit_v1", { p_url: url, p_idempotency_key: paUuid() }).then(function (erg) {
+        delete PA.start[k];
+        if (fehltFn(erg)) { paAus(); return; }
+        var d = erg.ok && erg.daten && typeof erg.daten === "object" ? erg.daten : null, run = d && d.run && typeof d.run === "object" ? d.run : null;
+        var hp = hostPfad(url), wo = hp.host + (hp.start ? "" : hp.pfad);
+        if (run && run.page_id != null && run.page_id !== "") {
+          paDa();
+          /* Der neue Stand gilt sofort in jeder Zeile mit dieser URL (beide Listen); die letzte Hauptzahl bleibt fuer danach gemerkt. */
+          var alt = PA.je[k] && PA.je[k].z ? PA.je[k].z : {}, neu = {};
+          for (var x in alt) if (Object.prototype.hasOwnProperty.call(alt, x)) neu[x] = alt[x];
+          neu.page_id = run.page_id; neu.last_status = String(run.status || "queued");
+          if (d.deduplicated !== true) neu.run_count = (num(alt.run_count) || 0) + 1;
+          PA.je[k] = { t: Date.now(), z: neu };
+          var pid = run.page_id;
+          if (UC.toast) UC.toast(t(d.deduplicated === true ? "Audit already running" : "Audit started"), { kind: d.deduplicated === true ? "neutral" : "success", desc: wo,
+            action: { label: t("View audit"), onClick: function () { paOeffnen(pid); } } });
+        } else {
+          var fe = erg.ok ? { titel: t("The audit couldn't be started"), desc: t("Please try again.") } : paFehler(erg, url);
+          if (UC.toast) UC.toast(fe.titel, fe.desc ? { kind: "error", desc: fe.desc } : { kind: "error" });
+        }
+        if (root.isConnected !== false) paZeilen(root);
+      });
     }
     /* ---- SEITENABDECKUNG JE REGEL (17.10., Auftrag Teil C, Vorbild: "Seitenindexierung" der
        Google Search Console) ------------------------------------------------------------------
@@ -4275,12 +4517,15 @@
       else if (!zit) { if (opt.tab !== "offen") marke = '<span class="up-marke is-leise uev-abd-marke">' + esc(t("Not cited yet")) + '</span>'; }
       else if (p.is_new === true) marke = '<span class="up-marke is-leise uev-abd-marke" data-tip="' + esc(t("New in the sitemap or updated since the event")) + '">' + esc(t("New or updated")) + '</span>';
       var offen = zit || nurBr ? ' is-zitiert" role="link" tabindex="0" data-url="' + esc(treffer && treffer.url ? treffer.url : p.url || "") : "";
-      return '<div class="uev-abd-seite' + (opt.name != null ? " is-im-baum" : "") + (weg ? " is-weg" : "") + offen + '"' + (zit || nurBr ? "" : ' data-abd-seite="1" data-url="' + esc(p.url || "") + '"') + (opt.tiefe ? ' style="--uev-tiefe:' + opt.tiefe + '"' : '') + '>' +
+      /* Page Audit (21.10.): die Angabe zum Audit steht vor der Angabe rechts, "Run audit" tauscht beim Hover mit ihr den Platz
+         (.uev-pa-tausch, Hausregel: an derselben Stelle, nie darueber, nie eine eigene Spalte). */
+      var paUrl = String(p.url || "");
+      return '<div class="uev-abd-seite' + (opt.name != null ? " is-im-baum" : "") + (weg ? " is-weg" : "") + offen + '"' + (zit || nurBr ? "" : ' data-abd-seite="1" data-url="' + esc(p.url || "") + '"') + (paUrl ? ' data-pa-url="' + esc(paUrl) + '"' : '') + (opt.tiefe ? ' style="--uev-tiefe:' + opt.tiefe + '"' : '') + '>' +
         zielFavKlein(p.url || "", '<span class="uev-abd-fav0">' + UC.icon("globe", 2) + '</span>') +
         '<span class="uev-abd-pfad" title="' + esc(p.url || "") + '">' + abdLinkHtml(p.url, pfad, opt.q) + '</span>' +
         marke +
         (weg ? '<span class="up-marke is-leise uev-abd-marke">' + esc(t("No longer in sitemap")) + '</span>' : '') +
-        rechts +
+        (paUrl ? paAngabeHtml(paUrl) + '<span class="uev-pa-tausch">' + rechts + paKnopfHtml() + '</span>' : rechts) +
       '</div>';
     }
     /* DER BAUM DER SEITEN (17.10.): dieselbe Zerlegung wie im Sitemap-Waehler (smBaum, nicht nachgebaut), nur
@@ -4886,6 +5131,12 @@
     }
     root.addEventListener("click", function (e) {
       if (!e.target.closest) return;
+      /* Page Audit in den Zeilen (21.10.): vor den Zeilen selbst, die sonst das URL-Detail oeffnen. Ein Klick mit Strg/Cmd/Umschalt folgt dem
+         Link (neuer Tab), der einfache geht ueber paOeffnen. */
+      var pao = e.target.closest("[data-pa-oeffnen]");
+      if (pao) { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); paOeffnen(pao.getAttribute("data-pa-oeffnen")); return; }
+      var pas = e.target.closest("[data-pa-start]");
+      if (pas) { paStarten(pas); return; }
       if (e.target.closest(".uev-anlegen, [data-uev-create]")) { e.preventDefault(); popupArt(); return; }
       if (e.target.closest(".uev-zurueck")) { zurUebersicht(true); return; }
       var zm = e.target.closest("[data-zm]");

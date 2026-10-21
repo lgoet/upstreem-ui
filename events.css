@@ -1021,3 +1021,54 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-abd-zeile .uev-abd-seg { margin-bottom: 0; }
 .uev-abd-zeile .uev-abd-seg:empty { display: none; }
 .uev-zielsek .uev-tabinhalt.is-laedt { opacity: .55; transition: opacity var(--up-t-1) var(--up-ease); }
+
+/* ---- PAGE AUDIT AUS IMPACT (21.10.) ------------------------------------------------------------------------------------
+   In den Zeilen von Cited URLs und der Sitemap: "Run audit" (.up-btn-sec.up-rowbtn aus core, wie "Remove") und die leise Angabe zum Audit
+   der URL (events.js, paAngabe). Der Knopf steht erst da, wenn die DB die Funktionen hat (has-pa an der Wurzel, paDa) -- vorher und ohne
+   sie gibt es keinen Knopf, der nichts kann, und kein Loch: ohne has-pa nimmt er auch keinen Platz. */
+.uev-root:not(.has-pa) .uev-pa-start { display: none; }
+/* Waehrend des Startens bleibt er stehen (auch ohne Hover), mit dem Spinner der App an der Stelle des Zeichens. 13 wie das Zeichen im
+   Zeilenknopf (core: .up-rowbtn svg). */
+.uev-pa-start.is-busy { opacity: 1; pointer-events: none; }
+.uev-pa-start .up-btn-spin { width: 13px; height: 13px; border-width: 1.5px; }
+.uev-pa-start.is-busy > svg { display: none; }
+/* Die Angabe: Zeichen und Text in der leisen Schrift der Angaben rechts (.uev-abd-datum, 12), ein Link wie der Pfad der Sitemap
+   (.uev-abd-link: unterstrichen erst beim Ueberfahren). Keine Pille, kein Punkt, kein Urteil in Farbe; nur ein laufendes Audit in der
+   Akzent-Tinte wie der laufende Status eines Events (.uev-status.is-running). Sie weicht nicht vor Pfad und Host (die kuerzen zuerst), und
+   erst wenn sie allein nicht mehr in die Zeile passt, kuerzt sie mit "…". */
+.uev-pa-angabe { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; max-width: 100%; min-width: 0; font-size: var(--up-fs-s); color: var(--vc-third);
+  text-decoration: none; white-space: nowrap; font-variant-numeric: tabular-nums; border-radius: var(--up-r-xs); }
+.uev-pa-angabe[hidden] { display: none; }
+.uev-pa-angabe > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.uev-pa-angabe > svg { width: 13px; height: 13px; flex: 0 0 auto; }
+.uev-pa-angabe:hover { color: var(--vc-text); text-decoration: underline; }
+.uev-pa-angabe:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: 2px; }
+.uev-pa-angabe.is-laeuft { color: var(--up-accent-ink); }
+/* Cited URLs: die Angabe in der leisen zweiten Zeile hinter dem Host. Wird es eng, kuerzt zuerst der Host (er steht in jeder Zeile gleich);
+   reicht die Zeile nicht fuer beide (unter 220, gemessen: Host 84 + 8 + Angabe bis 115), weicht er in Zeilen mit Audit ganz -- sonst stuende
+   vor der Angabe eine Luecke, wo der Host auf null gekuerzt ist (gesehen bei 768 Breite). Gemessen wird die Zeile selbst (Container),
+   nicht das Fenster: die erste Spalte ist schon bei 850 Breite auf ihrem Minimum. Dafuer fuellt der Text die Zelle bis zum Zeilenknopf. */
+.uev-zielurls .uev-url-txt { flex: 1 1 auto; }
+.uev-url-unter { display: flex; align-items: center; gap: 8px; min-width: 0; container: uev-url-unter / inline-size; }
+.uev-url-unter > .uev-url-host { flex: 0 1 auto; min-width: 0; }
+@container uev-url-unter (max-width: 219px) {
+  .uev-url-unter:has(> a.uev-pa-angabe) > .uev-url-host { display: none; }
+}
+/* Sitemap: Tausch nach der Hausregel. Die Angabe rechts (Zahl der Zitate, Datum) und der Knopf liegen in DERSELBEN Rasterzelle, rechtsbuendig;
+   am Hover der Zeile weicht die Angabe und der Knopf steht an ihrer Stelle -- nie darueber, nie eine eigene Spalte. Die Zelle ist so breit
+   wie das Breitere von beiden, die Angabe zum Audit links daneben steht darum in allen Zeilen eines Reiters auf derselben Linie. */
+.uev-pa-tausch { display: grid; align-items: center; justify-items: end; flex: 0 0 auto; }
+/* Ohne die Funktionen (kein has-pa) ist der Behaelter nicht da: die Angabe rechts steht wie vorher als Kind der Zeile -- ein leerer Behaelter
+   kostete in Zeilen ohne Angabe die Luecke der Zeile (10, gemessen gegen die alte Fassung). */
+.uev-root:not(.has-pa) .uev-pa-tausch { display: contents; }
+.uev-pa-tausch > * { grid-area: 1 / 1; }
+.uev-pa-tausch > .up-rowbtn { margin-left: 0; }
+.uev-abd-seite:hover .uev-pa-tausch > .up-rowbtn { opacity: 1; pointer-events: auto; }
+.uev-root.has-pa:not(.is-vnarrow) .uev-abd-seite:hover .uev-pa-tausch > .uev-abd-datum,
+.uev-root.has-pa:not(.is-vnarrow) .uev-pa-tausch:focus-within > .uev-abd-datum,
+.uev-root.has-pa:not(.is-vnarrow) .uev-pa-tausch:has(> .is-busy) > .uev-abd-datum { visibility: hidden; }
+/* Beruehrung (kein Hover): Angabe und Knopf stehen beide, nebeneinander (Hausregel); der Knopf in Cited URLs ebenso. */
+@media (hover: none) {
+  .uev-root.has-pa .uev-pa-tausch { display: flex; gap: 8px; }
+  .uev-root.has-pa .uev-pa-start { opacity: 1; pointer-events: auto; }
+}
