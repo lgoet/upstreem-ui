@@ -105,6 +105,10 @@
          (Hugeicons, 03.10. angefordert) ist das Zeichen der Events-Komponente selbst (Krume im
          Seitenkopf), derselbe Ort, dasselbe Zeichen. Schluessel "events" = ?view=events. */
       { key: "events",        label: "Impact",          icon: "cells" },
+      /* Page Audit (21.10. angefordert: eigene Seite unter Workspace, Zeichen Dna01 aus Hugeicons).
+         Direkt unter Impact: von dort kommt der zweite Einstieg ("Run audit" an einer zitierten
+         URL). Schluessel "audits" = ?view=audits, dasselbe Zeichen wie in der Krume der Seite. */
+      { key: "audits",        label: "Page Audit",      icon: "dna01" },
       /* Schluessel "research", nicht "prompt-research" -- siehe AKTIV_SYNONYM weiter unten. */
       { key: "research",      label: "Prompt Research", icon: "telescope" },
       /* blend statt der Bilddatei: Mira traegt jetzt dasselbe Zeichen wie ihre Wortmarke in der

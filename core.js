@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261181;
+  var BUILD = 20261183;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -20000,6 +20000,110 @@
     if (EVM.lauf) return EVM.lauf.then(function(){ return EVM.stand === true; });
     return Promise.resolve(APP.start).then(function(){ return eventMeldungenStart(); }).then(function(){ return EVM.stand === true; });
   }
+  /* ── EIN AUDIT OEFFNEN (21.10., Page Audit) ──────────────────────────────────────────────────
+     Das Detail eines Audits liegt in der Ansicht "audits" (page-audit.js), die Adresse traegt
+     ?page_id=<uuid>, wahlweise &run_id=<uuid> fuer einen bestimmten Lauf. Hier in core und nicht in
+     page-audit.js aus demselben Grund wie eventOeffnen: die Datei laedt nur mit ihrer Ansicht, die
+     Einstiege kommen aber von ueberall (Impact "Run audit", die Meldung "Audit updated"). Eine
+     schon offene Seite hoert up-page-audit-open -- dort gibt es keinen Ansichtswechsel, den sie
+     sehen koennte. Nach aussen als window.upstreemPageAuditOpen (Vertrag mit der Impact-Session). */
+  var PAGE_AUDIT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  function pageAuditOeffnen(pageId, runId){
+    var id = String(pageId == null ? "" : pageId).trim(), lauf = String(runId == null ? "" : runId).trim();
+    if (!PAGE_AUDIT_ID.test(id)) return false;
+    if (!PAGE_AUDIT_ID.test(lauf)) lauf = "";
+    try {
+      var u = new URL(window.location.href);
+      u.searchParams.set("page_id", id);
+      if (lauf) u.searchParams.set("run_id", lauf); else u.searchParams.delete("run_id");
+      window.history.pushState(window.history.state, "", u.pathname + u.search + u.hash);
+    } catch(e){}
+    try { window.dispatchEvent(new CustomEvent("up-page-audit-open", { detail: { pageId: id, runId: lauf } })); } catch(e){}
+    try {
+      var offen = (typeof currentView === "function" && currentView()) || "";
+      if (offen !== "audits"){
+        if (typeof window.usnNavigieren === "function") window.usnNavigieren("audits");
+        else if (typeof window.showView === "function"){ window.showView("audits"); ansichtHalten("audits"); }
+      }
+    } catch(e){}
+    return true;
+  }
+  window.upstreemPageAuditOpen = function(pageId){ return pageAuditOeffnen(pageId); };
+  /* ── DIE MELDUNG "AUDIT UPDATED" (21.10., Page Audit) ─────────────────────────────────────────
+     Nur nach einem GEPLANTEN Lauf (weekly, monthly) und OHNE Ergebnis darin -- so bestellt: eine
+     Karte mit dem Favicon der Seite, "Audit updated" und der Adresse, ein Klick oeffnet das Detail.
+     Form, Stapel und Ablauf wie die Meldungen der Events (evmZeigen): eine Karte bleibt stehen,
+     hoechstens drei (am Telefon eine), darunter der Hinweis auf den Rest.
+     GELESEN ist ein Stand je Nutzer (mark_page_audit_notices_read_v1, p_until), keine Liste: X oder
+     Klick markieren bis zum Ende DIESES Laufs. Was aelter ist, gilt dabei mit als gelesen -- es steht
+     ja schon darunter. Fehlt die Funktion (Datei 2 nicht eingespielt), ist das Feature still nicht da. */
+  var PAM = (window.__upAuditMeldungen = window.__upAuditMeldungen || { lauf: null, schlange: [], mehr: 0, offen: 0 });
+  addMessages("de", {
+    "Audit updated": "Audit aktualisiert",
+    "1 more audit was updated": "1 weiteres Audit wurde aktualisiert",
+    "{n} more audits were updated": "{n} weitere Audits wurden aktualisiert",
+    "View audits": "Audits ansehen"
+  });
+  function pamGelesen(bis){
+    return rpc("mark_page_audit_notices_read_v1", { p_team: APP.team, p_until: bis || null }, { timeoutMs: 15000 }).then(function(erg){
+      if (!erg || !erg.ok) console.error("[page-audit] notice could not be marked as read:", erg && erg.fehler ? erg.fehler.message : "");
+    });
+  }
+  function pamAnsicht(){
+    try {
+      if (typeof window.usnNavigieren === "function") window.usnNavigieren("audits");
+      else if (typeof window.showView === "function"){ window.showView("audits"); ansichtHalten("audits"); }
+    } catch(e){}
+  }
+  function pamHinweis(){
+    var n = PAM.schlange.length + PAM.mehr;
+    if (!n){ toastZu("pam-mehr"); return; }
+    var text = n === 1 ? t_("1 more audit was updated") : t_("{n} more audits were updated").replace("{n}", String(n));
+    toast(text, { kind: "neutral", bleibt: true, unten: true, roh: true, schluessel: "pam-mehr",
+      action: { label: t_("View audits"), onClick: pamAnsicht },
+      onClose: function(){ PAM.schlange = []; PAM.mehr = 0; } });
+  }
+  function pamZeigen(m){
+    PAM.offen++;
+    toast(t_("Audit updated"), {
+      kind: "neutral", bleibt: true, roh: true, schluessel: "pam-" + m.run_id,
+      karte: { bildUrl: faviconUrl(m.url, 64) || "", zeichen: icon("dna01", 1.8) },
+      /* Die Adresse in der Primaerfarbe wie "X is cited" (.up-toast-urlwort), sonst nichts: kein
+         Ergebnis, keine Zahl. */
+      inhalt: '<span class="up-toast-d"><span class="up-toast-urlwort">' + esc(evmKurz(m.url)) + '</span></span>',
+      onClick: function(){ pageAuditOeffnen(m.page_id, m.run_id); },
+      onClose: function(){
+        pamGelesen(m.finished_at);
+        PAM.offen = Math.max(0, PAM.offen - 1);
+        setTimeout(function(){
+          if (PAM.schlange.length && PAM.offen < evmSichtbar()) pamZeigen(PAM.schlange.shift());
+          pamHinweis();
+        }, 140);
+      }
+    });
+  }
+  function pageAuditMeldungenStart(){
+    if (PAM.lauf) return PAM.lauf;
+    if (!APP.team) return Promise.resolve(false);
+    PAM.lauf = rpc("list_page_audit_notices_v1", { p_team: APP.team }, { timeoutMs: 15000 }).then(function(erg){
+      var f = (erg && erg.fehler) || {};
+      if (erg && !erg.ok && (/PGRST202/.test(String(f.code || "")) || erg.status === 404)) return false;
+      if (!erg || !erg.ok){ console.error("[page-audit] notices could not be loaded:", f.message || ""); return false; }
+      var d = erg.daten && typeof erg.daten === "object" ? erg.daten : null;
+      var liste = d && isArr(d.rows) ? d.rows.filter(function(m){
+        return m && typeof m === "object" && PAGE_AUDIT_ID.test(String(m.page_id || "")) && typeof m.url === "string" && m.url;
+      }) : null;
+      if (!liste){ console.error("[page-audit] notices could not be read"); return false; }
+      PAM.mehr = Math.max(0, toNum(d.meta && d.meta.more_count) || 0);
+      /* Platz nur, was die Karten der Events uebrig lassen (gemeinsamer Stapel, evmSichtbar). */
+      var sichtbar = Math.max(0, evmSichtbar() - EVM.offen - PAM.offen);
+      liste.slice(0, sichtbar).forEach(pamZeigen);
+      PAM.schlange = liste.slice(sichtbar);
+      pamHinweis();
+      return true;
+    }, function(err){ console.error("[page-audit] notices could not be loaded:", err); return false; });
+    return PAM.lauf;
+  }
   /* DIE ANSICHT HALTEN (05.10.). Gemeldet: der Klick in die Leiste setzt ?view=..., aber eine
      Ansicht, die seit dem Seitenaufbau noch nie offen war, bleibt unsichtbar; nach einem Aufruf
      direkt auf sie geht es danach immer. Die Reihenfolge im Workflow ist: showView, DANN der
@@ -23704,7 +23808,15 @@
   function appStartAktiv(){ return !!APP.aktiv; }
   /* Die Meldungen je Event erst, wenn die Seite steht -- sie sind kein Teil des ersten Bildes.
      EVM.lauf haelt sie bei einem zweiten Start (appZugangWeg) bei einem Mal. */
-  function evmNachStart(){ setTimeout(function(){ try { eventMeldungenStart(); } catch(e){} }, 800); }
+  /* Die Meldungen der Audits danach (21.10.): sie teilen sich den Stapel, also erst, wenn die der
+     Events stehen -- pageAuditMeldungenStart zeigt nur so viele, wie noch Platz ist. */
+  function evmNachStart(){
+    setTimeout(function(){
+      var lauf = null;
+      try { lauf = eventMeldungenStart(); } catch(e){}
+      Promise.resolve(lauf).then(function(){ try { pageAuditMeldungenStart(); } catch(e){} }, function(){ try { pageAuditMeldungenStart(); } catch(e){} });
+    }, 800);
+  }
   /* 402 aus irgendeinem RPC: der Zugang ist weg (Abo beendet, Team geloescht). Der Start laeuft
      einmal neu und zeigt das Gate -- hoechstens alle 30 s, damit eine Seite voller Aufrufe nicht
      dreissig Starts ausloest. */
@@ -26916,7 +27028,10 @@
     /* ChatAdd01Icon -- Create with AI */
     chatAdd: '<path d="M21.9609 9C21.9865 9.72648 22 10.2292 22 11C22 11.7708 21.9865 12.5232 21.9609 13.2497C21.8772 15.6232 21.8353 16.8099 20.8699 17.7826C19.9046 18.7552 18.6843 18.8074 16.2437 18.9118C15.5098 18.9432 14.7498 18.9667 13.9693 18.9815C13.2282 18.9955 12.8576 19.0026 12.532 19.1266C12.2064 19.2506 11.9325 19.4855 11.3845 19.9553L9.20503 21.8242C9.07273 21.9376 8.90419 22 8.72991 22C8.32679 22 8 21.6732 8 21.2701V18.9219C7.91842 18.9186 7.83715 18.9153 7.75619 18.9118C5.31569 18.8074 4.09545 18.7552 3.13007 17.7825C2.16469 16.8099 2.12282 15.6232 2.03909 13.2497C2.01346 12.5232 2 11.7708 2 11C2 10.2292 2.01346 9.47679 2.03909 8.7503C2.12282 6.37683 2.16469 5.19009 3.13007 4.21745C4.09545 3.24481 5.3157 3.1926 7.7562 3.08819C9.09517 3.0309 10.5209 3 12 3C12.5067 3 13.0072 3.00363 13.5 3.0107"/>' +
              '<path d="M22 5H16M19 2V8"/>' +
-             '<path d="M12.1257 11H12.0007M8.125 11H8M12.2507 11C12.2507 11.1381 12.1388 11.25 12.0007 11.25C11.8627 11.25 11.7507 11.1381 11.7507 11C11.7507 10.8619 11.8627 10.75 12.0007 10.75C12.1388 10.75 12.2507 10.8619 12.2507 11ZM8.25 11C8.25 11.1381 8.13807 11.25 8 11.25C7.86193 11.25 7.75 11.1381 7.75 11C7.75 10.8619 7.86193 10.75 8 10.75C8.13807 10.75 8.25 10.8619 8.25 11Z"/>'
+             '<path d="M12.1257 11H12.0007M8.125 11H8M12.2507 11C12.2507 11.1381 12.1388 11.25 12.0007 11.25C11.8627 11.25 11.7507 11.1381 11.7507 11C11.7507 10.8619 11.8627 10.75 12.0007 10.75C12.1388 10.75 12.2507 10.8619 12.2507 11ZM8.25 11C8.25 11.1381 8.13807 11.25 8 11.25C7.86193 11.25 7.75 11.1381 7.75 11C7.75 10.8619 7.86193 10.75 8 10.75C8.13807 10.75 8.25 10.8619 8.25 11Z"/>',
+    /* Dna01Icon (Hugeicons, 21.10. angefordert): das Zeichen der Seite Page Audit -- Seitenleiste,
+       Krume, Ladebild und Meldung. Pfad wortgleich aus der Anfrage. */
+    dna01: '<path d="M8.6671 22C9.20107 21.466 9.73505 20.9321 9.24127 18M8.6671 15.3336C7.33381 10.0004 8.33378 9.00042 8.6671 8.6671C9.00042 8.33378 10.0004 7.33381 15.3336 8.6671M8.6671 15.3336C3.33394 14.0003 2.66664 14.6663 2 15.3329M8.6671 15.3336C14.0003 16.6668 14.9996 15.6662 15.3329 15.3329C15.6662 14.9996 16.6668 14.0003 15.3336 8.6671M22 8.6671C21.3334 9.33375 20.6667 10.0004 15.3336 8.6671M15.3329 2C14.799 2.53394 14.2654 3.06829 14.7592 6"/>'
   };
   /* ---- Nachtrag zu TOOLBAR_SEL ------------------------------------------------------------
      Drei Knoepfe dieser Liste tragen Zeichen AUS DEM SATZ. Oben, wo die Liste steht, gibt es
@@ -27649,6 +27764,24 @@
       '<div class="up-empty-h">' + esc(t_(titel)) + '</div>' +
       '<div class="up-empty-t">' + esc(t_(satz)) + '</div>' +
     '</div>';
+  }
+
+  /* DIE AUSWAHLKARTE (21.10., core.css .up-wk; Nutzer: "Die Cards gehoeren nach Core"). Die Karte aus dem Dialog
+     "Create" von Impact als geteilter Baustein: Titel mit Pfeil, ein Satz, die gekippte Tafel mit dem Zeichen.
+     o: { titel, satz, icon, invers, kompakt, klasse, daten: { name: wert } (als data-name, Werte escaped),
+     deaktiviert }. Titel und Satz englisch, uebersetzt wird hier (t_). Das Verhalten (Klick, Pfeiltasten im Raster)
+     bleibt beim Aufrufer -- die Karte weiss nicht, wohin sie fuehrt. */
+  function wkKarteHtml(o){
+    o = o || {};
+    var attr = "", daten = o.daten && typeof o.daten === "object" ? o.daten : {};
+    Object.keys(daten).forEach(function(k){ if (/^[a-z][a-z0-9-]*$/.test(k)) attr += ' data-' + k + '="' + esc(daten[k]) + '"'; });
+    return '<button type="button" class="up-wk' + (o.invers ? " is-invers" : "") + (o.kompakt ? " is-kompakt" : "") +
+      (o.klasse ? " " + esc(o.klasse) : "") + '"' + attr + (o.deaktiviert ? " disabled" : "") + '>' +
+      '<span class="up-wk-kopf"><span class="up-wk-t">' + esc(t_(o.titel || "")) + '</span>' +
+        '<span class="up-wk-pfeil" aria-hidden="true">' + icon("arrowUpRight", 2) + '</span></span>' +
+      (o.satz ? '<span class="up-wk-s">' + esc(t_(o.satz)) + '</span>' : '') +
+      '<span class="up-wk-tafel" aria-hidden="true"><span class="up-wk-feld">' + icon(o.icon || "plus", 1.8) + '</span></span>' +
+    '</button>';
   }
 
   /* ---- DER LEERZUSTAND ALS BAUSTEIN (22.09.) --------------------------------------------------
@@ -30080,6 +30213,9 @@
     granAvailability: granAvailability,
     granFuerZeitraum: granFuerZeitraum,
     rpc: rpc, edge: edge, kanal: kanal, nutzerId: nutzerId,
+    /* Das Token der Sitzung (21.10., Page Audit): fuer Aufrufe an Routen der App selbst (/api/...), die die
+       Mitgliedschaft mit dem Nutzer pruefen -- derselbe Weg wie rpc, frisch vor Ablauf. Promise auf den Text. */
+    sitzungsToken: rpcToken,
     warteSekunden: warteSekunden, warteSatz: warteSatz,
     unbekannteIds: unbekannteIds, filterBereinigen: filterBereinigen,
     rpcBereit: rpcBereit,
@@ -30147,7 +30283,7 @@
     normParams: normParams,
     makeToolGroup: makeToolGroup,
     leseFehlerHtml: leseFehlerHtml, fehlerSatzArt: fehlerSatzArt,
-    leerHtml: leerHtml,
+    leerHtml: leerHtml, wkKarteHtml: wkKarteHtml,
     /* Der Leerzustand eines Charts (15.10.): fuer Flaechen, die keinen der Chart-Bausteine
        benutzen (Landschaft in brands-overview, Heatmap des Performance Radar). */
     chartLeerHtml: chartLeerHtml,
@@ -30197,7 +30333,7 @@
     setModels: setModels,
     onModels: onModels,
     getEvents: getEvents, setEvents: setEvents, onEvents: onEvents, eventsStand: eventsStand, eventsChanged: eventsChanged,
-    EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen, eventMeldungenDa: eventMeldungenDa,
+    EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen, eventMeldungenDa: eventMeldungenDa, pageAuditOeffnen: pageAuditOeffnen,
     kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal, modalVerhalten: modalVerhalten,
     seitenSperreAbgleichen: seitenSperreAbgleichen,
     sparkHtml: sparkHtml, zahlZaehlen: zahlZaehlen, zaehlHtml: zaehlHtml, hochzaehlen: hochzaehlen,
