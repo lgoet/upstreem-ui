@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261183;
+  var BUILD = 20261184;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -20029,6 +20029,120 @@
     return true;
   }
   window.upstreemPageAuditOpen = function(pageId){ return pageAuditOeffnen(pageId); };
+  /* ── PAGE AUDIT: STATUS UND FEHLERSAETZE, GETEILT (21.10., Absprache mit der Impact-Sitzung) ───────────────────
+     Was die Seite Page Audit UND Impact ("Run audit" an einer zitierten URL) beide zeigen: der Status eines Laufs mit
+     Zeichen und Ton, und der Satz zu jedem Fehler von create_page_audit_v1 (Vertrag 27_page_audit.md). Eine Quelle:
+     page-audit-data.js liest beides von hier. Die Datenbank liefert Schluessel (status, message, hint, detail), nie Saetze.
+     ton: pos, neg, warn, leise (Farbe der Angabe); dreht: das Zeichen dreht sich (laufend). Englisch, uebersetzt wird
+     beim Zeichnen (t_ bzw. o.t des Aufrufers); die deutschen Eintraege stehen gleich darunter im Katalog. */
+  var PAGE_AUDIT_STATUS = {
+    queued: { text: "Queued", zeichen: "clock", ton: "leise" },
+    running: { text: "Running", zeichen: "loader", ton: "leise", dreht: true },
+    completed: { text: "Completed", zeichen: "checkCircle", ton: "leise" },
+    partial: { text: "Partial", zeichen: "alertCircle", ton: "leise" },
+    failed: { text: "Failed", zeichen: "alertCircle", ton: "neg" },
+    cancelled: { text: "Cancelled", zeichen: "ban", ton: "leise" },
+    skipped_quota: { text: "Skipped (quota)", zeichen: "clock", ton: "leise" }
+  };
+  /* hint von page_audit_invalid_url (_page_audit_url_v1) -> was der Nutzer aendern kann. */
+  var PA_URL_GRUND = {
+    empty: "Enter the URL of a page.",
+    too_long: "This URL is too long. Use an address with up to 2,048 characters.",
+    invalid: "This doesn't look like a valid URL. Check for spaces or special characters.",
+    scheme: "Only http and https addresses can be audited.",
+    fragment: "Remove the part after # from the URL. An audit checks the page without it.",
+    credentials: "Remove the username and password from the URL.",
+    port: "Only the standard ports can be audited (80 for http, 443 for https).",
+    host: "This host name isn't valid. Check the domain.",
+    ip_literal: "IP addresses can't be audited. Use the domain of the page.",
+    local_host: "This address isn't public. Only public websites can be audited.",
+    credentialed_query: "This URL contains a token or password. Remove it and try again."
+  };
+  addMessages("de", {
+    "Queued": "Wartet", "Completed": "Abgeschlossen", "Partial": "Teilweise", "Failed": "Fehlgeschlagen",
+    "Cancelled": "Abgebrochen", "Skipped (quota)": "Übersprungen (Kontingent)",
+    "Reachable": "Erreichbar", "{x} of {n}": "{x} von {n}",
+    "1 second": "1 Sekunde", "{n} seconds": "{n} Sekunden", "1 minute": "1 Minute", "{n} minutes": "{n} Minuten",
+    "1 hour": "1 Stunde", "{n} hours": "{n} Stunden", "{n} days": "{n} Tage",
+    "Enter the URL of a page.": "Gib die URL einer Seite ein.",
+    "This URL is too long. Use an address with up to 2,048 characters.": "Diese URL ist zu lang. Nimm eine Adresse mit höchstens 2.048 Zeichen.",
+    "This doesn't look like a valid URL. Check for spaces or special characters.": "Das sieht nicht nach einer gültigen URL aus. Prüf sie auf Leerzeichen oder Sonderzeichen.",
+    "Only http and https addresses can be audited.": "Prüfen lassen sich nur http- und https-Adressen.",
+    "Remove the part after # from the URL. An audit checks the page without it.": "Entfern den Teil nach # aus der URL. Ein Audit prüft die Seite ohne ihn.",
+    "Remove the username and password from the URL.": "Entfern Benutzername und Passwort aus der URL.",
+    "Only the standard ports can be audited (80 for http, 443 for https).": "Prüfen lassen sich nur die Standard-Ports (80 für http, 443 für https).",
+    "This host name isn't valid. Check the domain.": "Dieser Hostname ist ungültig. Prüf die Domain.",
+    "IP addresses can't be audited. Use the domain of the page.": "IP-Adressen lassen sich nicht prüfen. Nimm die Domain der Seite.",
+    "This address isn't public. Only public websites can be audited.": "Diese Adresse ist nicht öffentlich. Prüfen lassen sich nur öffentliche Websites.",
+    "This URL contains a token or password. Remove it and try again.": "Diese URL enthält ein Token oder Passwort. Entfern es und versuch es noch einmal.",
+    "You've used all {n} audits for this week.": "Du hast alle {n} Audits dieser Woche verbraucht.",
+    "You've used all audits for this week.": "Du hast alle Audits dieser Woche verbraucht.",
+    "Your quota resets on {date}.": "Dein Kontingent wird am {date} zurückgesetzt.",
+    "Your quota resets next Monday.": "Dein Kontingent wird nächsten Montag zurückgesetzt.",
+    "Your team started 10 audits in the last hour. You can start the next one in {time}.": "Dein Team hat in der letzten Stunde 10 Audits gestartet. Das nächste kannst du in {time} starten.",
+    "10 audits are already waiting or running. Try again when one has finished.": "10 Audits warten oder laufen schon. Versuch es noch einmal, wenn eines fertig ist.",
+    "This website was audited many times in the last hour. Try again in {time}.": "Diese Website wurde in der letzten Stunde sehr oft geprüft. Versuch es in {time} noch einmal.",
+    "Recurring audits can use up to {n} of your weekly audits, and this would exceed it. Set another page to Once first.": "Wiederkehrende Audits dürfen höchstens {n} deiner wöchentlichen Audits belegen, und das würde die Grenze überschreiten. Stell zuerst eine andere Seite auf Einmalig.",
+    "You've reached the limit for recurring audits. Set another page to Once first.": "Du hast die Grenze für wiederkehrende Audits erreicht. Stell zuerst eine andere Seite auf Einmalig.",
+    "This audit is running. Cancel it or wait until it has finished, then delete it.": "Dieses Audit läuft. Brich es ab oder warte, bis es fertig ist, und lösch es dann.",
+    "This audit no longer exists.": "Dieses Audit gibt es nicht mehr.",
+    "This is taking longer than expected. Please try again.": "Das dauert länger als erwartet. Bitte erneut versuchen.",
+    "Something went wrong on our side. Please try again.": "Bei uns ist etwas schiefgelaufen. Versuch es noch einmal.",
+    "The audit couldn't be started. Please try again.": "Das Audit konnte nicht gestartet werden. Versuch es noch einmal."
+  });
+  function paDetailJson(f){ try { return JSON.parse(String((f && f.details) || "")) || {}; } catch(e){ return {}; } }
+  function paZahl(v){ var n = Number(v); return v == null || v === "" || !isFinite(n) ? null : n; }
+  /* Sekunden -> "4 minutes", "1 hour" ... (fuer "Try again in ..."); aufgerundet, nie 0. */
+  function pageAuditDauerText(sek, tt){
+    tt = tt || t_;
+    var s = Math.max(1, Math.round(paZahl(sek) || 0));
+    if (s < 60) return s === 1 ? tt("1 second") : tt("{n} seconds").replace("{n}", String(s));
+    var m = Math.ceil(s / 60);
+    if (m < 60) return m === 1 ? tt("1 minute") : tt("{n} minutes").replace("{n}", String(m));
+    var h = Math.ceil(m / 60);
+    if (h < 48) return h === 1 ? tt("1 hour") : tt("{n} hours").replace("{n}", String(h));
+    return tt("{n} days").replace("{n}", String(Math.ceil(h / 24)));
+  }
+  /* Antwort eines Page-Audit-RPC (rpc: { ok, status, fehler:{message, hint, details} }) -> { satz, feld, grund, vorschlag,
+     neuerSchluessel }. feld "url": der Satz gehoert an das URL-Feld. vorschlag: die Adresse ohne Fragment (anbieten, nie selbst
+     starten). neuerSchluessel: der Aufrufer braucht einen neuen p_idempotency_key. o: { t, eingabe, datum(iso) -> Text, sonst }.
+     Nie der Code selbst im Bild (Keine Entwicklertexte im UI). */
+  function pageAuditFehlerSatz(erg, o){
+    o = o || {};
+    var tt = o.t || t_;
+    var f = (erg && erg.fehler) || {}, m = String(f.message || ""), h = String(f.hint == null ? "" : f.hint).trim();
+    if (m === "page_audit_invalid_url"){
+      var aus = { satz: tt(PA_URL_GRUND[h] || PA_URL_GRUND.invalid), feld: "url", grund: h };
+      if (h === "fragment" && o.eingabe){
+        var i = String(o.eingabe).indexOf("#");
+        if (i > 0) aus.vorschlag = String(o.eingabe).slice(0, i);
+      }
+      return aus;
+    }
+    if (m === "page_audit_quota_exhausted"){
+      var q = paDetailJson(f), allow = paZahl(q.allowance), wann = String(q.resets_at || "");
+      return { satz: (allow != null ? tt("You've used all {n} audits for this week.").replace("{n}", String(allow)) : tt("You've used all audits for this week.")) +
+        " " + (wann && o.datum ? tt("Your quota resets on {date}.").replace("{date}", o.datum(wann)) : tt("Your quota resets next Monday.")) };
+    }
+    if (m === "page_audit_hourly_limit") return { satz: tt("Your team started 10 audits in the last hour. You can start the next one in {time}.").replace("{time}", pageAuditDauerText(h, tt)) };
+    if (m === "page_audit_pending_limit") return { satz: tt("10 audits are already waiting or running. Try again when one has finished.") };
+    if (m === "page_audit_domain_rate_limited") return { satz: tt("This website was audited many times in the last hour. Try again in {time}.").replace("{time}", pageAuditDauerText(h, tt)) };
+    if (m === "page_audit_rate_limited" || (erg && erg.status === 429)) return { satz: tt("Too many requests in a short time. Please wait a moment.") };
+    if (m === "page_audit_schedule_capacity"){
+      var c = paDetailJson(f), kap = paZahl(c.capacity);
+      return { satz: kap != null
+        ? tt("Recurring audits can use up to {n} of your weekly audits, and this would exceed it. Set another page to Once first.").replace("{n}", String(Math.round(kap * 100) / 100))
+        : tt("You've reached the limit for recurring audits. Set another page to Once first.") };
+    }
+    if (m === "page_audit_running") return { satz: tt("This audit is running. Cancel it or wait until it has finished, then delete it.") };
+    if (m === "page_audit_not_found") return { satz: tt("This audit no longer exists.") };
+    if (m === "page_audit_idempotency_conflict") return { satz: tt("Something went wrong. Please try again."), neuerSchluessel: true };
+    /* Zeit abgelaufen (rpc: "timeout") oder Netz weg: ein Schreiben kann trotzdem angekommen sein -- der Aufrufer behaelt
+       seinen Schluessel, ein zweiter Versuch bekommt dann dieselbe Quittung. */
+    if (m === "timeout" || m === "aborted") return { satz: tt("This is taking longer than expected. Please try again.") };
+    if (m === "network") return { satz: tt("Check your connection and try again.") };
+    return { satz: tt(o.sonst || "Something went wrong on our side. Please try again.") };
+  }
   /* ── DIE MELDUNG "AUDIT UPDATED" (21.10., Page Audit) ─────────────────────────────────────────
      Nur nach einem GEPLANTEN Lauf (weekly, monthly) und OHNE Ergebnis darin -- so bestellt: eine
      Karte mit dem Favicon der Seite, "Audit updated" und der Adresse, ein Klick oeffnet das Detail.
@@ -30334,6 +30448,7 @@
     onModels: onModels,
     getEvents: getEvents, setEvents: setEvents, onEvents: onEvents, eventsStand: eventsStand, eventsChanged: eventsChanged,
     EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen, eventMeldungenDa: eventMeldungenDa, pageAuditOeffnen: pageAuditOeffnen,
+    pageAuditStatus: PAGE_AUDIT_STATUS, pageAuditFehlerSatz: pageAuditFehlerSatz, pageAuditDauerText: pageAuditDauerText,
     kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal, modalVerhalten: modalVerhalten,
     seitenSperreAbgleichen: seitenSperreAbgleichen,
     sparkHtml: sparkHtml, zahlZaehlen: zahlZaehlen, zaehlHtml: zaehlHtml, hochzaehlen: hochzaehlen,

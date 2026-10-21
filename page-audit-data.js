@@ -223,15 +223,11 @@
     no_tested_obstacle: { text: "No obstacle found", zeichen: "checkCircle", ton: "pos" },
     inconclusive: { text: "Inconclusive", zeichen: "helpCircle", ton: "leise" }
   };
-  var STATUS = {
-    queued: { text: "Queued", zeichen: "clock", ton: "leise" },
-    running: { text: "Running", zeichen: "loader", ton: "leise", dreht: true },
-    completed: { text: "Completed", zeichen: "checkCircle", ton: "leise" },
-    partial: { text: "Partial", zeichen: "alertCircle", ton: "leise" },
-    failed: { text: "Failed", zeichen: "alertCircle", ton: "neg" },
-    cancelled: { text: "Cancelled", zeichen: "ban", ton: "leise" },
-    skipped_quota: { text: "Skipped (quota)", zeichen: "clock", ton: "leise" }
-  };
+  /* Status eines Laufs und die Fehlersaetze teilt sich die Seite mit Impact: sie stehen in core
+     (UC.pageAuditStatus, UC.pageAuditFehlerSatz, UC.pageAuditDauerText), hier nur der Verweis -- eine Quelle.
+     core laedt vor jeder Ansicht; fehlt es doch, zeigen die Zellen "–" statt eines geratenen Worts. */
+  var UCK = window.UpstreemCore || {};
+  var STATUS = UCK.pageAuditStatus || {};
   var PLAN = { once: "Once", weekly: "Weekly", monthly: "Monthly" };
   /* Warum ein Lauf ohne Ergebnis blieb (error_code). Nur bekannte Codes bekommen einen Satz; ein
      unbekannter faellt auf den allgemeinen, nie auf einen erfundenen Grund. */
@@ -500,74 +496,12 @@
   var ERGEBNIS_BEOBACHTUNG = { observed: "Observed", measurement_error: "Measurement failed", unsupported: "Not supported",
                                not_applicable: "Not applicable", missing: "Missing" };
 
-  /* ---- Fehler der RPCs -> ein Satz fuer den Nutzer ---------------------------------------------
-     message ist der Code, hint der Grund bzw. die Sekunden bis wieder Platz ist, detail JSON (Vertrag
-     02_rpcs_v1.sql, Kopf). Nie der Code selbst im Bild (Keine Entwicklertexte im UI). */
-  var URL_GRUND = {
-    empty: "Enter the URL of a page.",
-    too_long: "This URL is too long. Use an address with up to 2,048 characters.",
-    invalid: "This doesn't look like a valid URL. Check for spaces or special characters.",
-    scheme: "Only http and https addresses can be audited.",
-    fragment: "Remove the part after # from the URL. An audit checks the page without it.",
-    credentials: "Remove the username and password from the URL.",
-    port: "Only the standard ports can be audited (80 for http, 443 for https).",
-    host: "This host name isn't valid. Check the domain.",
-    ip_literal: "IP addresses can't be audited. Use the domain of the page.",
-    local_host: "This address isn't public. Only public websites can be audited.",
-    credentialed_query: "This URL contains a token or password. Remove it and try again."
-  };
-  function detailJson(f) { try { return JSON.parse(str(f && f.details)) || {}; } catch (e) { return {}; } }
-  /* Sekunden -> "4 minutes", "1 hour" ... (fuer "Try again in ...") */
-  function dauerText(sek, t) {
-    t = t || function (x) { return x; };
-    var s = Math.max(1, Math.round(num(sek) || 0));
-    if (s < 60) return (s === 1 ? t("1 second") : t("{n} seconds").replace("{n}", String(s)));
-    var m = Math.ceil(s / 60);
-    if (m < 60) return (m === 1 ? t("1 minute") : t("{n} minutes").replace("{n}", String(m)));
-    var h = Math.ceil(m / 60);
-    if (h < 48) return (h === 1 ? t("1 hour") : t("{n} hours").replace("{n}", String(h)));
-    var d = Math.ceil(h / 24);
-    return t("{n} days").replace("{n}", String(d));
-  }
-  /* { satz, feld, vorschlag } -- feld "url", wenn der Satz an das URL-Feld gehoert. vorschlag: die
-     Adresse ohne Fragment (HANDOFF 4.1: anbieten, nicht selbst starten). */
+  /* ---- Fehler der RPCs -> ein Satz fuer den Nutzer: aus core (siehe STATUS oben) ---------------- */
   function fehlerSatz(erg, o) {
-    o = o || {};
-    var t = o.t || function (x) { return x; };
-    var f = (erg && erg.fehler) || {}, m = str(f.message), h = str(f.hint).trim();
-    if (m === "page_audit_invalid_url") {
-      var aus = { satz: t(URL_GRUND[h] || URL_GRUND.invalid), feld: "url", grund: h };
-      if (h === "fragment" && o.eingabe) {
-        var i = str(o.eingabe).indexOf("#");
-        if (i > 0) aus.vorschlag = str(o.eingabe).slice(0, i);
-      }
-      return aus;
-    }
-    if (m === "page_audit_quota_exhausted") {
-      var q = detailJson(f), allow = num(q.allowance);
-      var wann = str(q.resets_at);
-      return { satz: (allow != null ? t("You've used all {n} audits for this week.").replace("{n}", String(allow)) : t("You've used all audits for this week.")) +
-               " " + (wann && o.datum ? t("Your quota resets on {date}.").replace("{date}", o.datum(wann)) : t("Your quota resets next Monday.")) };
-    }
-    if (m === "page_audit_hourly_limit") return { satz: t("Your team started 10 audits in the last hour. You can start the next one in {time}.").replace("{time}", dauerText(h, t)) };
-    if (m === "page_audit_pending_limit") return { satz: t("10 audits are already waiting or running. Try again when one has finished.") };
-    if (m === "page_audit_domain_rate_limited") return { satz: t("This website was audited many times in the last hour. Try again in {time}.").replace("{time}", dauerText(h, t)) };
-    if (m === "page_audit_rate_limited" || erg && erg.status === 429) return { satz: t("Too many requests in a short time. Please wait a moment.") };
-    if (m === "page_audit_schedule_capacity") {
-      var c = detailJson(f), kap = num(c.capacity);
-      return { satz: kap != null
-        ? t("Recurring audits can use up to {n} of your weekly audits, and this would exceed it. Set another page to Once first.").replace("{n}", fmtZahl(kap))
-        : t("You've reached the limit for recurring audits. Set another page to Once first.") };
-    }
-    if (m === "page_audit_running") return { satz: t("This audit is running. Cancel it or wait until it has finished, then delete it.") };
-    if (m === "page_audit_not_found") return { satz: t("This audit no longer exists.") };
-    if (m === "page_audit_idempotency_conflict") return { satz: t("Something went wrong. Please try again.") , neuerSchluessel: true };
-    /* Zeit abgelaufen (UC.rpc: "timeout") oder Netz weg: ein Schreiben kann trotzdem angekommen sein --
-       der Aufrufer behaelt seinen Schluessel, ein zweiter Versuch bekommt dann dieselbe Quittung. */
-    if (m === "timeout" || m === "aborted") return { satz: t("This is taking longer than expected. Please try again.") };
-    if (m === "network") return { satz: t("Check your connection and try again.") };
-    return { satz: t(o.sonst || "Something went wrong on our side. Please try again.") };
+    if (typeof UCK.pageAuditFehlerSatz === "function") return UCK.pageAuditFehlerSatz(erg, o);
+    return { satz: ((o && o.t) || function (x) { return x; })("Something went wrong on our side. Please try again.") };
   }
+  function dauerText(sek, t) { return typeof UCK.pageAuditDauerText === "function" ? UCK.pageAuditDauerText(sek, t) : String(Math.round(num(sek) || 0)) + " s"; }
   /* 0.25-Schritte (monatlich = 1/4) ohne lange Nachkommastellen. */
   function fmtZahl(v) {
     var n = num(v);

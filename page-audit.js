@@ -46,7 +46,7 @@
 
   /* Laut sagen, WAS fehlt -- der Name des Kits zeigt auf den veralteten Stand von core. */
   var FEHLT = ["rpc", "makeColumns", "makeSearch", "makePager", "makeHeadSort", "makeSticky", "makePageCrumbs",
-               "makeModal", "toast", "leerHtml", "leseFehlerHtml", "skeletonRows", "kpiKarte", "makePopover", "pageAuditOeffnen"]
+               "makeModal", "toast", "leerHtml", "leseFehlerHtml", "skeletonRows", "kpiKarte", "makePopover", "pageAuditOeffnen", "pageAuditFehlerSatz"]
     .filter(function (k) { return typeof UC[k] !== "function"; });
   if (FEHLT.length && window.console) console.error("[page-audit] Die core.js ist aelter als page-audit.js, es fehlen: " + FEHLT.join(", "));
 
@@ -59,9 +59,9 @@
     "{used} of {n} audits this week": "{used} von {n} Audits diese Woche",
     "Search audits…": "Audits durchsuchen…",
     "Search audits": "Audits durchsuchen",
-    "Reachable": "Erreichbar", "Restrictions": "Sperren", "Issues": "Probleme", "Last audit": "Letztes Audit",
+    /* "Reachable", "{x} of {n}" und die Status-Woerter stehen in core (mit Impact geteilt). */
+    "Restrictions": "Sperren", "Issues": "Probleme", "Last audit": "Letztes Audit",
     "Schedule": "Zeitplan", "Result": "Ergebnis",
-    "{x} of {n}": "{x} von {n}",
     "Once": "Einmalig", "Weekly": "Wöchentlich", "Monthly": "Monatlich",
     "Next {date}": "Nächstes {date}",
     "No audits yet": "Noch keine Audits",
@@ -71,8 +71,6 @@
     "Clear search": "Suche leeren",
     "Restriction detected": "Sperre gefunden", "Potential issue": "Mögliches Problem",
     "No obstacle found": "Kein Hindernis gefunden", "Inconclusive": "Nicht eindeutig",
-    "Queued": "Wartet", "Running": "Läuft", "Completed": "Abgeschlossen", "Partial": "Teilweise",
-    "Failed": "Fehlgeschlagen", "Cancelled": "Abgebrochen", "Skipped (quota)": "Übersprungen (Kontingent)",
     "Run again": "Erneut prüfen", "Cancel run": "Lauf abbrechen", "Cancelling…": "Wird abgebrochen…",
     "Delete Audit": "Audit löschen", "Open page": "Seite öffnen",
     "Audit started": "Audit gestartet", "This page is already being audited": "Diese Seite wird schon geprüft",
