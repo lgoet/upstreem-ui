@@ -3423,6 +3423,25 @@
         if (w === "urls") bs[i].hidden = URLSER.stand === false;
       }
       if (UC.segJetzt) { var sg = elMain.querySelectorAll(".uev-zielmetrik"); for (var j = 0; j < sg.length; j++) { try { UC.segJetzt(sg[j]); } catch (e) {} } }
+      /* URL Share: das Chart 64 hoeher (events.css .is-urls); beim Wechsel zieht die Hoehe in 200 ms auf und das Chart folgt Bild fuer Bild. */
+      var boxen = elMain.querySelectorAll(".uev-zielchart");
+      for (var k = 0; k < boxen.length; k++) {
+        var urlsJetzt = m === "urls", war = boxen[k].classList.contains("is-urls");
+        if (urlsJetzt === war) continue;
+        boxen[k].classList.toggle("is-urls", urlsJetzt);
+        var zs = boxen[k].closest(".uev-zielsek");
+        zielHoeheFolgen(zs ? zielLinien[zs.getAttribute("data-ziel-id")] : null);
+      }
+    }
+    /* Chart.js misst seinen Kasten selbst erst 120 ms nach der letzten Groessenaenderung (resizeDelay) -- waehrend der 200 ms der Hoehe stuende es
+       still und spraenge am Ende. Darum fuer die Dauer des Uebergangs in jedem Bild resize(); danach einmal zur Sicherheit. */
+    function zielHoeheFolgen(linie) {
+      if (!linie || !linie.resize) return;
+      var bis = Date.now() + 260;
+      (function schritt() {
+        linie.resize();
+        if (Date.now() < bis) requestAnimationFrame(schritt);
+      })();
     }
     /* Die Suche aus core (UC.makeSearch, .up-search) in einer Hinweiszeile: Lupe, die sich zum Feld oeffnet, Esc leert zuerst und schliesst dann,
        eine neue Eingabe beginnt wieder bei Seite 1. st: der Stand der Tabelle (page, query), zeichnen: die Neuanfrage. Genau wie die Suche der
@@ -3511,7 +3530,16 @@
           '<div class="uev-abd-liste"></div></section></div></div>';
       host.appendChild(sek);
       var n = "ziel-" + zt.id;
-      pagerAnlegen(sek.querySelector(".uev-ziel-tab"), n, function () { renderZiele(); });
+      /* Hover auf einer Zeile der URL-Tabelle hebt im Modus URL Share deren Linie hervor (wie die Visibility-Tabelle ihre Linie, UC.makeLine
+         highlight). Eine URL ohne eigene Linie (ausserhalb der staerksten zehn) laesst das Chart, wie es ist. */
+      var tabEl = sek.querySelector(".uev-ziel-tab");
+      tabEl.addEventListener("mouseover", function (e) {
+        var zeile = e.target.closest ? e.target.closest(".uev-zitzeile") : null, li = zielLinien[zt.id], rec = urlReihen[zt.id];
+        if (!zeile || !li || !li.highlight || zielModus() !== "urls" || !rec || !rec.ids) return;
+        li.highlight(rec.ids[abdUrlSchluessel(zeile.getAttribute("data-url") || "")] || null);
+      });
+      tabEl.addEventListener("mouseleave", function () { var li = zielLinien[zt.id]; if (li && li.highlight && zielModus() === "urls") li.highlight(null); });
+      pagerAnlegen(tabEl, n, function () { renderZiele(); });
       suchenAnlegen(sek.querySelector(".uev-ziel-suche"), seiten[n].st, function () { renderZiele(); });
       suchenAnlegen(sek.querySelector(".uev-abd-suche"), abdSucheSt[String(zt.id)] || (abdSucheSt[String(zt.id)] = { query: "", page: 1, loading: false }), function () { abdAlle(); });
       var lw = sek.querySelector(".uev-ziel-linie");
@@ -3759,6 +3787,9 @@
       var je = {};
       d.points.forEach(function (p) { if (!p) return; var u = String(p.url || ""); (je[u] || (je[u] = {}))[String(p.day || "").slice(0, 10)] = num(p.citations) || 0; });
       var fam = UC.chartFamilie ? UC.chartFamilie(isDark()) : [token("--vc-text")];
+      /* Fuer den Hover auf einer Zeile der URL-Tabelle (urlZeileHover): welche Linie zu welcher URL gehoert. */
+      rec.ids = {};
+      d.urls.forEach(function (u, i) { rec.ids[abdUrlSchluessel(String(u && u.url || ""))] = "u" + i; });
       linie.render({ labels: tage.map(function (p) { return String(p.day).slice(0, 10); }), datasets: d.urls.map(function (u, i) {
         var url = String(u && u.url || ""), farbe = fam[i % fam.length], m = je[url] || {};
         return { label: pfadText(hostPfad(url)) || url, __id: "u" + i, __baseColor: farbe, borderColor: farbe, __luecken: true,

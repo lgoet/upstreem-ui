@@ -154,10 +154,10 @@
    .uss-main: "Unten 64"). Am Bereich, nicht am Detail: Uebersicht und Detail teilen ihn. */
 .uev-root .uev-main { padding-bottom: 64px; }
 .uev-steuerblock { display: flex; flex-direction: column; gap: 16px; }
-/* FENSTER UND FILTER (21.10., Nutzer: "das Gap nach oben und nach unten auf 16"): die Steuerzeile ist die Leiste des Details, ueber und
-   unter ihr dieselbe Luft wie ueber und unter der Leiste jeder Seite (--up-band-luft, 16) statt der 40 zwischen den Abschnitten. Damit stehen
-   auch Kennzahlen und Chart eines Events 16 unter ihr (vorher eine eigene Regel fuer .uev-sek-chart). */
-.uev-detail > .uev-steuerblock { margin-top: calc(var(--up-band-luft, 16px) - 40px); margin-bottom: calc(var(--up-band-luft, 16px) - 40px); }
+/* FENSTER UND FILTER (21.10.): ueber und unter der Steuerzeile 32 statt der 40 zwischen den Abschnitten (Nutzer, nach dem ersten Stand mit
+   16: "auf 32"). Die Raender gleichen die 40 des Stapels aus; damit stehen auch Kennzahlen und Chart eines Events 32 unter ihr (vorher eine
+   eigene Regel fuer .uev-sek-chart mit 16). */
+.uev-detail > .uev-steuerblock { margin-top: calc(32px - 40px); margin-bottom: calc(32px - 40px); }
 /* DER KOPF DES DETAILS (03.10. neu): dieselbe Sprache wie die Karte, eine Nummer groesser --
    Band 96, Profilbild 64, Name in der groessten Stufe der App (Dashboards: hoechstens 22-24px).
    Datum und Typ als zwei Angaben mit Zeichen, der Umfang darunter. */
@@ -759,7 +759,10 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-ziel-hinweis[hidden] { display: none; }
 .uev-zielsek .uev-zielweg { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
 .uev-zielsek .uev-zielweg svg { width: 14px; height: 14px; }
-.uev-linewrap.uev-ziel-linie { height: 220px; }
+.uev-linewrap.uev-ziel-linie { height: 220px; transition: height var(--up-t-2) ease; }
+/* URL Share (21.10.): mit einer Linie je URL 64 hoeher; die Hoehe zieht in 200 ms auf (events.js zielHoeheFolgen zeichnet das Chart in jedem Bild nach). */
+.uev-zielchart.is-urls .uev-linewrap.uev-ziel-linie { height: 284px; }
+@media (prefers-reduced-motion: reduce) { .uev-linewrap.uev-ziel-linie { transition: none; } }
 /* 148 statt 120 (17.10.): "Citations after" mit Sortierzeichen braucht gemessen 144. */
 .uev-zielurls .uev-td-zahl, .uev-zielurls .uev-th-zahl { flex: 0 0 148px; min-width: 0; }
 .uev-zielurls .uev-td-beob, .uev-zielurls .uev-th-beob { flex: 0 0 150px; }
