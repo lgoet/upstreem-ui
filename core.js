@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261188;
+  var BUILD = 20261189;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -8905,6 +8905,50 @@
       cfg.onSort(parts[0], parts[1]);
     }
     return { syncHeadSorters: syncHeadSorters, headSortClick: headSortClick };
+  }
+
+  /* ---- DER RING ALS ZEICHEN (22.10., Lukas: "als loading spinner bitte meinen bekannten core spinner nutzen") ----
+     Der Ring des Ladebilds (makeLadebild) in klein, fuer Zeilen und Kaesten, in denen etwas laeuft: dieselbe Spur
+     (Linienfarbe), derselbe Bogen (Textfarbe, ein Fuenftel des Umfangs), eine Umdrehung je Sekunde. Die viewBox
+     rechnet in Pixeln der Groesse, damit der Strich in jeder Groesse 1.5px bleibt wie im grossen Ring; Radius =
+     halbe Groesse minus halber Strich, der Bogen beruehrt den Rand. */
+  function ringHtml(px){
+    var g = Math.max(10, Math.round(Number(px) || 14)), m = g / 2, r = m - 0.75;
+    return '<svg class="up-ring" width="' + g + '" height="' + g + '" viewBox="0 0 ' + g + ' ' + g + '" aria-hidden="true">' +
+      '<circle class="up-ring-spur" cx="' + m + '" cy="' + m + '" r="' + r + '"/>' +
+      '<circle class="up-ring-bogen" cx="' + m + '" cy="' + m + '" r="' + r + '" pathLength="100"/></svg>';
+  }
+
+  /* ---- DER KOPIERKASTEN (22.10., Lukas: "die copy box aus geist design system ... und leg das in core") ----------
+     Geist Snippet: ein Kasten mit Rand, darin eine Zeile in Mono, rechts das Zeichen Kopieren; nach dem Kopieren
+     steht dort der Haken (Geist: "checkmark feedback") KOPIER_HAKEN_MS lang, dann wieder das Zeichen. Kein Toast:
+     die Rueckmeldung steht, wo man geklickt hat; die Live-Region im Kasten sagt sie an. Der ganze Kasten ist der
+     Knopf. Kopiert wird, was der Aufrufer beim Klick an kopierBoxKopieren gibt (Copy for AI: der ganze Auftrag,
+     nicht die sichtbare Zeile). Lukas 22.10.: erst Copy for AI, die uebrigen Kopierstellen ziehen nach, wenn ihre
+     Seite ohnehin drankommt. */
+  var KOPIER_HAKEN_MS = 2000;
+  function kopierBoxHtml(o){
+    o = o || {};
+    return '<button type="button" class="up-kopierbox' + (o.klasse ? " " + o.klasse : "") + '"' + (o.attr || "") +
+      (o.tip ? ' data-tip="' + esc(o.tip) + '"' : '') + '>' +
+      '<span class="up-kopierbox-t">' + esc(o.text || "") + '</span>' +
+      '<span class="up-kopierbox-ic" aria-hidden="true"><span class="up-kopierbox-kopie">' + icon("copy", 2) + '</span>' +
+      '<span class="up-kopierbox-haken">' + icon("check", 2) + '</span></span>' +
+      '<span class="up-kopierbox-live" aria-live="polite"></span></button>';
+  }
+  function kopierBoxKopieren(el, text){
+    if (!el) return;
+    var live = el.querySelector(".up-kopierbox-live");
+    function ok(){
+      el.classList.add("is-kopiert");
+      if (live) live.textContent = t_("Copied");
+      clearTimeout(el.__upKopie);
+      el.__upKopie = setTimeout(function(){ el.classList.remove("is-kopiert"); if (live) live.textContent = ""; }, KOPIER_HAKEN_MS);
+    }
+    function nein(){ if (typeof toast === "function") toast(t_("Couldn't copy"), { kind: "error" }); }
+    try {
+      navigator.clipboard.writeText(String(text == null ? "" : text)).then(ok, function(){ if (legacyCopy(text)) ok(); else nein(); });
+    } catch(e){ if (legacyCopy(text)) ok(); else nein(); }
   }
 
   /* Clipboard fallback for browsers/iframes where navigator.clipboard is unavailable. */
@@ -22986,6 +23030,10 @@
     if (mitKopf) makePageCrumbs(root, { icon: cfg.icon, name: cfg.name, marke: cfg.marke, komponente: true });
     return root;
   }
+  /* Ein Teil, das erst NACH dem Auftritt seiner Seite sichtbar wird, holt dieselbe Fahrt nach (ohne Staffel). Page
+     Audit, 22.10.: die Reiter des Details kommen erst mit den Daten (gemessen 356 ms nach dem Auftritt bei 85 ms) und
+     standen sonst starr da, waehrend alles andere hereinkam. */
+  function auftrittNachholen(el){ if (el && el.isConnected) auftrittBewegen([el], 0, 0); }
   function makeAuftritt(root, cfg){
     cfg = cfg || {};
     var datenDa = false, wartet = false, nr = 0, zu = [], uhr = null, stilDa = false, kopfN = 0, vorabSeit = -1;
@@ -30853,7 +30901,7 @@
     makePager: makePager,
     makeHeadSort: makeHeadSort,
     makeSoftReload: makeSoftReload,
-    legacyCopy: legacyCopy,
+    legacyCopy: legacyCopy, auftrittNachholen: auftrittNachholen, ringHtml: ringHtml, kopierBoxHtml: kopierBoxHtml, kopierBoxKopieren: kopierBoxKopieren,
     makeEmptyGrace: makeEmptyGrace,
     makeExplain: makeExplain, makeAnleitung: makeAnleitung,
     STORE: STORE,

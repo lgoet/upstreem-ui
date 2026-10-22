@@ -117,7 +117,10 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-tab-mess { --up-cols: minmax(220px, 2fr) minmax(170px, 1fr) minmax(180px, 1fr); }
 .upa-tab-belege { --up-cols: minmax(260px, 2.4fr) minmax(76px, .5fr) minmax(140px, .9fr) minmax(84px, .6fr) minmax(76px, .5fr) minmax(150px, .9fr); }
 .upa-root .upa-kasten .up-row.upa-lauf, .upa-root .upa-kasten .up-row.upa-einzeilig { height: 48px; flex: 0 0 48px; }
-.upa-root .upa-kasten .up-row.upa-lauf.is-gewaehlt { background: var(--up-wahl-bg); }
+/* Gewaehlter Lauf wie eine gewaehlte Zeile der Prompts-Tabelle (Lukas 22.10.: "viel zu stark"): die Flaeche des Hovers,
+   auch beim Ueberfahren (.upt-root .up-row.is-selected), nicht --up-wahl-bg der Navigation. */
+.upa-root .upa-kasten .up-row.upa-lauf.is-gewaehlt,
+.upa-root .upa-kasten .up-row.upa-lauf.is-gewaehlt:hover { background: var(--vt-row-hover); }
 .upa-zeit { font-size: var(--up-fs-l); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .upa-gruppe { display: flex; align-items: flex-end; height: 36px; padding: 0 12px 7px; border-bottom: 1px solid var(--vc-border); }
 .upa-root .up-logo-box.upa-plogo { width: 24px; height: 24px; }
@@ -256,11 +259,23 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-lb { display: grid; grid-template-rows: 0fr; opacity: 0; margin-bottom: 0; visibility: hidden;
   transition: grid-template-rows var(--up-t-2) ease, opacity var(--up-t-2) ease, margin-bottom var(--up-t-2) ease, visibility 0s linear var(--up-t-2); }
 .upa-lb.is-offen { grid-template-rows: 1fr; opacity: 1; margin-bottom: 16px; visibility: visible; transition-delay: 0s; }
-.upa-lb.is-sofort { transition: none; }
+.upa-lb.is-sofort, .upa-lb.is-sofort .upa-lb-box { transition: none; }
+/* Herein und hinaus GLEITET der Kasten von oben (Lukas 22.10. abends: "smooth reinsliden, von oben, und auch smooth
+   wieder nach oben raus"): waehrend die Zeile aufzieht, faehrt der Kasten aus -100 % ein, abgeschnitten an der Zeile.
+   Vorher zog nur die Hoehe auf, der Inhalt stand schon und wurde von oben her aufgedeckt -- das las sich wie ein Sprung. */
 .upa-lb-in { min-height: 0; overflow: hidden; }
 /* Oben und unten 7: Rand 1 + 7 + X 32 + 7 + Rand 1 = 48, mit X genauso hoch wie ohne (mit 8 waren es 50, der Kasten
    wuchs beim Fertigwerden um 2). */
-.upa-lb-box { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 7px 8px 7px 16px; }
+.upa-lb-box { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 7px 8px 7px 16px;
+  transform: translateY(-100%); transition: transform var(--up-t-2) ease; }
+.upa-lb.is-offen .upa-lb-box { transform: none; }
+/* Der Ring (UC.ringHtml 14) zwischen Punkt und Titel, nur solange der Lauf wartet oder laeuft. Fertig zieht er sich in
+   200 ms zusammen: Breite 0 und der Abstand davor zurueck (-12 = gap), damit der Titel ruhig an den Punkt rueckt.
+   (.check_reinvention.py haelt das fuer eine Slide-out-Suche wie .up-search: es ist der Platz des Rings, kein Feld.) */
+.upa-lb-ring { display: flex; align-items: center; width: 14px; margin-left: -12px; opacity: 0; overflow: hidden; flex: 0 0 auto;
+  transition: width var(--up-t-2) ease, margin-left var(--up-t-2) ease, opacity var(--up-t-2) ease; }
+.upa-lb-box.is-laeuft .upa-lb-ring { margin-left: 0; opacity: 1; }
+.upa-lb-box:not(.is-laeuft) .upa-lb-ring { width: 0; }
 .upa-lb-punkt { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--vc-third); transition: background-color var(--up-t-2) ease; }
 .upa-lb-punkt.is-warn { background: var(--vt-warn-flaeche); }
 .upa-lb-punkt.is-pos { background: var(--vt-up-flaeche); }
@@ -270,7 +285,7 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-lb-satz { font-size: var(--up-fs-m); line-height: 20px; color: var(--vc-muted); }
 .upa-lb-rechts { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .upa-lb-rechts:empty { display: none; }
-@media (prefers-reduced-motion: reduce) { .upa-lb, .upa-lb-punkt { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .upa-lb, .upa-lb-punkt, .upa-lb-box, .upa-lb-ring { transition: none; } }
 
 /* ---------- Befunde: Etiketten je Plattform und Profilansicht (UMSETZUNGSPLAN 14) ----------
    NEU (nicht in core): die Liste je Plattform im Befund und die aufklappbare Plattformzeile. Marken aus core (.up-marke.is-leise). */

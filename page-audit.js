@@ -731,7 +731,10 @@
     var nav = UC.makePageNav ? UC.makePageNav(root, { nav: elNav, storeKey: instanceId + "|upa-nav", selected: reiter(), pages: REITER,
       onSelect: function (v) { gem.reiter = v; detailZeichnen(); } }) : null;
     function reiterSetzen(v) { gem.reiter = v; if (nav) nav.selectPage(v, false); }
-    var auftritt = UC.makeAuftritt ? UC.makeAuftritt(root, { kopf: ":scope > .up-ph-top", inhalt: ":scope > .upa-main" }) : null;
+    /* Die Reiter kommen mit dem Inhalt herein, nicht mit dem Kopf (Lukas 22.10.: "bis auf die Navigation in audit detail.
+       die ist starr"): makeAuftritt nimmt den Kopf beim Start, da sind die Reiter noch verborgen (navZeigen erst mit den
+       Daten) und fielen heraus; den Inhalt zaehlt es beim Zeigen neu, dann stehen sie schon. */
+    var auftritt = UC.makeAuftritt ? UC.makeAuftritt(root, { kopf: ":scope > .up-ph-top", inhalt: ":scope > .upa-nav, :scope > .upa-main" }) : null;
     var auftrittDa = false;
     function auftrittBereit() { if (!auftrittDa && auftritt) { auftrittDa = true; auftritt.bereit(); } }
 
@@ -1502,10 +1505,11 @@
        "Run again" im Detail: direkt unter der Reiterleiste ein Kasten, der auf JEDEM Reiter steht und in 200 ms ease aufzieht.
        Vorn ein Punkt in der Farbe des Zustands (Flaechentoene aus core wie der Punkt "Active": laeuft Amber, wartet grau,
        fertig gruen, gescheitert rot). Ist der Lauf fertig, bleibt der Kasten mit "Page Audit completed" und dem Satz, dass
-       jetzt das neue Ergebnis zu sehen ist; er geht nach 5 s oder per X (rechts, mittig), ebenfalls in 200 ms. Ein
+       jetzt das neue Ergebnis zu sehen ist; er geht nach 10 s oder per X (rechts, mittig), ebenfalls in 200 ms. Ein
        gescheiterter Lauf bleibt stehen, bis man ihn schliesst: dort steht weiter das vorige Ergebnis, das muss man sehen.
        Ersetzt im Overview die Laufzeile; ohne Ergebnis (Reiter verborgen) bleibt es bei Protokoll bzw. Laufzeile. */
-    var LB_WEG_MS = 5000, LB_ZU_MS = 260;
+    /* 10 s statt 5 (Lukas 22.10. abends: "Er soll 10s stehen bleiben statt 5"). */
+    var LB_WEG_MS = 10000, LB_ZU_MS = 260;
     var LB = { page: "", lauf: "", ende: "", timer: 0, zuTimer: 0 };
     function lbLaufend(a) {
       var k = anzeigeJetzt(a.id), wartet = k ? k === "queued" : a.status === "queued";
@@ -1514,7 +1518,7 @@
       var ph = wartet ? phaseVon("queued") : (k ? phaseVon(k) : null) || (LB.schritt && LB.schritt.lauf === a.id ? LB.schritt.ph : null);
       ph = ph || OHNE_SCHRITT;
       LB.schritt = { lauf: a.id, ph: ph };
-      return { ton: wartet ? "leise" : "warn", titel: wartet ? "Queued" : "Running",
+      return { ton: wartet ? "leise" : "warn", titel: wartet ? "Queued" : "Running", laeuft: true,
                satz: t(ph.text) + ". " + t("Started {time}.").replace("{time}", wann(a.acceptedAt)) };
     }
     function lbRechtsHtml(o) {
@@ -1527,12 +1531,16 @@
       clearTimeout(LB.zuTimer);
       var box = elLb.querySelector(".upa-lb-box"), rechts = lbRechtsHtml(o);
       if (!box) {
-        elLb.innerHTML = '<div class="upa-lb-in"><div class="up-box upa-lb-box"><span class="upa-lb-punkt is-' + o.ton + '" aria-hidden="true"></span>' +
+        /* Zwischen Punkt und Titel der Ring aus core (UC.ringHtml, Lukas 22.10.: "nach dem gelben shape und vor Running
+           der loading spinner"), solange der Lauf wartet oder laeuft; fertig zieht er sich zusammen (CSS .is-laeuft). */
+        elLb.innerHTML = '<div class="upa-lb-in"><div class="up-box upa-lb-box' + (o.laeuft ? " is-laeuft" : "") + '"><span class="upa-lb-punkt is-' + o.ton + '" aria-hidden="true"></span>' +
+          '<span class="upa-lb-ring">' + (UC.ringHtml ? UC.ringHtml(14) : "") + '</span>' +
           '<span class="upa-lb-text"><span class="upa-lb-titel">' + esc(t(o.titel)) + '</span><span class="upa-lb-satz">' + esc(o.satz || "") + '</span></span>' +
           '<span class="upa-lb-rechts">' + rechts + '</span></div></div>';
       } else {
         var p = box.querySelector(".upa-lb-punkt"), ti = box.querySelector(".upa-lb-titel"), sa = box.querySelector(".upa-lb-satz"), re = box.querySelector(".upa-lb-rechts");
         if (p.className !== "upa-lb-punkt is-" + o.ton) p.className = "upa-lb-punkt is-" + o.ton;
+        box.classList.toggle("is-laeuft", !!o.laeuft);
         if (ti.textContent !== t(o.titel)) ti.textContent = t(o.titel);
         if (sa.textContent !== (o.satz || "")) sa.textContent = o.satz || "";
         if (re.getAttribute("data-k") !== rechts) { re.innerHTML = rechts; re.setAttribute("data-k", rechts); }
@@ -1569,7 +1577,7 @@
         lbSetzen(lbLaufend(a));
         return;
       }
-      /* Nichts verfolgt, oder der Endzustand steht schon (er bleibt bis 5 s bzw. X, auch beim Reiterwechsel). */
+      /* Nichts verfolgt, oder der Endzustand steht schon (er bleibt bis 10 s bzw. X, auch beim Reiterwechsel). */
       if (!LB.lauf || LB.ende) return;
       var r = null;
       d.runs.forEach(function (x) { if (x.id === LB.lauf) r = x; });
@@ -2243,7 +2251,11 @@
             belegeBlockHtml(bel.filter(function (b) { return b.art !== "rendered_only_excerpt"; }))) +
           (tx.warum ? abschnitt("Why it matters", '<p class="upa-satz">' + esc(t(tx.warum)) + '</p>') : '') +
           (schritte.length ? '<div class="upa-absatz upa-fixabsatz"><div class="upa-fix-schrittkopf"><h4 class="upa-blocktitel">' + esc(t("How to fix")) + '</h4>' +
-            '<button type="button" class="up-btn-sec upa-kopie" data-upa-kopie="' + esc(schl) + '" data-tip="' + esc(t("Copies this finding as a task for an AI coding assistant, such as Claude Code, Cursor or ChatGPT.")) + '">' + UC.icon("copy", 2) + '<span>' + esc(t("Copy for AI")) + '</span></button></div>' +
+            /* Der Kopierkasten aus core (Geist Snippet, Lukas 22.10.: "copy for ai soll da natuerlich stehen, aber als copy
+               box wie im geist design system"); kopiert wird der ganze Auftrag (KOPIE), nicht die Zeile. */
+            (UC.kopierBoxHtml ? UC.kopierBoxHtml({ text: t("Copy for AI"), attr: ' data-upa-kopie="' + esc(schl) + '"',
+              tip: t("Copies this finding as a task for an AI coding assistant, such as Claude Code, Cursor or ChatGPT.") })
+              : '<button type="button" class="up-btn-sec upa-kopie" data-upa-kopie="' + esc(schl) + '">' + UC.icon("copy", 2) + '<span>' + esc(t("Copy for AI")) + '</span></button>') + '</div>' +
             '<ol class="upa-schritte">' + schritte.map(function (x) { return '<li>' + esc(t(x)) + '</li>'; }).join("") + '</ol></div>' : '') +
           (mitWirkung ? '<div class="upa-absatz upa-fixabsatz"><h4 class="upa-blocktitel">' + esc(t("By platform")) + '</h4>' +
             '<div class="up-box upa-kasten upa-fixplattformen"><div class="up-table" role="table"><div class="up-tbody" role="rowgroup">' + jp + '</div></div></div></div>' : '') +
@@ -2554,9 +2566,16 @@
     }
     /* Die Reiter erscheinen erst mit einem Ergebnis. Beim Einblenden den Strich neu setzen: makePageNav hat
        ihn im verborgenen Zustand mit Breite 0 gemessen. */
+    /* Kommen die Reiter zum ersten Mal kurz nach dem Aufbau der Seite (mit den Daten des Details), holen sie den Auftritt
+       nach; spaeter (Liste -> Detail) nicht, dort kommt auch der Inhalt ohne Auftritt. */
+    var navSeit = performance.now(), navSchonDa = false, NAV_NACHHOLEN_MS = 5000;
     function navZeigen(an) {
       if (!elNav || elNav.hidden === !an) return;
       elNav.hidden = !an;
+      if (an && !navSchonDa) {
+        navSchonDa = true;
+        if (performance.now() - navSeit < NAV_NACHHOLEN_MS && UC.auftrittNachholen) UC.auftrittNachholen(elNav);
+      }
       root.classList.toggle("has-upa-nav", an);
       /* Beim Einblenden auch neu einpassen (core __upStrichNeu: Zeichen weg bzw. kuerzen, dann der Strich): makePageNav hat die
          verborgene Leiste mit Breite 0 gemessen und nichts eingepasst -- gemessen 22.10. abends bei 375: Reiter bis x 427,
@@ -2662,6 +2681,7 @@
       if (kp) {
         /* Der Befund als Auftrag fuer eine KI (kiText, Recherche in research_notes/Copy for AI/); liest sich auch im Ticket. */
         var txt = KOPIE[kp.getAttribute("data-upa-kopie")] || "";
+        if (UC.kopierBoxKopieren) { UC.kopierBoxKopieren(kp, txt); return; }
         var fertig = function () { if (UC.toast) UC.toast(t("Copied to clipboard"), { kind: "success" }); };
         try { navigator.clipboard.writeText(txt).then(fertig, function () { if (UC.legacyCopy) UC.legacyCopy(txt); fertig(); }); }
         catch (x) { if (UC.legacyCopy) UC.legacyCopy(txt); fertig(); }

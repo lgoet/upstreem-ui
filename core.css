@@ -6085,6 +6085,36 @@
 .up-lb.is-fertig .up-lb-spin { animation-play-state: paused; }
 .up-lb.is-fertig .up-lb-bogen { stroke-dasharray: 100 0; }
 .up-lb-tile { display: grid; place-items: center; }
+/* Der Ring als kleines Zeichen (UC.ringHtml, 22.10.): Spur, Bogen und Drehung wie .up-lb-spin oben, Strich 1.5px in
+   jeder Groesse (die viewBox rechnet in Pixeln). Reduziert langsamer, nicht still -- wie der grosse Ring. */
+.up-ring { display: block; flex: 0 0 auto; overflow: visible; animation: upLbDreh 1s linear infinite; }
+.up-ring-spur, .up-ring-bogen { fill: none; stroke-width: 1.5; }
+.up-ring-spur { stroke: var(--vc-border); }
+.up-ring-bogen { stroke: var(--vc-text); stroke-linecap: round; stroke-dasharray: 20 100; }
+@media (prefers-reduced-motion: reduce){ .up-ring { animation-duration: 2.4s; } }
+
+/* ---------- Kopierkasten (UC.kopierBoxHtml, 22.10., Geist Snippet) ----------
+   Rand und Flaeche eines Feldes (--up-feld-bg, Rand --vc-border), 32 hoch wie ein Knopf, darum Radius 6. Die Zeile in
+   Mono 13, das Zeichen 16 rechts in der dritten Textfarbe, beim Ueberfahren in der Textfarbe; nur die Flaeche
+   aendert sich beim Ueberfahren (Knopf-Hover der App). Kopie und Haken liegen uebereinander und tauschen in 120 ms
+   (Deckkraft und Skalierung), der Haken in der Farbe "gut". Die Live-Region ist unsichtbar, aber vorgelesen. */
+.up-kopierbox { display: inline-flex; align-items: center; gap: 12px; height: var(--up-h-btn); max-width: 100%; padding: 0 8px 0 12px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--up-feld-bg); color: var(--vc-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: var(--up-fs-m); line-height: 20px;
+  position: relative; cursor: pointer; flex: 0 0 auto; transition: background-color var(--up-t-1) var(--up-ease); }
+.up-kopierbox:hover { background: var(--up-knopf-hover); }
+.up-kopierbox:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
+.up-kopierbox-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.up-kopierbox-ic { position: relative; display: grid; width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-third); }
+.up-kopierbox:hover .up-kopierbox-ic { color: var(--vc-text); }
+.up-kopierbox-kopie, .up-kopierbox-haken { grid-area: 1 / 1; display: grid; place-items: center;
+  transition: opacity var(--up-t-1) var(--up-ease), transform var(--up-t-1) var(--up-ease); }
+.up-kopierbox-ic svg { width: 16px; height: 16px; display: block; }
+.up-kopierbox-haken { opacity: 0; transform: scale(.6); color: var(--vt-up); }
+.up-kopierbox.is-kopiert .up-kopierbox-kopie { opacity: 0; transform: scale(.6); }
+.up-kopierbox.is-kopiert .up-kopierbox-haken { opacity: 1; transform: none; }
+.up-kopierbox-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce){ .up-kopierbox-kopie, .up-kopierbox-haken { transition: none; } }
 .up-lb-tile svg { width: var(--up-lb-zeichen); height: var(--up-lb-zeichen); display: block; }
 .up-lb-name { margin-top: 16px; max-width: 100%; font-size: var(--up-fs-l); font-weight: var(--up-fw-m); line-height: 20px;
   color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
