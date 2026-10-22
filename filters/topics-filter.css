@@ -163,6 +163,9 @@
 /* The right-hand cluster is pushed as a group, so the grouping button keeps its place next to New
    Topic whether or not New Topic is rendered at all (data-newtopic="no" drops it). */
 .utf-foot-right { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
+/* Nur "Oder" (data-nur-oder an der Wurzel, topics-filter.js nurOder, 22.10. fuer Ads): kein Umschalter Or/And. Die rechte
+   Gruppe bleibt rechts (margin-left: auto). */
+.utf-root.is-nur-oder .utf-foot > .up-seg { display: none; }
 
 /* Grouping toggle. Icon button in the app's standard 32px box, with prompts-table's notify dot:
    the same control in two places has to carry the same "there is something on" mark. */

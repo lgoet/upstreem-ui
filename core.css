@@ -2852,7 +2852,11 @@
       /* 16px prevents the iOS focus-zoom and must beat the 14px active rule above (same
          specificity, later in the file), so it targets the open state too. */
       .up-search.is-open .up-search-input { font-size: 16px; }
-      .up-tip { display: none !important; }
+      /* Ausser dem per Tippen geoeffneten (.is-tipp, 22.10., makeTooltips: tippenZeigen) -- sonst war die
+         Angabe hinter einem Tooltip auf dem Telefon nicht zu erreichen. Jeder andere Weg (Ueberfahren,
+         Fokus) bleibt dort unsichtbar, aus dem Grund oben. (0,2,0) gegen die Grundregel (0,1,0), ohne
+         !important. */
+      .up-tip:not(.is-tipp) { display: none; }
     }
     /* THE dropdown shell. .up-sort-menu / .up-cols-menu / .up-ment-menu were three near-identical
        copies of it; anything new that needs a dropdown uses .up-menu and adds only its own width.
@@ -7850,9 +7854,13 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
 :is(.up-modal, .up-geist) > .up-topicmodal-foot > button { height: var(--up-h-btn); font-size: var(--up-fs-l); }
 /* Eine einzelne Aktion steht rechts (Geists "Single button"), nicht links: space-between setzt sie sonst an den Anfang. */
 :is(.up-modal, .up-geist) > .up-topicmodal-foot > button:last-child { margin-left: auto; }
+/* DIE RICHTUNG STEHT HIER SELBST (22.10., Prompt Research / Klickrouten): jede Schale traegt auch .up-root, und .up-root ist
+   flex-direction: column. Dann ist align-items die WAAGERECHTE Achse: "flex-end" schob die Karte nach rechts (bei voller Breite
+   also nirgendwohin), senkrecht blieb sie mittig -- gemessen bei 375: Blatt 293 ueber dem unteren Rand statt 0. In Zeilenrichtung
+   meint align-items die Senkrechte, und die Karte steht unten. Breite 100 %, damit auch eine Karte ohne eigene Breite das Blatt fuellt. */
 @media (max-width: 540px) {
-  .up-topicmodal-backdrop:has(> .up-geist, > .up-modal) { align-items: flex-end; padding: 10px 0 0; }
-  .up-topicmodal-backdrop > :is(.up-modal, .up-geist) { max-width: 100%; max-height: 90vh; max-height: 90dvh; border-radius: var(--up-r-2xl) var(--up-r-2xl) 0 0; border-bottom: 0; }
+  .up-topicmodal-backdrop:has(> .up-geist, > .up-modal) { flex-direction: row; align-items: flex-end; padding: 10px 0 0; }
+  .up-topicmodal-backdrop > :is(.up-modal, .up-geist) { width: 100%; max-width: 100%; max-height: 90vh; max-height: 90dvh; border-radius: var(--up-r-2xl) var(--up-r-2xl) 0 0; border-bottom: 0; }
 }
 /* Der Gefahr-Knopf ist gefuellt rot mit weisser Schrift (10.10. angefordert, vorher umrandet und
    erst beim Ueberfahren rot). Mit .up-modal-foot davor: er muss .up-btn-sec samt :hover schlagen,

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261191;
+  var BUILD = 20261192;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -7636,6 +7636,15 @@
       return v || 0;
     }
     var prefixes = cfg.cellPrefixes || ["up"];
+    /* DIE ART JE KOPFZELLE FUER zahlSpalten (22.10., Klickrouten: Kopf einer Zahlenspalte sprang in der
+       leeren Tabelle nach links). Ohne Zeile kann zahlSpalten nichts lesen; dann sagt die Spalte selbst,
+       was sie ist -- nur als letzter Rueckfall, wenn die Tabelle in dieser Sitzung nie Zeilen trug
+       (zahlSpaltenKopf). An der Wurzel und ZUSAMMENGEFUEHRT: eine Wurzel kann mehrere Kits tragen. */
+    var artReg = root.__upSpaltenArt || (root.__upSpaltenArt = {});
+    COLUMNS.forEach(function(c){
+      if (!c || !c.key || !c.art) return;
+      for (var p = 0; p < prefixes.length; p++) artReg[prefixes[p] + "-th-" + c.key] = c.art;
+    });
     /* Key format is deliberately "<pfx>_cols__<instanceId>", matching what the tables wrote
        before this machinery moved into core — changing it would silently throw away every user's
        saved column choices and drag widths on first load. */
@@ -8702,28 +8711,76 @@
     return cl.contains("up-num") || cl.contains("up-rank-group") || cl.contains("tct-num") || cl.contains("tct-used") ||
       (cl.contains("up-sent") && !cl.contains("up-pille"));
   }
+  /* DAS GEDAECHTNIS DER ZAHLENSPALTEN (22.10., Klickrouten-Pruefung: "die Koepfe der Zahlenspalten springen in
+     der leeren Tabelle nach links"). Der Satz oben -- "springt nicht zurueck, nur weil eine Seite gerade leer
+     ist" -- galt nur fuer denselben Kopf. Zeichnet eine Tabelle ihren Kopf im Leer- oder Fehlerzustand NEU
+     (Brands bei einer Suche ohne Treffer: gemessen Visibility, Rank, Sentiment links statt rechts), hat der
+     frische Kopf die Klasse nicht, und darunter steht keine Zeile, an der dieser Lauf sie wiederfinden koennte.
+     Darum merkt er sich je Spalte, was er gelesen hat: true = Zahlenspalte, false = mit Zeilen gelesen und
+     keine. Gilt fuer den naechsten Kopf derselben Spalte, solange die Zeilen nichts anderes sagen. Hat die
+     Tabelle in dieser Sitzung nie Zeilen getragen (gleich leer geladen, ohne Skelett mit zahl-Flag), sagt
+     die Spalte selbst, was sie ist: ihre `art` aus makeColumns (ZAHL_ARTEN). Datum, Typ, Marken, Topics,
+     Citations und "Mentioned?" bleiben links -- wie ihre Zellen.
+     Der Schluessel: die Spaltenklasse des Kopfs (<praefix>-th-<key>, die makeColumns ohnehin schaltet), sonst
+     Stelle, Zahl der Koepfe und Etikett; davor die data-instance der Komponente, damit zwei Tabellen mit
+     gleichen Spaltennamen sich nicht gegenseitig belehren. */
+  var ZAHL_GEMERKT = {};
+  var ZAHL_ARTEN = { anteil: 1, rang: 1, sentiment: 1, zaehl: 1, kpi: 1 };
+  var ZAHL_KOPF_KLASSE = /^[a-z0-9]+-th-[a-z0-9_-]+$/i, ZAHL_KOPF_KEINE = /^(up|vt|tct)-th-(zahl|txt|info|mentlbl)$/;
+  function zahlKennung(vorn, th, i, n){
+    for (var j = 0; j < th.classList.length; j++){
+      var c = th.classList[j];
+      if (ZAHL_KOPF_KLASSE.test(c) && !ZAHL_KOPF_KEINE.test(c)) return vorn + c;
+    }
+    var txt = th.querySelector(".up-th-txt");
+    var etikett = (txt && txt.getAttribute("data-i18n")) || th.getAttribute("data-i18n") || (th.textContent || "").trim();
+    return vorn + "#" + i + "/" + n + "|" + etikett;
+  }
+  /* Die Art der Spalte aus makeColumns (root.__upSpaltenArt), gesucht an den Vorfahren des Kopfs. */
+  function zahlArt(kopf, th){
+    for (var p = kopf, tiefe = 0; p && p.nodeType === 1 && tiefe < 12; p = p.parentElement, tiefe++){
+      var reg = p.__upSpaltenArt;
+      if (!reg) continue;
+      for (var j = 0; j < th.classList.length; j++){ if (reg[th.classList[j]]) return reg[th.classList[j]]; }
+      return null;
+    }
+    return null;
+  }
   function zahlSpaltenKopf(kopf){
     var n = kopf.children.length;
     if (!n || kopf.closest(".ulh-root")) return;
     var cont = kopf.parentElement;
     if (!cont) return;
-    var offen = 0, gesetzt = [], spurGeprueft = [];
+    /* Der Kopf im eigenen Halter (.up-cs-kopf, colscrollTeilen in Shopping und Ads): die Zeilen stehen im
+       Scrollkasten DANEBEN, unter dem Kopf stand nichts. Gemessen 22.10. Shopping > Products: Zellen
+       rechtsbuendig (flex-end), alle Koepfe links. Dann zaehlt der Kasten, in dem beide stehen. */
+    var halter = cont.parentElement;
+    if (halter && halter.classList.contains("up-cs-kopf") && halter.parentElement) cont = halter.parentElement;
+    var offen = 0, gesetzt = [], spurGeprueft = [], kennung = [];
+    var wo = kopf.closest("[data-instance]"), vorn = (wo ? wo.getAttribute("data-instance") : "") + "|";
     for (var i = 0; i < n; i++){
       var th = kopf.children[i];
-      if (th.classList.contains("up-th-zahl") || !(th.classList.contains("up-th") || th.classList.contains("vt-th") || th.classList.contains("tct-th"))) gesetzt[i] = true;
+      var istKopf = th.classList.contains("up-th") || th.classList.contains("vt-th") || th.classList.contains("tct-th");
+      if (istKopf) kennung[i] = zahlKennung(vorn, th, i, n);
+      if (th.classList.contains("up-th-zahl") || !istKopf){
+        gesetzt[i] = true;
+        if (istKopf) ZAHL_GEMERKT[kennung[i]] = true;
+      }
       else offen++;
     }
     if (!offen) return;
-    var zl = cont.querySelectorAll(ZAHL_ZEILE_SEL), gelesen = 0;
+    var zl = cont.querySelectorAll(ZAHL_ZEILE_SEL), gelesen = 0, skelett = false;
     for (var z = 0; z < zl.length && offen && gelesen < ZAHL_ZEILEN_MAX; z++){
       var r = zl[z];
       if (r === kopf || r.children.length !== n || r.classList.contains("up-sumrow")) continue;
       /* Eine Skelettzeile kennt ihre Zahlenspalten aus dem Aufruf (skeletonRows, zahl: true): der Kopf steht
          damit schon beim Laden rechts. Gelesen wird nur das Flag, keine berechnete Fassung. */
       if (r.classList.contains("up-tsk")){
+        skelett = true;
         for (var s = 0; s < n; s++){
           if (gesetzt[s] || !r.children[s].classList.contains("up-tsk-zahl")) continue;
           kopf.children[s].classList.add("up-th-zahl");
+          ZAHL_GEMERKT[kennung[s]] = true;
           gesetzt[s] = true; offen--;
         }
         continue;
@@ -8747,8 +8804,17 @@
         if (!hat) continue;
         if ((cs || getComputedStyle(td)).justifyContent !== "flex-end") continue;
         kopf.children[k].classList.add("up-th-zahl");
+        ZAHL_GEMERKT[kennung[k]] = true;
         gesetzt[k] = true; offen--;
       }
+    }
+    /* Was die Zeilen nicht entschieden haben: das Gedaechtnis, und ohne jede Zeile und ohne Skelett die Art. */
+    for (var m = 0; m < n && offen; m++){
+      if (gesetzt[m] || !kennung[m]) continue;
+      var weiss = ZAHL_GEMERKT[kennung[m]];
+      var zahl = weiss === true || (weiss === undefined && !gelesen && !skelett && !!ZAHL_ARTEN[zahlArt(kopf, kopf.children[m])]);
+      if (zahl){ kopf.children[m].classList.add("up-th-zahl"); gesetzt[m] = true; offen--; }
+      else if (gelesen && weiss === undefined) ZAHL_GEMERKT[kennung[m]] = false;
     }
   }
   function zahlSpalten(start){
@@ -8761,6 +8827,11 @@
       for (var j = 0; j < kinder.length; j++){
         var cl = kinder[j].classList;
         if (cl.contains("up-thead") || cl.contains("vt-thead") || cl.contains("tct-thead")){ zahlSpaltenKopf(kinder[j]); tiefe = 99; break; }
+        /* Der Kopf steht im Halter neben dem Scrollkasten (colscrollTeilen). */
+        if (cl.contains("up-cs-kopf")){
+          var hk = kinder[j].querySelector(ZAHL_KOPF_SEL);
+          if (hk){ zahlSpaltenKopf(hk); tiefe = 99; break; }
+        }
       }
     }
   }
@@ -12983,13 +13054,20 @@
          wieder unter seinem Ausloeser sitzen und soll dann normal einfahren. */
       tip.style.transitionProperty = "";
       tip.classList.remove("is-on");
+      S.tipp = false;
       /* is-wide erst nach dem Ausblenden (17.10.): sofort entfernt, schrumpfte der grosse Tooltip
          waehrend der 140ms zum einzeiligen Chip (Hoehe, Umbruch, Ecke) -- ein Sprung der Form
-         bei noch sichtbarem Kasten. paint() setzt is-wide bei jedem Zeigen ohnehin neu. */
+         bei noch sichtbarem Kasten. paint() setzt is-wide bei jedem Zeigen ohnehin neu.
+         is-tipp ebenso: ohne die Klasse steht der Chip auf dem Telefon sofort auf display: none
+         (core.css, hover: none), er soll aber ausblenden wie ueberall. */
       clearTimeout(S.weitUhr);
-      if (tip.classList.contains("is-wide")) S.weitUhr = setTimeout(function(){ if (!S.btn) tip.classList.remove("is-wide"); }, 200);
+      if (tip.classList.contains("is-wide") || tip.classList.contains("is-tipp")){
+        S.weitUhr = setTimeout(function(){ if (!S.btn){ tip.classList.remove("is-wide"); tip.classList.remove("is-tipp"); } }, 200);
+      }
     }
-    function paint(el, text, wide){
+    /* tipp: per Tippen geoeffnet (Telefon, siehe tippenZeigen). Nur dann zeigt core.css den Chip
+       auch ohne Zeiger, der schweben kann (.up-tip.is-tipp). */
+    function paint(el, text, wide, tipp){
       if (!text || !el || !document.contains(el)) return;
       /* Belt-and-suspenders for hover-reveal buttons (chart settings gears and anything else that
          fades in on its own delay): if the browser somehow still delivers a mouseover for an
@@ -13020,6 +13098,8 @@
       tip.textContent = t_(text);
       clearTimeout(S.weitUhr);
       tip.classList.toggle("is-wide", !!wide);
+      tip.classList.toggle("is-tipp", !!tipp);
+      S.tipp = !!tipp;
 
       S.wide = !!wide;
       tip.setAttribute("data-theme", dark ? "dark" : "light");
@@ -13032,6 +13112,18 @@
     function showTip(el){ if (!S.suppressed) paint(el, el.getAttribute("data-tip"), false); }
     function showTipText(el, t){ if (!S.suppressed) paint(el, t, false); }
     function showTipWide(el, text){ if (!S.suppressed) paint(el, text, true); }
+    /* Per Tippen (Telefon): erst als Chip; waere der breiter als das Fenster (ein ganzer Satz wie in Impact,
+       "The numbers after the event only use the days that have data so far.", bei 375), als die breite,
+       umbrechende Fassung. Ohne die Pruefung auf S.suppressed: das Tippen IST die Aufforderung, und mousedown
+       hat sie eben erst gesetzt. */
+    function tippenZeigen(el, text){
+      paint(el, text, false, true);
+      var vw = window.innerWidth || document.documentElement.clientWidth;
+      if (S.btn === el && tip.offsetWidth > vw - 12) paint(el, text, true, true);
+    }
+    /* Der Weg vom Tippen hierher fuehrt ueber das Dokument (siehe unten), gezeigt wird mit der Fassung der
+       Wurzel, an der der Ausloeser haengt -- bei jedem Aufruf neu gesetzt, also immer der juengste Chip. */
+    root.__upTipApi = { tippen: tippenZeigen, hide: hideTip };
 
     if (!root.__upTipBound){
       root.__upTipBound = true;
@@ -13097,6 +13189,59 @@
         if (S.btn || S.timer || tip.classList.contains("is-on")) hideTip();
       }, { capture: true, passive: true });
       window.addEventListener("blur", hideTip);
+    }
+    /* TOOLTIPS PER TIPPEN (22.10., Klickrouten-Pruefung, Lukas: "ja, per Tap, app-weit, wie die
+       Erklaerkarten"). Auf dem Telefon versteckte core.css jeden Chip (hover: none) -- die Angabe hinter
+       einem Tooltip war dort nicht zu erreichen, etwa in Impact "15 of 30 days after the event observed
+       so far". Jetzt: Tippen oeffnet, Tippen daneben oder Escape schliesst, ein zweites Tippen auf
+       denselben Ausloeser auch, Scrollen wie bisher.
+       NIE STATT EINER AKTION. Ein Tooltip an einem Knopf ist dessen Beschriftung, der Knopf tut beim
+       Tippen, was er tut -- dort kommt kein Chip (TIPP_AKTION: Knoepfe, Links, Felder, Rollen mit eigener
+       Bedienung). Ebenso ein Ausloeser in etwas Anklickbarem ohne eigene Rolle (die Zeile einer Tabelle,
+       die einen Drawer oeffnet): das erkennt der Zeiger, den die Seite dort zeigt (cursor: pointer,
+       vererbt). Kein preventDefault, kein stopPropagation: der Klick geht weiter, wohin er immer ging.
+       Am Dokument und nicht an der Wurzel: der Klick der Wurzel (oben) blendet bei jedem Klick aus, der
+       des Dokuments laeuft danach. Nur fuer Ausloeser in einer Wurzel, die makeTooltips eingerichtet hat
+       (root.__upTipApi) -- dieselben, die mit der Maus einen Tooltip zeigen. Wer tippt, sagt der Zeiger
+       des pointerdown (ein Finger: "touch"); mit Maus oder Stift aendert sich nichts. */
+    if (!window.__upTipTippBound){
+      window.__upTipTippBound = true;
+      var TIPP_AKTION = 'button, a[href], input, select, textarea, label, summary, [contenteditable=""], [contenteditable="true"], ' +
+        '[role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], ' +
+        '[role="option"], [role="switch"], [role="checkbox"], [role="radio"]';
+      var tippApi = function(el){
+        for (var p = el; p && p.nodeType === 1; p = p.parentElement) if (p.__upTipApi) return p.__upTipApi;
+        return null;
+      };
+      document.addEventListener("pointerdown", function(e){
+        S.zeiger = e.pointerType || "";
+        S.tippVor = S.tipp ? S.btn : null;
+        var t = e.target;
+        if (S.tipp && S.btn && !(t && t.nodeType === 1 && S.btn.contains(t))){
+          var a = tippApi(S.btn);
+          if (a) a.hide();
+        }
+      }, true);
+      document.addEventListener("click", function(e){
+        if ((e.pointerType || S.zeiger) !== "touch") return;
+        var t = e.target;
+        if (!t || t.nodeType !== 1 || !t.closest) return;
+        var el = t.closest("[data-tip], [data-brandtip]");
+        if (!el || t.closest(TIPP_AKTION)) return;
+        try { if (getComputedStyle(t).cursor === "pointer") return; } catch(err){ return; }
+        var api = tippApi(el);
+        if (!api) return;
+        /* Das zweite Tippen auf denselben Ausloeser schliesst: mousedown hat ihn schon ausgeblendet. */
+        if (S.tippVor === el){ S.tippVor = null; return; }
+        var text = el.getAttribute("data-tip") || el.getAttribute("data-brandtip");
+        if (text) api.tippen(el, text);
+      }, false);
+      document.addEventListener("keydown", function(e){
+        if ((e.key === "Escape" || e.key === "Esc") && S.tipp && S.btn){
+          var a = tippApi(S.btn);
+          if (a) a.hide();
+        }
+      }, true);
     }
     /* Lifts the post-click suppression above. A component that drives its own hover-tooltip (the
        "show the full title only when it is actually clipped" pattern in the tables) has to call

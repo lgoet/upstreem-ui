@@ -26,6 +26,10 @@
    Ein Flex mit 8px, wie jede Werkzeugreihe der App. min-width: 0 an allem, was Text traegt,
    sonst schiebt eine lange Chipliste die Leiste aus ihrem Container. */
 .ufb-root { display: block; min-width: 0; }
+/* EIN AM KOERPER GEPARKTER FILTER (22.10., filter-bar.js heimschicken): versteckt, solange er dort wartet. Das hidden-Attribut
+   allein verliert gegen das display von .up-root und der Filterwurzeln; (0,3,1) schlaegt beide. Nur direkt am <body> -- holt
+   ihn die naechste Leiste (einziehen), faellt die Marke, und wo ihn sonst jemand hinsetzt, steht er wieder. */
+body > .up-root[data-ufb-geparkt][hidden] { display: none; }
 /* DIE LEISTE BRICHT IMMER UM, NICHT ERST UNTER 768px (24.09. gemeldet: "wenn die Screenwidth
    kleiner wird, ueberlagern sich irgendwann die Chips mit dem Alle-loeschen-Knopf -- die muessen
    untereinander brechen, der Container muss in der Hoehe groesser werden, das muss 100 Prozent

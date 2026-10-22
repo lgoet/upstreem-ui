@@ -424,7 +424,7 @@
         '<div class="up-root ufb-root uad-filterleiste" data-instance="' + esc(idFilter) + '" data-topics-instance="' + esc(idTopics) + '"' +
           ' data-models-instance="' + esc(idModelle) + '" data-markets-instance="' + esc(idMaerkte) + '" data-form="gross"' +
           ' data-adadv-instance="' + esc(ID_FF.adadv) + '" data-adformat-instance="' + esc(ID_FF.adformat) + '" data-isdark="' + dunkelAttr + '"></div>' +
-        '<div class="up-root utf-root" data-instance="' + esc(idTopics) + '" data-local="yes" data-isdark="' + dunkelAttr + '"></div>' +
+        '<div class="up-root utf-root" data-instance="' + esc(idTopics) + '" data-local="yes" data-nur-oder="yes" data-isdark="' + dunkelAttr + '"></div>' +
         '<div class="up-root umf-root" data-instance="' + esc(idModelle) + '" data-local="yes" data-isdark="' + dunkelAttr + '"></div>' +
         '<div class="up-root umk-root" data-instance="' + esc(idMaerkte) + '" data-local="yes" data-isdark="' + dunkelAttr + '"></div>' +
         /* EXPORT rechts in der Filterzeile (16.10.), Form wie in Prompt Insights (.up-export aus core). */

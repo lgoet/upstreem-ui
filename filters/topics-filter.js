@@ -154,6 +154,14 @@
     var topics = [];                                  // full list as delivered
     var selected = saved.selected ? saved.selected.slice() : [];
     var mode = (saved.mode === "and") ? "and" : "or";
+    /* NUR "ODER" (22.10., Klickrouten-Pruefung Ads): data-nur-oder="yes" an der Wurzel. Fuer eine Seite, deren Abfrage
+       nur "eines der gewaehlten Topics" kennt -- die Ads-RPCs nehmen keinen tag_mode. Der Chip der Leiste sagte trotzdem
+       "Topic is all of EV, Hybrid", sobald jemand "And" gewaehlt hatte (gemerkt je Instanz), und die Zahlen kamen aus
+       "any of". Mit dem Attribut steht kein Umschalter da (topics-filter.css), und JEDE Auskunft nach aussen sagt "or"
+       (modus): Ereignis, getSelected, also auch der Chip. Der gemerkte Modus selbst bleibt unberuehrt -- er gehoert der
+       Instanz, nicht dieser Seite. Zur Laufzeit gelesen, ein spaeter gesetztes Attribut gilt sofort. */
+    function nurOder() { return isYes(root.getAttribute("data-nur-oder")); }
+    function modus() { return nurOder() ? "or" : mode; }
     var sortKey = saved.sortKey || DEFAULT_SORT;
     var query = "";
     var open = false, sortOpen = false, cursor = -1;
@@ -415,9 +423,10 @@
       /* Always live. It was disabled below two selections, but the mode is a persistent setting
          the user may want to set before picking anything -- and a control that greys itself out
          reads as broken. */
+      root.classList.toggle("is-nur-oder", nurOder());
       var opts = elMode.querySelectorAll(".up-seg-btn");
       for (var i = 0; i < opts.length; i++) {
-        opts[i].classList.toggle("is-active", opts[i].getAttribute("data-mode") === mode);
+        opts[i].classList.toggle("is-active", opts[i].getAttribute("data-mode") === modus());
       }
     }
     function renderGroupsBtn() {
@@ -463,7 +472,7 @@
       var payload = {
         instance_id: instanceId,
         topic_ids: selected.join(","),
-        tag_mode: mode,
+        tag_mode: modus(),
         count: selected.length
       };
       /* Same team_id every other event carries (core adds it inside makeFire; this component
@@ -648,7 +657,7 @@
       var b = e.target.closest ? e.target.closest("[data-mode]") : null;
       if (!b) return;
       var next = b.getAttribute("data-mode");
-      if (next === mode) return;
+      if (next === mode || nurOder()) return;
       mode = next;
       persist(); render();
       /* Only publish when the mode actually changes which prompts come back. With fewer than two
@@ -855,7 +864,7 @@
         }
         if (spaet) spaet.drain(instanceId, ctrl);
       },
-      getSelected: function () { return { topic_ids: selected.join(","), tag_mode: mode }; }
+      getSelected: function () { return { topic_ids: selected.join(","), tag_mode: modus() }; }
     };
     root.__utfCtrl = ctrl;
     CONTROLLERS.push(ctrl);
