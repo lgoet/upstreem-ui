@@ -57,6 +57,17 @@
       }
     },
     {
+      "name": "explain_change",
+      "bereich": "dashboard",
+      "klasse": "lesen",
+      "beschreibung": "Why a brand's Visibility changed between the period and the comparison period, in one call. Use it first for any why question about a rise or fall (why did my Visibility drop, what happened since a date, why is competitor X growing) and add other tools only for what it leaves open. meta: period and comparison period with their length in days (days, prev_days; the comparison period is usually half as long), topic_overlap (topics share prompts, so topic contributions overlap), omitted (groups left out and their contribution). total: visibility_pct and visibility_prev_pct with delta_pct, avg_rank and sentiment with previous values, mentions and runs also per day: compare per day, never raw counts across the two periods. weekly: the brand's Visibility per week over both windows (window prev or now), to say when it changed. change_point: the week-to-week move that carries the change (weeks, Visibility before and after). by_model and by_topic, per group: runs_share_pct / runs_share_prev_pct (share of the tracked answers), visibility_pct / visibility_prev_pct, rate_effect_pct (change of the brand inside the group), mix_effect_pct (answers shifting into groups where the brand is weaker or stronger) and contribution_pct (their sum; the models add up to the total change). prompts_lost / prompts_gained: the prompts whose mention rate moved most (text, topics, runs, mention_rate_pct / mention_rate_prev_pct, impact_pct, top_competitor_gain = the competitor that gained most in that prompt); prompts_added / prompts_removed: prompts that ran in only one of the windows. own_domains and own_pages: the brand's own cited domains and URLs with share_pct / share_prev_pct (share of answers with citations), last_cited_on and runs_last_7d. pages_naming_brand: share of answers with citations that cite a page naming the brand, now and before, with top_lost (those pages that lost most). competitors: tracked brands whose Visibility moved most. Not for one value per brand (brands_overview) or a long trend (brands_visibility_trend).",
+      "aufrufe": [{ "fn": "cached_brand_change_drivers_v1", "nur_mira": "Ursachen einer Veraenderung in einem Aufruf (Warum-Fragen); die UI hat dafuer keine Ansicht (22.10.)" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "brand_id": { "rpc": "p_brand", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "company_id of a tracked brand of the team, own or competitor (from search_entities, brands_tracked or a previous result). Omit for the own brand." }
+      }
+    },
+    {
       "name": "brand_detail",
       "bereich": "marken",
       "klasse": "lesen",
