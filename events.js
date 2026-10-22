@@ -1203,9 +1203,7 @@
     "View audit": "Audit ansehen",
     "The audit couldn't be started": "Das Audit ließ sich nicht starten",
     "You don't have access to this team.": "Du hast keinen Zugang zu diesem Team.",
-    "This team no longer exists.": "Dieses Team gibt es nicht mehr.",
-    "Page audits aren't included in your plan": "Page Audits sind in deinem Tarif nicht enthalten",
-    "Choose a plan with page audits to run one.": "Wähl einen Tarif mit Page Audits, um eins zu starten."
+    "This team no longer exists.": "Dieses Team gibt es nicht mehr."
   });
 
   /* Spaltenzahl der Karten: nach dem PLATZ (wie response-detail.spalten -- dieselben Schwellen,
@@ -4099,20 +4097,14 @@
     }
     /* Jeder Fehler des Anlegens: Titel "The audit couldn't be started", darunter der Satz aus core (UC.pageAuditFehlerSatz -- dieselben Saetze
        wie im Dialog der Seite Page Audit: Kontingent, Grenzen, jede URL-Begruendung, Zeit, Netz). Vorher nur, was die Zugangsbausteine werfen
-       (_set_require_v1, _app_gate_v1) und core nicht kennt: dort sagte der allgemeine Satz "on our side", und das stimmt nicht. */
+       (_set_require_v1, _app_gate_v1) und core nicht kennt: dort sagte der allgemeine Satz "on our side", und das stimmt nicht. Ein Tarif ohne
+       Audits (allowance 0) steht seit BUILD 20261186 in core. */
     function paFehler(erg, url) {
       var f = (erg && erg.fehler) || {}, c = String(f.message || ""), h = String(f.hint || "").trim(), nicht = t("The audit couldn't be started");
       if (/^team_access_/.test(c)) return { titel: nicht, desc: fehlerText(c, h) };
       if ((erg && erg.status === 401) || c === "settings_not_authenticated") return { titel: nicht, desc: t("Please sign in again.") };
       if (c === "team_forbidden" || c === "forbidden") return { titel: nicht, desc: t("You don't have access to this team.") };
       if (c === "team_deleted") return { titel: nicht, desc: t("This team no longer exists.") };
-      /* Ein Tarif ohne Audits (audits_per_week leer, allowance 0): core saegte "You've used all 0 audits for this week" (gemessen 22.10.,
-         BUILD 20261185) -- gehoert nach core, bis dahin hier. */
-      if (c === "page_audit_quota_exhausted") {
-        var q = {};
-        try { q = JSON.parse(String(f.details || "")) || {}; } catch (e) { q = {}; }
-        if (num(q.allowance) === 0) return { titel: t("Page audits aren't included in your plan"), desc: t("Choose a plan with page audits to run one.") };
-      }
       var fs = UC.pageAuditFehlerSatz ? UC.pageAuditFehlerSatz(erg, { t: t, eingabe: url, datum: paTag }) : null;
       return { titel: nicht, desc: fs && fs.satz ? fs.satz : t("Please try again.") };
     }
