@@ -1353,6 +1353,16 @@
   /* Vertrag B.1: Laenge hoechstens 183 Tage (Start und Ende zaehlen mit), Start bis heute + 365. */
   var KAMPAGNE_TAGE = 183, ZUKUNFT_TAGE = 365;
   var NULL_ID = "00000000-0000-0000-0000-000000000000";
+  /* ---- TAG, WOCHE, MONAT IN DEN CHARTS (22.10., Lukas: "in allen Linecharts, wo geht, Granularitaet reinmachen. Unsere core-Regeln
+     dazu. Aktuell werden 3 oder 6 Monate Daten einfach mit einem Datenpunkt pro URL pro Tag geholt") --------------------------------
+     Die Datenbank fasst zusammen (bubble/impact_gran_22_10/impact_gran_22_10_v1.sql): cached_impact_event_analysis_v4 und
+     get_impact_event_url_series_v1 kennen p_granularity und antworten mit granularity; die Woche beginnt am Montag, der Punkt traegt
+     den Beginn seines Buckets, Anteile kommen aus den Summen. Der Browser fasst nichts zusammen.
+     GRAN_DA.analyse / .reihe: null unbekannt, true die Funktion kennt p_granularity, false nicht (PGRST202 auf eine Anfrage MIT dem
+     Parameter: dann einmal ohne nachfragen, und fuer den Rest der Seite gilt die Tagesreihe wie bis 22.10., ohne Schalter -- ein
+     Schalter, der nichts aendern kann, steht nicht da). Je Seitenaufruf und fuer alle Wurzeln, wie ZIELE_DA. */
+  var GRAN_DA = { analyse: null, reihe: null };
+  var GRANS = [{ key: "day", tip: "Day" }, { key: "week", tip: "Week" }, { key: "month", tip: "Month" }];
   function kampagneDa() { return KAMPAGNE_DA.stand === true; }
   /* Eine Zeile mit status kann es nur geben, wenn Teil B eingespielt ist -- dann ist die Frage
      beantwortet, ohne einen Aufruf. */
@@ -1772,6 +1782,15 @@
         return UC.rpc(k.fn, mitTeam(o, tm2), { timeoutMs: k.ms });
       }).then(function (erg) {
         erg = erg || { ok: false, status: 0, fehler: {} };
+        /* Die Analyse kennt p_granularity noch nicht (impact_gran_22_10 nicht eingespielt): PostgREST meldet den unbekannten
+           Parameter als fehlende Funktion. Einmal ohne ihn nachfragen; ab jetzt gilt die Tagesreihe ohne Schalter (GRAN_DA). */
+        if (!erg.ok && kanal === "uevAnalysis" && o && o.p_granularity != null && fehltFn(erg)) {
+          GRAN_DA.analyse = false;
+          var ohneGran = {};
+          for (var gk in o) if (Object.prototype.hasOwnProperty.call(o, gk) && gk !== "p_granularity") ohneGran[gk] = o[gk];
+          rufen(kanal, ohneGran, kx, spaet);
+          return;
+        }
         /* "And" (p_tagmode) und die Funktion kennt den Parameter noch nicht: PostgREST meldet das
            als fehlende Funktion (PGRST202), obwohl es sie gibt. Das ist KEIN Grund fuer den
            Rueckweg zu Bubble -- der wuerde den Kanal fuer die ganze Sitzung umstellen, und Bubble
@@ -1819,7 +1838,19 @@
       }
       /* Eine Analyse fuer Fenster oder Filter von vorhin: setAnalysis legt unter den AKTUELLEN
          Filtern ab -- eine spaete Antwort waere dort falsch einsortiert. Die aktuelle kommt noch. */
-      if (kanal === "uevAnalysis") { if (kx.sig === analyseSig()) ctrl.setAnalysis(d, kx.sig); return; }
+      if (kanal === "uevAnalysis") {
+        /* Traegt die Antwort granularity, kennt die Datenbank die Stufen (GRAN_DA); eine Antwort ohne das Feld ist die alte Analyse. */
+        if (d && typeof d === "object" && !Array.isArray(d)) {
+          if (d.granularity != null) GRAN_DA.analyse = true; else if (GRAN_DA.analyse == null) GRAN_DA.analyse = false;
+        }
+        if (kx.sig === analyseSig()) {
+          ctrl.setAnalysis(d, kx.sig);
+          /* Die Stufe hat sich waehrend der Anfrage geaendert (Startstufe erst mit dem Event bekannt): die gewaehlte nachfragen. Nur wenn
+             diese Antwort die bestellte Stufe war -- so fragt eine Datenbank, die eine andere liefert, nie im Kreis. */
+          if (kx.gran && kx.gran !== state.gran && granDa() && !dieReihe()) analyseAnfordern();
+        }
+        return;
+      }
       if (kanal === "uevScopePreview") { if (popup && popup === kx.popup) ctrl.setVorschau(d); return; }
       if (kanal === "uevDelete") { ctrl.setGeloescht(d); return; }
       /* Anlegen, Bearbeiten, URL hinzufuegen und entfernen antworten mit dem Detail (Vertrag 1,
@@ -1996,6 +2027,10 @@
       },
       detail: gemerkt("detail", {}), detailLaden: false, detailFehler: false,
       analyse: gemerkt("analyse", {}), analyseLaden: false, analyseFehler: false,
+      /* Tag, Woche, Monat (22.10.): die Stufe der Charts im Detail (alle Charts einer Analyse teilen sie, die DB liefert sie in einer
+         Antwort), der Zeitraum, fuer den die Startstufe gesetzt wurde (granFuer), und je Signatur und Stufe die Analyse (analyseJe) --
+         die Kennzahlen stehen in jeder Stufe gleich, nur die Reihen der Charts wechseln. */
+      gran: gemerkt("gran", "day"), granFuer: gemerkt("granFuer", ""), analyseJe: gemerkt("analyseJe", {}),
       fenster: gemerkt("fenster", 30), seit: gemerkt("seit", false), metrik: gemerkt("metrik", "visibility"),
       modelle: gemerkt("modelle", null), maerkte: gemerkt("maerkte", null),
       respUrl: "", geloescht: {},
@@ -2013,7 +2048,8 @@
       if (root.isConnected === false) return;
       STORE[instanceId] = { ue: state.ue, detail: state.detail, analyse: state.analyse,
         fenster: state.fenster, seit: state.seit, metrik: state.metrik, modelle: state.modelle, maerkte: state.maerkte,
-        abd: state.abd, abdSeg: state.abdSeg, zielMetrik: state.zielMetrik };
+        abd: state.abd, abdSeg: state.abdSeg, zielMetrik: state.zielMetrik,
+        gran: state.gran, granFuer: state.granFuer, analyseJe: state.analyseJe };
     }
     function dieDetail() { return state.eventId ? state.detail[state.eventId] || null : null; }
     /* Der Intent-Filter der App gehoert in die Signatur (13.10.): sonst zeigte ein Wechsel die
@@ -2028,6 +2064,90 @@
               (state.maerkte || []).join(","), JSON.stringify(intentP())].join("|");
     }
     function dieAnalyse() { return state.analyse[analyseSig()] || null; }
+    /* ---- DIE STUFE DER CHARTS (22.10.) -------------------------------------------------------------------------------------------
+       Regeln aus core, keine eigenen (Memory "Granularitaet einheitlich"): Startstufe aus dem Zeitraum (UC.granFuerZeitraum), Freigabe
+       nach der Spanne der gezeigten Reihe (UC.granAvailability), die aktive Stufe ist die der Lieferung (UC.granAusLieferung); eine
+       Antwort loest nie selbst ein Laden aus, nur ein Klick. Ohne GRAN_DA (alte Datenbank, Vorfuehrung) die Tagesreihe ohne Schalter. */
+    function granDa() { return !demo && GRAN_DA.analyse === true; }
+    /* Die Analyse, deren Reihen die Charts zeigen: die der gewaehlten Stufe. Die Kennzahlen nehmen weiter dieAnalyse() (gleich in jeder
+       Stufe) -- ein Wechsel der Stufe laesst Kopf, Kacheln und Tabellen stehen, nur die Charts warten. */
+    function dieReihe() {
+      var a = dieAnalyse();
+      if (!granDa()) return a;
+      var je = state.analyseJe[analyseSig() + "|" + state.gran];
+      if (je) return je;
+      return a && UC.normGran && UC.normGran(a.granularity) === state.gran ? a : null;
+    }
+    /* Was eine Reihe zeigt: das Feld granularity der Lieferung, sonst der Abstand der Punkte (core). */
+    function reiheGran(a, reihe) {
+      var g = UC.granAusLieferung ? UC.granAusLieferung(a || null, reihe || []) : null;
+      return g === "week" || g === "month" ? g : "day";
+    }
+    /* DER ZEITRAUM DER CHARTS fuer die Startstufe, VOR der Antwort (die Stufe geht mit der Anfrage hinaus). Er folgt den Fenstern der
+       Analyse (_impact_event_analysis_v4_calc): Event vorher N Tage bis nachher N Tage (hoechstens heute), "Since event" so lang vorher
+       wie nachher (hoechstens 183), Kampagne vorher min(L, 180) bis Nachlauf min(L, 90); Citation Tracking zeigt nur das letzte Fenster
+       (zielFuellen). Er waehlt nur die Startstufe -- die Grenzen der Daten setzt die Datenbank. */
+    function granZeitraum() {
+      var ev = dasEvent();
+      if (!ev) return null;
+      var T = 864e5, heute = tagMs(heuteIso()), n = state.fenster || 30, von, bis;
+      if (istWatch(ev)) { bis = heute; von = heute - (n - 1) * T; }
+      else {
+        var start = tagMs(ev.event_date);
+        if (isNaN(start)) return null;
+        if (kampagneDa() && mitEnde(ev)) {
+          var ende = tagMs(ev.end_date), L = Math.round((ende - start) / T) + 1;
+          von = start - Math.min(L, 180) * T; bis = Math.min(ende + Math.min(L, 90) * T, heute);
+        } else if (seitAktiv(ev)) {
+          von = start - Math.min(Math.max(Math.round((heute - start) / T), 1), 183) * T; bis = heute;
+        } else { von = start - n * T; bis = Math.min(start + n * T, heute); }
+      }
+      if (isNaN(von) || isNaN(bis)) return null;
+      return { von: isoAus(von), bis: isoAus(Math.max(von, bis)) };
+    }
+    /* Die Startstufe gilt, bis sich der Zeitraum aendert (anderes Event, anderes Fenster, "Since event"); ein Klick dazwischen bleibt.
+       Filter (Modelle, Maerkte, Intent) aendern den Zeitraum nicht. Wie SET GRAN auf jeder Seite mit Kalender (core, 08.10.). */
+    /* Rueckgabe: ob sich die Stufe geaendert hat. Ist das Event noch unbekannt (Tiefenlink vor Liste und Detail), gilt Day, ohne den
+       Zeitraum als erledigt zu merken -- sobald das Event da ist, kommt die richtige Startstufe. */
+    function granStartSetzen() {
+      var schl = String(state.eventId || "") + "|" + String(fensterSig());
+      if (state.granFuer === schl) return false;
+      var z = granZeitraum(), g = z && UC.granFuerZeitraum ? UC.granFuerZeitraum(z.von, z.bis) : null, alt = state.gran;
+      if (z) state.granFuer = schl;
+      state.gran = g === "week" || g === "month" ? g : "day";
+      return state.gran !== alt;
+    }
+    /* Der Schalter aus core (.vc-gran, D/W/M mit Tooltip, wie Domain und Brand Detail). hidden, bis die Datenbank die Stufen kann. */
+    function granSchalterHtml() {
+      return '<div class="vc-gran uev-gran" role="group" aria-label="' + esc(t("Granularity")) + '" hidden>' +
+        GRANS.map(function (g) {
+          return '<button class="vc-gran-btn" type="button" data-gran="' + g.key + '" data-tip="' + esc(t(g.tip)) + '" aria-label="' + esc(t(g.tip)) + '">' +
+            g.tip.charAt(0) + '</button>';
+        }).join("") + '</div>';
+    }
+    /* Einen Schalter stellen: sichtbar nur mit GRAN_DA; aktiv die gezeigte Stufe (laedt eine neue, die gewaehlte); gesperrt nach der
+       Spanne der Reihe (core sperrt nie die aktive). reihe: die Punkte, die das Chart zeigt (oder zuletzt zeigte). */
+    function granSchalterStellen(el, reihe, g) {
+      if (!el) return;
+      var da = granDa();
+      el.hidden = !da;
+      if (!da) return;
+      [].forEach.call(el.querySelectorAll("[data-gran]"), function (b) {
+        var an = b.getAttribute("data-gran") === g;
+        b.classList.toggle("is-active", an); b.setAttribute("aria-pressed", String(an));
+      });
+      if (UC.granAvailability) UC.granAvailability(el, isArr(reihe) ? reihe : [], g);
+      if (UC.segJetzt) { try { UC.segJetzt(el); } catch (e) {} }
+    }
+    /* Ein Klick: gesperrt bleibt gesperrt (auch per Tastatur), dieselbe Stufe tut nichts. Liegt die Analyse der Stufe schon vor (vorher
+       gewaehlt), zeichnen die Charts sofort; sonst holt die DB sie (ein Treffer im Cache, die Rechnung liefert alle drei Stufen). */
+    function granKlick(b) {
+      var g = b.getAttribute("data-gran");
+      if (b.classList.contains("is-disabled") || (g !== "day" && g !== "week" && g !== "month") || g === state.gran) return;
+      state.gran = g; persist();
+      if (!dieReihe()) analyseAnfordern();
+      renderChart(); renderZiele();
+    }
     /* Das Fenster einer Anfrage (17.10.): eine Kampagne kennt keins ("k", feste Abschnitte
        Vorher/Waehrend/Danach), ein offenes Event zusaetzlich "Since event" ("seit"). */
     function dasEvent(id) { id = id != null ? id : state.eventId; return state.detail[id] || listeEvent(id); }
@@ -2844,9 +2964,10 @@
           '</div>' +
           '<section class="uev-sek uev-sek-chart">' +
             sekKopf("Performance around event", "How your brand developed in the affected prompts before and after the event.",
-              '<div class="up-seg uev-metrik" role="group">' +
+              /* Kennzahl und Stufe (22.10.) nebeneinander, die Stufe ganz rechts wie in den anderen Charts der App. */
+              '<div class="uev-chartwerkzeuge"><div class="up-seg uev-metrik" role="group">' +
                 METRIKEN.map(function (m) { return '<button class="up-seg-btn" type="button" data-metrik="' + m.key + '">' + esc(t(m.label)) + '</button>'; }).join("") +
-              '</div>') +
+              '</div>' + granSchalterHtml() + '</div>') +
             '<div class="up-box uev-chartbox"><div class="up-line-wrap uev-linewrap"><canvas></canvas></div>' +
               '<div class="up-legend uev-legende"></div></div>' +
           '</section>' +
@@ -2864,8 +2985,9 @@
       elChartWrap = elMain.querySelector(".uev-linewrap");
       elLegende = elMain.querySelector(".uev-legende");
       linie = UC.makeLine({
+        /* Achse und Tooltip lesen die Stufe der gezeigten Reihe (core: Woche als Datum ihres Montags, Monat als Name). */
         wrap: elChartWrap, canvas: elChartWrap.querySelector("canvas"), legend: elLegende,
-        isDark: isDark, gran: function () { return "day"; },
+        isDark: isDark, gran: function () { var r = dieReihe(); return reiheGran(r, r && r.trend); },
         unit: function () { return state.metrik === "visibility" ? "%" : ""; },
         decimals: function () { return state.metrik === "sentiment" ? 0 : 1; },
         tipLabel: function () { return t(state.metrik === "rank" ? "Rank:" : state.metrik === "sentiment" ? "Sentiment:" : "Visibility:"); },
@@ -3406,8 +3528,12 @@
     }
     function renderChart() {
       if (!linie) return;
-      var a = dieAnalyse();
+      /* Die Reihe der gewaehlten Stufe (22.10.); bis sie da ist, wartet nur das Chart. Der Schalter zeigt solange die gewaehlte Stufe und
+         gibt frei nach der zuletzt gezeigten Reihe (die Spanne ist dieselbe). */
+      var a = dieReihe(), k = dieAnalyse();
       segSetzen();
+      granSchalterStellen(elMain.querySelector(".uev-chartwerkzeuge .uev-gran"),
+        a ? a.trend : (k && k.trend), a ? reiheGran(a, a.trend) : state.gran);
       if (!a) { if (state.analyseFehler && !state.analyseLaden) linie.meldung(t("This event could not be loaded.")); else linie.skeleton(); return; }
       var tr = isArr(a.trend) ? a.trend : [];
       if (!tr.length) { linie.empty(); return; }
@@ -3960,12 +4086,16 @@
              Welche, sagt zielKacheln -- dieselbe Liste wie fuer die fertige Reihe und ihr Skelett. */
           '<div class="up-kpiband is-offen ' + zielBandKlasse(zielKacheln(istWatch(dieDetail() || listeEvent(state.eventId))).length) + ' uev-zielkpis"></div>' +
           '<div class="up-box uev-chartbox uev-zielchart">' +
+            /* Die Werkzeuge des Charts in einer Zeile (22.10.): beim Citation Tracking der Modus, dazu die Stufe (ganz rechts, wie in den
+               anderen Charts). Ohne Modus und ohne Stufe (alte Datenbank, Event Tracking) steht die Zeile nicht da (zielWerkzeugeStellen). */
+            '<div class="uev-zielwerkzeuge">' +
             /* Citation Tracking (19.10.): der Share ist die Hauptzahl, die Zahl der Zitate die Option -- bei mehr Prompts steigt sie, ohne dass die Seite besser wird. */
             (istWatch(dieDetail() || listeEvent(state.eventId))
               ? '<div class="up-seg uev-zielmetrik" role="group" aria-label="' + esc(t("Chart shows")) + '">' +
                   '<button type="button" class="up-seg-btn" data-zm="share">' + esc(t("Overall Share")) + '</button>' +
                   '<button type="button" class="up-seg-btn" data-zm="abs">' + esc(t("Overall Citations")) + '</button>' +
                   '<button type="button" class="up-seg-btn" data-zm="urls"' + (URLSER.stand === false ? " hidden" : "") + '>' + esc(t("URL Share")) + '</button></div>' : '') +
+            granSchalterHtml() + '</div>' +
             '<div class="up-line-wrap uev-linewrap uev-ziel-linie"><canvas></canvas></div><div class="up-legend uev-legende"></div></div>' +
           /* Der Leerzustand des ganzen Ziels (zielFuellen, is-leer am Block): statt Kennzahlen,
              Verlauf und Tabelle. Die drei bleiben stehen, nur verborgen -- das Diagramm ueberlebt so
@@ -4021,7 +4151,8 @@
       var lw = sek.querySelector(".uev-ziel-linie");
       zielLinien[zt.id] = UC.makeLine ? UC.makeLine({
         wrap: lw, canvas: lw.querySelector("canvas"), legend: sek.querySelector(".uev-legende"),
-        isDark: isDark, gran: function () { return "day"; },
+        /* Die Stufe der gezeigten Reihe (zielFuellen bzw. urlReiheZeigen setzen sie vor jedem Zeichnen). */
+        isDark: isDark, gran: function () { return sek.__gran || "day"; },
         unit: function () { return zielShare() ? "%" : ""; }, decimals: function () { return zielShare() ? (zielModus() === "urls" ? 2 : 1) : 0; },
         /* yGanz nur fuer die Zahl der Zitate: der Share in Prozent mit einer Stelle skaliert auf seinen Hoechstwert (20.10.: bei 0,8 Prozent stand
            die Achse sonst bis 4, die Linie lag platt am Boden -- yGanz hebt den Hoechstwert auf ein Vielfaches von 4). */
@@ -4036,7 +4167,7 @@
       return sek;
     }
     function renderZiele() {
-      var host = elMain.querySelector('[data-sek="ziele"]'), d = dieDetail(), a = dieAnalyse();
+      var host = elMain.querySelector('[data-sek="ziele"]'), d = dieDetail(), a = dieAnalyse(), ar = dieReihe();
       if (!host) return;
       var liste = regelZiele(d), da = {};
       /* Die Abdeckung VOR dem Zeichnen anfragen: so steht e.laedt schon, wenn abdFuellen einen
@@ -4048,7 +4179,7 @@
         for (var j = 0; j < alle.length; j++) if (alle[j].getAttribute("data-ziel-id") === String(zt.id)) sek = alle[j];
         if (!sek) sek = zielSekAnlegen(host, zt);
         else if (host.querySelectorAll(".uev-zielsek")[i] !== sek) host.appendChild(sek);   // nur umhaengen, wenn die Reihenfolge es braucht: ein Umhaengen nimmt dem Suchfeld den Fokus
-        zielFuellen(sek, zt, zielAuswertung(a, zt, i, liste), a);
+        zielFuellen(sek, zt, zielAuswertung(a, zt, i, liste), a, ar ? zielAuswertung(ar, zt, i, liste) : null, ar);
         abdFuellen(sek, zt);
         quellenStellen(sek);
       });
@@ -4062,9 +4193,12 @@
       });
       host.hidden = !liste.length;
     }
-    function zielFuellen(sek, zt, z, a) {
+    /* z/a: das Ziel in der Analyse fuer Kennzahlen und Tabelle (in jeder Stufe gleich); zr/ar: dasselbe in der Analyse der gewaehlten
+       Stufe, fuer das Chart (22.10.) -- null, solange sie laedt. */
+    function zielFuellen(sek, zt, z, a, zr, ar) {
       var kpis = sek.querySelector(".uev-zielkpis"), linie2 = zielLinien[zt.id], platz = sek.querySelector(".uev-tabinhalt");
       if (istWatch(dieDetail() || listeEvent(state.eventId))) zielMetrikSetzen();
+      var grEl = sek.querySelector(".uev-zielwerkzeuge .uev-gran");
       var n = "ziel-" + zt.id, hinweis = sek.querySelector(".uev-ziel-hinweis");
       /* EV-10: mit gesetztem Filter dazu die leise Zeile, dass "First cited" und "New URLs" ihn nicht
          kennen -- nur, wo die Tabelle und die Kachel auch stehen (nicht im Leerzustand, siehe unten). */
@@ -4094,6 +4228,8 @@
            mit einer Zeile im Fuss wie unten. */
         var fehler = state.analyseFehler && !state.analyseLaden;
         kpis.innerHTML = fehler ? "" : kacheln.map(function () { return UC.kpiKarteSkelett("uev-kpi", { fuss: 1 }); }).join("");
+        granSchalterStellen(grEl, [], state.gran);
+        zielWerkzeugeStellen(sek);
         if (linie2) { if (fehler) linie2.meldung(t("This event could not be loaded.")); else linie2.skeleton(); }
         platz.innerHTML = fehler ? "" : '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
           (UC.skeletonRows ? UC.skeletonRows({ count: 3, rowClass: "up-row up-vrow", cellClass: "up-td",
@@ -4147,15 +4283,23 @@
         }
       };
       kpis.innerHTML = kacheln.map(function (k) { return KACHEL[k](); }).join("");
-      var tage = isArr(z.daily) ? z.daily : [];
+      /* Die Reihe der gewaehlten Stufe (22.10.); laedt sie noch, wartet nur das Chart, der Schalter zeigt die gewaehlte Stufe. */
+      var tage = zr && isArr(zr.daily) ? zr.daily : null, rg = tage ? reiheGran(ar, tage) : state.gran;
       /* Citation Tracking (20.10.): die DB liefert die Tage beider Fenster (vorher und letzte, bei 30 Tagen 61), die Kennzahlen und die Tabelle
          vergleichen sie. Die Linie zeigt nur das gewaehlte Fenster: unter "30 days" stehen 30 Tage auf der Achse, nicht 60. Der Beginn
-         kommt aus der Analyse (actual_first_after), sonst die letzten wtage Tage. */
-      if (wz) {
+         kommt aus der Analyse (actual_first_after), sonst die letzten wtage Tage. Wochen und Monate liefert die DB schon nur fuer dieses
+         Fenster (der erste Bucket beginnt am Montag davor bzw. am Monatsersten, mit den Tagen ab dem Fensterbeginn) -- dort nichts abschneiden. */
+      if (wz && tage && rg === "day") {
         var ab = String(a && a.windows && (a.windows.actual_first_after || a.windows.requested_after_from) || "").slice(0, 10);
         tage = ab ? tage.filter(function (p) { return String(p.day).slice(0, 10) >= ab; }) : tage.slice(-wtage);
       }
-      if (linie2) {
+      sek.__gran = rg;
+      /* Im Modus URL Share stellt urlReiheZeigen den Schalter danach noch einmal nach der Reihe der URLs (sie traegt ihre eigene Stufe). */
+      granSchalterStellen(grEl, tage || (isArr(z.daily) ? z.daily : []), rg);
+      zielWerkzeugeStellen(sek);
+      if (linie2 && !tage) {
+        if (state.analyseFehler && !state.analyseLaden) linie2.meldung(t("This event could not be loaded.")); else linie2.skeleton();
+      } else if (linie2) {
         /* Ohne Tage oder nur mit Tagen ohne Lauf (alles null): der Leerzustand der Charts, nicht ein
            leeres Achsenkreuz (wie renderChart). */
         if (!tage.some(function (p) { return num(p.runs) !== 0 && (num(p.citations) != null || num(p.new_urls) != null); })) linie2.empty();
@@ -4245,10 +4389,18 @@
        (daily[].total_citations): die Summe aller URL-Linien ist so genau "Overall Share". Farben wie Domain Detail (UC.chartFamilie, ab
        der sechsten URL von vorn). URLSER.stand: null unbekannt, true gibt es, false fehlt (PGRST202) -- dann verschwindet der Modus. */
     var URLSER = { stand: null }, urlReihen = {}, URLREIHE_MAX = 10;
+    /* TAG, WOCHE, MONAT (22.10.): die Reihe kommt in der Stufe der Charts (p_granularity, Bucket wie die Analyse) und bringt ihren Nenner
+       je Bucket selbst mit (totals[]: runs, citations, total_citations -- dieselben Zahlen wie die Reihe des Ziels der Analyse, im
+       Rollback je Bucket gleich gemessen). Ohne totals (alte Datenbank) wie bisher der Nenner aus der Tagesreihe des Ziels (tage).
+       Kennt die Funktion p_granularity nicht (PGRST202 MIT dem Parameter), einmal ohne nachfragen (GRAN_DA.reihe); erst PGRST202 OHNE
+       ihn heisst, dass es die Funktion nicht gibt. Eine Reihe einer anderen Stufe wird nicht gezeigt (die Achse waere falsch), sondern
+       das Skelett, bis die passende da ist. */
     function urlReiheZeigen(zt, tage, linie) {
       var rec = urlReihen[zt.id] || (urlReihen[zt.id] = { seq: 0, sig: null, daten: null, laedt: false, fehler: false });
       var body = analyseKoerper();
       body.p_target_id = zt.id; body.p_limit = URLREIHE_MAX;
+      if (granDa() && GRAN_DA.reihe !== false) body.p_granularity = state.gran;
+      var soll = body.p_granularity || "day";
       var sig = JSON.stringify(body);
       if (rec.sig !== sig) {
         rec.sig = sig; rec.laedt = true; rec.fehler = false;
@@ -4256,16 +4408,29 @@
         abdRpc("get_impact_event_url_series_v1", body).then(function (erg) {
           if (seq !== rec.seq) return;
           rec.laedt = false;
-          if (fehltFn(erg)) { URLSER.stand = false; rec.sig = null; zielMetrikSetzen(); }
+          if (fehltFn(erg) && body.p_granularity != null) { GRAN_DA.reihe = false; rec.sig = null; }
+          else if (fehltFn(erg)) { URLSER.stand = false; rec.sig = null; zielMetrikSetzen(); }
           else {
             var d = erg.ok && erg.daten && isArr(erg.daten.urls) && isArr(erg.daten.points) ? erg.daten : null;
-            if (d) { URLSER.stand = true; rec.daten = d; rec.fehler = false; } else rec.fehler = true;
+            if (d) { URLSER.stand = true; rec.daten = d; rec.fehler = false; if (d.granularity != null) GRAN_DA.reihe = true; } else rec.fehler = true;
           }
           if (root.isConnected !== false && state.ansicht === "detail") renderZiele();
         });
       }
-      if (!rec.daten) { if (rec.fehler) linie.meldung(t("The URL lines couldn't be loaded.")); else linie.skeleton(); return; }
-      var d = rec.daten;
+      var d = rec.daten, mitSummen = !!d && isArr(d.totals) && d.totals.length > 0;
+      var dg = d ? reiheGran(d, mitSummen ? d.totals : d.points) : null;
+      var zs = null, alleZs = root.querySelectorAll(".uev-zielsek");
+      for (var i0 = 0; i0 < alleZs.length; i0++) if (alleZs[i0].getAttribute("data-ziel-id") === String(zt.id)) zs = alleZs[i0];
+      var grEl = zs ? zs.querySelector(".uev-zielwerkzeuge .uev-gran") : null;
+      /* Der Schalter nach dem, was zu sehen ist; waehrend die Reihe der gewaehlten Stufe laedt, die gewaehlte. */
+      if (!d || dg !== soll) {
+        granSchalterStellen(grEl, tage, soll);
+        if (rec.fehler) linie.meldung(t("The URL lines couldn't be loaded.")); else linie.skeleton();
+        return;
+      }
+      var reihe = mitSummen ? d.totals : tage;
+      if (zs) zs.__gran = dg;
+      granSchalterStellen(grEl, reihe, dg);
       if (!d.urls.length) { linie.empty({ text: t("No URL was cited in this period.") }); return; }
       var je = {};
       d.points.forEach(function (p) { if (!p) return; var u = String(p.url || ""); (je[u] || (je[u] = {}))[String(p.day || "").slice(0, 10)] = num(p.citations) || 0; });
@@ -4273,15 +4438,22 @@
       /* Fuer den Hover auf einer Zeile der URL-Tabelle (urlZeileHover): welche Linie zu welcher URL gehoert. */
       rec.ids = {};
       d.urls.forEach(function (u, i) { rec.ids[abdUrlSchluessel(String(u && u.url || ""))] = "u" + i; });
-      linie.render({ labels: tage.map(function (p) { return String(p.day).slice(0, 10); }), datasets: d.urls.map(function (u, i) {
+      linie.render({ labels: reihe.map(function (p) { return String(p.day).slice(0, 10); }), datasets: d.urls.map(function (u, i) {
         var url = String(u && u.url || ""), farbe = fam[i % fam.length], m = je[url] || {};
         return { label: pfadText(hostPfad(url)) || url, __id: "u" + i, __baseColor: farbe, borderColor: farbe, __luecken: true,
-          data: tage.map(function (p) {
+          data: reihe.map(function (p) {
             var g = num(p.total_citations);
-            /* Ein Tag ohne Lauf oder ohne Nenner hat keine Zahl -- die Linie bricht dort ab, wie die Linie des Ziels. */
+            /* Ein Bucket ohne Lauf oder ohne Nenner hat keine Zahl -- die Linie bricht dort ab, wie die Linie des Ziels. */
             return num(p.runs) === 0 || !g ? null : Math.round((m[String(p.day).slice(0, 10)] || 0) * 10000 / g) / 100;
           }) };
       }) });
+    }
+    /* Die Werkzeugzeile eines Ziel-Charts (22.10.): weg, wenn nichts darin steht (Event Tracking ohne Stufen), sonst bliebe ihr Abstand. */
+    function zielWerkzeugeStellen(sek) {
+      var w = sek && sek.querySelector(".uev-zielwerkzeuge");
+      if (!w) return;
+      var seg = w.querySelector(".uev-zielmetrik"), gr = w.querySelector(".uev-gran");
+      w.hidden = !seg && (!gr || gr.hidden);
     }
     /* Der Kasten URLs/Sitemap: welcher Teil da ist (URLs nicht im Leerzustand des Ziels, Sitemap nur mit Abdeckung), welcher steht (die Wahl
        je Ziel, sonst URLs), und ob der Kasten ueberhaupt steht. Nach jedem Zeichnen beider Teile. */
@@ -5425,6 +5597,9 @@
       box.classList.toggle("is-bericht", istFertig(ev));
       krumenNeu();
       modusStellen();
+      /* Die Startstufe der Charts vor dem ersten Bild eines neuen Zeitraums (sonst zeigte ein gemerktes Detail kurz die Stufe des vorigen).
+         Kam sie erst mit dem Event (Tiefenlink) und ist die Analyse schon mit der vorigen Stufe bestellt, die neue nachfragen. */
+      if (granStartSetzen() && granDa() && state.analyseSigLief === analyseSig() && !dieReihe()) analyseAnfordern();
       renderKopf(); renderGeplant(); renderHinweise(); renderKpis(); renderBericht(); renderChart(); renderMarkt(); renderZiele(); renderUrls(); renderScope(); renderResp();
       if (anleitung && anleitung.laeuft()) anleitung.neu();
     }
@@ -5444,7 +5619,9 @@
     function detailAblauf() {
       detailUhrId = null;
       if (root.isConnected === false || state.ansicht !== "detail") return;
-      var ohneDetail = !dieDetail(), ohneAnalyse = !dieAnalyse();
+      /* Auch die Reihe der gewaehlten Stufe (22.10.): nach einem Klick auf Woche oder Monat stehen die Kennzahlen schon da, die Charts
+         warten -- ohne Antwort zeigen sie nach der Uhr den Fehler, nie ein Skelett ohne Ende. */
+      var ohneDetail = !dieDetail(), ohneAnalyse = !dieAnalyse() || !dieReihe();
       if (!ohneDetail && !ohneAnalyse) return;
       if (UC.istSichtbar && !UC.istSichtbar(root)) { detailUhrId = setTimeout(detailVerdeckt, 1000); return; }
       if (ohneDetail) { state.detailLaden = false; state.detailFehler = true; }
@@ -5480,9 +5657,13 @@
     function analyseAnfordern(spaet) {
       state.analyseLaden = true; state.analyseFehler = false;
       detailUhr();
+      /* Die Stufe geht mit (22.10.), solange nicht feststeht, dass die Datenbank sie nicht kennt -- NICHT in analyseKoerper: dessen
+         Filter gehen auch an get_impact_event_urls_v1, und die lehnt einen unbekannten Parameter ab. */
+      granStartSetzen();
       var body = analyseKoerper();
+      if (!demo && GRAN_DA.analyse !== false) body.p_granularity = state.gran;
       state.analyseSigLief = analyseSig();
-      rufen("uevAnalysis", body, { sig: state.analyseSigLief }, spaet);
+      rufen("uevAnalysis", body, { sig: state.analyseSigLief, gran: body.p_granularity || null }, spaet);
     }
     /* Das Fenster der Responses: ab dem Event-Tag bis zum Ende des Analysefensters, hoechstens
        heute (Vertrag 3.10: "das gewaehlte Analyse-Fenster uebergeben"). Ab dem Event-Tag und nicht
@@ -5594,6 +5775,8 @@
       if (e.target.closest(".uev-anlegen, [data-uev-create]")) { e.preventDefault(); popupArt(); return; }
       if (e.target.closest(".uev-zurueck, [data-uev-zurueck]")) { zurUebersicht(true); return; }
       if (e.target.closest("[data-uev-detailneu]")) { state.detailLaden = true; renderDetail(); detailAnfordern(); return; }
+      var grb = e.target.closest(".uev-gran [data-gran]");
+      if (grb) { granKlick(grb); return; }
       var zm = e.target.closest("[data-zm]");
       if (zm) { var zw = zm.getAttribute("data-zm"); state.zielMetrik = zw === "abs" || zw === "urls" ? zw : "share"; persist(); zielMetrikSetzen(); renderZiele(); return; }
       var qb = e.target.closest("[data-quelle]");
@@ -9801,6 +9984,10 @@
            "Since event" tragen keine Fensterlaenge, an der sich die Antwort einsortieren liesse. */
         var sig = typeof bestellt === "string" && bestellt ? bestellt : analyseSig(id, fen);
         state.analyse[sig] = a;
+        /* Die Reihen je Stufe (22.10.): unter der Stufe, die die Antwort selbst nennt -- eine spaete Antwort einer anderen Stufe landet
+           so nie unter der gerade gewaehlten. Ohne granularity (alte Datenbank, Bubble, Vorfuehrung) nur state.analyse, wie bisher. */
+        var ag = UC.normGran ? UC.normGran(a.granularity) : null;
+        if (ag) state.analyseJe[sig + "|" + ag] = a;
         persist();
         if (state.ansicht === "detail" && state.eventId === id) renderDetail();
         return true;
@@ -9902,6 +10089,8 @@
       },
       reset: function () {
         state.detail = {}; state.analyse = {}; state.respUrl = ""; state.geloescht = {};
+        /* Reset -> Day (Regel aus core fuer jeden Schalter); die naechste Startstufe kommt wieder aus dem Zeitraum. */
+        state.analyseJe = {}; state.gran = "day"; state.granFuer = "";
         persist();
         zurUebersicht(false);
         return true;

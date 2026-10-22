@@ -882,6 +882,15 @@ Füllung und wird gedimmt.
 Große Form `.up-seg.is-lg` (allein über dem Inhalt, z. B. Brand Detail): 32px hoch, Knöpfe
 `0 16px`. Die Schiene ist in jeder Größe `--vc-switch-rail`, die Pille `--vc-switch-pill`.
 
+**D/W/M an mehreren Charts aus einer Antwort (Impact, 22.10.):** Jeder Chart trägt seinen
+Schalter, ganz rechts in seiner Werkzeugzeile, 8 neben dem nächsten Umschalter. Kommen die Reihen
+aller Charts aus einer Anfrage, teilen sie EINE Stufe: ein Klick stellt alle Schalter um, Kopf,
+Kennzahlen und Tabellen bleiben stehen, nur die Charts zeigen ihr Skelett, bis die Stufe da ist.
+Freigabe, Startstufe und aktive Stufe kommen aus core (`UC.granAvailability`,
+`UC.granFuerZeitraum`, `UC.granAusLieferung`), nie aus der Komponente. Ein Schalter, den die
+Datenbank noch nicht bedienen kann, steht nicht da (`hidden`; core setzt `display`, darum
+`.uev-gran[hidden] { display: none }`).
+
 ### Themenschalter nach Geist (`UC.themeSchalterHtml`, seit 15.10.)
 
 Geists Theme Switcher (vercel.com/geist/theme-switcher), aufgebaut auf `.up-seg` (der gleitende
