@@ -3,8 +3,12 @@
    Migrated from the standalone prompt_research.html with the BEHAVIOUR left alone: every public
    method on window.upstreemPromptResearch, every bubble_fn_* call, every CustomEvent name and
    every payload key is byte-identical to the standalone. What changed is the surface — core
-   tokens, core table/toolbar/dropdown classes — plus one structural change that was asked for:
-   "Previous researches" is no longer an inline panel under the composer but a right-hand sidebar.
+   tokens, core table/toolbar/dropdown classes — plus the structural changes that were asked for.
+   SEIT DEM 22.10. (Lukas: "Layout wie die Startseite von Page Audit"): die Startansicht ist der
+   Startbereich nach page-audit.js (Ueberschrift, ein Satz, Karte mit "Start Research ->", Grafik)
+   und darunter die Liste der Recherchen als Tabelle mit der einen Leiste -- die Seitenleiste
+   "Previous researches" ist weg. Das Eingabefeld samt Einstellungen steht im Popup "Start Research"
+   (UC.makeModal); Lauf (Ladebild) und Ergebnis (Vorschlaege) sind unveraendert eigene Ansichten.
 
    Two deliberate departures from the usual component skeleton, both with precedent:
 
@@ -16,11 +20,7 @@
    2) No feather-icons. The standalone pulled unpkg.com/feather-icons at runtime and called
       feather.replace() after every render; nothing else in this repo takes a third-party runtime
       dependency, and an icon library that has to re-scan the DOM after each paint is exactly the
-      kind of thing that makes a Bubble page feel slow. Every icon is an inline SVG constant.
-
-   The sidebar is a page-level drawer, portalled into <body> for the same reason the opportunities
-   drawer is: position:fixed only means "relative to the viewport" while no ancestor has a
-   transform/filter/will-change, and a Bubble wrapper usually has one. */
+      kind of thing that makes a Bubble page feel slow. Every icon is an inline SVG constant. */
 (function(){
   "use strict";
 
@@ -150,7 +150,11 @@
           '</div>' +
           '<h1 class="up-ph-heading">Prompt Research</h1>' +
           '<p class="up-ph-desc">Find the prompts your audience actually asks AI, and turn the ones worth owning into tracked prompts.</p>' +
-        '</div>';
+        '</div>' +
+        /* Rechts im Kopf der Start einer neuen Recherche, wie "Create Audit" auf Page Audit (22.10.):
+           derselbe Knopf aus core, derselbe Weg wie der Knopf in der Startkarte. */
+        '<div class="upr-kopfrechts"><button class="up-ph-addbtn up-export upr-neuknopf" type="button" data-upr-neu>' +
+          (UC.icon ? UC.icon('plus', 1.8) : '') + '<span>' + UC.esc(UC.t ? UC.t('New Research') : 'New Research') + '</span></button></div>';
       root.insertBefore(head, root.firstChild);
 
       /* Bubble resolves these dynamic expressions AFTER the root is mounted -- it patches the
@@ -195,22 +199,16 @@
       klickWenn: function(){ return root.classList.contains('is-results'); }
     }) : null;
 
-    /* The top-right action belongs to the PAGE, not to the start screen: it was absolutely
-       positioned inside .upr-content, so the new page header pushed it down with it. Lifted to
-       the root, where the CSS pins it to 16px from the top and right like every other page's. */
-    function liftHistoryButton(){
-      /* Any depth: in the template it sits under .upr-shell, not .upr-content -- a child selector
-         quietly matched nothing on the first attempt. */
-      var btn = root.querySelector(".upr-history-entry");
-      if (btn && btn.parentElement !== root) root.appendChild(btn);
-    }
-    /* Called again on a timer because later init steps re-render the shell and put the button back
-       where the markup had it -- verified: the class set on the line below was present while the
-       button had returned to .upr-shell. Cheap and idempotent: once it is a child of the root the
-       call does nothing. */
-    liftHistoryButton();
-    setTimeout(liftHistoryButton, 0);
-    setTimeout(liftHistoryButton, 400);
+    /* DIE SEITENLEISTE "PREVIOUS RESEARCHES" IST WEG (22.10., Lukas: die vorangegangenen Recherchen
+       "nicht mehr in einer Seitenleiste, sondern unten als uebersichtliche Liste"). Die Liste steht
+       jetzt unter dem Startbereich (listeHtml). Leiste, Schleier und die zwei Knoepfe, die sie
+       oeffneten, kommen noch aus dem Markup der Vorlage und werden hier entfernt -- im Markup
+       stehen lassen hiesse, sie per CSS zu verstecken, und dann hingen Fokus und Vorleser weiter
+       an ihnen. */
+    ['.upr-side', '.upr-side-scrim', '.upr-history-entry', '#upr-open-history-results'].forEach(function(sel){
+      var el = root.querySelector(sel);
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    });
 
     /* data-head-top="0" (or any CSS length) trims the space above the meta row, for a placement
        where the Bubble element already brings its own top spacing. Default stays 16px, the value
@@ -270,41 +268,6 @@
   })();
   var acceptAllButton     = root.querySelector('#upr-accept-all-prompts');
   var deleteAllButton     = root.querySelector('#upr-delete-all-prompts');
-  var historyList         = root.querySelector('#upr-history-list');
-  /* grabbed BEFORE the portal move below — after it, root.querySelector no longer reaches
-     anything inside the sidebar. */
-  var historyCountEl      = root.querySelector('#upr-history-count');
-  /* Label + icon are patched from here rather than left to the markup: the root markup lives in a
-     Bubble HTML element the user pasted once, so a change in bubble/prompt_research_bubble.html
-     only reaches a FRESH install. From JS the CDN pin alone carries it. Idempotent by nature. */
-  (function(){
-    /* panelRight aus core: die Liste der Recherchen faehrt von RECHTS herein. Bis zum 22.09.
-       stand hier panelLeft mit einer Spiegelung in der CSS (.upr-leiste-ic, scaleX(-1)) -- der
-       Satz kannte nur eine Seite. Jetzt fuehrt er beide, und eine gedrehte Kopie ist keine
-       Abbildung mehr noetig. Vorher stand hier die runde Sprechblase -- die sagt "Chat" und
-       nicht "Liste, die von der Seite kommt". */
-    /* Die FORMEN aus core, nicht aus einer Kopie: icon() liefert ein ganzes svg, gebraucht wird
-       hier nur sein Inhalt (das svg der Vorlage bleibt stehen, es traegt Groesse und Strichbreite
-       aus der CSS des Knopfes). */
-    var LEISTE = (function(){
-      if (!UC || !UC.icon) return "";
-      var h = document.createElement('div');
-      h.innerHTML = UC.icon('panelRight', 1.7);
-      return h.firstChild ? h.firstChild.innerHTML : "";
-    })();
-    ['#upr-open-history', '#upr-open-history-results'].forEach(function(sel){
-      var btn = root.querySelector(sel);
-      if (!btn) return;
-      var svg = btn.querySelector('svg');
-      if (svg && LEISTE){ svg.innerHTML = LEISTE; }
-      /* Only the text node carries the label -- replacing it directly leaves the <svg> alone,
-         which innerHTML/textContent on the button would not. */
-      for (var i = 0; i < btn.childNodes.length; i++){
-        var n = btn.childNodes[i];
-        if (n.nodeType === 3 && n.nodeValue.trim()) { n.nodeValue = 'Previous Researches'; return; }
-      }
-    });
-  })();
 
   /* Das Zeichen in der Kugel oben in der Mitte: lucide "telescope", dasselbe, das Prompt Research
      jetzt in der Seitenleiste und im Seitenkopf traegt. Vorher stand hier lucide "scan-search" --
@@ -358,106 +321,386 @@
   }
   ladebildSetzen();
 
-  var openHistoryButton   = root.querySelector('#upr-open-history');
-  var closeHistoryButton  = root.querySelector('#upr-close-history');
-  var openHistoryResultsButton = root.querySelector('#upr-open-history-results');
   var backToStartButton   = root.querySelector('#upr-back-to-start');
 
-  /* ---------- sidebar ----------
-     Scrim and panel stay INSIDE this component, exactly the way Ask Mira's "Previous chats" panel
-     works (.am-prev-scrim / .am-prev-panel live in #ask-mira, and #ask-mira.prev-open drives them).
-     They used to be moved into a host div on <body> so the drawer could span the whole page; that
-     host turned out to be a liability. Its harmlessness depended entirely on prompt-research.css
-     being on the page -- that file supplies its display:contents plus the position/hidden rules on
-     scrim and panel -- and without it the closed panel rendered as a plain static block at the end
-     of <body>, adding real height and letting the page scroll past the end of the app. Keeping the
-     panel in the component removes that whole failure mode: whatever the stylesheet does or does
-     not do, it can only ever affect this component's own box, which core.css already bounds.
-     `portal` stays as the name for the element carrying the side-open / side-in state classes --
-     it is the root now, so .upr-root.side-open still matches without a single selector changing. */
+  /* `portal` heisst seit dem 22.10. nur noch die Wurzel, an der das Thema steht (setTheme, syncTheme):
+     die Seitenleiste, fuer die es den Namen gab, ist weg (siehe oben). */
   var portal = root;
-  var sideScrim = root.querySelector('.upr-side-scrim');
-  var sidePanel = root.querySelector('.upr-side');
 
-  /* Same idea for the history button: Ask Mira's "View Previous Chats" sits at the very top right
-     of the component, and this one should too. It is authored inside .upr-content (a centred
-     900px column, so its top-right is not the component's top-right), so move it up to .upr-shell
-     and let the CSS pin it -- that way the Bubble markup does not have to change. */
+  /* ---------- Startbereich und Liste der Recherchen (22.10.) ----------
+     Nach dem Vorbild der Startseite von Page Audit (page-audit.js startGeruest/listeGeruest; Lukas:
+     "Layout wie die Startseite von Page Audit"): oben links Ueberschrift und EIN Satz, darunter die
+     kleinere Karte mit der genaueren Erklaerung und dem Start unten rechts, rechts daneben die Grafik;
+     darunter die Liste der Recherchen als Tabelle mit der einen Leiste (STYLEGUIDE 8b). Beides steht
+     nur im Ruhezustand da -- laeuft eine Recherche oder ist eine geoeffnet, zeigt die Komponente wie
+     bisher das Ladebild bzw. die Vorschlaege unter der Krume "Prompt Research > Begriffe".
+     Die Liste kommt ganz (die DB liefert hoechstens 20 fertige mit offenen Vorschlaegen plus laufende,
+     n8n behaelt ohnehin nur die fuenf juengsten): Suche, Sortierung und Seiten rechnet der Browser. */
+  /* Deutsch fuer die neuen Texte. Nur Schluessel, die core noch nicht fuehrt (Memory
+     "Katalog-Kollision": ein core-Schluessel hier neu wuerde ihn app-weit umbenennen). */
+  if (UC.addMessages && !window.__uprKatalog){
+    window.__uprKatalog = true;
+    UC.addMessages('de', {
+      'New Research': 'Neue Recherche',
+      'Find prompts worth tracking': 'Finde Prompts, die sich zu tracken lohnen',
+      'Discover the questions people ask AI search platforms about your keywords.': 'Entdecke, was Menschen KI-Suchplattformen zu deinen Keywords fragen.',
+      'How a research works': 'So funktioniert eine Recherche',
+      'Enter keywords or a topic and choose a market. We write up to 20 prompts that people in that market are likely to ask, estimate how often each one is asked and match them to your topics. You choose which ones to track. Tracked prompts count toward your plan.':
+        'Gib Keywords oder ein Thema ein und wähle einen Markt. Wir schreiben bis zu 20 Prompts, die Menschen in diesem Markt wahrscheinlich stellen, schätzen, wie oft jeder gestellt wird, und ordnen sie deinen Topics zu. Du entscheidest, welche du trackst. Getrackte Prompts zählen zu deinem Tarif.',
+      'Research': 'Recherche',
+      'Open prompts': 'Offene Prompts',
+      'Search researches…': 'Recherchen durchsuchen …',
+      'Search researches': 'Recherchen durchsuchen',
+      'No research matches your search': 'Keine Recherche passt zu deiner Suche',
+      'Audience': 'Zielgruppe'
+    });
+  }
+  var START = {
+    titel: 'Find prompts worth tracking',
+    unter: 'Discover the questions people ask AI search platforms about your keywords.',
+    karteTitel: 'How a research works',
+    karteSatz: 'Enter keywords or a topic and choose a market. We write up to 20 prompts that people in that market are likely to ask, estimate how often each one is asked and match them to your topics. You choose which ones to track. Tracked prompts count toward your plan.'
+  };
+  /* Die Grafik: dasselbe Feld wie auf Page Audit (fensterHtml dort) -- drei Kaskaden zu je 18 Karten,
+     120 x 84, je Schritt 16 nach rechts und 32 nach unten, Kaskaden 168 auseinander; eine
+     hervorgehoben, die zwei dahinter fehlen, damit sie frei steht, ihre Mitte auf der Mitte der
+     Flaeche; gestaffelt um 18 ms. Statt Browserfenstern sind es Prompts: zwei Textzeilen je Karte, die
+     hervorgehobene traegt das Zeichen der Seite (Teleskop, wie Krume und Ladebild). */
+  function grafikHtml(){
+    var f = { w: 120, h: 84, dx: 16, dy: 32, spalte: 168, n: 18, hl: [1, 4], weg: ['1|5', '1|6'] }, h = '';
+    /* Die Laenge der Zeilen wechselt von Karte zu Karte, sonst liest sich das Feld als Raster und nicht als Text. */
+    var LANG = [[78, 46], [64, 58], [86, 34], [70, 52]];
+    for (var c = 0; c < 3; c++) for (var i = 0; i < f.n; i++){
+      if (f.weg.indexOf(c + '|' + i) >= 0) continue;
+      var hl = c === f.hl[0] && i === f.hl[1], l = LANG[(c + i) % LANG.length];
+      h += '<div class="upr-grafik-karte' + (hl ? ' is-hl' : '') + '" style="left:' + (c * f.spalte + i * f.dx) + 'px;top:' + (i * f.dy) + 'px;animation-delay:' + (i * 18) + 'ms">' +
+        (hl ? '<span class="upr-grafik-ic">' + UC.icon('telescope', 1.8) + '</span>'
+            : '<span class="upr-grafik-zeilen"><i style="width:' + l[0] + '%"></i><i style="width:' + l[1] + '%"></i></span>') + '</div>';
+    }
+    var mx = f.hl[0] * f.spalte + f.hl[1] * f.dx + f.w / 2, my = f.hl[1] * f.dy + f.h / 2;
+    return '<div class="upr-grafik" aria-hidden="true"><div class="upr-grafik-feld" style="transform:translate(' + (-mx) + 'px,' + (-my) + 'px)">' + h + '</div></div>';
+  }
+  function startHtml(){
+    return '<section class="upr-start">' +
+      '<div class="upr-start-text"><h2 class="up-heading up-sec-h">' + esc(tt(START.titel)) + '</h2><p class="up-sec-sub">' + esc(tt(START.unter)) + '</p></div>' +
+      '<div class="up-box upr-startkarte">' +
+        '<span class="upr-sk-titel">' + esc(tt(START.karteTitel)) + '</span>' +
+        '<p class="upr-sk-satz">' + esc(tt(START.karteSatz)) + '</p>' +
+        '<div class="upr-sk-fuss"><button type="button" class="up-btn-pri upr-sk-los" data-upr-neu><span>' + esc(tt('Start Research')) + '</span>' + UC.icon('arrowRightLong', 2) + '</button></div>' +
+      '</div>' +
+      grafikHtml() +
+    '</section>';
+  }
+  /* Die eine Leiste wie auf Page Audit: rechts Suche und Table Settings, der Kopf klebt (makeSticky),
+     Gesamtzeile und Pagination kleben unten (data-kleb-fuss). Links steht nichts -- es gibt keinen
+     Filter, der die Liste aendert. */
+  function listeHtml(){
+    return '<section class="up-root upr-liste" data-flach="yes" data-leiste="yes" data-kleb-fuss="yes" data-sticky-top="16" data-instance="' + esc(instanceId + '_liste') + '">' +
+      '<div class="up-head upr-liste-head">' +
+        '<div class="up-leiste-scope"></div>' +
+        '<div class="up-head-tools">' +
+          '<div class="up-search upr-liste-suche">' +
+            '<button type="button" class="up-iconbtn up-search-btn" aria-label="' + esc(tt('Search')) + '" data-tip="' + esc(tt('Search')) + '">' + UC.icon('search', 2) + '</button>' +
+            '<div class="up-search-box">' +
+              '<input class="up-search-input" type="text" placeholder="' + esc(tt('Search researches…')) + '" autocomplete="off" spellcheck="false" aria-label="' + esc(tt('Search researches')) + '" maxlength="200"/>' +
+              '<button type="button" class="up-search-clear" aria-label="' + esc(tt('Clear search')) + '">' + UC.icon('x', 2.2) + '</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="up-cols">' +
+            '<button type="button" class="up-iconbtn up-cols-btn" data-tip="' + esc(tt('Table Settings')) + '" aria-label="' + esc(tt('Table settings')) + '">' +
+              UC.icon('settings', 2) + '<span class="up-badge upr-cols-badge"></span></button>' +
+            '<div class="up-menu up-cols-menu" role="menu" aria-hidden="true"></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="up-box upr-liste-box"><div class="up-table" role="table" data-table></div></div>' +
+      '<div class="up-foot">' +
+        '<div class="up-pagesize"><span class="up-pagesize-lbl">' + esc(tt('Rows per page')) + '</span>' +
+          '<div class="up-pagesize-seg" role="group" aria-label="' + esc(tt('Rows per page')) + '"></div></div>' +
+        '<div class="up-pager"></div>' +
+      '</div>' +
+    '</section>';
+  }
+  var startAnsicht = document.createElement('div');
+  startAnsicht.className = 'upr-startansicht';
+  startAnsicht.innerHTML = startHtml() + listeHtml();
   (function(){
-    var histEntry = root.querySelector('.upr-history-entry');
-    var shell = root.querySelector('.upr-shell');
-    if (histEntry && shell && histEntry.parentElement !== shell) shell.appendChild(histEntry);
+    var schale = root.querySelector('.upr-shell');
+    if (schale) schale.insertBefore(startAnsicht, resultsStage && resultsStage.parentNode === schale ? resultsStage : schale.firstChild);
   })();
+  var elListe = startAnsicht.querySelector('.upr-liste'), elTable = elListe.querySelector('[data-table]');
+  var elSuche = elListe.querySelector('.upr-liste-suche'), elSucheIn = elListe.querySelector('.up-search-input');
+  if (UC.widthTiers) UC.widthTiers(elListe);
 
-  /* ---------- Hoehe des Startbereichs ----------------------------------------------------
-     justify-content: center zentriert den Inhalt in der Hoehe des Kastens -- und der Kasten war
-     nur so hoch wie sein Inhalt. Damit stand die Ueberschrift direkt unter der Kopfzeile, nicht
-     in der Mitte der Seite: die Zentrierung lief ins Leere.
+  /* Spalten nach der ersten ("research", die Begriffe). art bestimmt, was bei Platzmangel zuerst
+     weicht (SPALTEN_ART in core); die Zahl der offenen Prompts ist die Hauptzahl und weicht nie.
+     Mindestbreiten am Inhalt gemessen (siehe Uebergabe 22.10.). */
+  /* Geschaeftsmodell und Persona stehen zusammen als "Audience" ("B2C, Student"): einzeln brauchten
+     die sieben Spalten bei 1440 (Tabelle 1190) 1223, und core liess der Art nach zuerst Intent und
+     Markt weichen -- die zwei Angaben, an denen man eine Recherche wiedererkennt. */
+  var SPALTEN = [
+    { key: 'prompts', label: 'Open prompts', w: 'minmax(144px, 0.7fr)', min: 144, art: 'zaehl', keep: true },
+    { key: 'market', label: 'Market', w: 'minmax(148px, 0.9fr)', min: 148, art: 'markt' },
+    { key: 'intent', label: 'Intent', w: 'minmax(160px, 0.9fr)', min: 160, art: 'intent' },
+    { key: 'audience', label: 'Audience', w: 'minmax(140px, 0.8fr)', min: 140, art: 'typ' },
+    { key: 'branded', label: 'Branded', w: 'minmax(132px, 0.6fr)', min: 132, art: 'typ' },
+    { key: 'created', label: 'Created', w: 'minmax(128px, 0.8fr)', min: 128, art: 'datum' }
+  ];
+  /* Ein Zeichen im Kopf (core kopfZeichenHtml, CLAUDE.md 1d) traegt eine Spalte, fuer deren Sache die
+     App einen Filter mit Zeichen hat -- dasselbe Zeichen wie dort (filter-bar.js: Market mapPin,
+     Intent signpost, Branded bubbleChatUser). Die uebrigen bleiben ohne, wie in der Prompt-Tabelle. */
+  var KOPF_ZEICHEN = { market: 'mapPin', intent: 'signpost', branded: 'bubbleChatUser' };
+  var ZYKLEN = { research: ['research:asc', 'research:desc'], prompts: ['prompts:desc', 'prompts:asc'], market: ['market:asc', 'market:desc'],
+                 intent: ['intent:asc', 'intent:desc'], audience: ['audience:asc', 'audience:desc'],
+                 branded: ['branded:desc', 'branded:asc'], created: ['created:desc', 'created:asc'] };
+  /* Der Stand der Liste ueber einen Neuaufbau hinweg (Themenwechsel): Suche, Sortierung, Seite. */
+  var L = (vorrat && vorrat.liste) ? vorrat.liste : { query: '', sort: 'created', dir: 'desc', page: 1, pageSize: UC.DEFAULT_PAGE_SIZE || 15 };
+  /* geliefert: die Seite hat die Liste geschickt (sonst Skelett); fehler: sie war nicht lesbar. */
+  var listeGeliefert = false;
+  var lst = { query: L.query, page: L.page, pageSize: L.pageSize, sortField: L.sort, sortDir: L.dir, loading: false, cols: {}, widths: {} };
+  var colsKit = UC.makeColumns({
+    root: elListe, state: lst, columns: SPALTEN, storePrefix: 'upr', instanceId: instanceId,
+    /* Wie Page Audit (firstShare 0.24): die erste Spalte traegt kurze Begriffe, keine Ueberschrift. */
+    firstKey: 'research', firstMin: 240, firstShare: 0.24, noActions: true,
+    badgeSel: '.upr-cols-badge', cellPrefixes: ['up', 'upr', 'up-sum'],
+    nachspann: function(){ return zaehl ? zaehl.schalter() : null; },
+    onChange: function(){ tabelleZeichnen(); }
+  });
+  lst.cols = colsKit.readCols(); lst.widths = colsKit.readWidths();
+  elListe.addEventListener('pointerdown', function(e){ var g = e.target.closest('.up-grip'); if (g) colsKit.startResize(e, g); });
+  var elColsMenu = elListe.querySelector('.up-cols-menu');
+  var colsPop = UC.makePopover({ wrap: elListe.querySelector('.up-cols'), menu: elColsMenu, opener: elListe.querySelector('.up-cols-btn'), group: 'upr-liste-' + instanceId });
+  elColsMenu.addEventListener('click', function(e){
+    if (e.target.closest('[data-colsall]')){ colsKit.selectAllCols(); colsKit.populateCols(); return; }
+    var row = e.target.closest('[data-col]');
+    if (!row) return;
+    colsKit.toggleCol(row.getAttribute('data-col')); colsKit.populateCols();
+  });
+  elListe.querySelector('.up-cols-btn').addEventListener('click', function(e){
+    e.stopPropagation();
+    if (colsPop.isOpen()){ colsPop.close(false); return; }
+    colsKit.populateCols(); colsPop.open();
+  });
+  /* Suche im Browser ueber Begriffe, Markt, Modell, Persona und Intents; Entprellung und
+     Mindestlaenge aus core (Memory "Suche nur mit Kern-Vorgaben"). */
+  var suche = UC.makeSearch({
+    root: elListe, box: elSuche, input: elSucheIn, state: lst, prefix: 'upr', mobileMax: 560,
+    onRender: function(){},
+    onFire: function(p){
+      var q = String(p.query || '').trim();
+      if (q === L.query) return;
+      L.query = q; L.page = 1; lst.page = 1;
+      tabelleZeichnen(); merke();
+    },
+    persist: function(){}
+  });
+  elSucheIn.addEventListener('input', function(){ suche.onInput(); });
+  elSucheIn.addEventListener('keydown', function(e){ if (e.key === 'Escape'){ e.stopPropagation(); suche.toggle(); } });
+  elListe.querySelector('.up-search-btn').addEventListener('click', function(e){ e.stopPropagation(); colsPop.close(false); suche.toggle(); });
+  elListe.querySelector('.up-search-clear').addEventListener('click', function(e){
+    e.stopPropagation();
+    if (elListe.classList.contains('is-searchtakeover')){ suche.toggle(); return; }
+    sucheLeeren();
+    try { elSucheIn.focus(); } catch(e2){}
+  });
+  function sucheLeeren(){
+    elSucheIn.value = ''; lst.query = ''; elSuche.classList.remove('has-text'); suche.cancel();
+    if (L.query){ L.query = ''; L.page = 1; lst.page = 1; tabelleZeichnen(); merke(); }
+  }
+  if (L.query){ elSucheIn.value = L.query; elSuche.classList.add('is-open', 'has-text'); suche.syncTakeover(); }
+  var pager = UC.makePager({
+    root: elListe, state: lst,
+    total: function(){ return gefiltert().length; },
+    onChange: function(){ L.page = lst.page; L.pageSize = lst.pageSize; tabelleZeichnen(); merke(); },
+    onClamp: function(){ L.page = lst.page; tabelleZeichnen(); }
+  });
+  var kopfSort = UC.makeHeadSort({
+    root: elListe, state: lst, cycles: ZYKLEN, defaultSort: { field: 'created', dir: 'desc' },
+    onSort: function(feld, dir){
+      lst.sortField = feld; lst.sortDir = dir; L.sort = feld; L.dir = dir; L.page = 1; lst.page = 1;
+      kopfSort.syncHeadSorters(); tabelleZeichnen(); merke();
+    }
+  });
+  var kleber = UC.makeSticky ? UC.makeSticky(elListe, elListe.querySelector('.up-head')) : null;
+  function kleben(){ if (kleber && !root.classList.contains('is-running') && !root.classList.contains('is-results')) kleber.applySticky(); }
+  if (UC.aufResize) UC.aufResize(kleben); else window.addEventListener('resize', kleben);
+  if (UC.onResize) UC.onResize(elListe, function(){ colsKit.applyCols(); });
+  /* Die Gesamtzeile wie auf Page Audit: links die Anzahl, keine Berechnungen (Minus je Spalte). */
+  var zaehl = UC.makeZaehlZeile ? UC.makeZaehlZeile({
+    root: elListe, nach: elTable, instanceId: instanceId, praefix: 'upr',
+    cols: function(){ return colsKit; }, rechnen: {},
+    spalten: function(){ return SPALTEN.map(function(c){ return c.key; }); },
+    anzahl: function(){ return listeFehler ? null : (listeGeliefert ? gefiltert().length : null); },
+    laedt: function(){ return !listeGeliefert && !listeFehler; }
+  }) : null;
 
-     Der Kasten bekommt jetzt als Mindesthoehe, was unterhalb seiner Oberkante noch auf den
-     Bildschirm passt. GEMESSEN und nicht als fester Wert: ueber der Komponente steht je nach
-     Seite eine verschieden hohe Kopfzeile, und ein geschaetzter Abzug waere auf der einen Seite
-     zu gross und auf der anderen zu klein.
-
-     Mindesthoehe und nicht Hoehe: waechst der Inhalt ueber den Bildschirm hinaus -- aufgeklappte
-     Einstellungen, ein offenes Auswahlfeld -- waechst der Kasten mit und die Seite scrollt.
-     Abgeschnitten wird nichts.
-
-     LUFT_UNTEN ist der Rand, der unter dem Eingabefeld stehen bleibt, damit es nicht auf der
-     Kante klebt. */
-  var LUFT_UNTEN = 28;
-  /* Was zuletzt WIRKLICH geschrieben wurde. Der Grund steht im Trace vom 24.08.: diese Funktion
-     war mit 695ms auf 42 Aufrufe die teuerste der ganzen Seite -- 16.5ms JE AUFRUF, mehr als
-     jede andere. Sie liest (getBoundingClientRect) und schreibt dann (style.minHeight), und
-     genau diese Reihenfolge macht das Layout des Teilbaums bei jedem Aufruf ungueltig; der
-     naechste Aufruf muss es komplett neu rechnen lassen.
-     Der Witz daran: beim Ziehen der BREITE aendert sich weder innerHeight noch die Oberkante des
-     Kastens. Es wurde also 42 Mal derselbe Wert geschrieben, und jeder dieser Schreibzugriffe war
-     reine Layout-Vernichtung ohne jede Wirkung. Ein Vergleich davor kostet nichts und spart
-     alles. */
-  var letzteHoehe = -1;
-  function heldenHoeheJetzt(){
-    var shell = root.querySelector('.upr-shell');
-    if (!shell) return;
-    /* In der Ergebnis- und der Laufansicht setzt die CSS min-height auf 0 und laesst den Inhalt
-       oben beginnen. Ein Inline-Wert wuerde diese Regel schlagen, also hier wieder loeschen. */
-    if (root.classList.contains('is-results') || root.classList.contains('is-running')){
-      if (letzteHoehe !== 0){ shell.style.minHeight = ''; letzteHoehe = 0; }
+  function laeuftNoch(it){ return it.status === 'queued' || it.status === 'running'; }
+  function begriffeText(it){ return (it.keywords && it.keywords.length) ? it.keywords.join(', ') : tt('Untitled research'); }
+  function marktName(it){
+    var a2 = String(it.market || '').toUpperCase();
+    return (UC.landName ? UC.landName(a2, it.market_name) : it.market_name) || it.market_name || a2;
+  }
+  function intentNamen(it){ return (it.intents || []).map(function(k){ return ipName(k); }).filter(Boolean); }
+  function modellText(it){ return it.business_model ? (MODELL[String(it.business_model).toLowerCase()] || String(it.business_model)) : ''; }
+  function personaZeile(it){ return it.persona ? tt(personaLabelVon(it.persona)) : ''; }
+  function zielgruppe(it){ return [modellText(it), personaZeile(it)].filter(Boolean).join(', '); }
+  /* Gefiltert und sortiert -- die Grundlage fuer Seite, Gesamtzeile und Pagination. */
+  function gefiltert(){
+    var q = String(L.query || '').toLowerCase();
+    var rows = !q ? previousResearches.slice() : previousResearches.filter(function(it){
+      return [begriffeText(it), marktName(it), it.market, zielgruppe(it), intentNamen(it).join(' ')].join(' ').toLowerCase().indexOf(q) >= 0;
+    });
+    var fuer = {
+      research: function(it){ return begriffeText(it).toLowerCase(); },
+      prompts: function(it){ return laeuftNoch(it) ? -1 : Number(it.prompt_count) || 0; },
+      market: function(it){ return marktName(it).toLowerCase(); },
+      intent: function(it){ return intentNamen(it).join(', ').toLowerCase(); },
+      audience: function(it){ return zielgruppe(it).toLowerCase(); },
+      branded: function(it){ return it.branded === 'all' ? 2 : it.branded === 'non_branded' ? 1 : 0; },
+      created: function(it){ var d = new Date(it.created_at || 0).getTime(); return isFinite(d) ? d : 0; }
+    }[L.sort] || function(it){ return new Date(it.created_at || 0).getTime() || 0; };
+    var r = L.dir === 'asc' ? 1 : -1;
+    /* Leere Werte stehen in beiden Richtungen hinten. */
+    return rows.map(function(it, i){ return { it: it, v: fuer(it), i: i }; }).sort(function(a, b){
+      var la = a.v === '' || a.v == null, lb = b.v === '' || b.v == null;
+      if (la !== lb) return la ? 1 : -1;
+      if (a.v < b.v) return -r; if (a.v > b.v) return r;
+      return a.i - b.i;
+    }).map(function(x){ return x.it; });
+  }
+  function seite(rows){
+    var n = Math.max(1, Math.ceil(rows.length / L.pageSize));
+    if (L.page > n){ L.page = n; lst.page = n; }
+    return rows.slice((L.page - 1) * L.pageSize, L.page * L.pageSize);
+  }
+  function leer(){ return '<span class="upr-cell-empty">–</span>'; }
+  function wann(v){
+    var d = new Date(String(v || ''));
+    if (!v || isNaN(d.getTime())) return '–';
+    return Date.now() - d.getTime() < 86400000 && UC.relativeTime ? UC.relativeTime(v) : UC.fmtDate(v);
+  }
+  function zelleHtml(key, it){
+    if (key === 'prompts'){
+      /* Laufend: das drehende Zeichen der Popups aus core (upModalDreh), wie der Status "Running" auf Page Audit. */
+      if (laeuftNoch(it)) return '<span class="upr-zustand' + (it.status === 'running' ? ' is-dreht' : '') + '"><span class="upr-zustand-ic" aria-hidden="true">' +
+        UC.icon(it.status === 'running' ? 'loader' : 'clock', 2) + '</span><span class="upr-zustand-t">' + esc(tt(it.status === 'running' ? 'Running' : 'Queued')) + '</span></span>';
+      return '<span class="up-num">' + esc(UC.fmtInt ? UC.fmtInt(it.prompt_count || 0) : String(it.prompt_count || 0)) + '</span>';
+    }
+    if (key === 'market'){
+      if (!it.market) return leer();
+      var name = marktName(it);
+      return '<span class="upr-liste-wert"><span class="upr-market-flag">' + flagHtml(getFlagUrlForMarket(it.market), name) + '</span><span class="upr-liste-txt">' + esc(name) + '</span></span>';
+    }
+    if (key === 'intent'){
+      var arten = (it.intents || []).map(function(k){ return UC.intentArt ? UC.intentArt(k) : null; }).filter(Boolean);
+      if (!arten.length) return '<span class="upr-liste-leise">' + esc(tt('Any intent')) + '</span>';
+      var namen = intentNamen(it);
+      return '<span class="upr-liste-wert"' + (arten.length > 1 ? ' data-tip="' + esc(namen.join(', ')) + '"' : '') + '>' +
+        '<span class="upr-liste-zeichen">' + arten.map(function(a){ return UC.icon(a.icon, 2); }).join('') + '</span>' +
+        '<span class="upr-liste-txt">' + esc(arten.length === 1 ? namen[0] : tt('{n} intents').replace('{n}', String(arten.length))) + '</span></span>';
+    }
+    if (key === 'audience'){ var z = zielgruppe(it); return z ? '<span class="upr-liste-txt" data-tip="' + esc(z) + '">' + esc(z) + '</span>' : leer(); }
+    if (key === 'branded'){
+      /* Wie der Branded-Filter der App (Memory "Branded kennzeichnen"): ohne Marken heisst "Excluded". */
+      if (it.branded === 'all') return '<span class="upr-liste-txt">' + esc(tt('Included')) + '</span>';
+      if (it.branded === 'non_branded') return '<span class="upr-liste-leise">' + esc(tt('Excluded')) + '</span>';
+      return leer();
+    }
+    if (key === 'created') return '<span class="upr-liste-txt"' + (it.created_at ? ' data-tip="' + esc(formatHistoryDate(it.created_at)) + '"' : '') + '>' + esc(wann(it.created_at)) + '</span>';
+    return '';
+  }
+  function zeileHtml(it, index){
+    var laeuft = laeuftNoch(it), name = begriffeText(it);
+    /* Laufend: weder oeffnen (es gibt noch nichts) noch loeschen (n8n liefe ins Leere, Vertrag 14.1). */
+    var h = '<div class="up-row upr-zeile' + (laeuft ? ' is-still' : '') + '" role="row"' + (laeuft ? '' : ' tabindex="0"') +
+      ' data-job-id="' + esc(it.job_id) + '" data-index="' + index + '" aria-label="' + esc(name) + '">' +
+      '<div class="up-td up-td-research" role="cell"><span class="up-zeilenname upr-liste-name" data-tip="' + esc(name) + '">' + esc(name) + '</span>' +
+        (laeuft ? '' : '<button type="button" class="up-btn-sec up-rowbtn upr-liste-weg" data-upr-weg="' + index + '" aria-label="' + esc(tt('Delete research')) + '">' +
+          UC.icon('trash', 2) + '<span>' + esc(tt('Delete')) + '</span></button>') +
+      '</div>';
+    colsKit.visibleCols().forEach(function(c){ h += '<div class="up-td up-td-' + c.key + '" role="cell">' + zelleHtml(c.key, it) + '</div>'; });
+    return h + '</div>';
+  }
+  function kopfZelle(key, label){
+    var an = lst.sortField === key;
+    return '<div class="up-th up-th-' + key + ' is-sortable" role="columnheader" data-sort="' + key + '" tabindex="0"' +
+      (an ? ' aria-sort="' + (lst.sortDir === 'asc' ? 'ascending' : 'descending') + '"' : '') + '>' +
+      (UC.thSortHtml ? UC.thSortHtml(key, an, lst.sortDir) : '') +
+      (KOPF_ZEICHEN[key] && UC.kopfZeichenHtml ? UC.kopfZeichenHtml(KOPF_ZEICHEN[key]) : '') +
+      '<span class="up-th-txt">' + esc(tt(label)) + '</span></div>';
+  }
+  function kopfHtml(){
+    var h = '<div class="up-thead" role="row">' + kopfZelle('research', 'Research');
+    colsKit.visibleCols().forEach(function(c){ h += kopfZelle(c.key, c.label); });
+    return h + '</div>';
+  }
+  function skelett(n){
+    return UC.skeletonRows ? UC.skeletonRows({ count: n, cols: [
+      { w: 170, jitter: 40, cls: 'up-td-research' }, { w: 22, cls: 'up-td-prompts', zahl: true },
+      { w: 96, cls: 'up-td-market' }, { w: 104, cls: 'up-td-intent' }, { w: 90, cls: 'up-td-audience' },
+      { w: 60, cls: 'up-td-branded' }, { w: 84, cls: 'up-td-created' }
+    ] }) : '';
+  }
+  function leerListeHtml(){
+    if (listeFehler) return UC.leseFehlerHtml ? UC.leseFehlerHtml('the research list') : '';
+    if (L.query) return UC.leerHtml({ gefiltert: true, was: 'researches', titel: 'No research matches your search', text: 'Try a shorter search term.', knopf: 'Clear search', knopfAttr: 'data-upr-suche-weg' });
+    /* Ohne Knopf: die Startkarte darueber ist der Start, sonst stuenden drei gleiche Aktionen
+       untereinander (Kopf, Karte, Leerzustand) -- wie auf Page Audit. */
+    return UC.leerHtml({ icon: 'telescope', titel: 'No completed researches yet', text: 'Finished researches show up here so you can reopen them.' });
+  }
+  var sichtbar = [];
+  function tabelleZeichnen(){
+    var kopf = kopfHtml();
+    if (!listeGeliefert && !listeFehler){
+      sichtbar = [];
+      elTable.innerHTML = kopf + '<div class="up-tbody">' + skelett(4) + '</div>';
+    } else {
+      var rows = listeFehler ? [] : gefiltert();
+      sichtbar = seite(rows);
+      elTable.innerHTML = kopf + (sichtbar.length ? '<div class="up-tbody" role="rowgroup">' + sichtbar.map(zeileHtml).join('') + '</div>' : leerListeHtml());
+    }
+    colsKit.applyCols(); colsKit.syncColsBadge(); kopfSort.syncHeadSorters();
+    elListe.classList.toggle('is-onepage', !listeGeliefert);
+    lst.page = L.page; lst.pageSize = L.pageSize;
+    pager.renderPageSize(); pager.renderPager();
+    if (zaehl) zaehl.zeichnen();
+    if (elListe.classList.contains('up-sticky') && kleber && kleber.syncTheadOffset) kleber.syncTheadOffset();
+    kleben();
+  }
+  elListe.addEventListener('click', function(e){
+    if (e.target.closest('.up-grip')) return;
+    var ps = e.target.closest('[data-pagesize]');
+    if (ps){ pager.setPageSize(Number(ps.getAttribute('data-pagesize'))); return; }
+    if (e.target.closest('.up-page-prev')){ pager.goToPage(lst.page - 1); return; }
+    if (e.target.closest('.up-page-next')){ pager.goToPage(lst.page + 1); return; }
+    var pg = e.target.closest('.up-page[data-page]');
+    if (pg){ pager.goToPage(Number(pg.getAttribute('data-page'))); return; }
+    var so = e.target.closest('.up-th.is-sortable[data-sort]');
+    if (so){ kopfSort.headSortClick(so.getAttribute('data-sort')); return; }
+    if (e.target.closest('[data-upr-suche-weg]')){ sucheLeeren(); return; }
+    var weg = e.target.closest('[data-upr-weg]');
+    if (weg){
+      e.stopPropagation();
+      var dItem = sichtbar[Number(weg.getAttribute('data-upr-weg'))];
+      if (!dItem) return;
+      senden('bubble_fn_deletePromptResearch', 'upstreem:delete-prompt-research', { job_id: dItem.job_id, keywords: dItem.keywords || [], market: dItem.market || null });
       return;
     }
-    var oben = shell.getBoundingClientRect().top;
-    var frei = Math.round((window.innerHeight || 0) - oben - LUFT_UNTEN);
-    /* Ein verdeckter Tab meldet 0 -- dann lieber nichts setzen als eine 0-Hoehe schreiben. */
-    if (!(frei > 0)) return;
-    var wert = Math.max(520, frei);
-    if (wert === letzteHoehe) return;          /* unveraendert -> NICHT anfassen */
-    letzteHoehe = wert;
-    shell.style.minHeight = wert + 'px';
-  }
-  /* Und zusaetzlich nur einmal pro Bild, nicht pro Resize-Ereignis: der Listener unten hing ohne
-     jede Drosselung an 'resize', und das feuert schneller als der Schirm zeichnet. rAF plus
-     Timer als Netz -- rAF allein feuert in einem Hintergrund-Tab nicht, dann bliebe die Hoehe
-     stehen. */
-  var heldenHoeheSetzen = (function(){
-    var raf = 0, t = 0;
-    function lauf(){
-      if (raf){ try { cancelAnimationFrame(raf); } catch(e){} raf = 0; }
-      if (t){ clearTimeout(t); t = 0; }
-      heldenHoeheJetzt();
-    }
-    return function(){
-      if (raf || t) return;
-      if (window.requestAnimationFrame) raf = requestAnimationFrame(lauf);
-      t = setTimeout(lauf, 32);
-    };
-  })();
-  heldenHoeheSetzen();
-  /* Bubble baut die Seite in Schueben auf: die Kopfzeile ueber der Komponente steht erst spaeter,
-     und damit verschiebt sich die Oberkante des Kastens noch. */
-  [120, 400, 1200].forEach(function(ms){ setTimeout(heldenHoeheSetzen, ms); });
-  /* Gedrosselt: die Funktion misst und schreibt eine Hoehe. */
-  if (window.UpstreemCore && window.UpstreemCore.aufResize) window.UpstreemCore.aufResize(heldenHoeheSetzen, { hoehe: true });
-  else window.addEventListener('resize', heldenHoeheSetzen);
+    var z = e.target.closest('.up-row.upr-zeile[data-index]');
+    if (z && !z.classList.contains('is-still')) emitOpenResearchJob(sichtbar[Number(z.getAttribute('data-index'))]);
+  });
+  elListe.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var so = e.target.closest && e.target.closest('.up-th.is-sortable[data-sort]');
+    if (so){ e.preventDefault(); kopfSort.headSortClick(so.getAttribute('data-sort')); return; }
+    var z = e.target.closest && e.target.closest('.up-row.upr-zeile[data-index]');
+    if (z && e.target === z && !z.classList.contains('is-still')){ e.preventDefault(); emitOpenResearchJob(sichtbar[Number(z.getAttribute('data-index'))]); }
+  });
+  /* Start einer neuen Recherche: Knopf im Kopf und Knopf der Startkarte, beide ueber denselben Weg. */
+  root.addEventListener('click', function(e){
+    var neu = e.target.closest && e.target.closest('[data-upr-neu]');
+    if (neu && root.contains(neu) && !neu.disabled) neueRecherche();
+  });
 
   /* ---------- state (unchanged from the standalone) ---------- */
   var fallbackMarkets = [
@@ -499,9 +742,12 @@
   var fehlerText = '';
   function fehlerZeigen(txt){
     fehlerText = String(txt || '');
-    var zeile = root.querySelector('.upr-fehler');
+    /* Das Feld steht seit dem 22.10. entweder im Popup oder an seinem Ruheplatz in der Wurzel:
+       gesucht wird darum am Feld selbst (neuEl), nicht an der Wurzel. */
+    var ort = neuEl || root;
+    var zeile = ort.querySelector('.upr-fehler');
     if (!zeile && fehlerText){
-      var schale = root.querySelector('.upr-composer-shell');
+      var schale = ort.querySelector('.upr-composer-shell');
       if (!schale || !schale.parentNode) return;
       zeile = document.createElement('div');
       zeile.className = 'up-fehlerzeile upr-fehler';
@@ -527,7 +773,8 @@
       mitTags: acceptWithTags,
       aktion: root.classList.contains('is-action-loading'),
       eingabe: eingabe.stand(),
-      fehler: fehlerText, listeFehler: listeFehler
+      fehler: fehlerText, listeFehler: listeFehler,
+      liste: L
     };
   }
 
@@ -676,6 +923,9 @@
     var isRunning = name === 'running';
     var isResults = name === 'results';
     var isError = name === 'error';
+    /* Laeuft eine Recherche (eigener Start, anderer Tab, Neuaufbau), geht das Popup zu -- die
+       Knoten des Felds sind danach wieder in der Wurzel und werden unten mit gesperrt. */
+    if (isRunning) popupZu();
     /* Beim UEBERGANG in "running" gesetzt, nicht bei jedem Aufruf: ein zweites setRunning() aus
        Bubble liess den Balken sonst von vorn anfangen. Ein Neuaufbau setzt laufSeit vorher aus
        dem Vorrat, dann bleibt es hier stehen. */
@@ -690,8 +940,8 @@
     root.classList.toggle('is-running', isRunning);
     root.classList.toggle('is-results', isResults);
     root.classList.toggle('is-error', isError);
-    /* Nach dem Umschalten, nicht davor: die Funktion liest genau diese Klassen. */
-    heldenHoeheSetzen();
+    /* Zurueck in der Startansicht: die Leiste der Liste neu messen (sie war verborgen). */
+    if (!isRunning && !isResults) setTimeout(kleben, 0);
     if (krumen) krumen.zeichnen();
     if (textarea) textarea.disabled = isRunning;
     if (settingsToggle) settingsToggle.disabled = isRunning;
@@ -700,7 +950,7 @@
       startButton.innerHTML = (isRunning ? ICON.search : ICON.send) + '<span>' + (isRunning ? 'Researching' : 'Start Research') + '</span>';
       startButton.classList.toggle('is-running', isRunning);
     }
-    root.querySelectorAll('.upr-chip, .upr-dd-trigger, .upr-dd-option, .upr-dd-clear, .upr-dd-search').forEach(function(el){ if ('disabled' in el) el.disabled = isRunning; });
+    root.querySelectorAll('.upr-chip, .upr-dd-trigger, .upr-dd-option, .upr-dd-clear, .upr-dd-search, [data-upr-neu]').forEach(function(el){ if ('disabled' in el) el.disabled = isRunning; });
     if (isRunning && settingsPanel){ settingsPanel.classList.remove('is-open', 'is-steht'); if (settingsToggle){ settingsToggle.setAttribute('aria-expanded', 'false'); settingsToggle.classList.remove('is-active'); } }
     if (tableMenu && !isResults) tableMenuPop.close();
     if (isRunning) startLoaderAnim(); else stopLoaderAnim();
@@ -792,7 +1042,7 @@
     if (krumen) krumen.zeichnen();
   }
 
-  /* ---------- previous researches (sidebar) ---------- */
+  /* ---------- die Liste der Recherchen: Umformen und Zeichnen (Aufbau oben, listeHtml) ---------- */
   function normalizeResearchMeta(item){
     var input = item.research_input && typeof item.research_input === 'object' ? item.research_input : {};
     var rawKeywords = item.keywords != null ? item.keywords : (item.input_keywords != null ? item.input_keywords : (item.keywords_raw != null ? item.keywords_raw : input.keywords));
@@ -822,24 +1072,6 @@
      personaText() allein gaebe "Smb owner". */
   var PERSONA = { student: 'Student', entrepreneur: 'Entrepreneur', smb_owner: 'SMB owner', parent_family: 'Parent / Family', tech_enthusiast: 'Tech enthusiast' };
   function personaLabelVon(p){ return PERSONA[String(p || '')] || personaText(p); }
-  function historyMeta(item){
-    var markt = String(item.market || '').toUpperCase();
-    var name = item.market_name || markt;
-    var modell = item.business_model ? (MODELL[String(item.business_model).toLowerCase()] || String(item.business_model)) : '';
-    /* Die Vorgaben (14.10.): je gewaehltem Intent sein Zeichen, bei erlaubten Marken das
-       Brands-Zeichen dahinter -- leise, mit den Namen im Tooltip. Die Spalte steht immer da,
-       auch leer, aus demselben Grund wie die zwei daneben. */
-    var arten = (item.intents || []).map(function(k){ return UC.intentArt ? UC.intentArt(k) : null; }).filter(Boolean);
-    var vorgaben = arten.map(function(a){ return UC.icon ? UC.icon(a.icon, 2) : ''; }).join('') +
-      (item.branded === 'all' && UC.icon ? UC.icon('squareStack', 2) : '');
-    var vorgabenTip = arten.map(function(a){ return UC.intentName ? UC.intentName(a) : a.label; }).join(', ') +
-      (item.branded === 'all' ? (arten.length ? ', ' : '') + (UC.t ? UC.t('Branded prompts') : 'Branded prompts') : '');
-    var vorgabenHtml = '<span class="upr-history-vorgaben"' + (vorgabenTip ? ' data-tip="' + esc(vorgabenTip) + '"' : '') + '>' + vorgaben + '</span>';
-    /* Beide Spalten immer, auch leer -- sonst rutschte das Modell in die Spalte des Marktes. */
-    return vorgabenHtml + '<span class="upr-history-markt"' + (markt ? ' data-tip="' + esc(name) + '"' : '') + '>' +
-        (markt ? '<span class="upr-market-flag">' + flagHtml(getFlagUrlForMarket(markt), name) + '</span>' + esc(markt) : '') + '</span>' +
-      '<span' + (modell ? ' data-tip="' + esc(UC.t ? UC.t('Business model') : 'Business model') + '"' : '') + '>' + esc(modell) + '</span>';
-  }
   function formatHistoryDate(value){
     if (!value) return 'recently';
     try { return new Intl.DateTimeFormat(undefined, { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(value)); }
@@ -854,109 +1086,21 @@
     /* Gemerkt erst NACH dem Umformen: eine Liste, an der normalizeResearchMeta scheitert, darf
        nicht in den Vorrat -- sonst scheiterte jeder Neuaufbau ein zweites Mal an ihr. */
     gemerkterVerlauf = Array.isArray(rawItems) ? rawItems : [];
+    listeGeliefert = true;
     merke();
-    if (historyCountEl) historyCountEl.textContent = String(previousResearches.length);
-    if (!historyList) return;
-    if (!previousResearches.length){
-      /* Die Uhr stand als eigene Zeichnung in dieser Datei; dieselben zwei Formen fuehrt die
-         Sammlung als "clock". */
-      historyList.innerHTML = UC.leerHtml({
-        icon: "clock", titel: "No completed researches yet",
-        text: "Finished researches show up here so you can reopen them."
-      });
-      return;
-    }
-    historyList.innerHTML = previousResearches.map(function(item, index){
-      var headline = (item.keywords && item.keywords.length) ? item.keywords.join(', ') : 'Untitled research';
-      /* Laufend: weder oeffnen (es gibt noch nichts) noch loeschen (n8n liefe ins Leere, Vertrag
-         14.1). */
-      var laeuft = item.status === 'queued' || item.status === 'running';
-      var zeile = laeuft
-        ? '<span class="upr-history-lauf">' + esc(UC.t ? UC.t('Running') : 'Running') + '</span>'
-        : esc(Number(item.prompt_count || 0) === 1 ? tt('1 prompt') : tt('{n} prompts').replace('{n}', item.prompt_count || 0));
-      /* Die Persona in der Datumszeile, nicht rechts: dort stehen nur Markt und Modell in festen
-         Spalten (10.10.), und eine Persona ist zu lang und zu selten fuer eine eigene. */
-      var persona = personaText(item.persona);
-      if (persona) zeile += ', ' + esc(persona);
-      return '<div class="upr-history-item' + (laeuft ? ' is-still' : '') + '" data-history-index="' + index + '"' +
-        (laeuft ? ' data-oeffnen="nein"' : ' role="button" tabindex="0"') + '>' +
-        '<div class="upr-history-main">' +
-          '<div class="upr-history-headline" data-tip="' + esc(headline) + '">' + esc(headline) + '</div>' +
-          '<div class="upr-history-date">' + esc(formatHistoryDate(item.created_at)) + ', ' + zeile + '</div>' +
-        '</div>' +
-        '<div class="upr-history-meta">' + historyMeta(item) + '</div>' +
-        /* Die Knoepfe liegen in derselben Zelle wie Markt und Modell und kommen beim Hover an deren
-           Stelle. Ein laufender Eintrag hat keine (nichts zu oeffnen, Loeschen liefe ins Leere). */
-        (laeuft
-          ? ''
-          : '<div class="upr-history-actions">' +
-              '<button class="up-iconbtn upr-history-delete" type="button" data-action="delete-research" data-job-id="' + esc(item.job_id) + '" data-history-index="' + index + '" data-tip="Delete research" aria-label="Delete research">' + ICON.trash + '</button>' +
-              '<button class="up-iconbtn" type="button" data-action="open-research" data-history-index="' + index + '" data-tip="Open research" aria-label="Open research">' + ICON.gotoArrow + '</button>' +
-            '</div>') +
-      '</div>';
-    }).join('');
+    tabelleZeichnen();
   }
 
-  /* ---------- sidebar open/close ----------
-     Same drawer contract the rest of the app uses: slide in from the right, backdrop, page-height,
-     z-index below the host app's own drawers, and #main locked while it is open. */
-  var sideCloseTimer = null;
-  var mainScrollTop = 0;
-  function lockPageScroll(on){
-    var main = document.getElementById('main');
-    if (!main) return;
-    var locked = main.classList.contains('drawer-locked');
-    if (on && !locked){ mainScrollTop = main.scrollTop; main.classList.add('drawer-locked'); }
-    else if (!on && locked){
-      if (document.querySelector('[id^="drawer-"].open')) return;   // one of the app's own is still up
-      main.classList.remove('drawer-locked');
-      main.scrollTop = mainScrollTop;
-    }
-  }
-  /* Everything about this panel -- that it is fixed, that it slides, that it is hidden while
-     closed -- lives in prompt-research.css. Without that file the component silently does nothing
-     visible, which is impossible to tell apart from a broken button. Probe once and say so
-     plainly. The sentinel is .upr-side's own position:fixed -- a bare div has position:static, so
-     if the stylesheet is on the page this comes back "fixed" and nothing is reported. */
-  var _cssWarned = false;
-  function stylesheetPresent(){
-    try {
-      var probe = document.createElement('div');
-      probe.className = 'upr-side';
-      probe.style.cssText = 'left:-9999px;top:-9999px';
-      document.body.appendChild(probe);
-      var ok = window.getComputedStyle(probe).position === 'fixed';
-      probe.parentNode.removeChild(probe);
-      return ok;
-    } catch(_){ return true; }   // can't tell -> don't cry wolf
-  }
-  function warnIfNoStylesheet(){
-    if (_cssWarned || stylesheetPresent()) return;
-    _cssWarned = true;
-    if (window.console) console.error(
-      '[prompt-research] prompt-research.css is NOT loaded on this page. The script runs, but ' +
-      'every panel it owns (previous-researches sidebar, dropdowns) has no styling and cannot ' +
-      'show itself. Check that the loader injects prompt-research.css and that the data-cdn-pin ' +
-      'commit actually serves it.');
-  }
-
+  /* openHistory und closeHistory bleiben als Aufrufe (Vertrag), seit die Liste keine Seitenleiste
+     mehr ist (22.10.): open zeigt die Startansicht und holt die Liste ins Bild, close hat nichts mehr
+     zu schliessen. Waehrend eines Laufs bleibt das Ladebild stehen, wie vorher die Leiste dort
+     nicht aufging (kein Knopf). */
   function openHistoryPanel(){
-    warnIfNoStylesheet();
-    if (!sidePanel) return;
-    if (sideCloseTimer){ clearTimeout(sideCloseTimer); sideCloseTimer = null; }
-    portal.setAttribute('data-theme', isDark() ? 'dark' : 'light');
-    portal.classList.add('side-open');
-    void sidePanel.offsetWidth;
-    requestAnimationFrame(function(){ portal.classList.add('side-in'); });
-    lockPageScroll(true);
-    if (historyList) historyList.scrollTop = 0;
+    if (root.classList.contains('is-running')) return;
+    if (root.classList.contains('is-results')) setResearchState('idle');
+    try { elListe.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch(e){}
   }
-  function closeHistoryPanel(){
-    if (!sidePanel) return;
-    portal.classList.remove('side-in');
-    lockPageScroll(false);
-    sideCloseTimer = setTimeout(function(){ portal.classList.remove('side-open'); }, 200);
-  }
+  function closeHistoryPanel(){}
 
   /* ---------- skeleton ---------- */
   function renderSkeletonRows(){
@@ -985,7 +1129,6 @@
     updateResearchContext(item); renderResultsContext(); closeHistoryPanel();
     ergebnisSkelett();
     setResearchState('results');
-    if (historyList) historyList.scrollTop = 0;
     var payload = { job_id: item.job_id, keywords: item.keywords, market: item.market, market_name: item.market_name, business_model: item.business_model, persona: item.persona };
     senden('bubble_fn_openPromptResearchJob', 'upstreem:open-prompt-research-job', payload);
   }
@@ -1045,10 +1188,6 @@
       if (isLoading){ if (!el.hasAttribute('data-upr-prev-disabled')) el.setAttribute('data-upr-prev-disabled', el.disabled ? '1' : '0'); el.disabled = true; }
       else if (el.hasAttribute('data-upr-prev-disabled')){ el.disabled = el.getAttribute('data-upr-prev-disabled') === '1'; el.removeAttribute('data-upr-prev-disabled'); }
     });
-    if (sidePanel) sidePanel.querySelectorAll('button').forEach(function(el){
-      if (isLoading){ if (!el.hasAttribute('data-upr-prev-disabled')) el.setAttribute('data-upr-prev-disabled', el.disabled ? '1' : '0'); el.disabled = true; }
-      else if (el.hasAttribute('data-upr-prev-disabled')){ el.disabled = el.getAttribute('data-upr-prev-disabled') === '1'; el.removeAttribute('data-upr-prev-disabled'); }
-    });
     merke();
   }
 
@@ -1072,7 +1211,7 @@
     var hiddenCount = Math.max(tags.length - visibleTags.length, 0);
     if (!suggestionsEl) return;
     if (isFirstCall){
-      var skeleton = root.querySelector('#upr-suggestions-skeleton');
+      var skeleton = feldEl('#upr-suggestions-skeleton');
       if (skeleton) skeleton.style.display = 'none';
       suggestionsEl.style.display = '';
     }
@@ -1221,7 +1360,7 @@
                name_en: String(m.name || '').trim(),
                flag_url: fremdBild(String(m.flag_url || '').trim()), prompt_count: Number(m.prompt_count || 0) };
     });
-    var dd = root.querySelector('#upr-market-dd');
+    var dd = feldEl('#upr-market-dd');
     if (!dd) return;
     var list = dd.querySelector('[data-dd-list]');
     if (!list) return;
@@ -1397,11 +1536,15 @@
   });
   brandedZeigen();
 
+  /* Was ein Start mitschickt -- fuer den runden Knopf im Feld (ohne Seite, Bubble) und fuer das Popup. */
+  function startDaten(){
+    return { keywords: textarea ? textarea.value.trim() : '', intents: eingabe.intents ? eingabe.intents() : [],
+             market: state.market, market_alpha2: state.market_alpha2,
+             market_alpha3: state.market_alpha3, market_name: state.market_name, business_model: state.business_model, persona: state.persona,
+             branded: state.branded };
+  }
   if (startButton) startButton.addEventListener('click', function(){
-    var payload = { keywords: textarea ? textarea.value.trim() : '', intents: eingabe.intents ? eingabe.intents() : [],
-                    market: state.market, market_alpha2: state.market_alpha2,
-                    market_alpha3: state.market_alpha3, market_name: state.market_name, business_model: state.business_model, persona: state.persona,
-                    branded: state.branded };
+    var payload = startDaten();
     updateResearchContext(payload); renderResultsContext();
     if (root.__uprStartLocked) return;
     root.__uprStartLocked = true; setTimeout(function(){ root.__uprStartLocked = false; }, 1200);
@@ -1414,6 +1557,95 @@
     senden('bubble_fn_startPromptResearch', 'upstreem:start-prompt-research', payload);
   });
 
+  /* ---------- Neue Recherche: das Eingabefeld im Popup (22.10.) ----------
+     Wie "Create Audit" auf Page Audit: der Knopf der Startkarte und "New Research" im Kopf oeffnen
+     ein Popup nach Geists Modal (UC.makeModal) -- Titel und Hauptknopf "Start Research", Cancel
+     links. Darin steht das bisherige Eingabefeld samt Einstellungen (Markt, Modell, Intent und
+     Persona, Branded) und den Vorschlaegen aus den Topics, als DIESELBEN Knoten: sie wandern beim
+     Oeffnen ins Popup und beim Schliessen zurueck an ihren Ruheplatz (.upr-content, verborgen). So
+     behalten sie ihre Zuhoerer, ihren Stand und den Vorrat fuer den Neuaufbau.
+     Der Start wartet im Popup (Knopf mit Spinner), bis die Seite antwortet: setRunning schliesst es
+     und zeigt das Ladebild, setError schreibt den Grund unter das Feld, die Eingabe bleibt stehen.
+     Die zwei Pruefungen, die die Seite selbst macht (Begriffe, Markt), laufen schon hier -- sonst
+     blitzte fuer einen leeren Start erst das Ladebild auf. */
+  var neuEl = document.createElement('div');
+  neuEl.className = 'upr-neu';
+  var heim = root.querySelector('.upr-content');
+  (function(){
+    var feld = root.querySelector('.upr-composer-area');
+    var vorschlaege = document.createElement('div');
+    vorschlaege.className = 'up-topicmodal-field upr-neu-vorschlaege';
+    vorschlaege.innerHTML = '<span class="up-topicmodal-label">' + esc(tt('Suggested keywords')) + '</span>';
+    var sk = root.querySelector('#upr-suggestions-skeleton');
+    if (sk) vorschlaege.appendChild(sk);
+    if (suggestionsEl) vorschlaege.appendChild(suggestionsEl);
+    if (feld) neuEl.appendChild(feld);
+    neuEl.appendChild(vorschlaege);
+    if (heim) heim.appendChild(neuEl);
+  })();
+  var neuPopup = null, startWartet = false;
+  /* Ein Teil des Felds, wo es gerade steht (im Popup oder am Ruheplatz in der Wurzel): Maerkte,
+     Themen und setMarket koennen kommen, waehrend das Popup offen ist. */
+  function feldEl(sel){ return (neuEl && neuEl.querySelector(sel)) || root.querySelector(sel); }
+  function neueRecherche(){
+    if (neuPopup || !UC.makeModal || root.classList.contains('is-running') || root.classList.contains('is-action-loading')) return;
+    fehlerZeigen('');
+    neuPopup = UC.makeModal({
+      titel: 'Start Research',
+      unter: 'Enter keywords or a topic and choose a market.',
+      isDark: isDark,
+      knoepfe: [
+        { id: 'ab', text: 'Cancel', art: 'sec' },
+        { id: 'ok', text: 'Start Research', art: 'pri', aktion: function(a){ startAusPopup(a); return false; } }
+      ],
+      onClose: function(){
+        neuPopup = null; startWartet = false;
+        Array.prototype.forEach.call(neuEl.querySelectorAll('.upr-dd'), function(d){ if (d.__pop) d.__pop.close(); });
+        if (heim) heim.appendChild(neuEl);
+        fehlerZeigen('');
+        merke();
+      }
+    });
+    neuPopup.karte.classList.add('upr-neu-karte');
+    neuPopup.body.appendChild(neuEl);
+    /* Die Einstellungen stehen im Popup immer offen da (der Regler, der sie auf- und zuklappte, ist
+       dort ausgeblendet): jeder Wert ist vor dem Start zu sehen. */
+    if (settingsPanel) settingsPanel.classList.add('is-open', 'is-steht');
+    einstellungenLage();
+  }
+  function popupZu(){
+    if (!neuPopup) return;
+    neuPopup.busy('ok', false);
+    neuPopup.schliessen();
+  }
+  function startAusPopup(a){
+    if (startWartet || root.__uprStartLocked) return;
+    var d = startDaten();
+    if (!String(d.keywords || '').replace(/[,\s]/g, '')){
+      fehlerZeigen(tt('Enter at least one keyword to start a research.'));
+      try { var ed = neuEl.querySelector('.upr-tag-editor'); if (ed) ed.focus(); } catch(e){}
+      return;
+    }
+    if (!(d.market_alpha2 || d.market)){ fehlerZeigen(tt('Choose a market in the research settings.')); return; }
+    /* Ohne Seite (Bubble) wie bisher: das Feld startet selbst und geht sofort ins Ladebild. */
+    if (!lokal){ a.schliessen(); if (startButton) startButton.click(); return; }
+    updateResearchContext(d); renderResultsContext();
+    root.__uprStartLocked = true; setTimeout(function(){ root.__uprStartLocked = false; }, 1200);
+    /* Was im Feld stand: scheitert die Recherche spaeter, holt setError es zurueck. */
+    vorStart = eingabe.stand();
+    fehlerZeigen('');
+    startWartet = true;
+    a.busy('ok', true);
+    senden('bubble_fn_startPromptResearch', 'upstreem:start-prompt-research', d);
+  }
+  /* Ein Fehler, waehrend das Popup zu ist (die Recherche lief schon): als Meldung aus core, der erste
+     Satz als Titel ohne Punkt, der Rest darunter -- wie die anderen Meldungen dieser Seite. */
+  function fehlerMelden(msg){
+    var m = String(msg || '').trim(), i = m.indexOf('. ');
+    if (!m || !UC.toast) return;
+    UC.toast((i > 0 ? m.slice(0, i) : m).replace(/\.$/, ''), { kind: 'error', desc: i > 0 ? m.slice(i + 2) : '' });
+  }
+
   if (resultsBody) resultsBody.addEventListener('click', function(e){
     var btn = e.target.closest('button[data-action]');
     if (!btn) return;
@@ -1423,34 +1655,6 @@
     emitPromptAction(btn.getAttribute('data-action'), { suggested_prompt_id: item.id, suggested_prompt_ids: [item.id] });
   });
 
-  if (historyList) historyList.addEventListener('click', function(e){
-    var deleteBtn = e.target.closest('button[data-action="delete-research"]');
-    if (deleteBtn){
-      e.stopPropagation();
-      var jobId = deleteBtn.getAttribute('data-job-id');
-      var dIndex = Number(deleteBtn.getAttribute('data-history-index'));
-      var dItem = previousResearches[dIndex];
-      var payload = { job_id: jobId, keywords: dItem ? dItem.keywords : [], market: dItem ? dItem.market : null };
-      senden('bubble_fn_deletePromptResearch', 'upstreem:delete-prompt-research', payload);
-      return;
-    }
-    var itemRow = e.target.closest('.upr-history-item');
-    if (!itemRow || itemRow.getAttribute('data-oeffnen') === 'nein') return;
-    emitOpenResearchJob(previousResearches[Number(itemRow.getAttribute('data-history-index'))]);
-  });
-  if (historyList) historyList.addEventListener('keydown', function(e){
-    if (e.key !== 'Enter' && e.key !== ' ') return;
-    var itemRow = e.target.closest('.upr-history-item');
-    if (!itemRow || itemRow.getAttribute('data-oeffnen') === 'nein') return;
-    e.preventDefault();
-    emitOpenResearchJob(previousResearches[Number(itemRow.getAttribute('data-history-index'))]);
-  });
-
-  if (openHistoryButton) openHistoryButton.addEventListener('click', openHistoryPanel);
-  if (openHistoryResultsButton) openHistoryResultsButton.addEventListener('click', openHistoryPanel);
-  if (closeHistoryButton) closeHistoryButton.addEventListener('click', closeHistoryPanel);
-  if (sideScrim) sideScrim.addEventListener('click', closeHistoryPanel);
-  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && portal.classList.contains('side-open')) closeHistoryPanel(); });
   if (backToStartButton) backToStartButton.addEventListener('click', function(){ setResearchState('idle'); closeHistoryPanel(); });
 
   if (tableMenuTrigger) tableMenuTrigger.addEventListener('click', function(e){ e.stopPropagation(); tableMenuPop.toggle(); });
@@ -1612,6 +1816,10 @@
     editor.setAttribute('role', 'textbox');
     editor.setAttribute('aria-multiline', 'true');
     editor.setAttribute('data-placeholder', placeholder);
+    /* Im Popup das erste Fokusziel (core modalVerhalten sucht Felder und [data-upm-fokus]): ohne das
+       fand es zuerst das Suchfeld im noch geschlossenen Markt-Menue. */
+    editor.setAttribute('data-upm-fokus', '');
+    editor.setAttribute('aria-label', tt('Keywords'));
     textarea.style.display = 'none';
     composerEl.insertBefore(editor, textarea);
 
@@ -1804,16 +2012,32 @@
   /* Ab hier gehoert die API dieser Wurzel -- und damit auch der Vorrat (siehe BESITZER oben). */
   BESITZER[instanceId] = root;
   var api = window.upstreemPromptResearch = window.upstreemPromptResearch || {};
-  api.setRunning  = function(){ setResearchState('running'); };
+  /* setRunning nach einem Start aus dem Popup: das Feld wird geleert (wie frueher beim Klick), das
+     Popup geht zu (setResearchState). */
+  api.setRunning  = function(){
+    if (startWartet){ startWartet = false; eingabe.setzen([]); }
+    setResearchState('running');
+  };
   api.setIdle     = function(){ setResearchState('idle'); };
   /* setError(text): zurueck zum Start, und der Satz steht unter dem Feld. Lief gerade eine
      Recherche an, kommt der Inhalt des Feldes zurueck. Ohne Text wie immer: nur zurueck. */
+  /* Seit dem Popup (22.10.): wartet ein Start darin, steht der Grund unter dem Feld und das Popup
+     bleibt offen. Sonst (die Recherche lief schon) zurueck zur Startansicht, die Eingabe kommt ins
+     Feld zurueck, und der Grund kommt als Meldung -- das Feld selbst ist dann nicht zu sehen. */
   api.setError    = function(msg){
+    if (startWartet && neuPopup){
+      startWartet = false;
+      neuPopup.busy('ok', false);
+      if (typeof msg === 'string') fehlerZeigen(msg);
+      merke();
+      return;
+    }
     var lief = root.classList.contains('is-running');
     setResearchState('idle');
     if (lief && vorStart && vorStart.length) eingabe.setzen(vorStart);
     vorStart = null;
-    if (typeof msg === 'string') fehlerZeigen(msg);
+    fehlerZeigen('');
+    if (typeof msg === 'string') fehlerMelden(msg);
     merke();
   };
   /* Die Liste der Recherchen konnte nicht geladen werden: der Lesefehler aus core statt "noch
@@ -1822,8 +2046,7 @@
     listeFehler = true;
     gemerkterVerlauf = null;
     previousResearches = [];
-    if (historyCountEl) historyCountEl.textContent = '0';
-    if (historyList) historyList.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml('the research list') : '';
+    tabelleZeichnen();
     setActionLoading(false);
   };
   api.setComplete = function(data){ Array.isArray(data) ? renderSuggestedPrompts(data) : setResearchState('idle'); };
@@ -1887,7 +2110,7 @@
     }
     return false;
   }
-  function applyMarket(v){ return selectDdValue(root.querySelector('#upr-market-dd'), v); }
+  function applyMarket(v){ return selectDdValue(feldEl('#upr-market-dd'), v); }
   function coerce(v){
     if (typeof v === 'string'){
       var t = v.trim();
@@ -1905,12 +2128,12 @@
      pending dance is needed -- but it DOES have a visible control, which the first version of this
      missed: it only wrote state.business_model, leaving the trigger stuck on "B2C". */
   api.setBusinessModel = function(v){
-    selectDdValue(root.querySelector('.upr-dd[data-name="business_model"]'), coerce(v));
+    selectDdValue(feldEl('.upr-dd[data-name="business_model"]'), coerce(v));
   };
   api.setPersona = function(v){
     var s = String(v == null ? '' : v).trim();
     state.persona = s;
-    var el = root.querySelector('.upr-persona-input, #upr-persona, [data-name="persona"] input');
+    var el = feldEl('.upr-persona-input, #upr-persona, [data-name="persona"] input');
     if (el && 'value' in el) el.value = s;
     /* Der Knopf nennt Intent und Persona zusammen (ipBeschriften). */
     if (!selectDdValue(ipDd, s)) ipBeschriften();
@@ -1919,7 +2142,10 @@
 
   renderSuggestions();
   renderMarketDropdown();
-  renderPreviousResearches([]);
+  /* Die Liste als Skelett, bis die Seite sie schickt (setPreviousResearches) oder meldet, dass sie
+     nicht lesbar war (setHistoryError) -- vorher stand hier eine leere Liste, und "noch keine
+     Recherchen" sah aus wie geladen. */
+  tabelleZeichnen();
   setResearchState('idle');
 
   /* ---------- Neuaufbau: der Stand des Vorgaengers ----------

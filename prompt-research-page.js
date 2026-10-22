@@ -7,15 +7,17 @@
    Vertrag C in bubble/seiten_db_vorschlag_2.md (Abschnitte 7 und 14); Anfragen und Umformung in
    prompt-research-data.js.
 
-   LISTE (Previous Researches): prompt_research_jobs_v1 beim Aufbau, nach jeder Aenderung und bei
-   jedem Teamwechsel. Laufende und gescheiterte Recherchen stehen mit drin.
+   LISTE (Previous Researches, seit 22.10. eine Tabelle unter dem Startbereich statt einer
+   Seitenleiste): prompt_research_jobs_v1 beim Aufbau, nach jeder Aenderung und bei jedem
+   Teamwechsel. Laufende und gescheiterte Recherchen stehen mit drin.
    MAERKTE UND THEMEN kommen aus den Ablagen von core (setUpstreemAllMarkets, setUpstreemTopics),
    nicht aus einem eigenen Aufruf.
    START: start-job (Edge Function) legt den Job an und stoesst n8n an. Danach hoert die Seite auf
    dessen Realtime-Kanal (prompt_research_job:<id>, seit 10.10. statt Abfragen im Takt): bei
-   success holt sie einmal prompt_research_result_v1, bei error steht der Grund unter dem
-   Eingabefeld. Laeuft beim Aufbau schon ein Job (Neuladen, anderer Tab), zeigt die Seite das
-   Ladebild und hoert auf seinen Kanal.
+   success holt sie einmal prompt_research_result_v1, bei error kommt der Grund als Meldung.
+   Seit dem 22.10. wartet der Start im Popup "Start Research": setRunning nach angenommenem Start
+   schliesst es, setError davor schreibt den Grund unter das Feld darin. Laeuft beim Aufbau schon
+   ein Job (Neuladen, anderer Tab), zeigt die Seite das Ladebild und hoert auf seinen Kanal.
    ENTSCHEIDEN: Track / Ignore / alle -> prompt_research_decide_v1, danach das Ergebnis neu. Das
    Kontingent aus der Antwort geht an setUpstreemQuota, und die Maerkte und Themen der App melden
    sich ueber die bekannten Signale neu (marketsChanged, topicsChanged).
@@ -273,7 +275,9 @@
       var body = D.startBody(tm, d);
       if (!body.params.keywords.length) { pr("setError", t("Enter at least one keyword to start a research.")); return; }
       if (!body.params.market) { pr("setError", t("Choose a market in the research settings.")); return; }
-      if (gem.lauf) return;
+      /* Seit dem Popup (22.10.) wartet der Start dort auf eine Antwort -- still zurueckzukehren hiesse,
+         der Knopf drehte fuer immer. */
+      if (gem.lauf) { pr("setError", t("A research is already running for this team")); return; }
       if (!UC.edge) { pr("setError", t("Prompt research is not available yet.")); return; }
       gem.offen = null;
       /* Ein Platzhalter, bis die Antwort die Id bringt: ein zweiter Start in dieser Zeit tut nichts. */
@@ -313,6 +317,9 @@
           jobsLaden(true);
           return;
         }
+        /* Angenommen: das Popup geht zu, das Ladebild kommt (vorher setzte die Komponente das schon
+           beim Klick, 22.10. wartet sie auf diese Antwort). */
+        pr("setRunning");
         /* Der erste Beitritt zum Kanal laedt die Liste (mit dem neuen Job darin). */
         kanalAuf(lauf);
       });
