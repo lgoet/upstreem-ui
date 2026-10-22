@@ -80,6 +80,8 @@
     laedtNicht:  "We could not load your connected apps.",
     nochmal:     "Try again",
     neu:         "Refresh",
+    bauen:       "What you can build",
+    inClaude:    "Open in Claude",
     fragTitel:   "Revoke Access",
     fragSatz:    "{name} will no longer be able to read your upstreem data. You can connect it again at any time.",
     fragKnopf:   "Revoke Access",
@@ -115,9 +117,21 @@
      kleine Workflows statt Fragen (Lukas: "build custom workflows with your data"; Vorbild Peec und Profound, die ihren
      MCP-Server mit Arbeitsablaeufen bewerben: Wochenbericht, Seiten mit Verlusten, Kundenbericht, Content-Plan). */
   var FRAGEN = {
-    web:  ["Write our weekly AI visibility brief: what changed and why?", "Which pages lost citations this month, and what should we update first?"],
     code: ["Turn this week's visibility data into a client report.", "Build a content plan from the prompts where competitors win."]
   };
+  /* "What you can build" (Lukas 23.10., Variante B im Canvas): die Auswahlkarte aus core (UC.wkKarteHtml, kompakt), ein
+     Klick oeffnet Claude mit dem Auftrag im Chat (claude.ai/new?q=, wie "Open in Claude" in Create with AI). Der Auftrag
+     steht nicht auf der Karte; er nennt upstreem, damit Claude den Connector auch nimmt. Titel und Satz uebersetzt
+     wkKarteHtml selbst, den Auftrag die Seite beim Klick (Deutsch fuer deutsche Nutzer). Nie Teamdaten. */
+  var WORKFLOWS = [
+    { titel: "Weekly AI visibility brief", satz: "Every Monday: what changed in AI search, and why.", icon: "newspaper",
+      auftrag: "Use upstreem to write our weekly AI visibility brief: what changed and why?" },
+    { titel: "Pages losing citations", satz: "Find the pages AI answers cite less, and what to update first.", icon: "chartBarDec",
+      auftrag: "Use upstreem to find the pages that lost citations this month, and what we should update first." },
+    { titel: "Competitor snapshot", satz: "Before a pitch or launch: where competitors win and you don't.", icon: "swords",
+      auftrag: "Use upstreem to show where competitors win in AI answers for our top topics, and why." }
+  ];
+  var CLAUDE_NEU = "https://claude.ai/new?q=";
 
   /* Ein Ladezustand muss IMMER enden (CLAUDE.md 2). Wie oauth-consent.js. */
   var LADEN_MAX = 15000;
@@ -178,6 +192,13 @@
               '<h2 class="up-heading up-sec-h">' + esc(t(T.startH)) + '</h2>' +
               '<p class="up-sec-sub">' + esc(t(T.startS)) + '</p>' +
             '</div>' + grafikHtml() +
+          '</section>' +
+          '<section class="umc-abschnitt umc-wf">' +
+            '<div class="up-sec-head"><div class="up-sec-titles"><h2 class="up-heading up-sec-h">' + esc(t(T.bauen)) + '</h2></div></div>' +
+            '<div class="umc-wf-raster">' + WORKFLOWS.map(function(w, i){
+              return UC.wkKarteHtml ? UC.wkKarteHtml({ titel: w.titel, satz: w.satz, icon: w.icon, kompakt: true, klasse: "umc-wk",
+                daten: { "umc-wf": String(i), tip: t(T.inClaude) } }) : "";
+            }).join("") + '</div>' +
           '</section>' +
           '<section class="umc-abschnitt">' +
             '<div class="up-sec-head"><div class="up-sec-titles"><h2 class="up-heading up-sec-h">' + esc(t(T.verbinden)) + '</h2></div></div>' +
@@ -294,7 +315,8 @@
           /* Die ID kennt nur die App: bis zu ihrer Antwort steht an ihrer Stelle ein Skelett in der Groesse des Kastens. */
           id ? kopie("id", id) : '<span class="up-tsk-bar umc-sk-kasten" aria-hidden="true"></span>') +
         schritt(4, satz("Click {a}, sign in to upstreem and choose {b}.", { a: b("Connect"), b: b("Allow access") })) +
-        schritt(5, satz("Start a chat and try a workflow:"), fragenHtml(FRAGEN.web));
+        /* Die Auftraege stehen als Karten oben ("What you can build"); hier nur der Verweis, sonst stuenden sie zweimal da. */
+        schritt(5, satz("Start a chat and try one of the workflows above."));
     }
     function anleitungZeichnen(){
       var html = schritteHtml();
@@ -429,8 +451,14 @@
     }
 
     root.addEventListener("click", function(e){
-      var el = e.target && e.target.closest ? e.target.closest("[data-umc-reiter], [data-umc-kopie], [data-umc-widerruf], [data-umc-nochmal], [data-umc-neu]") : null;
+      var el = e.target && e.target.closest ? e.target.closest("[data-umc-reiter], [data-umc-kopie], [data-umc-widerruf], [data-umc-nochmal], [data-umc-neu], [data-umc-wf]") : null;
       if (!el || !root.contains(el)) return;
+      if (el.hasAttribute("data-umc-wf")){
+        var wf = WORKFLOWS[Number(el.getAttribute("data-umc-wf"))];
+        /* Neuer Tab ohne Verweis auf diese Seite (noopener): Claude bekommt nur den festen Auftrag, nie Daten der Seite. */
+        if (wf) window.open(CLAUDE_NEU + encodeURIComponent(t(wf.auftrag)), "_blank", "noopener,noreferrer");
+        return;
+      }
       if (el.hasAttribute("data-umc-reiter")){
         var r = el.getAttribute("data-umc-reiter");
         if (r !== gem.reiter){ gem.reiter = r; anleitungZeichnen(); }

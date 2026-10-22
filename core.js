@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261198;
+  var BUILD = 20261199;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -693,6 +693,18 @@
     "Filter": "Filtern",
     "Research settings": "Recherche einstellen",
     /* Seite MCP Server (mcp-server.js, 22.10.): ganze Saetze, die Namen aus Claudes Oberflaeche als {a}/{b}/{c} (bleiben englisch). */
+    "What you can build": "Was du damit bauen kannst",
+    "Open in Claude": "In Claude öffnen",
+    "Weekly AI visibility brief": "Wochenbericht zur AI Visibility",
+    "Every Monday: what changed in AI search, and why.": "Jeden Montag: was sich in der AI-Suche geändert hat und warum.",
+    "Pages losing citations": "Seiten, die Zitate verlieren",
+    "Find the pages AI answers cite less, and what to update first.": "Seiten, die AI seltener zitiert, und was zuerst dran ist.",
+    "Competitor snapshot": "Wettbewerber-Überblick",
+    "Before a pitch or launch: where competitors win and you don't.": "Vor einem Pitch oder Launch: wo Wettbewerber gewinnen und du nicht.",
+    "Use upstreem to write our weekly AI visibility brief: what changed and why?": "Schreib mit upstreem unseren Wochenbericht zur AI Visibility: Was hat sich geändert und warum?",
+    "Use upstreem to find the pages that lost citations this month, and what we should update first.": "Finde mit upstreem die Seiten, die diesen Monat Zitate verloren haben, und was wir zuerst überarbeiten sollten.",
+    "Use upstreem to show where competitors win in AI answers for our top topics, and why.": "Zeig mit upstreem, wo Wettbewerber bei unseren wichtigsten Topics in AI-Antworten gewinnen, und warum.",
+    "Start a chat and try one of the workflows above.": "Starte einen Chat und probier einen der Workflows oben aus.",
     "Build custom workflows with your data": "Eigene Workflows mit deinen Daten bauen",
     "Connect upstreem to Claude and turn your live AI visibility data into weekly briefs, competitor snapshots and content plans.": "Verbinde upstreem mit Claude und mach aus deinen aktuellen Daten zur AI Visibility Wochenberichte, Wettbewerber-Überblicke und Content-Pläne.",
     "Connect an app": "App verbinden",
@@ -716,13 +728,10 @@
     "Name it {a} and paste the server URL.": "Nenne ihn {a} und füge die Server-URL ein.",
     "Open {a} and paste the OAuth Client ID.": "Öffne {a} und füge die OAuth Client ID ein.",
     "Click {a}, sign in to upstreem and choose {b}.": "Klicke auf {a}, melde dich bei upstreem an und wähle {b}.",
-    "Start a chat and try a workflow:": "Starte einen Chat und probier einen Workflow aus:",
     "Add upstreem in your terminal.": "Füge upstreem in deinem Terminal hinzu.",
     "Start Claude Code, run {a}, choose {b} and then {c}.": "Starte Claude Code, führe {a} aus, wähle {b} und dann {c}.",
     "Sign in to upstreem in the browser window that opens and choose {a}.": "Melde dich im Browserfenster, das sich öffnet, bei upstreem an und wähle {a}.",
     "Try a workflow:": "Probier einen Workflow aus:",
-    "Write our weekly AI visibility brief: what changed and why?": "Schreib unseren Wochenbericht zur AI Visibility: Was hat sich geändert und warum?",
-    "Which pages lost citations this month, and what should we update first?": "Welche Seiten haben diesen Monat Zitate verloren, und was sollten wir zuerst überarbeiten?",
     "Turn this week's visibility data into a client report.": "Mach aus den Daten dieser Woche einen Bericht für unseren Kunden.",
     "Build a content plan from the prompts where competitors win.": "Erstell einen Content-Plan aus den Prompts, bei denen Wettbewerber vorne liegen.",
     /* Fehlermeldungen der Prompt-Research-Seite (Audit 14.10.: standen nur englisch da). */

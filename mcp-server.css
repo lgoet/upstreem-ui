@@ -176,3 +176,15 @@
 .umc-neu[aria-disabled="true"], .umc-neu[aria-disabled="true"]:hover { cursor: default; }
 .umc-apps [data-umc-apps] .up-table { transition: opacity var(--up-t-2) var(--up-ease); }
 .umc-apps [data-umc-apps].is-umc-dimm .up-table { opacity: .5; pointer-events: none; }
+
+/* "What you can build" (Lukas 23.10., Canvas Variante B): drei Auswahlkarten aus core (.up-wk.is-kompakt, 160 hoch) in einer
+   Reihe, 16 Abstand wie die Kacheln der App. Die Karte bringt Rand, Flaeche, Pfeil und die gekippte Tafel selbst mit, hier
+   steht nur das Raster.
+   Die kompakte Karte traegt Titel in EINER Zeile und den Satz in hoechstens ZWEI, sonst laeuft der Text auf die weisse
+   Tafel (gemessen bei 246 breit: Satz endet bei 136, Tafel beginnt bei 115). Gemessen: Englisch passt ab 280, Deutsch ab
+   320 -- drei nebeneinander also erst ab 3 x 320 + 2 x 16 = 992 Breite des Abschnitts, darunter untereinander (Frage an den
+   Abschnitt, nicht an das Fenster: die Seitenleiste nimmt je nach Zustand 0 bis 250). */
+.umc-wf { container-type: inline-size; }
+.umc-wf-raster { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.umc-wf-raster .up-wk { width: 100%; }
+@container (max-width: 991px) { .umc-wf-raster { grid-template-columns: minmax(0, 1fr); } }
