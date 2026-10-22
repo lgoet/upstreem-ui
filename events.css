@@ -999,6 +999,13 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 /* Erste Zelle wie Page Audit (.upa-seite): Logo-Kachel, daneben Name (.up-zeilenname) und die Beschreibung der Karte als leise zweite
    Zeile; Compact einzeilig ohne sie. */
 .uev-tabbox .up-td-name { gap: 10px; }
+/* SCHRIFT DER ZELLEN (23.10., Lukas: "einige Zellen-Font-Sizes in der Tabelle sind viel zu gross (Status, Tracking, Prompts, Created)"):
+   .up-td setzt in core keine Schrift, und jeder Text ohne eigene Klasse erbte die 16 der Wurzel -- gemessen Event date, Status, Tracking,
+   "All active" und Created mit 16/400 neben Zahl und Name in 14/500. Jetzt 14/400 in der Textfarbe wie die Textzellen der Liste von Page
+   Audit (.upa-z1 Last audit, .upa-zustand Result). Was eine eigene Schrift traegt, bleibt dabei: Zahl (.up-num), Name (.up-zeilenname),
+   Typ (.up-marke), die leise zweite Zeile (.uev-tz-text, 12) und die Logos im Stapel. An der Zelle statt an jeder Textklasse, damit kein
+   neuer Text wieder auf 16 faellt. */
+.uev-tabbox .up-td { font-size: var(--up-fs-l); }
 .uev-tz-name { display: flex; flex: 1 1 auto; flex-direction: column; gap: 2px; min-width: 0; }
 .uev-tz-text { min-width: 0; font-size: var(--up-fs-s); color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .uev-abschnitt.is-dense .uev-tz-text { display: none; }
@@ -1130,6 +1137,12 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-pa-start.is-busy { opacity: 1; pointer-events: none; }
 .uev-pa-start .up-btn-spin { width: 13px; height: 13px; border-width: 1.5px; }
 .uev-pa-start.is-busy > svg { display: none; }
+/* GESPERRT, EINE URL ALLE 10 MINUTEN (23.10., events.js paSperrBis): aria-disabled statt disabled, damit der Tooltip mit dem Grund kommt.
+   Leise wie die gesperrten Knoepfe im Kopf von Page Audit (.upa-kopfrechts .up-btn-sec[aria-disabled]: Schrift --vc-fourth, kein Zeiger),
+   der Hover aendert nichts (core: .up-btn-sec:hover Flaeche, .up-rowbtn:hover Schrift). Ueber die Farbe und nicht die Deckkraft: die
+   Deckkraft gehoert dem Erscheinen beim Ueberfahren der Zeile (core .up-rowbtn, die Sitemap oben). Laufend (is-busy) bleibt er, wie er ist. */
+.uev-root .uev-pa-start[aria-disabled="true"]:not(.is-busy),
+.uev-root .uev-pa-start[aria-disabled="true"]:not(.is-busy):hover { color: var(--vc-fourth); background: transparent; cursor: default; }
 /* Die Angabe als leise Marke aus core (.up-marke.is-leise, 22.10. abends, Lukas: "pack den bitte aber in einen kleinen Chip"): Hoehe 20,
    Polster 7, Radius, Schrift 11/600 und Flaeche kommen von dort, wie die Marken der Seite Page Audit (.upa-marke) und "First cited" in
    derselben Tabelle. Hier nur, was die Marke nicht kennt: das Zeichen davor, nach der Schrift der Marke eine Stufe kleiner als vorher
