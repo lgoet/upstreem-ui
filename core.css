@@ -2628,6 +2628,8 @@
        instead of leaving page size hugging the left edge and page nav the right. See
        syncFootWrap() in UC.makePager, shared by every table using this footer. */
     .up-foot.is-wrapped { justify-content: center; }
+    /* Im Leer- und Fehlerzustand keine Pagination (22.10., core.js ohneDatenZeilen in makePager). */
+    .up-foot.is-leer { display: none; }
     .up-foot.is-wrapped .up-pagesize { flex: 1 1 100%; justify-content: center; }
     .up-foot.is-wrapped .up-pager { flex: 1 1 100%; justify-content: center; margin-left: 0; }
 
@@ -9422,6 +9424,9 @@ html[data-usn-modus="hint"] .up-ph-heading.is-knapp > .up-ph-crumb:first-child:n
   box-shadow: inset 0 1px 0 var(--vc-border); background: var(--up-surface);
 }
 .up-sumrow.is-aus { display: none; }
+/* Im Leer- und Fehlerzustand keine Gesamtzeile (22.10., core.js ohneDatenZeilen; Lukas zu Page Audit Frage 10). Getrennt von
+   is-aus: das ist die Wahl des Nutzers im Display-Menue, die bleibt, wenn die Zeilen zurueckkommen. */
+.up-sumrow.is-leer { display: none; }
 /* Rechts das Auslauf-Polster wie jede Zeile der flachen Tabelle, links nichts (core.css "DIE
    FLACHE TABELLE": das Zellpolster 12 ist der Abstand zur Kante). */
 .up-root.up-root[data-flach="yes"] .up-sumrow { padding-left: 0; padding-right: var(--up-flach-aus); }
