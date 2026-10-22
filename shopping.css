@@ -87,18 +87,23 @@
 .ush-summary.is-sk { flex-direction: column; align-items: flex-start; gap: 10px; }
 
 /* ---- Kennzahlen ----------------------------------------------------------------------------------- */
-.ush-kpi .up-kpi-label { display: inline-flex; align-items: center; gap: 6px; }
 /* DAS ERKLAER-ZEICHEN (05.10.: "Tooltips bei den Top KPIs!"). Es ist .up-th-info aus core -- und das
-   zeigt sich nur unter .up-th:hover, also im Tabellenkopf. In der Kachel und im Abschnittskopf
-   blieb es dadurch dauerhaft unsichtbar. Hier erscheint es wie in url-detail (.uud-kpi:hover):
-   beim Ueberfahren der Kachel bzw. des Kopfs, dicht hinter dem Wort statt am rechten Rand. */
-.ush-root .ush-kpi .up-th-info, .ush-root .ush-sec-head .up-sec-h .up-th-info { margin-left: 0; }
-.ush-root .ush-kpi:hover .up-th-info, .ush-root .ush-sec-head:hover .up-th-info { opacity: 1; }
+   zeigt sich nur unter .up-th:hover, also im Tabellenkopf. Im Abschnittskopf erscheint es beim
+   Ueberfahren des Kopfs, dicht hinter dem Wort. Die KACHELN tragen es seit dem 22.10. abends aus
+   core (kpiKarte explain, .up-kpi-label.has-info): oben rechts, sichtbar beim Ueberfahren der
+   Kachel, wie in Page Audit -- die eigene Regel fuer das Etikett (inline-flex, Zeichen hinter dem
+   Wort) ist dafuer weg; sie haette auch das Etikett des Skeletts auf die Hoehe des Balkens (12)
+   gedrueckt, die Kachel mit Text ist 17 hoch. */
+.ush-root .ush-sec-head .up-sec-h .up-th-info { margin-left: 0; }
+.ush-root .ush-sec-head:hover .up-th-info { opacity: 1; }
 .ush-kpifehler { grid-column: 1 / -1; }
 /* Die Sparkline (UC.sparkHtml) steht rechts in der Zeile, hinter dem Trend. */
 .ush-kpi .up-kpi-trend { flex: 1 1 auto; }
 .ush-spark { display: inline-flex; margin-left: auto; align-self: center; }
-.ush-kpi-marke { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+/* vertical-align: top (22.10. abends gemessen): sonst stand das Kaestchen auf der Grundlinie des Logo-Buchstabens, die Zahl
+   von "Top competitor" lag 3.35 tiefer als in den Nachbarkacheln und die Wertzeile wurde 28.65 statt 28 hoch -- das Skelett
+   (82) sprang beim Laden um 0.65. */
+.ush-kpi-marke { display: inline-flex; align-items: center; gap: 8px; min-width: 0; vertical-align: top; }
 .ush-kpi-text { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ush-kpi .up-kpi-val { min-width: 0; max-width: 100%; }
 

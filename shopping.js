@@ -196,7 +196,8 @@
     "Top Product": "Top-Produkt", "Rising": "Steigend", "Declining": "Fallend", "New": "Neu", "Gone": "Nicht mehr gesehen",
     "Not enough history yet": "Noch zu wenig Verlauf", "Product Movement needs a comparison period. It appears once there is data from before this range.":
       "Die Produktbewegung braucht einen Vergleichszeitraum. Sie erscheint, sobald es Daten von vor diesem Zeitraum gibt.",
-    "No comparison period available": "Kein Vergleichszeitraum verfügbar", "vs. {period}": "ggü. {period}",
+    /* Die Saetze in den Erklaerkarten der Kacheln (22.10. abends, vorher Fusszeilen darunter, siehe kachelKarte). */
+    "No comparison period available.": "Kein Vergleichszeitraum verfügbar.", "Change compared with {period}.": "Veränderung im Vergleich zu {period}.",
     "No products matched your brand": "Kein Produkt ließ sich deiner Marke zuordnen",
     "Products without a tracked brand": "Produkte ohne getrackte Marke",
     "{n} merchant": "{n} Händler", "{n} merchants": "{n} Händler", "{n} other merchants": "{n} weitere Händler",
@@ -205,13 +206,13 @@
     "Search merchants": "Händler durchsuchen", "Filter by {brand}": "Nach {brand} filtern", "Previous images": "Vorherige Bilder", "Next images": "Nächste Bilder",
     "No matching products": "Keine passenden Produkte", "No matching brands": "Keine passenden Marken", "No matching merchants": "Keine passenden Händler",
     "Clear search and filters": "Suche und Filter zurücksetzen",
-    "Brands observed": "Beobachtete Marken", "Tracked brands. Unassigned products are not counted.": "Getrackte Marken. Nicht zugeordnete Produkte zählen nicht.",
-    "Your rank": "Dein Rang", "of {n} by Share of Shelf": "von {n} nach Share of Shelf", "Your Share of Shelf": "Dein Share of Shelf",
-    "Top competitor": "Stärkster Wettbewerber", "Share of Shelf of {brand}": "Share of Shelf von {brand}",
+    "Brands observed": "Beobachtete Marken",
+    "Your rank": "Dein Rang", "#{rank} of {n} by Share of Shelf.": "#{rank} von {n} nach Share of Shelf.", "Your Share of Shelf": "Dein Share of Shelf",
+    "Top competitor": "Stärkster Wettbewerber",
     "Brand Performance": "Markenperformance", "How the top brands develop in AI shopping results": "Wie sich die stärksten Marken in KI-Shopping-Ergebnissen entwickeln",
-    "Merchants observed": "Beobachtete Händler", "Across {n} products": "Über {n} Produkte", "Top merchant": "Stärkster Händler",
-    "Most listed with observed products": "Am häufigsten mit beobachteten Produkten gelistet", "Top merchant share": "Anteil des stärksten Händlers",
-    "{n} of {total} merchant mentions": "{n} von {total} Händlernennungen", "Merchant Share": "Händleranteil",
+    "Merchants observed": "Beobachtete Händler", "Across {n} products.": "Über {n} Produkte.", "Top merchant": "Stärkster Händler",
+    "Top merchant share": "Anteil des stärksten Händlers",
+    "{n} of {total} merchant mentions.": "{n} von {total} Händlernennungen.", "Merchant Share": "Händleranteil",
     "Share of all merchant mentions on observed products": "Anteil an allen Händlernennungen bei beobachteten Produkten",
     "Avg. Product Position": "Ø Produktposition",
     "Listed in AI results as {title}": "In KI-Ergebnissen gelistet als {title}", "Observed price": "Beobachteter Preis",
@@ -510,14 +511,28 @@
       var th = z.closest(".up-th"), el = th ? th.querySelector(".up-th-txt") : z.closest(".up-kpi-label, .up-sec-h, dt");
       return el ? str(el.textContent).trim() : "";
     }
-    if (UC.makeExplain) UC.makeExplain({ root: root, triggerSel: ".ush-erklaer", getIsDark: isDark,
+    /* DIE ZEILE UNTER DER KACHEL STEHT IN IHRER KARTE (22.10. abends, Lukas: "tooltips wie ueberall: nicht einfach on hover auf
+       die card sondern in einem i icon"). Was als Fusszeile unter einer Kachel erklaerte, wovon die Zahl spricht ("of 31 by Share
+       of Shelf", "vs. 9 Oct - 15 Oct", "Across 120 products"), steht jetzt als letzter Satz in der Erklaerkarte hinter ihrem
+       Info-Zeichen -- wie "92.9% of tracked prompts" an "Prompts with Ads" in ads.js. Die Kacheln tragen das Zeichen aus core
+       (kpiKarte explain: oben rechts, sichtbar beim Ueberfahren der Kachel), nicht mehr hinter dem Wort. kpiHtml legt dafuer je
+       Schluessel ab, was die Karte DIESER Kachel zusaetzlich zeigt: satz (eine Funktion, uebersetzt erst beim Oeffnen) und wert
+       (die Zahl der Kachel fuer die Platte, nur wo der Satz sie wiederholt oder aus ihr rechnet -- eine Beispielzahl neben dem
+       echten "#3 of 31" saehe aus wie ein Widerspruch, dieselbe Ueberlegung wie in ads.js). Je Reiter steht nur eine Reihe
+       Kacheln; jede zeichnende Funktion faengt mit kachelnNeu() an. Nur an Zeichen IN einer Kachel: dieselben Schluessel an
+       Spaltenkoepfen ("share") bleiben ohne Zusatz. */
+    var kachelKarte = {};
+    function kachelnNeu() { kachelKarte = {}; }
+    if (UC.makeExplain) UC.makeExplain({ root: root, triggerSel: ".ush-erklaer, .ush-kpi .up-th-info[data-explain]", getIsDark: isDark,
       html: function (key, ausloeser) {
         var e = ERKLAER[key];
         if (!e) return "";
-        var vis = erklaerVorschau(key);
+        var kk = ausloeser && ausloeser.closest && ausloeser.closest(".ush-kpi") ? kachelKarte[key] : null;
+        var vis = kk && kk.wert ? '<span class="up-explain-row">' + esc(kk.wert) + '</span>' : erklaerVorschau(key);
+        var satz = kk && kk.satz ? kk.satz() : "";
         return (vis ? '<div class="up-explain-vis">' + vis + '</div>' : '') +
           '<div class="up-explain-h">' + esc(ortEtikett(ausloeser) || t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>' +
-          '<div class="up-explain-t">' + esc(t(e.f)) + '</div>';
+          '<div class="up-explain-t">' + esc(t(e.f)) + '</div>' + (satz ? '<div class="up-explain-t">' + esc(satz) + '</div>' : '');
       } });
     function info(key) {
       return '<span class="up-th-info ush-erklaer" data-explain="' + esc(key) + '">' + UC.icon("info", 2) + '</span>';
@@ -1331,11 +1346,13 @@
       return o && str(o.name).trim() ? str(o.name).trim() : t("your brand");
     }
     function vergleich(meta) { return !!meta && meta.comparison_available === true; }
-    function vergleichFuss(meta) {
-      if (!vergleich(meta)) return esc(t("No comparison period available"));
+    /* Der Vergleichszeitraum einer Kachel mit Trend -- seit 22.10. abends als Satz in ihrer Erklaerkarte (kachelKarte), nicht
+       mehr als Fusszeile. Text, kein HTML: die Karte escaped. */
+    function vergleichSatz(meta) {
+      if (!vergleich(meta)) return t("No comparison period available.");
       var pp = meta.previous_period;
       var z = pp ? zeitraum(pp.from, pp.to) : "";
-      return z ? esc(ersetze(t("vs. {period}"), { period: z })) : "";
+      return z ? ersetze(t("Change compared with {period}."), { period: z }) : "";
     }
 
     function aufraeumen() {
@@ -1936,9 +1953,20 @@
       if (code === "filter_gone") return UC.leerHtml({ icon: "info", titel: titel, text: text, knopf: "Clear filters", knopfAttr: "data-ush-filterweg" });
       return UC.leerHtml({ icon: "info", titel: titel, text: text, knopf: "Try again", knopfAttr: 'data-ush-nochmal="' + esc(a.kanal) + '"' });
     }
+    /* o.explain: der Schluessel aus ERKLAER, kpiKarte setzt damit das Info-Zeichen. o.satz / o.wert: was die Karte dieser Kachel
+       zusaetzlich zeigt (kachelKarte oben). o.fussHtml nur noch fuer einen ZUSTAND (eigene Marke fehlt) oder den Namen des
+       Wettbewerbers, nie fuer eine Erklaerung. */
     function kpiHtml(o) {
       o.klasse = (o.klasse ? o.klasse + " " : "") + "ush-kpi";
+      if (o.explain) kachelKarte[o.explain] = { satz: o.satz || null, wert: o.wert || "" };
       return UC.kpiKarte ? UC.kpiKarte(o) : "";
+    }
+    /* Das Skelett einer Reihe ohne Fusszeilen, in den Faechern der Kachel (core kpiKarteSkelett fuss): so hoch wie die fertige
+       Kachel. fuss: je Kachel die Zahl ihrer Fusszeilen, wo eine stehen bleibt (Name des Wettbewerbers). */
+    function kpiSkelett(n, fuss) {
+      var h = "";
+      for (var i = 0; i < n; i++) h += UC.kpiKarteSkelett ? UC.kpiKarteSkelett("ush-kpi", { fuss: (fuss && fuss[i]) || 0 }) : "";
+      return h;
     }
     /* Die Kacheln zaehlen hoch: UC.zaehlHtml zeichnet die Zahl, UC.hochzaehlen zaehlt nach dem
        Zeichnen (seit 05.10. in core, Events zaehlt genauso). EINMAL JE WERT (05.10. gemeldet: "die
@@ -1956,13 +1984,6 @@
       var inner = UC.zaehlHtml ? UC.zaehlHtml(v, art === "pct" ? "pct1" : art === "pos" ? "num1" : "int")
         : '<span class="up-num">' + esc(art === "pct" ? pct(v) : art === "pos" ? stelle(v) : ganz(v)) + '</span>';
       return art === "pos" ? '<span class="up-rank-group">' + HASH + inner + '</span>' : inner;
-    }
-    /* Das Kennzahlen-Label mit seiner Erklaerung: kpiKarte schreibt das Label als Text, die
-       Erklaerung kommt danach ins Label. */
-    function erklaerAnLabels(el, keys) {
-      if (!el) return;
-      var l = el.querySelectorAll(".up-kpi-label");
-      for (var i = 0; i < l.length && i < keys.length; i++) if (keys[i]) l[i].insertAdjacentHTML("beforeend", info(keys[i]));
     }
 
     /* ============================================================================================
@@ -2048,22 +2069,24 @@
     function zeichneKpis(d) {
       var el = sek("kpis");
       if (!el) return;
-      if (!d) { el.innerHTML = [0, 1, 2, 3].map(function () { return UC.kpiKarteSkelett ? UC.kpiKarteSkelett("ush-kpi") : ""; }).join(""); return; }
+      if (!d) { el.innerHTML = kpiSkelett(4); return; }
+      kachelnNeu();
       var meta = d.meta || {}, k = d.kpis || {}, ohneEigene = meta.own_company_set !== true || eigeneOhneTreffer(meta);
-      var fuss = vergleichFuss(meta);
       var reihen = [
         ["Shopping Rate", "shoppingRate", kz(k.shopping_rate), false],
         ["Brand Presence", "presence", kz(k.brand_presence), true],
         ["Share of Shelf", "share", kz(k.share_of_shelf), true],
         ["First Position Rate", "firstBrand", kz(k.first_position_rate), true]
       ];
+      /* Der Vergleichszeitraum ("vs. ...") steht in der Karte (vergleichSatz). Unter der Kachel bleibt nur der ZUSTAND ohne
+         eigene Marke: er sagt, warum dort ein Strich steht und was zu tun ist. */
       el.innerHTML = reihen.map(function (r) {
         var leer = r[3] && ohneEigene;
-        return kpiHtml({ label: r[0], wertHtml: leer ? '<span class="up-num is-empty">–</span>' : zaehlWert("pct", r[2].v),
+        return kpiHtml({ label: r[0], explain: r[1], wertHtml: leer ? '<span class="up-num is-empty">–</span>' : zaehlWert("pct", r[2].v),
           trendHtml: leer ? "" : trend("pct", r[2].d, meta),
-          fussHtml: leer ? esc(t(meta.own_company_set === true ? "No products matched your brand" : "Set up your own brand to see your brand metrics.")) : fuss });
+          satz: leer ? null : function () { return vergleichSatz(meta); },
+          fussHtml: leer ? esc(t(meta.own_company_set === true ? "No products matched your brand" : "Set up your own brand to see your brand metrics.")) : "" });
       }).join("");
-      erklaerAnLabels(el, reihen.map(function (r) { return r[1]; }));
       hochzaehlen(el);
     }
 
@@ -2665,24 +2688,34 @@
       if (!el) return;
       if (!d) {
         var a = ovAnfrage(state.brands);
-        el.innerHTML = fehlerVon(a) ? '<div class="ush-kpifehler">' + fehlerKasten(a) + '</div>'
-          : [0, 1, 2, 3].map(function () { return UC.kpiKarteSkelett ? UC.kpiKarteSkelett("ush-kpi") : ""; }).join("");
+        /* Die vierte Kachel behaelt ihre Fusszeile (der Name des Wettbewerbers), das Skelett traegt dort eine. */
+        el.innerHTML = fehlerVon(a) ? '<div class="ush-kpifehler">' + fehlerKasten(a) + '</div>' : kpiSkelett(4, [0, 0, 0, 1]);
         return;
       }
+      kachelnNeu();
       var meta = d.meta || {}, bs = d.brands_summary && typeof d.brands_summary === "object" ? d.brands_summary : {};
       var ohneEigene = meta.own_company_set !== true || eigeneOhneTreffer(meta);
       var tc = bs.top_competitor && typeof bs.top_competitor === "object" ? bs.top_competitor : null;
       var n = num(bs.tracked_brands_observed), sos = kz(bs.own_share_of_shelf);
+      var rang = ohneEigene ? null : posWert(bs.own_rank);
       var leerFuss = esc(t(meta.own_company_set === true ? "No products matched your brand" : "Set up your own brand to see your brand metrics."));
+      /* ERKLAERUNGEN IN DIE KARTE (22.10. abends): "Tracked brands. Unassigned products are not counted." sagte der Satz der
+         Karte schon ("Products without a tracked brand are not counted.") -- er faellt ersatzlos weg. "of 31 by Share of Shelf"
+         wird "#3 of 31 by Share of Shelf." in der Karte, mit dem echten Rang auf der Platte; "vs. ..." wird vergleichSatz.
+         Unter der Kachel bleiben der Zustand ohne eigene Marke und der NAME des Wettbewerbers: die Kachel zeigt sonst nur sein
+         Logo, und wer der staerkste Wettbewerber ist, ist ein Messwert, keine Erklaerung ("Share of Shelf of" faellt weg, das
+         sagt die Karte). */
       el.innerHTML =
-        kpiHtml({ label: "Brands observed", wertHtml: zaehlWert("ganz", n), fussHtml: esc(t("Tracked brands. Unassigned products are not counted.")) }) +
-        kpiHtml({ label: "Your rank", wertHtml: ohneEigene || posWert(bs.own_rank) == null ? '<span class="up-num is-empty">–</span>' : '<span class="up-num">#' + esc(ganz(bs.own_rank)) + '</span>',
-          fussHtml: ohneEigene ? leerFuss : (n != null ? esc(ersetze(t("of {n} by Share of Shelf"), { n: ganz(n) })) : "") }) +
-        kpiHtml({ label: "Your Share of Shelf", wertHtml: ohneEigene ? '<span class="up-num is-empty">–</span>' : zaehlWert("pct", sos.v),
-          trendHtml: ohneEigene ? "" : trend("pct", sos.d, meta), fussHtml: ohneEigene ? leerFuss : vergleichFuss(meta) }) +
-        kpiHtml({ label: "Top competitor", wertHtml: tc && anteilWert(tc.share_of_shelf) != null ? '<span class="ush-kpi-marke">' + markeLogo(tc) + zaehlWert("pct", tc.share_of_shelf) + '</span>' : '<span class="up-num is-empty">–</span>',
-          fussHtml: tc && str(tc.name).trim() ? esc(ersetze(t("Share of Shelf of {brand}"), { brand: str(tc.name).trim() })) : "" });
-      erklaerAnLabels(el, ["brandsObserved", "ownRank", "share", "topCompetitor"]);
+        kpiHtml({ label: "Brands observed", explain: "brandsObserved", wertHtml: zaehlWert("ganz", n) }) +
+        kpiHtml({ label: "Your rank", explain: "ownRank", wertHtml: rang == null ? '<span class="up-num is-empty">–</span>' : '<span class="up-num">#' + esc(ganz(rang)) + '</span>',
+          wert: rang != null && anzahlWert(n) != null ? "#" + ganz(rang) : "",
+          satz: rang != null && anzahlWert(n) != null ? function () { return ersetze(t("#{rank} of {n} by Share of Shelf."), { rank: ganz(rang), n: ganz(n) }); } : null,
+          fussHtml: ohneEigene ? leerFuss : "" }) +
+        kpiHtml({ label: "Your Share of Shelf", explain: "share", wertHtml: ohneEigene ? '<span class="up-num is-empty">–</span>' : zaehlWert("pct", sos.v),
+          trendHtml: ohneEigene ? "" : trend("pct", sos.d, meta),
+          satz: ohneEigene ? null : function () { return vergleichSatz(meta); }, fussHtml: ohneEigene ? leerFuss : "" }) +
+        kpiHtml({ label: "Top competitor", explain: "topCompetitor", wertHtml: tc && anteilWert(tc.share_of_shelf) != null ? '<span class="ush-kpi-marke">' + markeLogo(tc) + zaehlWert("pct", tc.share_of_shelf) + '</span>' : '<span class="up-num is-empty">–</span>',
+          fussHtml: tc && str(tc.name).trim() ? esc(str(tc.name).trim()) : "" });
       hochzaehlen(el);
     }
     function zeichneMarkenTabelle() {
@@ -2748,20 +2781,26 @@
       var el = sek("kpis");
       if (!el) return;
       if (!d) {
-        el.innerHTML = fehlerVon(a) ? '<div class="ush-kpifehler">' + fehlerKasten(a) + '</div>'
-          : [0, 1, 2].map(function () { return UC.kpiKarteSkelett ? UC.kpiKarteSkelett("ush-kpi") : ""; }).join("");
+        el.innerHTML = fehlerVon(a) ? '<div class="ush-kpifehler">' + fehlerKasten(a) + '</div>' : kpiSkelett(3);
         return;
       }
+      kachelnNeu();
       var s = d.summary && typeof d.summary === "object" ? d.summary : {};
       var tm = s.top_merchant && typeof s.top_merchant === "object" ? s.top_merchant : null;
       var name = tm ? haendlerName(tm.merchant_name) : "";
+      /* ERKLAERUNGEN IN DIE KARTE (22.10. abends): "Across 120 products" und "412 of 1,603 merchant mentions" als Satz der
+         Karte, mit dem Wert der Kachel auf der Platte. "Most listed with observed products" sagte der Satz der Karte von Top
+         merchant schon ("The merchant listed most often with the observed products") -- er faellt ersatzlos weg. */
+      var mz = anzahlWert(s.merchants), pz = anzahlWert(s.products), ts = tm ? anteilWert(tm.share) : null;
+      var tmN = tm ? anzahlWert(tm.observations) : null, alleN = anzahlWert(s.observations);
       el.innerHTML =
-        kpiHtml({ label: "Merchants observed", wertHtml: zaehlWert("ganz", s.merchants), fussHtml: num(s.products) != null ? esc(ersetze(t("Across {n} products"), { n: ganz(s.products) })) : "" }) +
-        kpiHtml({ label: "Top merchant", wertHtml: tm ? '<span class="ush-kpi-text" title="' + esc(name || t("Unknown")) + '">' + esc(name || t("Unknown")) + '</span>' : '<span class="up-num is-empty">–</span>',
-          fussHtml: esc(t("Most listed with observed products")) }) +
-        kpiHtml({ label: "Top merchant share", wertHtml: tm ? zaehlWert("pct", tm.share) : '<span class="up-num is-empty">–</span>',
-          fussHtml: tm && num(tm.observations) != null && num(s.observations) != null ? esc(ersetze(t("{n} of {total} merchant mentions"), { n: ganz(tm.observations), total: ganz(s.observations) })) : "" });
-      erklaerAnLabels(el, ["merchantsObserved", "topMerchant", "topMerchantShare"]);
+        kpiHtml({ label: "Merchants observed", explain: "merchantsObserved", wertHtml: zaehlWert("ganz", s.merchants),
+          wert: pz != null && mz != null ? ganz(mz) : "",
+          satz: pz != null ? function () { return ersetze(t("Across {n} products."), { n: ganz(pz) }); } : null }) +
+        kpiHtml({ label: "Top merchant", explain: "topMerchant", wertHtml: tm ? '<span class="ush-kpi-text" title="' + esc(name || t("Unknown")) + '">' + esc(name || t("Unknown")) + '</span>' : '<span class="up-num is-empty">–</span>' }) +
+        kpiHtml({ label: "Top merchant share", explain: "topMerchantShare", wertHtml: tm ? zaehlWert("pct", tm.share) : '<span class="up-num is-empty">–</span>',
+          wert: tmN != null && alleN != null && ts != null ? pct(ts) : "",
+          satz: tmN != null && alleN != null ? function () { return ersetze(t("{n} of {total} merchant mentions."), { n: ganz(tmN), total: ganz(alleN) }); } : null });
       hochzaehlen(el);
     }
     function zeichneHaendlerBalken(d, a) {
@@ -2867,7 +2906,7 @@
       if (!d) {
         el.innerHTML = '<div class="up-box ush-hero"><div class="ush-hero-oben"><span class="ush-hero-bild is-sk"></span>' +
           '<div class="ush-hero-info"><span class="up-tsk-bar" style="width:120px"></span><span class="up-tsk-bar" style="width:60%"></span><span class="up-tsk-bar" style="width:40%"></span></div></div>' +
-          '<div class="up-kpiband is-4 ush-kpis">' + [0, 1, 2, 3].map(function () { return UC.kpiKarteSkelett ? UC.kpiKarteSkelett("ush-kpi", { fuss: 0 }) : ""; }).join("") + '</div></div>';
+          '<div class="up-kpiband is-4 ush-kpis">' + kpiSkelett(4) + '</div></div>';
         return;
       }
       var p = d.product || {}, meta = d.meta || {}, b = p.brand && typeof p.brand === "object" ? p.brand : { type: "other" };
@@ -2885,12 +2924,14 @@
       function reihe(f) { return tr.map(function (x) { var v = metrikWert(f, x[f]); return v == null && !/position/.test(f) ? 0 : v; }); }
       var kv = kz(k.visibility), ko = kz(k.observations), kp = kz(k.avg_position), kf = kz(k.first_position_rate);
       /* OHNE FUSSZEILE (22.10., Lukas zu "vs. 09. Oct – 15. Oct 2026": "weg damit"): die Kacheln des Produkts nennen
-         den Vergleichszeitraum nicht mehr. Nur hier -- Overview, Brands und Merchants behalten ihn. Das Skelett oben
-         steht dafuer ohne Fusszeile (kpiKarteSkelett fuss 0): mit dem alten Skelett (100) waere die Kachel (82) beim Laden
-         um 18 gesprungen, so sind es 5 (77) -- die Sparkline macht die Wertzeile hoeher, wie vorher auch (100 zu 106). */
-      function kachel(label, wert, trendH, spark) {
+         den Vergleichszeitraum nicht mehr (seit 22.10. abends auch Overview und Brands nicht: er steht dort in der Karte,
+         vergleichSatz). Das Skelett oben steht dafuer ohne Fusszeile (kpiSkelett): 82 wie die Kachel, gemessen; bis zur
+         eigenen Etikettregel in shopping.css (inline-flex, weg seit 22.10. abends) waren es 77, das Etikett des Skeletts
+         wurde so hoch wie sein 12er-Balken statt wie eine Textzeile (17). */
+      kachelnNeu();
+      function kachel(label, key, wert, trendH, spark) {
         /* Die Sparkline steht rechts in der Zeile des Werts, hinter dem Trend (Entwurf: 72 x 24). */
-        return kpiHtml({ label: label, wertHtml: wert, trendHtml: (trendH || "") + (spark ? '<span class="ush-spark">' + spark + '</span>' : '') });
+        return kpiHtml({ label: label, explain: key, wertHtml: wert, trendHtml: (trendH || "") + (spark ? '<span class="ush-spark">' + spark + '</span>' : '') });
       }
       el.innerHTML = '<div class="up-box ush-hero">' +
         '<div class="ush-hero-oben">' +
@@ -2925,12 +2966,11 @@
           '</div>' +
         '</div>' +
         '<div class="up-kpiband is-4 ush-kpis">' +
-          kachel("Visibility", zaehlWert("pct", kv.v), trend("pct", kv.d, meta), UC.sparkHtml ? UC.sparkHtml(reihe("visibility")) : "") +
-          kachel("Observations", zaehlWert("ganz", ko.v), trend("anzahl", ko.d, meta), UC.sparkHtml ? UC.sparkHtml(reihe("observations")) : "") +
-          kachel("Avg. Position", zaehlWert("pos", kp.v), trend("pos", kp.d, meta), UC.sparkHtml ? UC.sparkHtml(reihe("avg_position"), { umgekehrt: true }) : "") +
-          kachel("First Position Rate", zaehlWert("pct", kf.v), trend("pct", kf.d, meta), "") +
+          kachel("Visibility", "vis", zaehlWert("pct", kv.v), trend("pct", kv.d, meta), UC.sparkHtml ? UC.sparkHtml(reihe("visibility")) : "") +
+          kachel("Observations", "obs", zaehlWert("ganz", ko.v), trend("anzahl", ko.d, meta), UC.sparkHtml ? UC.sparkHtml(reihe("observations")) : "") +
+          kachel("Avg. Position", "pos", zaehlWert("pos", kp.v), trend("pos", kp.d, meta), UC.sparkHtml ? UC.sparkHtml(reihe("avg_position"), { umgekehrt: true }) : "") +
+          kachel("First Position Rate", "firstProd", zaehlWert("pct", kf.v), trend("pct", kf.d, meta), "") +
         '</div></div>';
-      erklaerAnLabels(el.querySelector(".ush-kpis"), ["vis", "obs", "pos", "firstProd"]);
       hochzaehlen(el);
       var leiste = el.querySelector(".ush-galerie-leiste");
       if (leiste) leiste.addEventListener("scroll", function () { karussellPruefen(el); }, { passive: true });

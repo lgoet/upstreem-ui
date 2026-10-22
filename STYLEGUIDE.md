@@ -1390,8 +1390,12 @@ beim Überfahren der Kachel (core.css); eigene Kacheln schreiben dasselbe Zeiche
 Kachel für die Platte findet der Aufrufer über `closest(".up-kpi")`. Format fest: Platte mit dem
 Wert, wie die Kachel ihn zeigt (mit Trend, wenn sie einen zeigt), Titel = Etikett, Satz aus
 `UC.explainCopy` (`EXPLAIN_TEXT` in core). Nie ein Tooltip mit Satz an einer Kennzahl oder auf
-einem Spaltenwort, nie eine Fußzeile als Erklärung. Shopping, Ads und die Details setzen ihr
-Zeichen weiter dicht hinter das Wort (ohne `.has-info`).
+einem Spaltenwort, nie eine Fußzeile als Erklärung. Seit dem 22.10. abends auch Shopping und Ads
+(`kpiHtml({ explain })`): ihre Erklärzeilen unter den Kacheln stehen als letzter Satz in der Karte,
+mit dem Wert der Kachel auf der Platte, wenn der Satz ihn wiederholt (Shopping `kachelKarte`, Ads
+"Prompts with Ads"). Unter einer Kachel bleibt nur ein Zustand mit Aktion oder ein Datum (Name des
+stärksten Wettbewerbers, Topic-Chips). Die Details (Prompt, Performance, URL) setzen ihr Zeichen
+weiter dicht hinter das Wort (ohne `.has-info`).
 
 **Erklärkarte mit klickbaren Zeilen** (22.10., Impact: „1 other event in this period“): Nennt die
 Karte Dinge, die man öffnen kann (die anderen Events im Zeitraum), stehen sie als Zeilen auf der
