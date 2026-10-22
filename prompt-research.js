@@ -1476,6 +1476,9 @@
       var option = e.target.closest('.upr-dd-option');
       if (!option || !dd.contains(option) || option.classList.contains('upr-ip-opt')) return;
       e.stopPropagation();
+      /* Die eigene Wahl ist neuer als ein noch offener Wunsch des Hosts: der Standardmarkt, den erst die volle
+         Liste fuehrt, ueberschriebe sie sonst, sobald diese Liste kommt (marktWahl). */
+      if (dd.getAttribute('data-name') === 'market') _pendingMarket = null;
       setDropdownValue(dd, option);
     });
     /* Das Esc-Schild leert das Feld (20.10.). */
@@ -1513,20 +1516,39 @@
     var list = dd.querySelector('[data-dd-list]');
     if (!list) return;
     var sorted = markets.slice().sort(function(a, b){ return (b.prompt_count || 0) - (a.prompt_count || 0) || a.name.localeCompare(b.name); });
-    list.innerHTML = sorted.map(function(m, index){
-      return '<button class="upr-dd-option ' + (index === 0 ? 'is-selected' : '') + '" type="button" data-value="' + esc(m.alpha2) + '" data-name-en="' + esc(m.name_en) + '" data-alpha2="' + esc(m.alpha2) + '" data-alpha3="' + esc(m.alpha3) + '" data-label="' + esc(m.name) + '" data-flag="' + esc(m.flag_url) + '">' +
+    /* Ohne Haken im Markup: den setzt die Wahl (marktWahl), sonst stand er auch ohne Wahl am ersten Eintrag. */
+    list.innerHTML = sorted.map(function(m){
+      return '<button class="upr-dd-option" type="button" data-value="' + esc(m.alpha2) + '" data-name-en="' + esc(m.name_en) + '" data-alpha2="' + esc(m.alpha2) + '" data-alpha3="' + esc(m.alpha3) + '" data-label="' + esc(m.name) + '" data-flag="' + esc(m.flag_url) + '">' +
         '<span class="upr-dd-check">' + ICON.check + '</span>' +
         '<span class="upr-dd-optlabel">' + esc(m.name) + ' <span class="upr-dd-meta">(' + esc(m.alpha2) + ')</span></span>' +
         '<span class="upr-flag">' + flagHtml(m.flag_url, m.name) + '</span></button>';
     }).join('') + '<div class="upr-dd-empty">No markets found</div>';
-    /* A market the host asked for wins over "just take the first option". The request usually
-       arrives before this list exists (Bubble fires setMarket from a run-JS step on page load),
-       so it is parked in _pendingMarket and claimed here -- this is the single point every path
-       into the dropdown goes through, whether the markets came from setMarkets() or from the
-       embedded #upr-markets-json tag at boot. */
-    if (_pendingMarket != null && applyMarket(_pendingMarket)){ _pendingMarket = null; return; }
-    var first = list.querySelector('.upr-dd-option');
-    if (first) setDropdownValue(dd, first);
+    /* A market the host asked for wins. The request usually arrives before this list exists
+       (Bubble fires setMarket from a run-JS step on page load), so it is parked in _pendingMarket
+       and claimed here -- this is the single point every path into the dropdown goes through,
+       whether the markets came from setMarkets() or from the embedded #upr-markets-json tag at boot. */
+    marktWahl(dd, list);
+  }
+  /* WELCHER MARKT NACH EINER NEUEN LISTE (22.10., gemeldet: "Ist wieder Afghanistan gesetzt", zum zweiten Mal
+     nach dem 14.10.). Bis hierher nahm jede neue Liste die ERSTE Option, sobald kein Wunsch mehr offen war --
+     und die Liste kommt oft: die Seite gibt sie bei jeder Aenderung beider Markt-Ablagen von core weiter
+     (onAllMarkets), beim App-Start zweimal (team_context_v1, dann markets_all_v1 oder umgekehrt) und nach
+     jedem Tracken (marketsChanged). Die volle Liste ist nach Name sortiert und traegt kein prompt_count,
+     also stand danach Afghanistan da: gemessen beim Neuladen auf der Ansicht, nach dem Tracken, nach einer
+     eigenen Wahl und in einer geparkten Ansicht. Jetzt in dieser Folge:
+       1. der offene Wunsch des Hosts (setMarket, Standardmarkt des Teams),
+       2. der Markt, der schon gewaehlt ist (eigene Wahl oder Vorgabe) -- eine neue Liste aendert ihn nie,
+       3. sonst KEIN Markt: "Select a market", und der Start sagt, dass einer fehlt. Ein geratener erster
+          Eintrag saehe aus wie eine Wahl und kostet eine Recherche im falschen Markt (Team ohne Standardmarkt).
+     Fehlt der gewaehlte Markt in dieser Liste (die Teamliste kommt vor der vollen), bleibt er stehen und
+     wird gehakt, sobald eine Liste ihn wieder fuehrt. */
+  function marktWahl(dd, list){
+    if (_pendingMarket != null && _pendingMarket !== '' && applyMarket(_pendingMarket)){ _pendingMarket = null; return; }
+    if (state.market){ applyMarket(state.market); return; }
+    if (!list.querySelector('.upr-dd-option')) return;
+    /* Ohne den leeren Flaggenkasten: der saehe aus wie eine fehlende Flagge -- nur Text wie "B2C" daneben. */
+    var valueEl = dd.querySelector('[data-dd-value]');
+    if (valueEl) valueEl.innerHTML = '<span>' + esc(tt('Select a market')) + '</span>';
   }
 
   /* ---------- table kebab ---------- */
