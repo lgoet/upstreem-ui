@@ -3082,7 +3082,7 @@
           var r = num(x.responses);
           /* Maerkte tragen das Flaggenplaettchen aus core (flagge: Code) statt einer PNG im Logo-
              Kaestchen; ohne Code zeigt das Plaettchen "?" und die Namen bleiben buendig. */
-          return { key: w + i, name: name, share: anteilWert(x.share), color: grau(i + 1), logo: logo,
+          return { key: w + i, name: name, share: anteilWert(x.share), color: grau(i + 1), logo: logo, modell: w === "models",
                    flagge: w === "markets" ? (/^[A-Z]{2}$/.test(code) ? code : "?") : undefined,
                    wert: w === "topics" && r != null ? ersetze(t(r === 1 ? "{n} response" : "{n} responses"), { n: ganz(r) }) : undefined };
         }));
@@ -3090,9 +3090,9 @@
     }
     function modellInfo(key) {
       var k = str(key).trim(), l = UC.getModels ? UC.getModels() : [];
-      /* Fuer die Balkenliste: deren Platte ist in beiden Themen hell, also das schwarze OpenAI-Logo. */
+      /* Fuer die Balkenliste (modell: true, core is-modell): im Dunkeln ohne helle Platte (23.10.), also OpenAI nach dem Thema. */
       for (var i = 0; i < l.length; i++) if (str(l[i].key || l[i].model) === k) {
-        return { name: str(l[i].display_name || k), logo: sichereUrl(UC.modelLogoUrl ? UC.modelLogoUrl(k, l[i].logo_url, false, l[i].provider) : l[i].logo_url) };
+        return { name: str(l[i].display_name || k), logo: sichereUrl(UC.modelLogoUrl ? UC.modelLogoUrl(k, l[i].logo_url, isDark(), l[i].provider) : l[i].logo_url) };
       }
       return { name: k ? k.charAt(0).toUpperCase() + k.slice(1) : t("Unknown"), logo: "" };
     }

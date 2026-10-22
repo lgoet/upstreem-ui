@@ -53,6 +53,10 @@
 .umc-sg-app { position: absolute; width: 40px; height: 40px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
   border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--vt-logo-bg); box-shadow: var(--up-e-chip); }
 .umc-sg-app img { width: 24px; height: 24px; display: block; object-fit: contain; border-radius: var(--up-r-xs); }
+/* Im Dunkeln ohne helle Platte (23.10., Lukas: "LLM-Logos brauchen nirgendwo in der App im Darkmode einen hellen
+   Background"): der Grund der Kacheln links (.umc-sg-kachel), Rahmen und Schatten bleiben. Die Logos sind dort
+   selbst hell, OpenAI kommt als weisse Datei (grafikHtml). */
+.up-root[data-theme="dark"] .umc-sg-app { background: var(--vc-bg); }
 /* Leiser wird nur das Logo, nicht die Platte: deren Deckkraft faehrt der Auftritt (umc-ein) bis 1, und
    ein leiser Wert an der Platte spraenge am Ende der Fahrt zurueck. */
 .umc-sg-app.is-bald img { opacity: .45; filter: grayscale(1); }
