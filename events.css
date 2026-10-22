@@ -959,41 +959,38 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 /* 32 wie zwischen allen Abschnitten (CLAUDE.md 1d, Gaps 20.10.) und wie vom Startbereich zum ersten Abschnitt; bis 22.10. 40. */
 .uev-abschnitt:not([hidden]) ~ .uev-abschnitt:not([hidden]) { margin-top: 32px; }
 
-/* ---- STARTBEREICH DER UEBERSICHT (22.10., im Canvas "Impact Startseite" gewaehlt) ----
-   Masse 1:1 aus page-audit.css (.upa-start, .upa-start-text, .upa-startkarte; CLAUDE.md 1b "dieselben Zahlen"): Raster zwei Spalten,
-   16 Abstand, 32 bis zum ersten Abschnitt; links oben Titel 20/26/600/-0.4 und Satz 14/20 (das Paar aus Titel und Untertitel eines
-   Popups), mindestens 112 hoch, senkrecht mittig; darunter die Karte aus core (.up-box), Polster 16, Saetze 13/1.5. Rechts ueber beide
-   Zeilen die Grafik. Hier noch als Kopie, weil core in dieser Runde nicht angefasst wird (Prompt Research baut parallel dasselbe); der
-   gemeinsame Baustein ist in der Uebergabe benannt. Praefix uev-start-, nicht uev-sk- (das ist das Skelett der Karten). */
-.uev-start { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto; gap: 16px; margin: 0 0 32px; }
+/* GEPARKTE FILTER DES DETAILS (22.10., Klickrouten-Pruefung): Modelle und Maerkte des Details (.uev-modelle, .uev-maerkte) zieht die Leiste
+   aus filters/filter-bar.js zu sich. Wird sie mit dem Detail abgerissen (zurueck zur Uebersicht), schickt sie die beiden "heim" -- und weil
+   es ihren Behaelter dann nicht mehr gibt, als Rueckfall an den <body> (heimschicken). Dort lag ihr geschlossenes Menue (Deckkraft 0, aber
+   ausgelegt, 284 breit) rechts ueber den Rand: gemessen bei 375 eine Seite von 398 statt 375, waagerechtes Scrollen, und der feste Schleier
+   jedes Popups wurde 398,5 breit, das Create-Popup sass 56 von links und rechts abgeschnitten. Am <body> stehen sie nur bis zum naechsten
+   Detail, das eine frische Wurzel mitbringt und die alte verwirft -- sie brauchen dort keinen Platz. */
+body > .up-root.uev-modelle, body > .up-root.uev-maerkte { display: none; }
+
+/* ---- STARTBEREICH DER UEBERSICHT (22.10.) ----
+   Masse aus page-audit.css (.upa-start, .upa-start-text; CLAUDE.md 1b "dieselben Zahlen"): zwei Spalten, 16 Abstand; links Titel
+   20/26/600/-0.4 und Satz 14/20 (das Paar aus Titel und Untertitel eines Popups), senkrecht mittig, hoechstens 520 breit; rechts die
+   Grafik. Seit 22.10. abends ohne Karte (Lukas: "nur heading + description links, chart grafik rechts") und mit einem Trenner zu den
+   Abschnitten darunter, "mit gleichem gap drueber wie drunter": 32 ueber und 32 unter der Linie, der Abstand zwischen Abschnitten
+   (CLAUDE.md 1d, Gaps). Die Linie traegt der Startbereich selbst (padding + border), so steht sie in jedem Zustand darunter --
+   beide Abschnitte, nur einer, Leer-, Fehler- oder Ladezustand. Hier noch als Kopie von Page Audit, weil core in dieser Runde nicht
+   angefasst wird; der gemeinsame Baustein ist in der Uebergabe benannt. */
+/* Oben 16 zu den 16 unter dem Seitenkopf (.uev-pagehead): der Inhalt steht mit 32 zwischen der Linie des Kopfs und dem Trenner, oben wie
+   unten gleich. Ohne die 16 sass der hervorgehobene Pin 16 unter der Kopflinie, aber 32 ueber dem Trenner (gemessen 22.10.). */
+.uev-start { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0 0 32px; padding: 16px 0 32px; border-bottom: 1px solid var(--vc-border); }
 .uev-start-text { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; min-height: 112px; max-width: 520px; padding: 0 0 0 2px; }
 .uev-start-text .up-heading, .uev-start-text .up-sec-sub { margin: 0; }
 .uev-start-text .up-heading.up-sec-h { font-size: var(--up-fs-modaltitel); line-height: 26px; letter-spacing: -0.4px; white-space: normal; }
 .uev-start-text .up-sec-sub { font-size: var(--up-fs-l); line-height: 20px; }
-.uev-start > .uev-startkarte { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; gap: 8px; padding: 16px; min-width: 0; }
-.uev-start-satz { margin: 0; font-size: var(--up-fs-m); line-height: 1.5; color: var(--vc-muted); }
-/* NEU gegen das Vorbild: statt eines Absatzes die zwei Arten, ohne eigene Ueberschrift der Karte (Lukas 22.10.). Je Zeichen und Name
-   wie im Kopf ihres Abschnitts darunter (Zeichen 16, 8 Abstand wie .uev-head-ic), der Name in der Schrift des Satzes, nur 500 und in
-   der Textfarbe; 12 zwischen den Arten (Rhythmus der Karte). */
-.uev-start-arten { display: flex; flex-direction: column; gap: 12px; }
-.uev-start-art { display: grid; grid-template-columns: 16px minmax(0, 1fr); column-gap: 8px; row-gap: 2px; align-items: center; }
-.uev-start-ic { display: inline-flex; color: var(--vc-text); }
-.uev-start-ic svg { width: 16px; height: 16px; }
-.uev-start-name { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 1.5; color: var(--vc-text); }
-.uev-start-art .uev-start-satz { grid-column: 2; }
-.uev-start-fuss { display: flex; align-items: center; justify-content: flex-end; margin-top: 4px; }
-.uev-start-los { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
-.uev-start-los svg { width: 14px; height: 14px; }
-/* NEU (nicht in core): die Grafik, Pins auf einer Zeitachse. Huelle, Maske und Erscheinen wie das Fensterfeld von Page Audit
-   (.upa-fenster): fester Inhalt um die Mitte, Raender per Maske ausgeblendet (Deckkraft, keine Themenfarbe), seitlich wie dort 22 %,
-   oben und unten 12 %, weil die Zeichnung flacher ist als das Feld. Linien in der Textfarbe, Pins in Rahmen und Flaeche der Fenster
-   dort (--vc-border, --vc-bg, --up-e-1). */
-.uev-startgrafik { grid-column: 2; grid-row: 1 / span 2; position: relative; min-height: 0; overflow: hidden; color: var(--vc-text);
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent), linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
-  -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent), linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
-  mask-composite: intersect; }
-.uev-sg-feld { position: absolute; left: 50%; top: 50%; width: 760px; height: 340px; transform: translate(-380px, -170px); }
+/* NEU (nicht in core): die Grafik, Pins auf einer Zeitachse. Hoehe = der gezeichnete Teil des Feldes: vom oberen Rand des hervorgehobenen
+   Pins (y 70) bis zum Ende der langen Ticks (y 258), also 188. So endet der Startbereich an der letzten sichtbaren Linie, und die 32 ueber
+   dem Trenner sind wirklich 32 (mit der Hoehe der fruehren Karte und oben und unten 12 % Maske standen unter den Ticks noch rund 70 leer).
+   Oben und unten darum keine Maske mehr, seitlich wie das Fensterfeld von Page Audit 22 %. Linien in der Textfarbe, Pins in Rahmen und
+   Flaeche der Fenster dort (--vc-border, --vc-bg, --up-e-1). Der Text daneben steht in derselben Hoehe mittig. */
+.uev-startgrafik { grid-column: 2; grid-row: 1; position: relative; height: 188px; overflow: hidden; color: var(--vc-text);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent); }
+.uev-sg-feld { position: absolute; left: 50%; top: 0; width: 760px; height: 340px; transform: translate(-380px, -70px); }
 .uev-sg-svg { position: absolute; inset: 0; display: block; overflow: visible; }
 /* Pins wie der Event-Pin im Chart, nur gross: Kachel 32 mit Radius 6 (nach Hoehe), Zeichen in der zweiten Textfarbe; der
    hervorgehobene 40 mit Radius 8, Rahmen und Zeichen wie das Fenster mit dem Zeichen in Page Audit (.upa-fenster-win.is-hl). */
@@ -1006,7 +1003,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-sg-teil { animation: uev-sg-ein var(--up-t-3) var(--up-ease-auf) backwards; }
 @keyframes uev-sg-ein { from { opacity: .3; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .uev-sg-teil { animation: none; } }
-/* Schmal: die Grafik weicht, Text und Karte stehen untereinander (Page Audit dasselbe bei is-narrow). */
+/* Schmal: die Grafik weicht, der Text steht allein ueber dem Trenner (Page Audit dasselbe bei is-narrow). */
 .uev-root.is-narrow .uev-start { grid-template-columns: minmax(0, 1fr); }
 .uev-root.is-narrow .uev-startgrafik { display: none; }
 .uev-root.is-narrow .uev-start-text { min-height: 0; }
@@ -1036,6 +1033,8 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 /* Die Wahl der Art ("Create", der allererste Schritt) bleibt im Hellen auf dem hellen Grau des Seitengrunds (20.10., Nutzer): die weissen Tafeln
    der Karten heben sich nur von Grau ab. Im Dunkeln gilt der Grund aller Popups. */
 .up-modal.uev-kind-karte, .up-modal.uev-kind-karte > .up-topicmodal-head { background: var(--up-seite-grau); }
+/* Breit genug fuer zwei Karten nebeneinander -- nur oberhalb der Blatt-Regel der Popups aus core (max-width 540: ganze Breite, unten). */
+@media (min-width: 541px) { .up-topicmodal-backdrop > .up-modal.uev-kind-karte { max-width: min(920px, calc(100vw - 32px)); } }
 .up-topicmodal-backdrop[data-theme="dark"] .up-modal.uev-kind-karte, .up-topicmodal-backdrop[data-theme="dark"] .up-modal.uev-kind-karte > .up-topicmodal-head { background: var(--up-popup-bg); }
 
 /* ---- SUCHE IN DEN URL-LISTEN (20.10.) ----------------------------------------------------------------------------------

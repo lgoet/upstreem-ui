@@ -755,10 +755,8 @@
     "Citation Tracking created": "Citation Tracking erstellt", "Created {date}": "Erstellt am {date}", "All active": "Alle aktiven",
     /* Startbereich der Uebersicht (22.10.). */
     "Measure the impact of your changes": "Miss die Wirkung deiner Änderungen",
-    "Track marketing campaigns, product launches or paid articles and see what each one really did for your AI visibility.":
-      "Tracke Marketingkampagnen, Produktlaunches oder Paid Articles und sieh, was jede davon wirklich für deine AI-Sichtbarkeit gebracht hat.",
-    "Find out which of your pages ChatGPT, Perplexity and others cite in their answers, and how often.":
-      "Finde heraus, welche deiner Seiten ChatGPT, Perplexity und andere in ihren Antworten zitieren, und wie oft.",
+    "This event no longer exists": "Dieses Event gibt es nicht mehr",
+    "It may have been deleted by someone in your team.": "Vielleicht hat es jemand aus deinem Team gelöscht.",
     "See how launches, campaigns and new pages change your visibility and citations in AI answers.":
       "Sieh, wie Launches, Kampagnen und neue Seiten deine Sichtbarkeit und deine Zitate in KI-Antworten verändern.",
     "What you track appears here.": "Was du trackst, erscheint hier.",
@@ -1774,12 +1772,15 @@
            kennt "And" ebenso wenig. Still auf "Or" zurueckzufallen waere eine andere Auswahl als
            die gezeigte. Also ein Fehler am Feld der Topics. Sobald die Datenbank p_tagmode
            fuehrt, laeuft derselbe Aufruf ohne Zutun durch. */
-        if (!erg.ok && funktionFehlt(erg) && o && o.p_tagmode) {
+        /* fehltFn statt funktionFehlt (22.10., Klickrouten-Pruefung): funktionFehlt ist ohne Bubble immer false (es entscheidet
+           ueber den Rueckweg zu Bubble), und damit waren dieser Feldfehler und der Satz fuer Citation Tracking darunter in der
+           Next.js-App nie erreichbar -- es stand "Something went wrong" (gemessen mit create_impact_watch_v1 = PGRST202). */
+        if (!erg.ok && fehltFn(erg) && o && o.p_tagmode) {
           kam(kanal, { ok: false, status: 400, fehler: { code: "", message: "impact_event_tagmode_unavailable", hint: "p_tagmode", details: "" } }, kx);
           return;
         }
         /* Citation Tracking (19.10.): die Funktion gibt es noch nicht -- ein Satz statt des allgemeinen Fehlers. */
-        if (!erg.ok && kanal === "uevCreateWatch" && funktionFehlt(erg)) {
+        if (!erg.ok && kanal === "uevCreateWatch" && fehltFn(erg)) {
           kam(kanal, { ok: false, status: 400, fehler: { code: "", message: "impact_event_watch_unavailable", hint: "", details: "" } }, kx);
           return;
         }
@@ -2023,29 +2024,14 @@
     var ABSCHNITT_ZEICHEN = { event: "cells", watch: "globe" };
 
     /* ---- STARTBEREICH (22.10., Vorbild Page Audit v2: startGeruest in page-audit.js) -------------------------------------------
-       Oben links Ueberschrift und EIN Satz, darunter eine kleinere Karte, rechts ueber beide Zeilen die Grafik. Gewaehlt im Canvas
-       "Impact Startseite" (Lukas 22.10.): die Karte ohne eigene Ueberschrift, nur die beiden Arten mit Zeichen und Namen ihres
-       Abschnitts darunter, unten rechts EIN Hauptknopf "Create ->", der wie "Create" im Kopf erst nach der Art fragt. Die Saetze
-       sagen, was man davon hat, nicht wie es rechnet (Lukas: "user will sehen, ah, ich kann Marketing-Kampagnen, Produktlaunches
-       oder Paid Artikel tracken"). Die Karten der Eintraege bleiben darunter. Steht in jedem Zustand der Uebersicht -- Laden,
-       Fehler, leer --, er braucht keine Daten. */
-    var START_ARTEN = [
-      { k: "event", satz: "Track marketing campaigns, product launches or paid articles and see what each one really did for your AI visibility." },
-      { k: "watch", satz: "Find out which of your pages ChatGPT, Perplexity and others cite in their answers, and how often." }
-    ];
+       Links Ueberschrift und EIN Satz, rechts die Grafik; darunter ein Trenner zu den Abschnitten. Eine Karte gibt es nicht mehr
+       (Lukas 22.10. abends: "Mach das card unter der heading doch weg. nur heading + description links. chart grafik rechts"),
+       angelegt wird ueber "Create" im Seitenkopf. Die Karten der Eintraege bleiben darunter. Steht in jedem Zustand der Uebersicht
+       -- Laden, Fehler, leer --, er braucht keine Daten. */
     function startGeruest() {
       return '<section class="uev-start">' +
         '<div class="uev-start-text"><h2 class="up-heading up-sec-h">' + esc(t("Measure the impact of your changes")) + '</h2>' +
           '<p class="up-sec-sub">' + esc(t("See how launches, campaigns and new pages change your visibility and citations in AI answers.")) + '</p></div>' +
-        '<div class="up-box uev-startkarte">' +
-          '<div class="uev-start-arten">' + START_ARTEN.map(function (a) {
-            return '<div class="uev-start-art"><span class="uev-start-ic" aria-hidden="true">' + UC.icon(ABSCHNITT_ZEICHEN[a.k], 1.8) + '</span>' +
-              '<span class="uev-start-name">' + esc(t(ART_TITEL[a.k])) + '</span><p class="uev-start-satz">' + esc(t(a.satz)) + '</p></div>';
-          }).join("") + '</div>' +
-          '<div class="uev-start-fuss">' +
-            '<button type="button" class="up-btn-pri uev-start-los" data-uev-create><span>' + esc(t("Create")) + '</span>' + UC.icon("arrowRightLong", 2) + '</button>' +
-          '</div>' +
-        '</div>' +
         startGrafik() +
       '</section>';
     }
@@ -2053,8 +2039,9 @@
        Artikel, Kampagne, Relaunch, Presse), einer hervorgehoben mit dem Zeichen von Event Tracking -- Kachel 40, Radius nach Hoehe 8,
        Rahmen wie das hervorgehobene Fenster in Page Audit; die anderen 32 mit Radius 6. Je Pin ein punktierter Stiel bis zur Achse wie
        der Event-Pin im echten Chart, auf der Achse ein Punkt, darunter leise Ticks alle 24 (jeder vierte laenger). Keine Zahl und kein
-       Wort: niemand soll ein Beispiel fuer echte Daten halten. Feste Masse um die Mitte der Flaeche wie das Fensterfeld von Page
-       Audit (Feld 760 x 340), die Raender blendet die Maske aus (events.css). Erscheinen gestaffelt wie dort. */
+       Wort: niemand soll ein Beispiel fuer echte Daten halten. Feste Masse wie das Fensterfeld von Page Audit (Feld 760 x 340); die
+       Flaeche zeigt genau den gezeichneten Teil (oberer Rand des hervorgehobenen Pins bis zum Ende der langen Ticks, events.css),
+       seitlich blendet die Maske aus. Erscheinen gestaffelt wie dort. */
     var START_PINS = [{ x: 110, y: 150, ic: "rocket" }, { x: 220, y: 104, ic: "fileText" }, { x: 318, y: 178, ic: "megaphone" },
                       { x: 430, y: 70, ic: "cells", hl: true }, { x: 540, y: 126, ic: "globe" }, { x: 646, y: 164, ic: "newspaper" }];
     function startGrafik() {
@@ -2647,11 +2634,17 @@
     /* DER KOPF DES DETAILS (03.10. neu): dieselbe Sprache wie die Karte -- Band in der Event-Farbe,
        das Zeichen gross als Profilbild, darunter Name, Datum und Typ als zwei Angaben mit Zeichen,
        die Beschreibung und der Umfang mit betonten Zahlen. Ein Kasten, kein lose stehender Text. */
+    /* Events, die es laut Datenbank nicht mehr gibt (impact_event_not_found), je Kennung. Dann sagt der Kopf genau das, wie Page Audit
+       ("This audit no longer exists") -- bis 22.10. stand dort der Lesefehler "Please reload the page", waehrend die Meldung daneben
+       "This event no longer exists." sagte (Klickrouten-Pruefung, gemessen mit geloeschtem Event). Neuladen hilft da nicht. */
+    var wegIds = {};
     function renderKopf() {
       var el = elMain.querySelector('[data-sek="kopf"]');
       var d = dieDetail() || mitZielen(listeEvent(state.eventId));
       if (!d) {
-        el.innerHTML = state.detailFehler
+        el.innerHTML = state.detailFehler && wegIds[state.eventId]
+          ? UC.leerHtml({ icon: "cells", titel: "This event no longer exists", text: "It may have been deleted by someone in your team.", knopf: "Back to overview", knopfAttr: "data-uev-zurueck" })
+          : state.detailFehler
           ? '<div class="uev-fehlerkopf">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("the event") : esc(t("This event could not be loaded."))) +
               '<button type="button" class="up-btn-sec uev-zurueck">' + esc(t("Back to overview")) + '</button></div>'
           : '<div class="up-box uev-hero is-sk"><div class="uev-hero-band uev-sk-band"></div><div class="uev-hero-body">' +
@@ -5185,7 +5178,7 @@
       var pas = e.target.closest("[data-pa-start]");
       if (pas) { paStarten(pas); return; }
       if (e.target.closest(".uev-anlegen, [data-uev-create]")) { e.preventDefault(); popupArt(); return; }
-      if (e.target.closest(".uev-zurueck")) { zurUebersicht(true); return; }
+      if (e.target.closest(".uev-zurueck, [data-uev-zurueck]")) { zurUebersicht(true); return; }
       var zm = e.target.closest("[data-zm]");
       if (zm) { var zw = zm.getAttribute("data-zm"); state.zielMetrik = zw === "abs" || zw === "urls" ? zw : "share"; persist(); zielMetrikSetzen(); renderZiele(); return; }
       var qb = e.target.closest("[data-quelle]");
@@ -8495,8 +8488,13 @@
          abgeschnitten wird, mit einer breiten Karte darin, die zu zwei Dritteln sichtbar ist. Links Event Tracking in den Farben des anderen Themas, rechts Citation Tracking. Ein Klick waehlt und geht weiter -- kein "Continue". */
       /* Die Karte ist seit dem 22.10. der Baustein aus core (UC.wkKarteHtml, .up-wk): dieselben Masse, dieselbe Bewegung, auch auf der
          Seite Page Audit ("Run Page Audit"). */
-      var karten = '<div class="up-wk-raster" role="group" aria-label="' + esc(t("What do you want to create?")) + '">' + KIND_WAHL.map(function (a) {
-        return UC.wkKarteHtml({ titel: a.titel, satz: a.satz, icon: a.ic, invers: !!a.invers, daten: { kind: a.k } });
+      /* Den Anfangsfokus setzt das Popup aus core (modalVerhalten, 60 ms nach dem Oeffnen) auf [data-upm-fokus], sonst auf die Karte des
+         Popups. Bis 22.10. setzte popupArt ihn nach 30 ms selbst auf die erste Karte -- und core nahm ihn 30 ms spaeter wieder weg
+         (gemessen: 40 ms auf der Karte, ab 80 ms auf dem Popup); Enter und Pfeiltasten gingen dann ins Leere. */
+      var karten = '<div class="up-wk-raster" role="group" aria-label="' + esc(t("What do you want to create?")) + '">' + KIND_WAHL.map(function (a, i) {
+        var daten = { kind: a.k };
+        if (!i) daten["upm-fokus"] = "1";
+        return UC.wkKarteHtml({ titel: a.titel, satz: a.satz, icon: a.ic, invers: !!a.invers, daten: daten });
       }).join("") + '</div>';
       var api = UC.makeModal({
         titel: "Create", unter: t("What do you want to create?"), isDark: isDark,
@@ -8507,7 +8505,8 @@
       api.karte.classList.add("uev-kind-karte");
       var p = { art: "art", api: api, e: {}, knopf: "weiter", pops: {} };
       popup = p;
-      try { api.karte.style.maxWidth = "min(920px, calc(100vw - 32px))"; } catch (e) {}
+      /* Die Breite fuer zwei Karten nebeneinander steht in events.css (.uev-kind-karte, erst ab 541): als Inline-Stil schlug sie die
+         Blatt-Regel der Popups unter 540 aus core (gemessen 22.10. bei 375: 343 breit, links 32 frei, rechts buendig statt ganzer Breite). */
       var box = api.body.querySelector(".uev-kindwahl");
       function weiter(k) {
         api.schliessen();
@@ -8521,7 +8520,6 @@
         if (ev.key === "ArrowRight" || ev.key === "ArrowDown") { ev.preventDefault(); l[(i + 1) % l.length].focus(); }
         else if (ev.key === "ArrowLeft" || ev.key === "ArrowUp") { ev.preventDefault(); l[(i + l.length - 1) % l.length].focus(); }
       });
-      setTimeout(function () { var f = box.querySelector("[data-kind]"); try { if (f && popup === p) f.focus(); } catch (e) {} }, 30);
       if (anleitung && anleitung.laeuft()) anleitungZeige("art");
     }
     function popupAnlegen(planEid, art) {
@@ -9401,7 +9399,7 @@
            Detail (sonst stuende es weiter im Kopf), und die Liste laedt neu. */
         if (wo === "lesen") {
           state.detailLaden = false;
-          if (weg && state.eventId) { delete state.detail[state.eventId]; persist(); listeNeu(); }
+          if (weg && state.eventId) { delete state.detail[state.eventId]; wegIds[state.eventId] = true; persist(); listeNeu(); }
           if (weg || !dieDetail()) state.detailFehler = true;
           if (weg) { state.analyseLaden = false; state.analyseFehler = true; }
           renderDetail();
@@ -9429,6 +9427,7 @@
            der Fehlerzustand (ein bekannter Code, nicht der allgemeine Satz). */
         if (state.ansicht === "detail" && (weg || (wo === "detail" && !dieDetail()))) {
           state.detailLaden = false; state.detailFehler = true;
+          if (weg && state.eventId) wegIds[state.eventId] = true;
           if (weg) { state.analyseLaden = false; state.analyseFehler = true; }
           renderDetail();
           if (!weg && txt === fehlerText("")) return true;
