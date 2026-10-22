@@ -21,7 +21,18 @@
 .upa-kopfrechts { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .upa-kopfrechts .up-btn-sec { display: inline-flex; align-items: center; gap: 6px; }
 .upa-kopfrechts .up-btn-sec svg { width: 14px; height: 14px; flex: 0 0 auto; }
-.upa-kopfrechts .up-btn-sec:disabled { color: var(--vc-fourth); cursor: default; }
+.upa-kopfrechts .up-btn-sec:is(:disabled, [aria-disabled="true"]) { color: var(--vc-fourth); cursor: default; }
+/* Gesperrt, weil kein Audit geht (22.10.: Kontingent verbraucht oder nicht im Tarif): aria-disabled statt disabled, damit der
+   Tooltip mit dem Grund kommt (page-audit.js sperreAnwenden). Dieselben Werte wie die gesperrten Knoepfe in core
+   (.up-btn-pri:disabled .4, .up-btn-sec:disabled .45, kein Zeiger, der Hover aendert nichts); core kennt aria-disabled nur am
+   Export (.up-export -- das ist Create Audit, der braucht hier nichts). Wie .upr-sk-los in prompt-research.css. Die Kette
+   schlaegt .up-btn-pri:not(:disabled):hover (0,3,0) und .up-btn-sec:hover bzw. .up-leer .up-empty-btn:hover (0,2,0). */
+.upa-root .up-btn-pri.upa-sk-los[aria-disabled="true"],
+.upa-root .up-btn-pri.upa-sk-los[aria-disabled="true"]:hover { opacity: .4; cursor: default; }
+.upa-root .up-btn-sec.upa-nochmal[aria-disabled="true"],
+.upa-root .up-btn-sec.upa-nochmal[aria-disabled="true"]:hover,
+.upa-root .up-leer .up-empty-btn[data-upa-nochmal][aria-disabled="true"],
+.upa-root .up-leer .up-empty-btn[data-upa-nochmal][aria-disabled="true"]:hover { opacity: .45; cursor: default; background: transparent; }
 /* Das Wochenkontingent: leise neben dem Knopf (Plan 2: "x of y audits this week"). */
 .upa-kontingent { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); font-variant-numeric: tabular-nums;
   white-space: nowrap; margin-right: 4px; outline: 0; }
@@ -40,6 +51,11 @@
 .upa-planopt-l { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .upa-planopt-t { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
 .upa-planopt-d { font-size: var(--up-fs-s); font-weight: var(--up-fw-n); color: var(--vc-muted); white-space: normal; }
+/* Eine Wahl, die die Grenze der Zeitplaene sprengen wuerde (22.10.): gedimmt wie ein gesperrter Knopf, ohne Hover und ohne
+   Zeiger; der Grund im Tooltip. core hat fuer .up-pop-opt keinen Sperrzustand. */
+.upa-root .upa-planopt[aria-disabled="true"] { cursor: default; }
+.upa-root .upa-planopt[aria-disabled="true"]:hover { background: transparent; }
+.upa-root .upa-planopt[aria-disabled="true"] .upa-planopt-l { opacity: .45; }
 .upa-planhinweis { margin: 0; padding: 2px 10px 6px; font-size: var(--up-fs-s); line-height: 1.45; color: var(--vc-third); white-space: normal; }
 .upa-mehrmenu a.up-pop-opt { text-decoration: none; }
 .upa-mehrmenu .up-pop-opt-l svg { width: 15px; height: 15px; color: var(--vc-third); flex: 0 0 auto; }
@@ -71,6 +87,14 @@
 /* Das Skelett (.up-tsk aus UC.skeletonRows) so hoch wie die Zeilen danach: vorher 72 gegen 55, die Liste sprang beim
    Laden um 5 x 17 px zusammen (gemessen 22.10., nx_pa laden). */
 .upa-root .upa-liste .up-row:is(.upa-zeile, .up-tsk) { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }
+/* Compact (22.10., Table Settings "Row height"): 34 wie Brands und Merchants (shopping.css .ush-rh.is-dense). Die Kette schlaegt
+   .up-root.is-dense .up-row aus core (55). Zweizeilige Zellen werden einzeilig: die Adresse unter einem Titel geht (wie
+   .ush-unter in Shopping), "Last run: Failed" und "Next ..." ruecken neben das Datum bzw. den Plan und kuerzen mit "…" --
+   ohne sie stuende neben dem Ergebnis eines aelteren Laufs das Datum des gescheiterten, als waere es seins. */
+.upa-root .upa-liste.is-dense .up-row:is(.upa-zeile, .up-tsk) { height: 34px; flex: 0 0 34px; }
+.upa-root .upa-liste.is-dense .upa-seite .upa-url { display: none; }
+.upa-root .upa-liste.is-dense .upa-zweizeilig { flex-direction: row; align-items: baseline; gap: 6px; }
+.upa-root .upa-liste.is-dense .upa-z1 { flex: 0 0 auto; }
 /* Ein Strich in einer TEXT-Spalte steht links wie der Text darin (CLAUDE.md 1d: Text- und Datumsspalten links). core rueckt
    jede Zelle mit .up-num nach rechts, auch den leeren Strich (.up-num.is-empty) -- gemessen 22.10.: robots.txt-Zelle 196
    breit, Strich bei 172; Raw data "JSON" links, "–" rechts in derselben Spalte. */
@@ -195,7 +219,11 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-root.is-narrow .upa-tab-checks { --up-cols: minmax(0, 2fr) minmax(130px, 1fr) minmax(130px, 1fr); }
 .upa-root.is-vnarrow .upa-td-r, .upa-root.is-vnarrow .upa-td-wechsel, .upa-root.is-vnarrow .upa-td-groesse,
 .upa-root.is-vnarrow .upa-td-roh, .upa-root.is-vnarrow .upa-pstapel { display: none; }
-.upa-root.is-vnarrow .upa-tab-plattformen { --up-cols: minmax(0, 1.4fr) minmax(0, 1fr) 40px; }
+/* Ganz schmal weicht die Plattform, nicht der Zugang (22.10., Lukas): vorher 1.4fr gegen 1fr, bei 375 bekam Access 125 und
+   zeigte "Not reach…" (Text 75 von 90 px; deutsch "Nicht erreichbar" 75 von 103). Die laengste Angabe braucht mit Zeichen,
+   Abstand und Polstern 154 (deutsch, gemessen 22.10.), darum fest 160; die Plattform nimmt den Rest und kuerzt mit "…".
+   Fest und nicht nach Inhalt (auto, fit-content): jede Zeile ist ein eigenes Raster, die Spalten liefen sonst auseinander. */
+.upa-root.is-vnarrow .upa-tab-plattformen { --up-cols: minmax(0, 1fr) 160px 40px; }
 .upa-root.is-vnarrow .upa-td-robots { display: none; }
 .upa-root.is-vnarrow .upa-tab-laeufe { --up-cols: minmax(0, 1fr) minmax(0, 1.2fr) minmax(76px, .7fr); }
 .upa-root.is-vnarrow .upa-tab-belege { --up-cols: minmax(0, 1fr) minmax(60px, auto); }
