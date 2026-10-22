@@ -1803,8 +1803,14 @@ Branded only   Kippt der Ausschluss eine Ja/Nein-Antwort (im Filter nicht zitier
 
 Bauen: `nurBrandedMarke(tag, klasse)` in events.js, Felder `branded_only`, `branded_last_cited_day` aus
 `get_impact_event_urls_v1` und `get_impact_event_coverage_v1` (DB `bubble/branded_kennzeichnen_22_10/branded_v1.sql`).
-Fehlt der DB das Argument (PGRST202), fragt die Sitemap einmal ohne nach (`ABD_PF`). Das URL-Detail (scope_last_cited_at,
-Note „Show Branded Runs“) folgt mit der Drawer-Arbeit (§8d).
+Fehlt der DB das Argument (PGRST202), fragt die Sitemap einmal ohne nach (`ABD_PF`).
+
+URL-Detail: „Last seen“ und „Last cited“ im Hinweis kommen aus `scope_last_cited_at` (Umfang des Drawers; ohne das Feld
+wie bisher `last_cited_at`). Bei `branded_only` ersetzt der Hinweis „Only branded prompts cited this page in this period:
+{n} run(s), last on {date}. …“ den Satz „Not cited in the selected period“; sein Knopf „Include Branded“ schaltet nur den
+Stand DIESES Drawers um (`UC.drawerIntent(key).set({ branded: "all" })`, §8d), der Chip zeigt danach „Branded: Include
+Branded“ mit X. Die leere Tabelle der Antworten sagt dasselbe. Liegt das Branded-Datum nur später als das im Umfang,
+gibt es keinen Hinweis (Größenunterschied).
 
 ## 9. Skeleton / Loading (Geist, seit 15.10.)
 

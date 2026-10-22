@@ -57,7 +57,14 @@
      Kataloge geprueft (Katalog-Kollision). */
   if (UC.addMessages) UC.addMessages("de", {
     "Not cited yet": "Noch nicht zitiert",
-    "AI answers to your tracked prompts haven't cited this page yet.": "KI-Antworten auf deine getrackten Prompts haben diese Seite noch nicht zitiert."
+    "AI answers to your tracked prompts haven't cited this page yet.": "KI-Antworten auf deine getrackten Prompts haben diese Seite noch nicht zitiert.",
+    /* Nur Branded-Prompts haben zitiert (22.10., lee-up.de/cedric-leenen). */
+    "Only branded prompts cited this page in this period: 1 run, last on {date}. Branded prompts are left out of the metrics.":
+      "In diesem Zeitraum haben nur Branded Prompts diese Seite zitiert: 1 Lauf, zuletzt am {date}. Branded Prompts fließen nicht in die Kennzahlen ein.",
+    "Only branded prompts cited this page in this period: {n} runs, last on {date}. Branded prompts are left out of the metrics.":
+      "In diesem Zeitraum haben nur Branded Prompts diese Seite zitiert: {n} Läufe, zuletzt am {date}. Branded Prompts fließen nicht in die Kennzahlen ein.",
+    "Only branded prompts cited this page in this period. Their runs are hidden because branded prompts are left out of the metrics.":
+      "In diesem Zeitraum haben nur Branded Prompts diese Seite zitiert. Ihre Läufe sind ausgeblendet, weil Branded Prompts nicht in die Kennzahlen einfließen."
   });
 
   /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
@@ -538,6 +545,12 @@
       var n = parseFloat(String(v == null ? "" : v).replace(",", "."));
       return isFinite(n) ? n : null;
     }
+    /* Das letzte Zitat im Umfang des Drawers (22.10., branded_v1.sql: scope_last_cited_at); ohne das Feld (aeltere DB)
+       das letzte ueberhaupt. "" heisst: im Umfang nie zitiert. */
+    function letzteImUmfang(x) {
+      x = x || {};
+      return "scope_last_cited_at" in x ? txt(x.scope_last_cited_at) : txt(x.last_cited_at);
+    }
     /* Der Strich der App fuer "nichts da" -- eine Antwort auf die Frage, nicht drei. */
     var LEER = '<span class="up-dash">–</span>';
 
@@ -640,8 +653,12 @@
           teile.push('<span class="uud-metachip" data-explain="' + esc(k.key) + '">' + kpiWert(k) + '</span>');
         });
         /* url_detail_v1: last_cited_at ist das letzte Zitat des Teams -- DAS ist "zuletzt gesehen".
-           last_scraped_at sagt nur, wann die Seite gelesen wurde, und steht hier nicht. */
-        var ls = txt(x.last_cited_at || x.last_seen);
+           last_scraped_at sagt nur, wann die Seite gelesen wurde, und steht hier nicht.
+           Seit 22.10. (branded_v1.sql) im Umfang des Drawers: scope_last_cited_at zaehlt nur Prompts im Intent-/Branded-
+           Filter, wie die Kennzahlen daneben. Ohne das Feld (aeltere DB) wie bisher; ist es null, haben nur ausgeschlossene
+           Prompts zitiert -- dann steht hier nichts, den Grund sagt der Hinweis an den Kennzahlen ("Last seen today" ueber
+           0 Laeufen las sich bei lee-up.de/cedric-leenen wie ein Datenfehler). */
+        var ls = letzteImUmfang(x) || (!("scope_last_cited_at" in x) ? txt(x.last_seen) : "");
         if (ls) teile.push('<span class="uud-zuletzt" data-explain="last_seen">' +
           esc(UC.t("Last seen {date}").replace("{date}", UC.fmtDate(ls))) + '</span>');
         elMeta0.innerHTML = teile.join(STRICH);
@@ -660,7 +677,21 @@
          ein Knopf, der den Zeitraum dorthin legt -- so machen es Analytics-Werkzeuge (Vorschlag
          des DB-Chats, 12.10.). Den Knopf gibt es nur, wo jemand den Zeitraum setzen kann. */
       if (!laedt && x.in_range === false) {
-        var lc = txt(x.last_cited_at);
+        /* NUR BRANDED (22.10.): im Zeitraum zitiert, aber nur von Branded-Prompts, die der Drawer ausschliesst. Dann nicht
+           "Not cited in the selected period" (das stimmt nicht, und "Adjust period" hilft nicht), sondern der Grund und ein
+           Knopf, der Branded NUR in diesem Drawer einbezieht (UC.drawerIntent; die Seite dahinter bleibt, wie sie ist). */
+        if (x.branded_only === true) {
+          var bn = num(x.branded_runs) || 0, bl = txt(x.branded_last_cited_at);
+          elKpis.classList.add("is-hinweis");
+          elKpis.innerHTML = '<span class="uud-hinweis">' + esc(UC.t(bn === 1
+              ? "Only branded prompts cited this page in this period: 1 run, last on {date}. Branded prompts are left out of the metrics."
+              : "Only branded prompts cited this page in this period: {n} runs, last on {date}. Branded prompts are left out of the metrics.")
+              .replace("{n}", UC.fmtInt ? UC.fmtInt(bn) : String(bn)).replace("{date}", bl ? UC.fmtDate(bl) : "–")) + '</span>' +
+            (typeof root.__uudBranded === "function"
+              ? '<button type="button" class="up-btn-sec uud-zeitraum" data-uud-branded>' + esc(UC.t("Include Branded")) + '</button>' : "");
+          return;
+        }
+        var lc = letzteImUmfang(x);
         elKpis.classList.add("is-hinweis");
         elKpis.innerHTML = '<span class="uud-hinweis">' + esc(lc
             ? UC.t("Not cited in the selected period. Last cited on {date}.").replace("{date}", UC.fmtDate(lc))
@@ -982,7 +1013,11 @@
     /* ---- Klicks ------------------------------------------------------------------------------ */
     root.addEventListener("click", function (e) {
       if (e.target.closest && e.target.closest("[data-uud-zeitraum]")) {
-        if (typeof root.__uudZeitraum === "function") root.__uudZeitraum(txt(d().last_cited_at));
+        if (typeof root.__uudZeitraum === "function") root.__uudZeitraum(letzteImUmfang(d()));
+        return;
+      }
+      if (e.target.closest && e.target.closest("[data-uud-branded]")) {
+        if (typeof root.__uudBranded === "function") root.__uudBranded();
         return;
       }
       if (e.target.closest && e.target.closest("[data-uud-retry]")) {
@@ -1382,10 +1417,14 @@
     if (!DU.inRange) {
       /* Nicht im Zeitraum: kein Abruf -- die Antwort waere leer --, sondern der Leerzustand der
          Tabelle mit demselben Satz wie oben in der Seite. */
-      var lc = DU.zeile ? duStr(DU.zeile.last_cited_at) : "";
+      /* Im Umfang des Drawers (scope_last_cited_at, 22.10.); haben im Zeitraum nur Branded-Prompts zitiert, sagt die
+         Tabelle das, statt "nicht zitiert". */
+      var z0 = DU.zeile || {}, lc = duStr("scope_last_cited_at" in z0 ? z0.scope_last_cited_at : z0.last_cited_at);
       duSetter("renderResponsesTable")({ instanceId: DU.ids.urt, rows: [], totalCount: 0, isDark: duDunkel(),
-        empty_text: lc ? UC.t("Not cited in the selected period. Last cited on {date}.").replace("{date}", UC.fmtDate(lc))
-                       : UC.t("Not cited in the selected period.") });
+        empty_text: z0.branded_only === true
+          ? UC.t("Only branded prompts cited this page in this period. Their runs are hidden because branded prompts are left out of the metrics.")
+          : lc ? UC.t("Not cited in the selected period. Last cited on {date}.").replace("{date}", UC.fmtDate(lc))
+               : UC.t("Not cited in the selected period.") });
       duSetter("setResponsesTableLoading")(DU.ids.urt, "no");
       return;
     }
@@ -1548,6 +1587,9 @@
         });
       }
       r.__uudZeitraum = duZeitraumAufZitat;
+      /* "Include Branded" im Hinweis "nur Branded" (22.10.): nur der Stand DIESES Drawers (UC.drawerIntent), die Seite
+         dahinter bleibt; der Chip der Leiste zeigt danach "Branded: Include Branded" mit X zum Zuruecknehmen. */
+      r.__uudBranded = UC.drawerIntent ? function () { UC.drawerIntent(DU.intentKey).set({ branded: "all" }); } : null;
       DU.root = r;
       initRoot(r);
       /* DER KALENDER STEHT RECHTS NEBEN TITEL UND ADRESSE (13.10., "bei allen Drawern die Filter
