@@ -887,7 +887,10 @@ Schalter, ganz rechts in seiner Werkzeugzeile, 8 neben dem nächsten Umschalter.
 aller Charts aus einer Anfrage, teilen sie EINE Stufe: ein Klick stellt alle Schalter um, Kopf,
 Kennzahlen und Tabellen bleiben stehen, nur die Charts zeigen ihr Skelett, bis die Stufe da ist.
 Freigabe, Startstufe und aktive Stufe kommen aus core (`UC.granAvailability`,
-`UC.granFuerZeitraum`, `UC.granAusLieferung`), nie aus der Komponente. Ein Schalter, den die
+`UC.granFuerZeitraum`, `UC.granAusLieferung`), nie aus der Komponente. Tragen die Punkte den
+Beginn ihres Buckets (Woche ab Montag, Monat ab dem 1.), gibt der Aufrufer das Fenster des Charts
+mit (`fenster`, fünftes Argument von `UC.granAvailability`): sonst ergäbe jede Stufe eine andere
+Spanne, und ein Klick kippte die Freigabe. Ein Schalter, den die
 Datenbank noch nicht bedienen kann, steht nicht da (`hidden`; core setzt `display`, darum
 `.uev-gran[hidden] { display: none }`).
 
