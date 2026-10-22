@@ -1341,12 +1341,17 @@ Breiten        werden dafür nicht vergrößert (Wunsch: lieber kürzen); nur wo
 Ausgenommen    "Mentioned?" (.up-th-mentlbl baut die Tabelle selbst) und die Landingpage
 ```
 
-**Erklärkarte an einer Kennzahl ohne Info-Zeichen** (seit 22.10., Page Audit): Trägt das Design an
-der Kachel weder Zeile noch Zeichen, ist die Kachel selbst der Auslöser (`data-explain` und
-`tabindex="0"`; `UC.kpiKarte({ explain })` setzt beides, eigene Kacheln schreiben es selbst). Die
-Karte bleibt im festen Format: Platte mit dem Wert, wie die Kachel ihn zeigt (mit Trend, wenn sie
-einen zeigt), Titel = Etikett, Satz aus `UC.explainCopy` (`EXPLAIN_TEXT` in core). Nie ein
-Tooltip mit Satz an einer Kennzahl, nie eine Fußzeile als Erklärung.
+**Erklärkarte an einer Kennzahl** (22.10., Page Audit; abends überholt): Eine Erklärung öffnet sich
+**immer über das Info-Zeichen**, nie über die ganze Kachel (Lukas: "verhält sich völlig anders, als
+User das gewohnt sind"). `UC.kpiKarte({ explain })` setzt `.up-th-info` mit `data-explain` rechts
+in die Zeile des Etiketts (`.up-kpi-label.has-info`), also **oben rechts in der Kachel**, sichtbar
+beim Überfahren der Kachel (core.css); eigene Kacheln schreiben dasselbe Zeichen ins Etikett
+(Page Audit `.upa-kk-l`). Die Karte baut `UC.makeExplain` mit `triggerSel` auf das Zeichen; die
+Kachel für die Platte findet der Aufrufer über `closest(".up-kpi")`. Format fest: Platte mit dem
+Wert, wie die Kachel ihn zeigt (mit Trend, wenn sie einen zeigt), Titel = Etikett, Satz aus
+`UC.explainCopy` (`EXPLAIN_TEXT` in core). Nie ein Tooltip mit Satz an einer Kennzahl oder auf
+einem Spaltenwort, nie eine Fußzeile als Erklärung. Shopping, Ads und die Details setzen ihr
+Zeichen weiter dicht hinter das Wort (ohne `.has-info`).
 
 **Tabellenköpfe im Drawer** (seit 15.10. spät, `core.css` „DIE TABELLENKOEPFE IM DRAWER“): jede
 Tabelle in einem Drawer (`.up-kdr`, `[id^="drawer-"]`) trägt den Kopf der Seitentabellen, behält
