@@ -141,12 +141,11 @@
 .uev-sk-text + .uev-sk { margin-top: 8px; }
 
 /* ---- Detail ---------------------------------------------------------------------------------- */
-/* SICHTBAR 40px von der Unterkante eines Kastens bis zur naechsten Ueberschrift (04.10.: "32px,
-   mit der Mitte der Koepfe kommen wir auf 40"). Gemessen stimmte die Rechnung nur fuer Koepfe ohne
-   Untertitel: mit Untertitel fuellt der Text seinen 32px-Behaelter (.up-sec-head) schon aus, und
-   es blieben 32. Darum 40 Abstand und die Koepfe oben statt mittig -- dann sind es bei jedem
-   Abschnitt dieselben 40. */
-.uev-detail { display: flex; flex-direction: column; gap: 40px; }
+/* 32 ZWISCHEN DEN ABSCHNITTEN (22.10., Lukas: "genau"): wie zwischen den Abschnitten jeder anderen Seite (Shopping, Ads, die
+   Uebersicht von Impact) und wie ueber und unter der Steuerzeile. Bis dahin 40 (04.10.: "32px, mit der Mitte der Koepfe kommen
+   wir auf 40"), damit stand das Detail als einzige Seite weiter auseinander. Die Koepfe bleiben oben statt mittig: mit Untertitel
+   fuellt der Text seinen 32px-Behaelter (.up-sec-head) aus, ohne stuende er tiefer -- so sind es bei jedem Abschnitt dieselben 32. */
+.uev-detail { display: flex; flex-direction: column; gap: 32px; }
 .uev-detail .uev-sec-head { align-items: flex-start; }
 /* LUFT UNTER DER LETZTEN ZEILE (17.10., Nutzer: "Vergleichsgruppe 67 Prompts klebt fast ganz
    unten am Rand"): gemessen 0 vom letzten Satz bis zur Unterkante von #main, in der Uebersicht
@@ -154,10 +153,8 @@
    .uss-main: "Unten 64"). Am Bereich, nicht am Detail: Uebersicht und Detail teilen ihn. */
 .uev-root .uev-main { padding-bottom: 64px; }
 .uev-steuerblock { display: flex; flex-direction: column; gap: 16px; }
-/* FENSTER UND FILTER (21.10.): ueber und unter der Steuerzeile 32 statt der 40 zwischen den Abschnitten (Nutzer, nach dem ersten Stand mit
-   16: "auf 32"). Die Raender gleichen die 40 des Stapels aus; damit stehen auch Kennzahlen und Chart eines Events 32 unter ihr (vorher eine
-   eigene Regel fuer .uev-sek-chart mit 16). */
-.uev-detail > .uev-steuerblock { margin-top: calc(32px - 40px); margin-bottom: calc(32px - 40px); }
+/* FENSTER UND FILTER (21.10.): ueber und unter der Steuerzeile 32 (Nutzer, nach dem ersten Stand mit 16: "auf 32"). Bis 22.10. glichen
+   Raender hier die 40 des Stapels aus; seit der Stapel selbst 32 hat, braucht die Zeile keine eigene Regel mehr. */
 /* DER KOPF DES DETAILS (03.10. neu): dieselbe Sprache wie die Karte, eine Nummer groesser --
    Band 96, Profilbild 64, Name in der groessten Stufe der App (Dashboards: hoechstens 22-24px).
    Datum und Typ als zwei Angaben mit Zeichen, der Umfang darunter. */
@@ -181,6 +178,25 @@
 /* Hinweise ("Still running", "Limited baseline", andere Events): Angaben mit Zeichen wie Datum
    und Typ im Kopf -- KEINE Pillen mit Punkt (03.10.: "die habe ich sonst nirgendwo in der App"). */
 .uev-hinweise { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 16px; font-size: var(--up-fs-m); color: var(--vc-third); }
+/* Andere Events im Zeitraum (22.10.): das Info-Zeichen aus core direkt hinter dem Text, sichtbar beim Ueberfahren der Angabe wie im
+   Tabellenkopf; ohne Zeiger (Touch) immer, sonst wuesste niemand, dass es die Liste gibt. margin-left: auto aus der Grundregel
+   gilt hier nicht -- die Angabe ist nur so breit wie ihr Inhalt. */
+.uev-angabe.uev-ov > .up-th-info { margin-left: 0; cursor: pointer; border-radius: var(--up-r-xs); }
+.uev-angabe.uev-ov:hover > .up-th-info, .uev-angabe.uev-ov > .up-th-info:focus-visible, .uev-angabe.uev-ov > .up-th-info[aria-expanded="true"] { opacity: 1; }
+.uev-angabe.uev-ov > .up-th-info:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: 2px; }
+@media (hover: none) { .uev-angabe.uev-ov > .up-th-info { opacity: 1; } }
+/* Die Karte dazu haengt am <body> (makeExplain): klickbar nur, solange sie steht, wie die Anleitung in core. Je Event eine Zeile auf
+   der Platte, Name in der Schrift der Probezeile aus core (12/500), das Datum leiser DARUNTER: nebeneinander liess ein Zeitraum
+   ("06. Oct – 05. Nov 2026", 126 breit) dem Namen in 248 nur gut 80 -- gemessen kuerzten zwei von drei Namen. */
+.up-explain.uev-explain-ov.is-on { pointer-events: auto; }
+.up-explain-vis.uev-ov-platte { gap: 0; padding: 4px; align-items: stretch; }
+.uev-ov-zeile { all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start; width: 100%;
+  padding: 6px 8px; border-radius: var(--up-r-xs); cursor: pointer; font-size: var(--up-fs-s); line-height: 16px; color: inherit; }
+.uev-ov-zeile:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+.uev-ov-zeile:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+.uev-ov-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.uev-ov-datum { max-width: 100%; white-space: nowrap; font-variant-numeric: tabular-nums; color: color-mix(in srgb, currentColor 60%, transparent); }
+.uev-ov-mehr { padding: 6px 8px; font-size: var(--up-fs-s); line-height: 16px; color: color-mix(in srgb, currentColor 60%, transparent); }
 /* Beispielwerte in der Erklaerkarte der Spalte "First cited": die Chips der Tabelle nebeneinander. */
 .up-explain-vis.uev-explain-chips { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px; }
 
@@ -746,10 +762,10 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-pruefmarke svg { width: 16px; height: 16px; color: var(--vc-third); }
 
 /* ---- DIE REGEL-ZIELE IM DETAIL ---------------------------------------------------------------
-   Je Regel ein Abschnitt in den Massen der anderen: 40 zwischen den Abschnitten wie .uev-detail,
+   Je Regel ein Abschnitt in den Massen der anderen: 32 zwischen den Abschnitten wie .uev-detail (bis 22.10. 40),
    16 zwischen Kennzahlen, Verlauf und Tabelle wie im Steuerblock oben. Der Verlauf ist kleiner
    als das Diagramm der Marke (220 statt 300) -- er ist eine Ergaenzung, nicht die Aussage. */
-.uev-ziele { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
+.uev-ziele { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
 .uev-ziele[hidden] { display: none; }
 .uev-ziel-h { gap: 8px; min-width: 0; }
 .uev-ziel-block { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
@@ -789,12 +805,12 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-konf-n { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* ---- DER ABSCHNITT "SITEMAP" (17.10., Beschluss 10, events.js abdFuellen) ------------------
-   Ein eigener Abschnitt direkt unter der URL-Tabelle einer Regel, 40 Abstand wie zwischen den
-   Abschnitten der Seite. Der Kopf ist der aus core (.up-sec-head, 14 nach unten): links "Sitemap" mit dem
+   Ein eigener Abschnitt direkt unter der URL-Tabelle einer Regel, 32 Abstand wie zwischen den
+   Abschnitten der Seite (bis 22.10. 40). Der Kopf ist der aus core (.up-sec-head, 14 nach unten): links "Sitemap" mit dem
    Satz als Untertitel ("12 of 43 pages cited. Last checked 5 minutes ago." -- KEIN Balken), rechts
    "Refresh" als .up-btn-sec wie "Remove" oben im Kopf der Regel. Darunter nur, wenn es etwas zu sagen
    gibt, ein Satz (Pause, Kuerzung, Fehler), dann die Reiter und die Liste. */
-.uev-abd-sek { display: flex; flex-direction: column; margin-top: 40px; min-width: 0; }
+.uev-abd-sek { display: flex; flex-direction: column; margin-top: 32px; min-width: 0; }
 /* ---- URLS UND SITEMAP IN EINEM KASTEN (21.10., events.js zielSekAnlegen/quellenStellen) -----------------------------------------
    .up-box aus core (Rand, Radius 12, Grund). Kopfzeile wie die Ueberschriftzeile im Band-Kasten: 48 hoch, 16 Polster, links der Umschalter
    (.up-seg, "Cited URLs 8 | Sitemap 8 of 30"), rechts die Suche der URLs. Unter dem Kopf eine Haarlinie, darunter randlos der eine Teil:
@@ -948,7 +964,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-datumhilfe { font-size: var(--up-fs-s); line-height: 1.5; color: var(--vc-third); }
 
 /* Modus "Citation Tracking only" (18.10.): UC.bandAus setzt .is-band-aus am Detail. Aus sind alles, was der Marke
-   gilt: Kennzahlen, Bericht, Chart und Marktbewegung. display:none, damit auch der Platz der 40er-Abstaende geht. */
+   gilt: Kennzahlen, Bericht, Chart und Marktbewegung. display:none, damit auch der Platz der Abstaende (32) geht. */
 .uev-detail.is-band-aus :is([data-sek="kpis"], [data-sek="bericht"], .uev-sek-chart, [data-sek="markt"]) { display: none; }
 /* Wie core fuer .up-ph-addbtn (core.css, :has(.up-bandsw)): schmal gibt der Hinzufuegen-Knopf sein Wort her, das Zeichen bleibt. */
 .uev-root.is-vnarrow .uev-kopfaktion:has(.up-bandsw) .uev-addurl-txt { display: none; }

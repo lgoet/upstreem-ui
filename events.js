@@ -831,6 +831,8 @@
     "No comparable data yet": "Noch keine vergleichbaren Daten",
     "{n} other event in this period": "{n} weiteres Event in diesem Zeitraum",
     "{n} other events in this period": "{n} weitere Events in diesem Zeitraum",
+    "Other events in this period": "Weitere Events in diesem Zeitraum", "Show the other events": "Die anderen Events zeigen",
+    "They happened in the same period and may also have moved these numbers.": "Sie fielen in denselben Zeitraum und können die Zahlen ebenfalls bewegt haben.",
     "{n} prompt was added after the event. It appears in the chart, but not in the before and after numbers.":
       "{n} Prompt kam erst nach dem Event dazu. Er steht in der Kurve, aber nicht in den Vorher-Nachher-Zahlen.",
     "{n} prompts were added after the event. They appear in the chart, but not in the before and after numbers.":
@@ -896,6 +898,8 @@
       "Die Suche ist gerade nicht verfügbar. Ein vollständiger Link lässt sich trotzdem einfügen.",
     "This is taking longer than expected. Please try again.": "Das dauert länger als erwartet. Bitte erneut versuchen.",
     "Event created": "Event angelegt", "URL added": "URL hinzugefügt", "Event updated": "Event aktualisiert",
+    "Event deleted": "Event gelöscht", "Citation Tracking deleted": "Citation Tracking gelöscht",
+    "Could not load the details": "Die Details konnten nicht geladen werden",
     "Observations are counted from the event date, also for URLs you add now.":
       "Beobachtungen zählen ab dem Event-Datum, auch für URLs, die du jetzt hinzufügst.",
     "Preview": "Vorschau", "Untitled event": "Unbenanntes Event",
@@ -1875,6 +1879,85 @@
           return '<span class="up-marke is-leise uev-beob' + (x.ja ? " is-ja" : "") + '">' + esc(t(x.text)) + '</span>'; }).join("") + '</div>' : "";
         return vis + '<div class="up-explain-h">' + esc(t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>';
       } });
+    /* DIE ANDEREN EVENTS IM ZEITRAUM (22.10., Lukas: "ja"): an "1 other event in this period" das Info-Zeichen, die Karte aus core
+       nennt Namen und Datum aus overlaps der Analyse, ein Klick auf einen Namen oeffnet dieses Event. makeExplain schliesst die
+       Karte, sobald der Zeiger das Zeichen verlaesst -- ein Name darin waere nie zu erreichen. Also bekommt core einen Ausloeser,
+       den es nicht gibt (.uev-ov-nie), und Zeigen und Schliessen stehen hier: der Weg vom Zeichen in die Karte (die 10 der Spitze)
+       hat 150 ms Nachlauf, ein Klick oeffnet auch ohne Zeigen (Touch), Escape und ein Druck daneben schliessen. */
+    var OV_MAX = 6, ovFuer = null, ovZuT = null;
+    var ovKarte = UC.makeExplain ? UC.makeExplain({ root: root, triggerSel: ".uev-ov-nie", cls: "uev-explain-ov", getIsDark: isDark,
+      html: function () {
+        var a = dieAnalyse(), l = a && isArr(a.overlaps) ? a.overlaps.filter(function (o) { return o && o.event_id; }) : [];
+        if (!l.length) return "";
+        var mehr = l.length - OV_MAX;
+        return '<div class="up-explain-vis uev-ov-platte">' + l.slice(0, mehr > 1 ? OV_MAX - 1 : OV_MAX).map(function (o) {
+          var wann = o.end_date && String(o.end_date).slice(0, 10) !== String(o.event_date || "").slice(0, 10) ? zeitraum(o.event_date, o.end_date) : datum(o.event_date);
+          return '<button type="button" class="uev-ov-zeile" data-uev-ov="' + esc(o.event_id) + '"><span class="uev-ov-name">' + esc(o.name || t("Untitled event")) + '</span>' +
+            '<span class="uev-ov-datum">' + esc(wann) + '</span></button>';
+        }).join("") + (mehr > 1 ? '<span class="uev-ov-mehr">' + esc(ersetze(t("and {n} more"), { n: mehr + 1 })) + '</span>' : '') + '</div>' +
+          '<div class="up-explain-h">' + esc(t("Other events in this period")) + '</div>' +
+          '<div class="up-explain-t">' + esc(t("They happened in the same period and may also have moved these numbers.")) + '</div>';
+      } }) : null;
+    function ovOffen() { return !!(ovKarte && ovFuer && ovKarte.el.classList.contains("is-on")); }
+    function ovZeigen(el) {
+      clearTimeout(ovZuT);
+      if (!ovKarte || (ovFuer === el && ovOffen())) return;
+      ovKarte.show(el);
+      if (!ovKarte.el.classList.contains("is-on")) return;
+      ovFuer = el; el.setAttribute("aria-expanded", "true");
+    }
+    function ovZu(sofort) {
+      clearTimeout(ovZuT);
+      function zu() { if (ovFuer) ovFuer.setAttribute("aria-expanded", "false"); ovFuer = null; if (ovKarte) ovKarte.hide(); }
+      if (sofort) zu(); else ovZuT = setTimeout(zu, 150);
+    }
+    if (ovKarte) {
+      root.addEventListener("mouseover", function (e) { var el = e.target.closest && e.target.closest(".uev-ov-info"); if (el) ovZeigen(el); });
+      root.addEventListener("mouseout", function (e) {
+        var el = e.target.closest && e.target.closest(".uev-ov-info");
+        if (!el || el !== ovFuer || (e.relatedTarget && (el.contains(e.relatedTarget) || ovKarte.el.contains(e.relatedTarget)))) return;
+        ovZu();
+      });
+      ovKarte.el.addEventListener("mouseenter", function () { clearTimeout(ovZuT); });
+      ovKarte.el.addEventListener("mouseleave", function (e) { if (!(ovFuer && e.relatedTarget && ovFuer.contains(e.relatedTarget))) ovZu(); });
+      root.addEventListener("click", function (e) {
+        var el = e.target.closest && e.target.closest(".uev-ov-info");
+        if (!el) return;
+        e.preventDefault(); e.stopPropagation();
+        if (ovFuer === el && ovOffen() && e.detail) return;   /* der Klick nach dem Zeigen schliesst nicht gleich wieder */
+        if (ovFuer === el && ovOffen()) ovZu(true); else ovZeigen(el);
+      });
+      root.addEventListener("keydown", function (e) {
+        var el = e.target.closest && e.target.closest(".uev-ov-info");
+        if (!el || (e.key !== "Enter" && e.key !== " ")) return;
+        e.preventDefault(); ovZeigen(el);
+        var erste = ovKarte.el.querySelector(".uev-ov-zeile"); if (erste) erste.focus();
+      });
+      ovKarte.el.addEventListener("click", function (e) {
+        var z = e.target.closest && e.target.closest("[data-uev-ov]");
+        if (!z) return;
+        var id = z.getAttribute("data-uev-ov");
+        ovZu(true);
+        oeffnen(id, true);
+      });
+      /* Escape schliesst und gibt den Fokus dem Zeichen zurueck; Pfeiltasten gehen durch die Namen. */
+      document.addEventListener("keydown", function (e) {
+        if (!ovOffen()) return;
+        if (e.key === "Escape") { var el = ovFuer; ovZu(true); if (el && ovKarte.el.contains(document.activeElement)) el.focus(); return; }
+        if ((e.key === "ArrowDown" || e.key === "ArrowUp") && ovKarte.el.contains(document.activeElement)) {
+          var zs = [].slice.call(ovKarte.el.querySelectorAll(".uev-ov-zeile")), i = zs.indexOf(document.activeElement);
+          if (i >= 0) { e.preventDefault(); zs[(i + (e.key === "ArrowDown" ? 1 : zs.length - 1)) % zs.length].focus(); }
+        }
+      }, true);
+      document.addEventListener("pointerdown", function (e) {
+        if (!ovOffen() || (e.target.closest && e.target.closest(".uev-ov-info")) || ovKarte.el.contains(e.target)) return;
+        ovZu(true);
+      }, true);
+      ovKarte.el.addEventListener("focusout", function (e) {
+        if (e.relatedTarget && (ovKarte.el.contains(e.relatedTarget) || (ovFuer && ovFuer.contains(e.relatedTarget)))) return;
+        if (e.relatedTarget) ovZu(true);
+      });
+    }
     /* DIE ERKLAERUNG DER SEITE (03.10.): ein Info-Knopf links neben der Hauptaktion im Kopf, am
        Zeiger UND per Klick. Die Erklaerkarte aus core, doppelt so breit (496 statt 248, cls
        uev-explain-breit), oben im hellen Feld eine kleine Zeichnung: zwei Kurven, die bis zum
@@ -1985,11 +2068,24 @@
       stufen: function () {
         if (state.ansicht !== "detail") return [{ name: "Overview", uebersetzen: true }];
         var d = dieDetail() || listeEvent(state.eventId);
+        /* Am Telefon (is-vnarrow, 22.10., Lukas: "ja") ohne die mittlere Stufe: "Impact" fuehrt ohnehin zur Uebersicht, und der Name
+           des Events bekommt den Platz. Mit dem Umschalter der Seitenleiste wird "Impact"
+           in core zum Zeichen (is-knapp), es bleibt Zeichen > Name. */
+        if (root.classList.contains("is-vnarrow")) return [{ name: d ? d.name : "…" }];
         return [{ name: "Overview", uebersetzen: true, klick: function () { zurUebersicht(true); } },
                 { name: d ? d.name : "…" }];
       }
     }) : null;
     function krumenNeu() { if (krumen && krumen.zeichnen) krumen.zeichnen(); }
+    /* Die Stufen haengen an is-vnarrow, das widthTiers setzt: wechselt die Klasse, neu zeichnen (zeichnen tut nichts, wenn sich die
+       Stufen nicht aendern). Am Attribut beobachtet statt an der Breite -- widthTiers hoert auf Beobachter UND Fenster. */
+    if (krumen && window.MutationObserver) {
+      var krumenSchmal = root.classList.contains("is-vnarrow");
+      new MutationObserver(function () {
+        var s = root.classList.contains("is-vnarrow");
+        if (s !== krumenSchmal) { krumenSchmal = s; krumenNeu(); }
+      }).observe(root, { attributes: true, attributeFilter: ["class"] });
+    }
 
     /* ---- Adresse --------------------------------------------------------------------------- */
     function adresseEvent() {
@@ -2923,7 +3019,11 @@
       if (isFinite(rf) && rf > tagMs(heuteIso()))
         h.push(angabe("clock", ersetze(t("Reliable from {date}"), { date: datum(String(w.ready_from).slice(0, 10)) }), t("The first day with data after the event.")));
       var ov = isArr(a.overlaps) ? a.overlaps.length : 0;
-      if (ov) h.push(angabe("tickets", ersetze(t(ov === 1 ? "{n} other event in this period" : "{n} other events in this period"), { n: ov })));
+      /* Mit dem Info-Zeichen (22.10.): die Karte nennt die Events und oeffnet sie (ovKarte). Das Zeichen ist ein Knopf mit eigenem
+         Namen, damit Tastatur und Vorleser die Liste erreichen. */
+      if (ov) h.push('<span class="uev-angabe uev-ov">' + UC.icon("tickets", 2) + '<span>' + esc(ersetze(t(ov === 1 ? "{n} other event in this period" : "{n} other events in this period"), { n: ov })) + '</span>' +
+        (ovKarte ? '<span class="up-th-info uev-ov-info" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-label="' + esc(t("Show the other events")) + '">' + UC.icon("info", 2) + '</span>' : '') + '</span>');
+      if (ovOffen()) ovZu(true);   /* das Zeichen wird neu gebaut, die Karte hinge sonst an einem Knoten, den es nicht mehr gibt */
       el.innerHTML = h.join("");
     }
 
@@ -3344,7 +3444,16 @@
     function renderUrls() {
       var el = elMain.querySelector('[data-sek="urls"]'), d = dieDetail(), a = dieAnalyse();
       var platz = tabInhalt("urls");
-      /* Ohne Detail kein Abschnitt (statt einer leeren Flaeche mit 40 Abstand darueber): der Kopf
+      /* DER DETAILABRUF IST GESCHEITERT, DER KOPF STEHT AUS DER LISTE (22.10., Klickrouten E2): bis dahin fehlten Ziele, URLs und
+         Umfang still, und die Seite sah aus wie ein Event ohne Ziele (CLAUDE.md "Stiller Ausfall"). Jetzt steht an ihrer Stelle der
+         Fehlerzustand aus core mit "Try again", der nur das Detail neu holt. Ohne Listeneintrag sagt es der Kopf selbst (renderKopf). */
+      if (!d && state.detailFehler && !state.detailLaden && state.eventId && !wegIds[state.eventId] && listeEvent(state.eventId)) {
+        seitenStand("urls", null); el.hidden = false;
+        platz.innerHTML = '<div class="up-box uev-leerbox">' + UC.leerHtml({ icon: "info", titel: "Could not load the details",
+          text: "Something went wrong on our side. Try again in a moment.", knopf: "Try again", knopfAttr: "data-uev-detailneu" }) + '</div>';
+        return;
+      }
+      /* Ohne Detail kein Abschnitt (statt einer leeren Flaeche mit Abstand darueber): der Kopf
          zeigt sein Skelett, und die Ziele kommen mit dem Detail. */
       if (!d) { platz.innerHTML = ""; seitenStand("urls", null); el.hidden = true; return; }
       var urls = isArr(d.urls) ? d.urls : [];
@@ -5018,8 +5127,9 @@
          abgeschlossene als Bericht. Ohne Teil B traegt kein Event einen Status -- alles wie bisher. */
       var ev = dasEvent();
       box.classList.toggle("is-geplant", istGeplant(ev));
-      /* Citation Tracking (19.10.): die Marken-Teile (Kennzahlen, Bericht, Chart, Marktbewegung, Hinweise, Umfang) gibt es nicht -- kein
-         Schalter, die Ansicht ist fest die Beobachtung der Seiten. */
+      /* Citation Tracking (19.10.): die Marken-Teile (Kennzahlen, Bericht, Chart, Marktbewegung, Hinweise, Umfang) gibt es nicht. Der
+         Schalter im Seitenkopf bleibt trotzdem (am 22.10. bestaetigt): "Chart and table" oder "Table only" wie auf Citations und
+         Brands, er blendet die Kennzahlen und den Chart der Ziele aus (modusStellen). */
       box.classList.toggle("is-watch", istWatch(ev));
       root.classList.toggle("is-watch-ansicht", istWatch(ev));   /* ohne Anleitung: ihre Detail-Schritte fuehren durch Teile, die es hier nicht gibt */
       box.classList.toggle("is-kampagne", kampagneDa() && mitEnde(ev) && !istGeplant(ev));
@@ -5179,6 +5289,7 @@
       if (pas) { paStarten(pas); return; }
       if (e.target.closest(".uev-anlegen, [data-uev-create]")) { e.preventDefault(); popupArt(); return; }
       if (e.target.closest(".uev-zurueck, [data-uev-zurueck]")) { zurUebersicht(true); return; }
+      if (e.target.closest("[data-uev-detailneu]")) { state.detailLaden = true; renderDetail(); detailAnfordern(); return; }
       var zm = e.target.closest("[data-zm]");
       if (zm) { var zw = zm.getAttribute("data-zm"); state.zielMetrik = zw === "abs" || zw === "urls" ? zw : "share"; persist(); zielMetrikSetzen(); renderZiele(); return; }
       var qb = e.target.closest("[data-quelle]");
@@ -8263,6 +8374,10 @@
       try { return (UC.eventsStand && UC.eventsStand()) || {}; } catch (e) { return {}; }
     }
     function geloeschtFertig(id, listeFrisch) {
+      /* Die Meldung nach dem Loeschen (22.10., Klickrouten: der Dialog ging zu, die Karte verschwand, und sonst sagte nichts, dass es
+         geklappt hat -- Anlegen und Bearbeiten melden sich). Nur fuer das Loeschen aus diesem Dialog: dieselbe Antwort ein zweites
+         Mal, oder ein Event, das jemand anders geloescht hat, meldet nichts. Die Art vor dem Abheften lesen, danach ist es weg. */
+      var unsere = !!(wartend.del && wartend.del.id === id), alt = state.detail[id] || listeEvent(id);
       state.geloescht[id] = 1;
       /* Sofort, nicht erst mit der naechsten Liste (die Leiste gleicht sonst selbst ab). */
       eventAbheften(id);
@@ -8271,6 +8386,7 @@
       if (wartend.del) { var api2 = wartend.del.api; clearTimeout(wartend.del.uhr); wartend.del = null; api2.schliessen(); }
       if (!listeFrisch) listeNeu();
       if (state.ansicht === "detail" && state.eventId === id) zurUebersicht(true); else renderListe();
+      if (unsere && UC.toast) UC.toast(t(alt && istWatch(alt) ? "Citation Tracking deleted" : "Event deleted"));
     }
     /* Loeschen oder URL entfernen ist gescheitert (13.10.): die Bestaetigung geht zu, der Grund
        steht als Toast -- dort hat sie kein Feld, an dem er stehen koennte, und die Frage "wirklich
