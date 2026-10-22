@@ -2760,8 +2760,19 @@
     }
     .up-ment-search:not(:placeholder-shown) + .up-ment-searchclear { display: inline-flex; }
     .up-ment-list { max-height: 336px; }   /* ~10.5 rows -> the 11th peeks and signals scrolling */
-    /* Typ-Filter (Citation/URL type): dieselbe feste Hoehe wie die Topics-Liste (.utf-list), damit beide Menues gleich hoch sind. */
-    .up-ff-ucittypes .up-ment-list, .up-ff-uurltypes .up-ment-list, .up-ff-dtypes .up-ment-list { max-height: 244px; overflow-y: auto; }
+    /* Typ-Filter (Citation/URL type): ALLE Zeilen ohne Scrollen (22.10., Nutzer: "die letzte Row wird leicht abgeschnitten
+       ... bei normaler Screen Height immer alle Rows"). Bis hier 244 wie die Topics-Liste (.utf-list). Die sieben Citation-
+       Typen brauchen 7 x 36 (Typ-Chip 24 + Polster 12) + 6 x 4 = 276; bei 244 drueckte die Flex-Liste jede Zeile auf ihr
+       min-height 34, und der letzten fehlten trotzdem 18px (gemessen 1440x900). Die Liste hat eine feste,
+       kurze Menge, also nimmt sie ihre eigene Hoehe; gedeckelt wird nur am Fenster: 100dvh minus dem Rand, den makeSubmenu
+       oben und unten laesst (klemmen, 2 x 8), minus allem, was in der Schale ueber und unter der Liste steht (Rahmen 2, Polster
+       2 x 8, Kopf 26 + 6, Suchfeld 32 + 8): zusammen 106. Erst wenn das Fenster dafuer zu niedrig ist, scrollt die Liste.
+       --up-ff-platz: im Hineingehen (vom Chip geoeffnet, oder schmal) klemmt keine Schale, das Panel haengt unter seinem
+       Ausloeser; dort setzt filter-bar.js (listePlatz) den gemessenen Platz bis zum Bildrand. Ohne Messung gilt das Fenster.
+       Die Zeilen schrumpfen nicht: scrollt die Liste doch, drueckte Flex sie sonst wieder auf 34 unter den 24 hohen Chip. */
+    .up-ff-ucittypes .up-ment-list, .up-ff-uurltypes .up-ment-list, .up-ff-dtypes .up-ment-list {
+      max-height: min(calc(100dvh - 106px), var(--up-ff-platz, 100dvh)); overflow-y: auto; }
+    .up-ff-ucittypes .up-ment-list > .up-ff-opt, .up-ff-uurltypes .up-ment-list > .up-ff-opt, .up-ff-dtypes .up-ment-list > .up-ff-opt { flex-shrink: 0; }
     .up-ment-noresult { padding: 12px; font-size: 12px; color: var(--vc-muted); text-align: center; }
     /* ---- "Not listed? Add your own" unten im Menue (03.10. nach core) --------------------------
        Die Bauart der Branche in Your Brand (settings-brand, dort noch .usb-ddcustom-*), Wert fuer

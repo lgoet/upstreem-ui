@@ -1639,8 +1639,10 @@
         onOpen: function (key) {
           var f = byKey(key);
           if (f) spiegeln(f);
+          listePlatz();
         },
         onClose: function (key) {
+          listePlatz();
           /* Die Suche des Filters beim Verlassen leeren -- ueber SEINEN eigenen Clear-Knopf, nicht
              ueber seinen Zustand. Ein Suchtext, der beim naechsten Oeffnen noch drinsteht, sieht
              aus wie eine Liste, in der Eintraege fehlen. */
@@ -1653,6 +1655,29 @@
         }
       });
       function byKey(k) { for (var i = 0; i < liste.length; i++) if (liste[i].key === k) return liste[i]; return null; }
+      /* PLATZ FUER DIE LISTE IM HINEINGEHEN (22.10.). Die Typ-Filter zeigen seit heute alle Zeilen (core.css,
+         .up-ff-*types .up-ment-list). Neben dem Panel klemmt makeSubmenu die Schale an den Bildrand; im Hineingehen (vom
+         Chip, oder schmal) haengt das Panel aber unter seinem Ausloeser und waechst nach unten. Gemessen bei 1440x760, vom
+         Chip "URL type" geoeffnet: 14 Zeilen, Panel unten bei 836, die letzten zwei Zeilen 76px unter dem Bild und nicht
+         erreichbar. Darum bekommt dort die offene Liste den Platz bis 8px vor dem Bildrand (wie klemmen) als Obergrenze,
+         abzueglich dessen, was im Panel unter ihr steht; reicht er nicht, scrollt sie. Mindestens drei Zeilen, sonst ist
+         sie nicht mehr bedienbar. Gelesen wird im naechsten Bild: im selben Zug erzwaenge das Messen ein Layout der ganzen
+         Seite vor dem Aufgehen (siehe oeffnen). Ausserhalb des Hineingehens und beim Schliessen faellt der Wert weg. */
+      var platzBild = 0;
+      function listePlatz() {
+        if (platzBild) cancelAnimationFrame(platzBild);
+        platzBild = requestAnimationFrame(function () {
+          platzBild = 0;
+          var drin = elMenu.classList.contains("is-drill") && elMenu.classList.contains("is-inside");
+          var mr = drin ? elMenu.getBoundingClientRect() : null;
+          Array.prototype.forEach.call(elMenu.querySelectorAll(".up-ment-list"), function (l) {
+            var r = drin ? l.getBoundingClientRect() : null;
+            if (!r || !r.height) { l.style.removeProperty("--up-ff-platz"); return; }
+            var platz = Math.floor(window.innerHeight - 8 - r.top - (mr.bottom - r.bottom));
+            l.style.setProperty("--up-ff-platz", Math.max(120, platz) + "px");
+          });
+        });
+      }
 
       /* KEIN eigener Escape-Zuhoerer. core hat einen seitenweiten: die Popover-Registry schliesst
          bei Escape ALLES (core.js, closeAll im keydown der Registry). Ich hatte hier erst zwei

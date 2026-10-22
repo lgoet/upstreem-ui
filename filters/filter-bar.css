@@ -527,10 +527,13 @@
 .ufb-root[data-form="gross"] .ufb-menu.is-vomchip .up-subback.up-subback { display: none; }
 /* Ein Logo statt des Zeichens (zeichenVon, 15.10.): dieselbe Kachel wie die Logos der Marken-
    Dropdowns (.up-ment-logo: Logo-Grund, Radius 4), so gross wie das Zeichen, das sie ersetzt --
-   16 in der Menuezeile, 14 im Chip. */
+   16 in der Menuezeile, 14 im Chip.
+   1px Polster wie dort (22.10., Nutzer: "im Darkmode eine kleine Padding bei dem hellen Bereich, wo das Logo drin ist"):
+   im Dunkeln ist der Logo-Grund hell (#e0e0e0), und ein Logo, das die Kachel ganz fuellte, stiess ohne Rand an die
+   dunkle Zeile. Die Aussenmasse bleiben (border-box), das Bild wird 2px kleiner und bekommt den konzentrischen Radius. */
 .ufb-bild { display: inline-flex; width: 16px; height: 16px; border-radius: var(--up-r-xs); overflow: hidden;
-  background: var(--vt-logo-bg); flex: 0 0 auto; }
-.ufb-bild img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  background: var(--vt-logo-bg); flex: 0 0 auto; padding: 1px; box-sizing: border-box; }
+.ufb-bild img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: calc(var(--up-r-xs) - 1px); }
 .ufb-chip-ic .ufb-bild { width: 14px; height: 14px; }
 
 /* Die Werte im dreiteiligen Chip mit ihrem Bild davor (wertHtml, 15.10.): der farbige Strich eines
