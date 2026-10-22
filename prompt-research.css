@@ -13,7 +13,8 @@
      - the loader stage.
      - the volume meter (4 segments) — no core widget shows a 0-100 strength rating.
      - the inline tag editor inside the composer.
-     - the right-hand "Previous researches" sidebar. */
+     - seit dem 22.10.: der Startbereich mit Grafik und die Zellen der Liste (nach Page Audit), und was
+       das Eingabefeld im Popup "Start Research" anders braucht. Die Seitenleiste ist weg. */
 
 /* .check_reinvention meldet in dieser Datei dreizehn Stellen als Nachbau von .up-seg-btn bzw.
    .up-search: .upr-showmore, .upr-secondary-btn, .upr-clear-input, .upr-start-btn,
@@ -59,56 +60,24 @@
 }
 .upr-root button, .upr-root input, .upr-root textarea { font-family: inherit; }
 
-/* ---------- hero shell ---------- */
+/* ---------- Schale ----------
+   SEIT DEM 22.10. OHNE ZENTRIERTEN STARTBILDSCHIRM: die Startansicht ist der Startbereich nach dem
+   Vorbild von Page Audit samt Liste (.upr-startansicht, unten), oben buendig wie jede Seite; das
+   Eingabefeld steht im Popup "Start Research". Die Schale hat darum kein Polster und keine
+   Mindesthoehe mehr. Auch waehrend eines Laufs bleibt die Startansicht stehen (Laufstreifen, R3). */
 .upr-shell {
   width: 100%;
   height: auto;
-  min-height: 520px;
-  padding: clamp(24px, 4vw, 52px);
+  padding: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   position: relative;
   overflow: visible;
 }
-.upr-root.is-results .upr-shell,
-.upr-root.is-running .upr-shell { min-height: 0; }
-/* Hier stand bis 14.10. ein Polster von 340px unten, solange ein Menue offen war ("damit die Schale
-   wohin scrollen kann"). Die Schale ist aber eine senkrecht ZENTRIERTE Spalte mit fester
-   Mindesthoehe: das Polster schob den ganzen Inhalt bei jedem Oeffnen um 170px nach oben und beim
-   Schliessen zurueck -- gemeldet als "bei jedem Dropdown ruckt die ganze Komponente". Ein
-   absolut gesetztes Menue zaehlt ohnehin zum scrollbaren Bereich von #main; die Liste passt sich
-   dem Platz an (prompt-research.js, seiteWaehlen). */
-/* Faint graph-paper wash behind the hero. Masked to a soft circle so it never reaches the edges. */
-.upr-shell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(to right, var(--vc-raster-linie) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--vc-raster-linie) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.76), transparent 72%);
-  -webkit-mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.76), transparent 72%);
-  opacity: 0.42;
-}
-/* Im Dunkeln Weiss zu 3,5 % statt Schrift zu 2,5 %: die Marke --vc-raster-linie dreht mit dem
-   Thema (core, 17.10.), die eigene dunkle Regel ist entfallen. */
-.upr-content {
-  width: min(100%, 900px);
-  margin: 0 auto;
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: opacity 260ms ease, transform 260ms ease, filter 260ms ease;
-}
-.upr-root.is-results .upr-content,
-.upr-root.is-results .upr-shell::before,
+/* Der fruehere Startbildschirm ist nur noch der Ruheplatz des Eingabefelds, solange das Popup zu
+   ist (prompt-research.js, neueRecherche): nie zu sehen. */
+.upr-content { display: none; }
 .upr-root.is-results .upr-loading-stage { display: none; }
-.upr-root.is-results .upr-shell { justify-content: flex-start; padding: 0; }
 
 /* ---------- hero mark ----------
    AUSGEBLENDET auf Ansage: das Zeichen samt Kasten und den treibenden Punkten ist weg, der Rest
@@ -207,23 +176,8 @@
   border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
 }
 
-/* ---------- "View previous researches" ---------- */
-/* Very top right of the component, flush against the true edges -- 0 inset, same as every other
-   component's toolbar (.up-root itself carries no padding of its own; a table's heading row sits
-   at the box's own edge, not offset from it). The button is authored inside .upr-content (a
-   centred 900px column), so the boot script lifts it up to .upr-shell first -- see
-   prompt-research.js. Pinned against .upr-shell, which is already position:relative. */
-.upr-history-entry { position: absolute; top: 0; right: 0; z-index: 6; display: flex; }
-/* The results view has its own history button (#upr-open-history-results) inside the results
-   stage. This one is authored inside .upr-content, which .upr-root.is-results hides -- but the
-   boot script lifts it out to .upr-shell, so it escaped that rule and both showed at once.
-   Hide it explicitly in the states where .upr-content is not the visible view. */
-/* SEIT DEM 10.10. bleibt der Knopf in allen Zustaenden in der Kopfzeile ("belass es einfach in der
-   Topbar"); der zweite Knopf in der Ergebnisansicht ist weg, ebenso deren Zeile "Back to start" --
-   zurueck fuehrt jetzt die Krume "Prompt Research". Nur der Knopf, der NICHT an die Wurzel
-   gehoben wurde (alte Fassung ohne Kopf), verschwindet weiter mit seiner Ansicht. */
-.upr-root.is-results .upr-shell > .upr-history-entry,
-.upr-root.is-running .upr-shell > .upr-history-entry { display: none; }
+/* ---------- Ergebnisansicht: Zeile "Back to start" ----------
+   Seit dem 10.10. fuehrt die Krume "Prompt Research" zurueck; die Zeile bleibt im Markup, verborgen. */
 .upr-results-stage > .upr-results-nav { display: none; }
 /* Secondary button, same shape as core's .up-empty-btn so it reads as one family. */
 .upr-secondary-btn {
@@ -234,12 +188,6 @@
   transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 .upr-secondary-btn:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
-/* The history buttons carry the primary colour on label AND icon (the icon's stroke is
-   currentColor, so one declaration covers both) -- same as Mira's "All Chats" opposite them.
-   Scoped to the two history triggers rather than put on .upr-secondary-btn itself: that class is
-   the generic secondary button and its muted default is right everywhere else it is used. */
-.upr-history-entry .upr-secondary-btn,
-#upr-open-history-results,
 #upr-back-to-start { color: var(--vc-text); }
 .upr-secondary-btn svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
 
@@ -752,15 +700,11 @@
 .upr-results-stage.is-empty .upr-box { display: none; }
 .upr-results-stage.is-empty .upr-results-empty { display: block; }
 
-/* ---------- loading stage ---------- */
-.upr-loading-stage {
-  position: absolute; inset: 0; z-index: 5; display: grid; place-items: center;
-  padding: clamp(24px, 4vw, 52px);
-  opacity: 0; transform: translateY(10px) scale(0.985); pointer-events: none;
-  transition: opacity 320ms ease, transform 320ms ease;
-}
+/* ---------- loading stage ----------
+   Seit dem 22.10. (Lukas, R3) laeuft eine Recherche im Streifen ueber der Liste; das Ladebild wird nicht
+   mehr gezeigt. Die Buehne bleibt im Markup der Vorlage und hier verborgen. */
+.upr-loading-stage { display: none; }
 .upr-root.is-running .upr-content { opacity: 0; transform: translateY(-8px) scale(0.985); pointer-events: none; filter: blur(3px); }
-.upr-root.is-running .upr-loading-stage { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 .upr-loading-inner { width: min(100%, 620px); display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; }
 
 /* ---------- Das Ladebild ----------
@@ -783,126 +727,9 @@
    stehen, falls fremder Code sie noch baut -- dann sieht sie aus wie vorher. */
 .upr-tl-dot { width: 6px; height: 6px; border-radius: var(--up-r-voll); flex: 0 0 auto; background: var(--vc-third); }
 
-/* ---------- previous researches: right-hand sidebar ----------
-   Was an inline panel under the composer; it is a page-level drawer now, so the list has room for
-   every field a research carries. Geometry, timings and stacking are the host app's own drawer
-   system: 6px off the top/right/bottom, 16px radius, slide in from the right, backdrop with a
-   1.5px blur. Stapelung siehe die Leiter unten am Schleier. Die Farbe des Schleiers ist seit dem
-   16.10. die aller Drawer (--vc-drawer-schleier, Schwarz zu 20 %); vorher war er durchsichtig. */
-/* The scrim and panel below live inside the component root (see the "sidebar" note in
-   prompt-research.js). .upr-root.side-open / .side-in therefore match the root itself now -- there
-   is no separate host element on <body> any more, and no .upr-portal rule to go with it. */
-/* ── Die Stapelleiter dieser App, von oben nach unten ───────────────────────────────────────
-     9905-9930  die Drawer der App selbst (bz1 9905, dz1 9910): URL, Prompt, Domain, Brand.
-                FREMDE Elemente -- die werden hier NICHT angefasst.
-     9904/9903  dieser Detail-Drawer und sein Schleier. Deckt alles Eigene ab, bleibt aber unter
-                den Drawern der App.
-     9902       der schwebende Sidebar-Knopf
-     9900       die Sidebar-Leiste
-     9899       der Sidebar-Schleier
-   Hier stand 9900/9895 -- also GENAU der Wert der Sidebar-Leiste. Bei gleichem z-index entscheidet
-   die DOM-Reihenfolge, und die Leiste haengt sich beim Booten spaeter an <body> als dieser Drawer
-   im Dokument steht. Ergebnis: der Drawer lag hinter der Navigation. Das war kein Entschluss,
-   sondern ein Zusammenstoss -- die 9900 stammen aus der Zeit vor der Sidebar. */
-.upr-side-scrim {
-  position: fixed; inset: 0; z-index: 9903; display: none; background: var(--vc-drawer-schleier);
-  opacity: 0; pointer-events: none; transition: opacity 160ms ease; will-change: opacity;
-}
-.upr-side {
-  position: fixed; top: 6px; right: 6px; bottom: 6px; z-index: 9904; width: min(520px, 92%);
-  display: none; flex-direction: column;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl);
-  box-shadow: var(--up-e-drawer); overflow: hidden;
-  transform: translateX(110%); transition: transform 180ms ease-in;
-  will-change: transform; backface-visibility: hidden;
-}
-.upr-root.side-open .upr-side-scrim { display: block; }
-.upr-root.side-open .upr-side { display: flex; }
-.upr-root.side-in .upr-side-scrim {
-  opacity: 1; pointer-events: auto; transition: opacity 200ms ease;
-  -webkit-backdrop-filter: blur(1.5px); backdrop-filter: blur(1.5px);
-}
-.upr-root.side-in .upr-side { transform: translateX(0); transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1); }
-.upr-side-head {
-  flex: 0 0 auto; height: 56px; padding: 0 12px 0 16px;
-  border-bottom: 1px solid var(--vc-border);
-  display: flex; align-items: center; gap: 8px;
-}
-  /* scrollbar-gutter: stable -- die Rinne wird IMMER reserviert, nicht erst wenn die Leiste
-     auftaucht. Unter Windows nimmt eine klassische Leiste rund 15px, und ohne diese Zeile
-     ruckt der ganze Inhalt um 15px, sobald er einmal ueber die Hoehe hinauswaechst (ein
-     aufgeklappter Abschnitt, eine Liste, die laenger wird). Auf macOS liegt die Leiste ueber
-     dem Inhalt, dort aendert die Zeile nichts. Gleiche Ursache wie die versetzten
-     Spaltentitel in Performance Detail, nur ohne Tabellenkopf daneben. */
-.upr-side-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px; scrollbar-gutter: stable; }
-.upr-side-body::-webkit-scrollbar { width: 8px; }
-.upr-side-body::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: var(--up-r-voll); }
-.upr-history-item {
-  position: relative;
-  border-radius: var(--up-r-m); padding: 12px; cursor: pointer;
-  /* ZWEI SPALTEN (10.10., dritte Fassung, so angeordnet): links Titel und Datum, rechts aussen
-     Markt und Modell. Beim Hover blenden Markt und Modell aus, und an GENAU IHRER STELLE stehen
-     die zwei Knoepfe -- beide liegen in derselben Rasterzelle, rechtsbuendig. Nichts verdeckt
-     etwas halb: es ist immer nur eins von beiden zu sehen. */
-  display: grid; grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas: "main rechts"; align-items: center; column-gap: 16px;
-  transition: background var(--up-t-1) var(--up-ease);
-}
-/* TRENNLINIEN MIT LUFT: zwischen zwei Eintraegen 9px, die Linie in der Mitte -- 4px frei ueber
-   und unter ihr. Die Hover-Flaeche bleibt im Eintrag und beruehrt die Linie nie. */
-.upr-history-item + .upr-history-item { margin-top: 9px; }
-.upr-history-item + .upr-history-item::before {
-  content: ""; position: absolute; left: 12px; right: 12px; top: -5px;
-  height: 1px; background: var(--vc-border); pointer-events: none;
-}
-.upr-history-item:not(.is-still):hover, .upr-history-item:focus-visible { background: var(--vc-heading-bg); outline: none; }
-.upr-history-main { grid-area: main; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-/* Markt und Modell als Text (nicht als Pillen), in zwei festen Spalten: auf allen Eintraegen
-   stehen sie auf denselben Kanten. Der Markt ist immer Flagge plus zwei Buchstaben, das Modell
-   hoechstens "Hybrid". */
-.upr-history-meta {
-  grid-area: rechts; justify-self: end;
-  /* Vorne die Vorgaben (14.10.): bis zu drei Intent-Zeichen und das Brands-Zeichen, je 14px mit
-     4px Abstand -- 68px. */
-  display: grid; grid-template-columns: 68px 44px 44px; align-items: center; column-gap: 12px;
-  font-size: var(--up-fs-s); line-height: 1.3; color: var(--vc-muted); white-space: nowrap;
-  transition: opacity var(--up-t-1) var(--up-ease);
-}
-.upr-history-markt { display: inline-flex; align-items: center; gap: 6px; }
-.upr-history-vorgaben { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; color: var(--vc-fourth); }
-.upr-history-vorgaben svg { width: 14px; height: 14px; display: block; }
-.upr-history-headline {
-  font-size: var(--up-ueb-block-gr); font-weight: var(--up-ueb-block-gew); line-height: 1.3; letter-spacing: var(--up-ueb-block-spur); color: var(--vc-text);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
-}
-.upr-history-date { font-size: 12px; color: var(--vc-fourth); line-height: 1.3; font-weight: 400; }
-/* Die zwei Knoepfe: in derselben Zelle wie Markt und Modell, unsichtbar und nicht klickbar,
-   bis der Eintrag unter dem Zeiger steht oder den Fokus hat. */
-.upr-history-actions {
-  grid-area: rechts; justify-self: end; display: flex; align-items: center; gap: 4px;
-  opacity: 0; pointer-events: none; transition: opacity var(--up-t-1) var(--up-ease);
-}
-.upr-history-item:not(.is-still):hover .upr-history-meta,
-.upr-history-item:focus-visible .upr-history-meta,
-.upr-history-item:focus-within .upr-history-meta { opacity: 0; }
-.upr-history-item:not(.is-still):hover .upr-history-actions,
-.upr-history-item:focus-visible .upr-history-actions,
-.upr-history-actions:focus-within { opacity: 1; pointer-events: auto; }
-.upr-history-delete:hover { color: var(--vt-down); }
-/* OHNE ZEIGER (Telefon, Tablet) gibt es keinen Hover: dort stehen Markt und Modell und daneben
-   die Knoepfe, beide sichtbar -- sonst kaeme man dort nicht ans Loeschen. */
-@media (hover: none) {
-  .upr-history-item { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "main meta akt"; }
-  .upr-history-meta { grid-area: meta; }
-  .upr-history-actions { grid-area: akt; opacity: 1; pointer-events: auto; }
-}
-/* Laufende Recherchen (09.10., Seite): sie lassen sich nicht oeffnen, also kein Zeiger und keine
-   Hover-Flaeche. Der Zustand steht als Wort in der Datumszeile. Gescheiterte stehen seit dem 10.10.
-   gar nicht mehr in der Liste. */
-.upr-history-item.is-still { cursor: default; }
-.upr-history-lauf { color: var(--vc-text); }
-/* Die Fehlerzeile unter dem Eingabefeld, mittig wie alles auf der Startseite (10.10.). */
-.upr-fehler > span { text-align: center; padding-top: 8px; }
+/* Die Fehlerzeile unter dem Eingabefeld. Seit dem 22.10. steht das Feld im Popup "Start Research":
+   linksbuendig wie jede Fehlerzeile eines Formulars (vorher mittig wie der Startbildschirm). */
+.upr-fehler > span { padding-top: 8px; }
 
 /* ---------- responsive ---------- */
 /* Spalten seit dem 14.10.: 1 Prompt, 2 Tags, 3 Intent, 4 Branded, 5 Volumen, 6 Aktionen. Zuerst
@@ -919,7 +746,6 @@
 }
 @media (max-width: 560px) {
   .upr-box .up-th:nth-child(5), .upr-box .up-td:nth-child(5) { display: none; }
-  .upr-side { width: 100%; right: 0; top: 0; bottom: 0; border-radius: 0; border-right: 0; }
 
   /* Icon-only actions. At this width "Ignore"/"Track" cost more than they explain -- the x and the
      check carry the same meaning, and the 150px the labels needed came straight out of the prompt
@@ -961,21 +787,10 @@
 .upr-root { --upr-head-top: 8px; }
 .upr-root .upr-pagehead { padding: var(--upr-head-top) 0 8px; margin-bottom: 16px; }
 
-/* The button used to be the first thing on the page and carried the page's own top padding. The
-   page header now sits above it, so that padding would double up as a gap -- 16px is the standard
-   separation from the block above, matching the kit. */
-/* Anchored to the ROOT, at the page's top right -- the same place every other page puts its
-   top-right action. It used to be absolute inside .upr-content, so once the page header moved in
-   above it, it came along and ended up under the heading. prompt-research.js lifts the element out
-   to the root so this rule has something to anchor against. */
-/* Im kompakten Kopf (29.09.) steht der Knopf IN dessen Zeile: oben dieselbe Luft wie die Zeile
-   (--upr-head-top), bei 32px Knopfhoehe also genau mittig in 8 + 32 + 8. Rechts dort, wo die
-   Kopfzeile endet: am Inhalt der Wurzel (--up-ph-innen-r -- right 0 waere ihre Kante, und die
-   liegt ohne Bubble-Polster 16 weiter aussen), abzueglich dessen, was die Kopfzeile rechts
-   hinausgezogen ist (--up-ph-kopfzug-r, seit 29.09. abends 8: Knoepfe rechts bei 8). */
+/* Fuer die Kopfzeile: die Wurzel ist der Bezug ihrer Teile. */
 .upr-root { position: relative; }
-.upr-root > .upr-history-entry { position: absolute; top: var(--upr-head-top);
-  right: calc(var(--up-ph-innen-r, 0px) - var(--up-ph-kopfzug-r, 0px)); z-index: 7; padding-top: 0; }
+/* Rechts in der Kopfzeile "New Research" (22.10.), wie .upa-kopfrechts auf Page Audit. */
+.upr-kopfrechts { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 
 /* Die Vorschau-Leiste in der Erklaerkarte. Die Karte haengt am document.body, dort loesen die
    --upr-vol-*-Tokens nicht auf -- darum feste Werte, aber MIT Dark-Pendant. Vorher standen sie
@@ -990,3 +805,150 @@
    Zeichnung, damit es dasselbe Zeichen bleibt. */
 /* .upr-leiste-ic ist am 22.09. entfallen: das Zeichen kommt jetzt als panelRight aus dem
    Satz und muss nicht mehr gedreht werden. */
+
+/* ---------- Die Startansicht (22.10.): Startbereich und Liste der Recherchen ----------
+   Nach dem Vorbild der Startseite von Page Audit (Lukas: "Layout wie die Startseite von Page Audit"):
+   die Werte aus page-audit.css (.upa-start*, .upa-startkarte, .upa-sk-*, .upa-fenster*, Liste),
+   dieselben Zahlen, nicht aehnliche. Verborgen nur, solange eine Recherche geoeffnet ist; ein Lauf steht
+   im Streifen ueber der Liste (R3). 64 Luft unter der Liste wie .upa-main. */
+.upr-startansicht { display: block; padding-bottom: 64px; }
+.upr-root.is-results .upr-startansicht { display: none; }
+
+/* Raster wie Page Audit: zwei Spalten mit 16 Abstand; links oben Ueberschrift und ein Satz,
+   senkrecht mittig, darunter die Karte; rechts ueber beide Zeilen die Grafik. 32 bis zur Leiste. */
+.upr-start { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto; gap: 16px; margin: 0 0 32px; }
+.upr-start-text { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; min-height: 112px; max-width: 520px; padding: 0 0 0 2px; }
+.upr-start-text .up-heading, .upr-start-text .up-sec-sub { margin: 0; }
+/* Titel und Satz eine Stufe groesser als ein Abschnitt (Page Audit, Lukas 22.10. abends): Geists
+   heading-20 (20/26/600/-0.4, --up-fs-modaltitel, wie der Titel eines Popups) und copy-14 (14/20). */
+.upr-start-text .up-heading.up-sec-h { font-size: var(--up-fs-modaltitel); line-height: 26px; letter-spacing: -0.4px; }
+.upr-start-text .up-sec-sub { font-size: var(--up-fs-l); line-height: 20px; }
+/* Die Karte aus core (.up-box: Rahmen, Flaeche, Radius 12), darin Titel (Block-Stufe 14/600), die
+   Erklaerung und unten rechts der Hauptknopf. Polster 16 wie eine Kennzahlkarte. */
+.upr-start > .upr-startkarte { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; gap: 8px; padding: 16px; min-width: 0; }
+.upr-sk-titel { font-size: var(--up-ueb-block-gr); font-weight: var(--up-ueb-block-gew); line-height: var(--up-ueb-block-zeile); letter-spacing: var(--up-ueb-block-spur); color: var(--vc-text); }
+.upr-sk-satz { margin: 0; font-size: var(--up-fs-m); line-height: 1.5; color: var(--vc-muted); }
+.upr-sk-fuss { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 4px; }
+.upr-sk-los { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.upr-sk-los svg { width: 14px; height: 14px; }
+/* NEU (nicht in core): die Grafik (Lukas 22.10., Canvas G3) -- Fragen als Sprechblasen, abwechselnd
+   links und rechts, eine hervorgehoben; rechts ueber beide Zeilen wie die Grafik auf Page Audit. Rand per
+   Maske ausgeblendet (Deckkraft, keine Themenfarbe). Eine Blase bricht nie um. */
+.upr-grafik { grid-column: 2; grid-row: 1 / span 2; position: relative; min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 0 40px;
+  --upr-punkt: color-mix(in srgb, var(--vc-text) 14%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent), linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent), linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
+  mask-composite: intersect; }
+/* DAS MUSTER DAHINTER ist das der Karten der Landingpage (.ulh-vis-muster in landing-hero.css): 1px-Punkte
+   im 8px-Raster, Blende als Oval etwas unter der Mitte. Nur die Farbe ist abgeleitet: dort #d8dbe0 fest (die
+   Landing kennt nur hell), hier Schrift zu 14 % -- hell fast derselbe Ton, und sie dreht mit dem Thema. */
+.upr-blasen-muster { position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(circle, var(--upr-punkt) 1px, transparent 1px);
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 45%, transparent 100%);
+  mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 45%, transparent 100%); }
+/* Die Blase liegt UEBER dem Muster. Radius 16 wie eine Sprechblase der Toast-Karte (--up-r-3xl), Tiefe e-1 (liegt
+   auf der Flaeche). nth-of-type zaehlt nur die Blasen (das Muster ist ein div): die zweite und vierte rechts. */
+.upr-blase { position: relative; z-index: 1; align-self: flex-start; max-width: 100%; display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 14px; box-sizing: border-box; border: 1px solid var(--vc-border); border-radius: var(--up-r-3xl);
+  background: var(--vc-bg); box-shadow: var(--up-e-1); font-size: var(--up-fs-m); line-height: 1.4; color: var(--vc-muted);
+  white-space: nowrap; transition: filter var(--up-t-3) var(--up-ease), opacity var(--up-t-3) var(--up-ease); }
+.upr-blase:nth-of-type(2n) { align-self: flex-end; }
+.upr-blase.is-hl { border-color: color-mix(in srgb, var(--vc-text) 45%, transparent); color: var(--vc-text); }
+.upr-blase svg { width: 16px; height: 16px; flex: 0 0 auto; }
+.upr-blase-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Der Wechsel alle 5 s (prompt-research.js, blasenTakt): die Blase verschwimmt, der Text wechselt, sie kommt an
+   derselben Stelle scharf zurueck. */
+.upr-blase.is-weg { filter: blur(6px); opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .upr-blase { transition: none; } }
+/* Schmal: die Grafik weicht, Text und Karte stehen untereinander. */
+.upr-root.is-narrow .upr-start { grid-template-columns: minmax(0, 1fr); }
+.upr-root.is-narrow .upr-grafik { display: none; }
+.upr-root.is-narrow .upr-start-text { min-height: 0; }
+
+/* Die Liste: Zeilen 55 (--up-h-row) wie Page Audit und Brands. Die erste Zelle traegt die Begriffe
+   (.up-zeilenname aus core) und am Hover der Zeile "Delete" (.up-rowbtn aus core). */
+.upr-liste .up-row.upr-zeile { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }
+.upr-liste .up-row.upr-zeile:not(.is-still) { cursor: pointer; }
+.upr-liste .up-td-research { gap: 10px; }
+.upr-liste-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upr-liste-txt, .upr-liste-leise { min-width: 0; font-size: var(--up-fs-l); color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upr-liste-leise { color: var(--vc-muted); }
+.upr-liste-wert { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.upr-liste-zeichen { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; color: var(--vc-third); }
+.upr-liste-zeichen svg { width: 15px; height: 15px; display: block; }
+/* Laufend: nichts zu oeffnen (es gibt noch keine Vorschlaege), also kein Zeiger und keine Hover-Flaeche. Der
+   Zeiger braucht die eigene Regel: core gibt jeder Zeile die Hand. */
+.upr-liste .up-row.upr-zeile.is-still { cursor: default; }
+.upr-liste .up-row.upr-zeile.is-still:hover { background: transparent; }
+/* In der Zahlenspalte steht der Zustand rechtsbuendig wie die Zahlen darueber und darunter. */
+.upr-liste .up-td-prompts .upr-zustand { margin-left: auto; }
+/* Der Zustand eines laufenden Jobs: Zeichen und Text wie die Zustandsangabe von Page Audit
+   (.upa-zustand, gleiche Werte), das Zeichen dreht mit dem Spinner der Popups aus core. */
+.upr-zustand { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--up-fs-l); font-weight: var(--up-fw-n); color: var(--vc-text); }
+.upr-zustand-ic { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
+.upr-zustand-ic svg { width: 15px; height: 15px; display: block; }
+.upr-zustand-t { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upr-zustand.is-dreht .upr-zustand-ic svg { animation: upModalDreh 1s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .upr-zustand.is-dreht .upr-zustand-ic svg { animation: none; } }
+
+/* ---------- Der Laufstreifen (Lukas 22.10., Canvas R3) ----------
+   Eine Karte aus core (.up-box) ueber der Liste: vorn die Form im Ton des Zustands -- Geists Amber 700
+   (--vt-warn-flaeche), solange die Recherche laeuft, Green 700 (--vt-up-flaeche), sobald sie fertig ist (wie
+   der Status eines Deployments bei Vercel) --, daneben Begriffe und Satz, fertig rechts senkrecht mittig "View
+   Research". Polster 16 seitlich wie die Startkarte, 16 bis zur Leiste. Punkt, Schrift und Zeilenhoehen wie der
+   Lauf-Kasten von Page Audit (.upa-lb, am selben Tag gebaut): Punkt 8, Titel 14/500, beide Zeilen 20. Anders als
+   dort stehen Titel und Satz untereinander (R3) und der fertige Streifen bleibt, bis die Recherche geoeffnet wird. */
+.upr-lauf { display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin: 0 0 16px; min-width: 0; }
+.upr-lauf[hidden] { display: none; }
+.upr-lauf-form { flex: 0 0 auto; width: 8px; height: 8px; border-radius: var(--up-r-voll); background: var(--vt-warn-flaeche);
+  transition: background-color var(--up-t-2) ease; }
+.upr-lauf.is-fertig .upr-lauf-form { background: var(--vt-up-flaeche); }
+.upr-lauf-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.upr-lauf-h { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); line-height: 20px; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upr-lauf-s { font-size: var(--up-fs-m); line-height: 20px; color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: opacity var(--up-t-2) var(--up-ease); }
+.upr-lauf-s.is-weg { opacity: 0; }
+.upr-lauf-knopf { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; }
+.upr-lauf-knopf[hidden] { display: none; }
+.upr-lauf-knopf svg { width: 14px; height: 14px; }
+@media (prefers-reduced-motion: reduce) { .upr-lauf-s, .upr-lauf-form { transition: none; } }
+/* Telefon (eigene Box, is-vnarrow): neben "View Research" blieben dem Text 137 px, Begriffe und
+   "12 prompts ready to review" waren beide gekuerzt. Der Knopf geht darum in eine eigene Zeile, rechts
+   wie "Start Research" in der Karte; der Text bekommt die volle Breite neben dem Punkt (8 + 12). */
+.upr-root.is-vnarrow .upr-lauf { flex-wrap: wrap; row-gap: 12px; }
+.upr-root.is-vnarrow .upr-lauf-text { flex-basis: calc(100% - 20px); }
+.upr-root.is-vnarrow .upr-lauf-knopf { margin-left: auto; }
+
+/* ---------- Das Popup "Start Research" (22.10.) ----------
+   Karte, Kopf, Fuss und Fokus aus core (UC.makeModal, .up-modal nach Geists Modal). Darin dieselben
+   Knoten wie vorher auf dem Startbildschirm: das Eingabefeld mit den Einstellungen als Pillen und
+   darunter die Vorschlaege aus den Topics. Der runde Start im Feld und der Regler der Einstellungen
+   fallen dort weg: gestartet wird ueber den Fuss, und die Einstellungen stehen immer offen. */
+.upr-neu { display: flex; flex-direction: column; gap: 16px; }
+.upr-neu button, .upr-neu input, .upr-neu textarea { font-family: inherit; }
+.upr-neu .upr-composer-area { width: 100%; margin-top: 0; }
+/* "Mach das aber ausreichend gross" (Lukas 22.10.): breiter als Geists 540 (core .up-modal, is-breit 560),
+   damit Begriffe und die vier Einstellungen in einer Reihe stehen, und ein hoeheres Feld. Unter 540 bleibt es
+   das Blatt aus core (max-width 100 %). */
+.up-topicmodal-card.up-modal.upr-neu-karte { max-width: 720px; }
+.upr-neu .upr-composer .upr-tag-editor { min-height: 140px; }
+.upr-neu .upr-start-btn, .upr-neu .upr-settings-toggle { display: none; }
+/* Der Satz "Tip: Be specific ..." unter dem Feld faellt im Popup weg (Memory "Keine Meta-Unterzeilen": keine
+   Erklaerzeilen unter Bauteilen); was das Feld nimmt, sagt der Untertitel des Popups. */
+.upr-neu .upr-tip { display: none; }
+.upr-neu .upr-suggestions, .upr-neu .upr-suggestions-skeleton { width: 100%; margin-top: 0; justify-content: flex-start; }
+/* Dunkel dieselben Flaechen wie bisher in der Wurzel (.up-root[data-theme="dark"].upr-root, oben):
+   das Popup haengt am body, dort traegt der Schleier das Thema. */
+.up-root[data-theme="dark"] .upr-neu .upr-dd-trigger,
+.up-root[data-theme="dark"] .upr-neu .upr-composer { background: var(--vc-field); }
+
+/* ---------- Stillgelegt (22.10.) ----------
+   Die Seitenleiste "Previous researches" und ihr Knopf sind weg (die Liste steht unter dem
+   Startbereich); prompt-research.js entfernt ihre Knoten aus dem Markup der Vorlage. Die Klassen
+   bleiben hier stehen, weil der Vertrag sie fuehrt (.contract_diff.py liest sie aus der CSS). */
+.upr-side, .upr-side-scrim, .upr-side-head, .upr-side-body, .upr-history-entry, .upr-history-item,
+.upr-history-main, .upr-history-meta, .upr-history-markt, .upr-history-vorgaben, .upr-history-headline,
+.upr-history-date, .upr-history-actions, .upr-history-delete, .upr-history-lauf, .upr-leiste-ic { display: none; }

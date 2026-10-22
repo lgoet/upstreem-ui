@@ -726,7 +726,8 @@ Wert**, dazu `blur(1.5px)` nur im offenen Zustand, Deckkraft 160 ms hinaus und 2
 setzt das Kopf-Skript an `[id^="backdrop-"]` mit `!important`; die Schleier aus core tragen dieselben
 Werte für Seiten ohne Kopf-Skript). Es gilt für die Kern-Drawer (`.up-kdr-scrim`: Brand, Prompt,
 Domain, URL, Response, Brand Editor, seit 22.10. Initial HTML), den Seiten-Drawer (`.up-sdrawer-scrim`, Ad-Detail), den
-Opportunity-Drawer (`.uo-scrim`) und die Liste früherer Recherchen (`.upr-side-scrim`).
+Opportunity-Drawer (`.uo-scrim`) und bis 22.10. die Liste früherer Recherchen (`.upr-side-scrim`; seither
+eine Tabelle unter dem Startbereich von Prompt Research, keine Seitenleiste mehr).
 
 Schwarz wie die Floating Groups der Bubble-Zeit. Vom 11. bis 16.10. stand hier 18 % der Schrift
 (hell) und 45 % von `--vc-text-invert` (dunkel) – das ist `#1f1f1b`, also heller als der dunkle
@@ -2023,9 +2024,11 @@ Kasten (vorher: Balkenliste kompakt oben).
 ## 9b. Das Ladebild langer Läufe (`UC.makeLadebild`, Variante A seit 16.10.)
 
 Ein Baustein für jeden Lauf, der Sekunden dauert und seinen Fortschritt nicht kennt: Explore
-Brands (Scan), Prompt Research (Recherche), Opportunities (Suche) und die Sitemap im
-Anlegen-Dialog der Events. Keine Seite trägt eine eigene Kopie; die Träger (`.udb-loading`,
-`.uo-suche`, `.upr-loading-inner`, `.uev-sm-lb`) geben nur Fläche und Abstand.
+Brands (Scan), Opportunities (Suche) und die Sitemap im Anlegen-Dialog der Events. Keine Seite
+trägt eine eigene Kopie; die Träger (`.udb-loading`, `.uo-suche`, `.uev-sm-lb`) geben nur Fläche
+und Abstand. Prompt Research zeigt seit dem 22.10. statt des Ladebilds einen Laufstreifen über der
+Liste (`.upr-lauf`, Punkt Amber/Grün wie der Lauf-Kasten `.upa-lb` von Page Audit): die Seite bleibt
+bedienbar, während die Recherche läuft (der Träger `.upr-loading-inner` steht still).
 
 Am 16.10. gewählt: **Variante A, entschlackt** (Nutzer: „Loader: bitte Variante A, entschlackt").
 Die Form vom 01.10. bleibt, ohne das, was sie schwer machte:
