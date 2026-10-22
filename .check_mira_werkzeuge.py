@@ -119,6 +119,17 @@ for w in werkzeuge:
         for o in a.get("ohne", []):
             if o not in params and o not in filt:
                 f(wo + ": %s.ohne nennt unbekanntes %s" % (fn, o))
+        # Feste Werte je Aufruf (z. B. p_fields der Gesamtzeilen: ohne sie rechnet die Funktion
+        # nichts, "von Haus aus keine Berechnung"). Ein fester Wert darf kein Modell-Parameter sein.
+        fest = a.get("fest", {})
+        if not isinstance(fest, dict):
+            f(wo + ": %s.fest muss ein Objekt sein" % fn)
+            fest = {}
+        for k in fest:
+            if not FN.match(k) or not k.startswith("p_"):
+                f(wo + ": %s.fest hat ungueltigen Parameter %s" % (fn, k))
+            if k in ziele or k in [filter_def.get(x, {}).get("rpc") for x in filt]:
+                f(wo + ": %s.fest setzt %s, das auch das Modell setzt" % (fn, k))
         if not zitiert(fn):
             f(wo + ": %s steht nicht im UI-Code -- ruft die UI sie nicht (mehr)?" % fn)
             continue
