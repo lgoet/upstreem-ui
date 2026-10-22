@@ -342,6 +342,30 @@
     }, function () { return { ok: false, status: 0, fehler: { code: "", message: "network", hint: "", details: "" } }; });
   }
 
+  /* PDF (Q20): POST /api/mira/pdf, Antwort die Datei. { ok, status, daten:{ blob, name } } wie UC.edge mit datei. */
+  function pdf(token, body) {
+    return fetch(API + "/pdf", {
+      method: "POST", credentials: "same-origin",
+      headers: { "content-type": "application/json", authorization: "Bearer " + str(token) },
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      var typ = String(r.headers.get("content-type") || "");
+      if (r.ok && typ.indexOf("application/pdf") === 0) {
+        var cd = String(r.headers.get("content-disposition") || "");
+        var m = /filename\*=UTF-8''([^;]+)/i.exec(cd);
+        var name = "";
+        try { name = m ? decodeURIComponent(m[1]) : ""; } catch (e) {}
+        return r.blob().then(function (b) { return { ok: true, status: r.status, daten: { blob: b, name: name || "mira.pdf" } }; });
+      }
+      return r.text().then(function (t) {
+        var j = null;
+        try { j = t ? JSON.parse(t) : null; } catch (e) {}
+        j = obj(j) || {};
+        return { ok: false, status: r.status, fehler: { code: str(j.code), message: str(j.code || ("http_" + r.status)), hint: str(j.hint), details: "" } };
+      });
+    }, function () { return { ok: false, status: 0, fehler: { code: "", message: "network", hint: "", details: "" } }; });
+  }
+
   /* Die Fehler des neuen Wegs, zusaetzlich zu fehlerArt: Kontingent und Tagesgrenze (Q11), ein zweiter
      laufender Chat (mira_user_busy), eine schon laufende gleiche Frage (mira_duplicate), Anmeldung. */
   function fehlerArtNeu(erg) {
@@ -366,6 +390,6 @@
     fehlerArt: fehlerArt,
     weg: weg, nachrichtenNeu: nachrichtenNeu, sendeBodyNeu: sendeBodyNeu, streamLesen: streamLesen,
     sendenNeu: senden, wiederanhaengen: wiederanhaengen, fehlerArtNeu: fehlerArtNeu, kennung: kennung, aktion: aktion,
-    wavAus: wavAus, transkribieren: transkribieren
+    wavAus: wavAus, transkribieren: transkribieren, pdf: pdf
   };
 })();

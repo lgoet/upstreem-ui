@@ -572,8 +572,15 @@
     }
     function pdf(d) {
       var tm = team(), amid = str(d.assistant_message_id), chat = str(d.session_id) || offenerChat();
-      if (!tm || !UC.edge || !amid || !chat) { am("askMiraSetExportPending", amid, false); return; }
-      UC.edge(D.FN.pdf, { team_id: tm, session_id: chat, assistant_message_id: amid }, { datei: true, timeoutMs: 150000 }).then(function (erg) {
+      if (!tm || !amid || !chat) { am("askMiraSetExportPending", amid, false); return; }
+      /* Neuer Weg (Q20): /api/mira/pdf druckt alte und neue Antworten (Bloecke und content_html). Der alte
+         (mira-export-pdf, n8n) kennt die Bloecke nicht und bleibt nur fuer den alten Weg. */
+      D.weg().then(function (w) {
+        var body = { team_id: tm, session_id: chat, assistant_message_id: amid };
+        if (w === "neu" && UC.sitzungsToken) return UC.sitzungsToken().then(function (token) { return D.pdf(token, body); });
+        if (!UC.edge) return { ok: false, status: 0, fehler: { message: "network" } };
+        return UC.edge(D.FN.pdf, body, { datei: true, timeoutMs: 150000 });
+      }).then(function (erg) {
         am("askMiraSetExportPending", amid, false);
         if (!erg.ok || !erg.daten || !erg.daten.blob) {
           var artP = D.fehlerArt(erg);
