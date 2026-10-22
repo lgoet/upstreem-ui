@@ -428,12 +428,18 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-fix-kopf .upa-befund-rechts { padding-top: 1px; }
 .upa-fix-in { padding-left: 44px; }
 .upa-fix-schrittkopf { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* Ueberschriften in "What to fix" (22.10., Lukas: "richtige heading klassen"): die Titel in einem aufgeklappten Befund
+   (What we found, Why it matters, How to fix, By platform) und die Titel der Gruppen unter der Liste sind die Block-Stufe
+   aus core (14/600/-0.28, Zeile 20, Textfarbe), nicht die graue Gruppe-Beschriftung 12/500. Abstand Titel zu Inhalt 8 wie
+   in der Startkarte (.upa-sk-titel zu .upa-sk-satz). */
+.upa-blocktitel { margin: 0; font-size: var(--up-ueb-block-gr); font-weight: var(--up-ueb-block-gew); line-height: var(--up-ueb-block-zeile); letter-spacing: var(--up-ueb-block-spur); color: var(--vc-text); }
+.upa-absatz.upa-fixabsatz { gap: 8px; }
 .upa-kopie { display: inline-flex; align-items: center; gap: 6px; height: var(--up-h-chip); padding: 0 8px; border-radius: var(--up-r-xs); font-size: var(--up-fs-s); }
 .upa-kopie svg { width: 13px; height: 13px; }
 .upa-schritte { margin: 0; padding: 0 0 0 20px; display: flex; flex-direction: column; gap: 6px; }
 .upa-schritte li { font-size: var(--up-fs-l); line-height: 1.5; color: var(--vc-text); padding-left: 2px; }
 .upa-schritte li::marker { color: var(--vc-muted); font-variant-numeric: tabular-nums; }
-.upa-fixplattformen { --up-cols: minmax(200px, 1.2fr) minmax(110px, .6fr) minmax(0, 3fr); margin-top: 4px; }
+.upa-fixplattformen { --up-cols: minmax(200px, 1.2fr) minmax(110px, .6fr) minmax(0, 3fr); }
 .upa-root .upa-fixplattformen .up-row.upa-fixp { height: auto; min-height: 48px; flex: 0 0 auto; padding-top: 10px; padding-bottom: 10px; align-items: start; }
 .upa-fixp .up-td { align-self: center; gap: 10px; }
 .upa-fixp-satz .upa-satz { font-size: var(--up-fs-m); }

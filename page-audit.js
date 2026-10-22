@@ -1957,8 +1957,11 @@
         '</div></div></div>' +
       '</div>';
     }
+    /* Titel in einem aufgeklappten Befund sind Block-Stufe (core: Titel eines Eintrags INNERHALB einer Karte), keine
+       Gruppe-Beschriftung: Lukas 22.10. "richtige heading klassen". h4, weil der Befund selbst unter dem Abschnitt und
+       ggf. einer Gruppe (h3) steht. */
     function abschnitt(titel, inhalt) {
-      return inhalt ? '<div class="upa-absatz"><span class="up-blockhead">' + esc(t(titel)) + '</span>' + inhalt + '</div>' : '';
+      return inhalt ? '<div class="upa-absatz upa-fixabsatz"><h4 class="upa-blocktitel">' + esc(t(titel)) + '</h4>' + inhalt + '</div>' : '';
     }
     /* Belege gruppiert nach ihrer Art: eine Ueberschrift (Gruppe-Stufe) je Art, darunter die Auszuege. */
     function belegeBlockHtml(bel) {
@@ -1978,7 +1981,7 @@
         return '<div class="upa-jp-zeile"><div class="upa-jp-kopf">' + plattformLogo(p, modellVon(p)) + '<span class="up-zeilenname">' + esc(p.name) + '</span>' +
           schwereHtml(f.severity) + wirkungHtml(w) + '</div>' + '<p class="upa-satz is-leise">' + esc(t(D.wirkungKurz(p.id, w.basis))) + '</p></div>';
       }).join("");
-      return zeilen ? '<div class="upa-absatz"><span class="up-blockhead">' + esc(t("By platform")) + '</span><div class="upa-jp">' + zeilen + '</div></div>' : '';
+      return zeilen ? abschnitt("By platform", '<div class="upa-jp">' + zeilen + '</div>') : '';
     }
     /* v2 Variante B der Befunde: eine nummerierte Liste "What to fix" (Recherche: Sitebulb zwei Saetze Was und Warum,
        Peec "What to do" als Schritte, Webflow "top priorities", Backlinko Fehlgeschlagenes zuerst). Sperren vor
@@ -2137,10 +2140,10 @@
               return '<div class="upa-diff-z"><span class="upa-diff-plus" aria-hidden="true">+</span><span class="upa-diff-t">' + esc(b.text) + '</span></div>'; }).join("") + '</div>' : '') +
             belegeBlockHtml(bel.filter(function (b) { return b.art !== "rendered_only_excerpt"; }))) +
           (tx.warum ? abschnitt("Why it matters", '<p class="upa-satz">' + esc(t(tx.warum)) + '</p>') : '') +
-          (schritte.length ? '<div class="upa-absatz"><div class="upa-fix-schrittkopf"><span class="up-blockhead">' + esc(t("How to fix")) + '</span>' +
+          (schritte.length ? '<div class="upa-absatz upa-fixabsatz"><div class="upa-fix-schrittkopf"><h4 class="upa-blocktitel">' + esc(t("How to fix")) + '</h4>' +
             '<button type="button" class="up-btn-sec upa-kopie" data-upa-kopie="' + esc(schl) + '" data-tip="' + esc(t("Copies this finding as a task for an AI coding assistant, such as Claude Code, Cursor or ChatGPT.")) + '">' + UC.icon("copy", 2) + '<span>' + esc(t("Copy for AI")) + '</span></button></div>' +
             '<ol class="upa-schritte">' + schritte.map(function (x) { return '<li>' + esc(t(x)) + '</li>'; }).join("") + '</ol></div>' : '') +
-          (mitWirkung ? '<div class="upa-absatz"><span class="up-blockhead">' + esc(t("By platform")) + '</span>' +
+          (mitWirkung ? '<div class="upa-absatz upa-fixabsatz"><h4 class="upa-blocktitel">' + esc(t("By platform")) + '</h4>' +
             '<div class="up-box upa-kasten upa-fixplattformen"><div class="up-table" role="table"><div class="up-tbody" role="rowgroup">' + jp + '</div></div></div></div>' : '') +
           (tx.umfang ? '<p class="upa-satz is-leise upa-umfang">' + esc(t(tx.umfang)) + '</p>' : '') +
         '</div></div></div></div>';
@@ -2159,7 +2162,7 @@
          Bauteilen; abends: kein Tooltip auf dem Titel selbst, sondern das Zeichen wie an jedem Spaltenkopf). */
       function gruppe(titel, l, erklaer) {
         if (!l.length) return "";
-        return '<div class="upa-bgruppe"><div class="upa-bgruppe-kopf"><span class="up-blockhead">' + esc(t(titel)) + '</span>' +
+        return '<div class="upa-bgruppe"><div class="upa-bgruppe-kopf"><h3 class="upa-blocktitel">' + esc(t(titel)) + '</h3>' +
           '<span class="upa-bgruppe-n">' + esc(fmtInt(l.length)) + '</span>' + (erklaer ? infoHtml(erklaer) : '') + '</div>' +
           '<div class="up-box upa-kasten upa-befunde">' + l.map(function (f) { return befundHtml(f, true, false); }).join("") + '</div></div>';
       }
