@@ -1844,10 +1844,10 @@
           if (d.granularity != null) GRAN_DA.analyse = true; else if (GRAN_DA.analyse == null) GRAN_DA.analyse = false;
         }
         if (kx.sig === analyseSig()) {
-          ctrl.setAnalysis(d, kx.sig);
+          ctrl.setAnalysis(d, kx.sig, !!kx.nurStufe);
           /* Die Stufe hat sich waehrend der Anfrage geaendert (Startstufe erst mit dem Event bekannt): die gewaehlte nachfragen. Nur wenn
              diese Antwort die bestellte Stufe war -- so fragt eine Datenbank, die eine andere liefert, nie im Kreis. */
-          if (kx.gran && kx.gran !== state.gran && granDa() && !dieReihe()) analyseAnfordern();
+          if (kx.gran && kx.gran !== state.gran && granDa() && !dieReihe()) analyseAnfordern(false, true);
         }
         return;
       }
@@ -1874,7 +1874,8 @@
            Zeit dasselbe hoert -- sonst stuenden zwei gleiche untereinander. */
         if (state.ansicht !== "detail" || kx.sig !== analyseSig()) return;
         state.analyseLaden = false; state.analyseFehler = true;
-        renderDetail();
+        /* Scheitert nur eine andere Stufe, sagen es nur die Charts; Kennzahlen und Tabellen stehen schon. */
+        if (kx.nurStufe && dieAnalyse()) { renderChart(); zieleChartsZeichnen(); } else renderDetail();
         return;
       }
       if (kanal === "uevScopePreview") {
@@ -2158,8 +2159,12 @@
       var g = b.getAttribute("data-gran");
       if (b.classList.contains("is-disabled") || (g !== "day" && g !== "week" && g !== "month") || g === state.gran) return;
       state.gran = g; persist();
-      if (!dieReihe()) analyseAnfordern();
-      renderChart(); renderZiele();
+      /* Im Modus URL Share des Citation Trackings braucht das Chart nur die URL-Reihe (sie fragt zieleChartsZeichnen); die Reihe der Analyse
+         holt erst ein Wechsel auf Overall Share oder Overall Citations. */
+      var nurUrls = istWatch(dasEvent()) && zielModus() === "urls" && GRAN_DA.reihe !== false;
+      if (!dieReihe() && !nurUrls) analyseAnfordern(false, true);
+      /* Nur die Charts (22.10. abends): Tabelle, Sitemap und Kennzahlen haengen nicht an der Stufe. */
+      renderChart(); zieleChartsZeichnen();
     }
     /* Das Fenster einer Anfrage (17.10.): eine Kampagne kennt keins ("k", feste Abschnitte
        Vorher/Waehrend/Danach), ein offenes Event zusaetzlich "Since event" ("seit"). */
@@ -4296,59 +4301,7 @@
         }
       };
       kpis.innerHTML = kacheln.map(function (k) { return KACHEL[k](); }).join("");
-      /* Die Reihe der gewaehlten Stufe (22.10.); laedt sie noch, wartet nur das Chart, der Schalter zeigt die gewaehlte Stufe. */
-      var tage = zr && isArr(zr.daily) ? zr.daily : null, rg = tage ? reiheGran(ar, tage) : state.gran;
-      /* Citation Tracking (20.10.): die DB liefert die Tage beider Fenster (vorher und letzte, bei 30 Tagen 61), die Kennzahlen und die Tabelle
-         vergleichen sie. Die Linie zeigt nur das gewaehlte Fenster: unter "30 days" stehen 30 Tage auf der Achse, nicht 60. Der Beginn
-         kommt aus der Analyse (actual_first_after), sonst die letzten wtage Tage. Wochen und Monate liefert die DB schon nur fuer dieses
-         Fenster (der erste Bucket beginnt am Montag davor bzw. am Monatsersten, mit den Tagen ab dem Fensterbeginn) -- dort nichts abschneiden. */
-      if (wz && tage && rg === "day") {
-        var ab = String(a && a.windows && (a.windows.actual_first_after || a.windows.requested_after_from) || "").slice(0, 10);
-        tage = ab ? tage.filter(function (p) { return String(p.day).slice(0, 10) >= ab; }) : tage.slice(-wtage);
-      }
-      sek.__gran = rg;
-      /* Im Modus URL Share stellt urlReiheZeigen den Schalter danach noch einmal nach der Reihe der URLs (sie traegt ihre eigene Stufe). */
-      granSchalterStellen(grEl, tage || (isArr(z.daily) ? z.daily : []), rg, reiheFenster(ar || a, wz));
-      zielWerkzeugeStellen(sek);
-      if (linie2 && !tage) {
-        if (state.analyseFehler && !state.analyseLaden) linie2.meldung(t("This event could not be loaded.")); else linie2.skeleton();
-      } else if (linie2) {
-        /* Ohne Tage oder nur mit Tagen ohne Lauf (alles null): der Leerzustand der Charts, nicht ein
-           leeres Achsenkreuz (wie renderChart). */
-        if (!tage.some(function (p) { return num(p.runs) !== 0 && (num(p.citations) != null || num(p.new_urls) != null); })) linie2.empty();
-        else {
-          var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text");
-          var grau = token("--vc-fourth");
-          /* Ein Tag ohne Lauf (runs 0) hat KEINE Zahl: citations kommt dort als null (Vertrag
-             Abschnitt 5, wie v2), und die neuen URLs dieses Tages sind ebenso keine Beobachtung.
-             __luecken aus core: die Linie bricht dort ab, statt den Tag zu ueberbruecken -- eine
-             Luecke statt einer 0 und statt eines erfundenen Verlaufs. Vor events_ziele_v2.sql
-             kam new_urls dort als 0, seitdem als null (Nachtrag 15.10., Abschnitt 4.1); beides
-             wird hier zur Luecke.
-             MIT FILTER (Markt, Intent, Modelle) folgen runs und citations dem Filter, new_urls
-             aber der ganzen Kohorte: eine neue URL kann auf einen Tag ohne gefilterten Lauf fallen.
-             Sie fehlt dann im Verlauf, zaehlt aber in new_urls_before/after. Die Kachel "New URLs"
-             nimmt deshalb diese beiden Felder und nie die Summe der Tagesreihe. */
-          var ohneLauf = function (p) { return num(p.runs) === 0; };
-          /* Citation Tracking: die Linie ist der Share je Tag (Zitate der Seiten durch alle Zitate der Prompts an diesem Tag) oder, als Option,
-             die Zahl der Zitate -- keine Linie "New URLs". Ein Tag ohne Nenner hat keine Zahl, die Linie bricht dort ab. */
-          if (wz && zielModus() === "urls") urlReiheZeigen(zt, tage, linie2);
-          else if (wz) {
-            var alsShare = zielModus() !== "abs";
-            linie2.render({ labels: tage.map(function (p) { return String(p.day).slice(0, 10); }), datasets: [
-              alsShare
-                ? { label: t("Share of all citations"), __id: "share", __baseColor: tinte, borderColor: tinte, __luecken: true, data: tage.map(function (p) {
-                    var c = num(p.citations), g = num(p.total_citations);
-                    return ohneLauf(p) || c == null || !g ? null : Math.round(c * 1000 / g) / 10; }) }
-                : { label: t("Citation count"), __id: "zitate", __baseColor: tinte, borderColor: tinte, __luecken: true, data: tage.map(function (p) { return ohneLauf(p) ? null : num(p.citations); }) }
-            ] });
-          } else
-          linie2.render({ labels: tage.map(function (p) { return String(p.day).slice(0, 10); }), datasets: [
-            { label: t("Citation count"), __id: "zitate", __baseColor: tinte, borderColor: tinte, __luecken: true, data: tage.map(function (p) { return ohneLauf(p) ? null : num(p.citations); }) },
-            { label: t("New URLs"), __id: "neu", __baseColor: grau, borderColor: grau, __dash: true, __luecken: true, data: tage.map(function (p) { return ohneLauf(p) ? null : num(p.new_urls); }) }
-          ] });
-        }
-      }
+      zielChartZeichnen(sek, zt, z, a, zr, ar);
       var urls = isArr(z.cited_urls) ? z.cited_urls : [];
       urls.forEach(function (u) { if (u && u.url) sek.__zitate[abdUrlSchluessel(u.url)] = { c: u.citations_after, url: u.url }; });
       var ev = dieDetail() || {}, evTag = String(ev.event_date || "").slice(0, 10);
@@ -4394,6 +4347,87 @@
       platz.innerHTML = urlTabelleHtml(kopf, urls.slice(ab.von, ab.bis), wz, evTag, frage);
       sortSync(n);
     }
+    /* NUR DAS CHART EINES ZIELS (22.10. abends, Lukas: "Die URL-Tabelle soll beim Wechsel von Tag/Woche/Monat nicht neu laden"). Der Teil von
+       zielFuellen, der von der Stufe abhaengt: Reihe, Schalter, Linien. Ein Wechsel der Stufe zeichnet nur das hier (zieleChartsZeichnen),
+       Kennzahlen, Tabelle (Seite, Sortierung, Suche), Sitemap und Audit-Angaben bleiben, wie sie sind -- vorher baute renderZiele alles neu,
+       und die neue Analyse liess die Tabelle get_impact_event_urls_v1 ein zweites Mal fragen (urlServerZeigen: rec.a !== a). */
+    function zielChartZeichnen(sek, zt, z, a, zr, ar) {
+      var linie2 = zielLinien[zt.id], grEl = sek.querySelector(".uev-zielwerkzeuge .uev-gran");
+      var wz = istWatch(dieDetail() || listeEvent(state.eventId)), wtage = num(a && a.windows && a.windows.window_days) || state.fenster || 30;
+      /* Die Reihe der gewaehlten Stufe (22.10.); laedt sie noch, wartet nur das Chart, der Schalter zeigt die gewaehlte Stufe. */
+      var tage = zr && isArr(zr.daily) ? zr.daily : null, rg = tage ? reiheGran(ar, tage) : state.gran;
+      /* Citation Tracking (20.10.): die DB liefert die Tage beider Fenster (vorher und letzte, bei 30 Tagen 61), die Kennzahlen und die Tabelle
+         vergleichen sie. Die Linie zeigt nur das gewaehlte Fenster: unter "30 days" stehen 30 Tage auf der Achse, nicht 60. Der Beginn
+         kommt aus der Analyse (actual_first_after), sonst die letzten wtage Tage. Wochen und Monate liefert die DB schon nur fuer dieses
+         Fenster (der erste Bucket beginnt am Montag davor bzw. am Monatsersten, mit den Tagen ab dem Fensterbeginn) -- dort nichts abschneiden. */
+      if (wz && tage && rg === "day") {
+        var ab = String(a && a.windows && (a.windows.actual_first_after || a.windows.requested_after_from) || "").slice(0, 10);
+        tage = ab ? tage.filter(function (p) { return String(p.day).slice(0, 10) >= ab; }) : tage.slice(-wtage);
+      }
+      sek.__gran = rg;
+      /* Im Modus URL Share stellt urlReiheZeigen den Schalter danach noch einmal nach der Reihe der URLs (sie traegt ihre eigene Stufe). */
+      granSchalterStellen(grEl, tage || (isArr(z.daily) ? z.daily : []), rg, reiheFenster(ar || a, wz));
+      zielWerkzeugeStellen(sek);
+      /* URL Share (22.10. abends): die URL-Reihe bringt ihre Stufe und ihren Nenner selbst mit (totals), sie wartet nicht auf die Reihe der
+         Analyse -- ein Klick auf D/W/M fragt in diesem Modus nur sie. Eine Reihe ohne einen Lauf bleibt der Leerzustand wie bisher. */
+      if (linie2 && wz && zielModus() === "urls" && (!tage || tage.some(function (p) { return num(p.runs) !== 0 && num(p.citations) != null; }))) {
+        urlReiheZeigen(zt, tage || [], linie2);
+        return;
+      }
+      if (linie2 && !tage) {
+        if (state.analyseFehler && !state.analyseLaden) linie2.meldung(t("This event could not be loaded.")); else linie2.skeleton();
+      } else if (linie2) {
+        /* Ohne Tage oder nur mit Tagen ohne Lauf (alles null): der Leerzustand der Charts, nicht ein
+           leeres Achsenkreuz (wie renderChart). */
+        if (!tage.some(function (p) { return num(p.runs) !== 0 && (num(p.citations) != null || num(p.new_urls) != null); })) linie2.empty();
+        else {
+          var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text");
+          var grau = token("--vc-fourth");
+          /* Ein Tag ohne Lauf (runs 0) hat KEINE Zahl: citations kommt dort als null (Vertrag
+             Abschnitt 5, wie v2), und die neuen URLs dieses Tages sind ebenso keine Beobachtung.
+             __luecken aus core: die Linie bricht dort ab, statt den Tag zu ueberbruecken -- eine
+             Luecke statt einer 0 und statt eines erfundenen Verlaufs. Vor events_ziele_v2.sql
+             kam new_urls dort als 0, seitdem als null (Nachtrag 15.10., Abschnitt 4.1); beides
+             wird hier zur Luecke.
+             MIT FILTER (Markt, Intent, Modelle) folgen runs und citations dem Filter, new_urls
+             aber der ganzen Kohorte: eine neue URL kann auf einen Tag ohne gefilterten Lauf fallen.
+             Sie fehlt dann im Verlauf, zaehlt aber in new_urls_before/after. Die Kachel "New URLs"
+             nimmt deshalb diese beiden Felder und nie die Summe der Tagesreihe. */
+          var ohneLauf = function (p) { return num(p.runs) === 0; };
+          /* Citation Tracking: die Linie ist der Share je Tag (Zitate der Seiten durch alle Zitate der Prompts an diesem Tag) oder, als Option,
+             die Zahl der Zitate -- keine Linie "New URLs". Ein Tag ohne Nenner hat keine Zahl, die Linie bricht dort ab. */
+          if (wz && zielModus() === "urls") urlReiheZeigen(zt, tage, linie2);
+          else if (wz) {
+            var alsShare = zielModus() !== "abs";
+            linie2.render({ labels: tage.map(function (p) { return String(p.day).slice(0, 10); }), datasets: [
+              alsShare
+                ? { label: t("Share of all citations"), __id: "share", __baseColor: tinte, borderColor: tinte, __luecken: true, data: tage.map(function (p) {
+                    var c = num(p.citations), g = num(p.total_citations);
+                    return ohneLauf(p) || c == null || !g ? null : Math.round(c * 1000 / g) / 10; }) }
+                : { label: t("Citation count"), __id: "zitate", __baseColor: tinte, borderColor: tinte, __luecken: true, data: tage.map(function (p) { return ohneLauf(p) ? null : num(p.citations); }) }
+            ] });
+          } else
+          linie2.render({ labels: tage.map(function (p) { return String(p.day).slice(0, 10); }), datasets: [
+            { label: t("Citation count"), __id: "zitate", __baseColor: tinte, borderColor: tinte, __luecken: true, data: tage.map(function (p) { return ohneLauf(p) ? null : num(p.citations); }) },
+            { label: t("New URLs"), __id: "neu", __baseColor: grau, borderColor: grau, __dash: true, __luecken: true, data: tage.map(function (p) { return ohneLauf(p) ? null : num(p.new_urls); }) }
+          ] });
+        }
+      }
+    }
+    /* Die Charts aller Ziele ohne den Rest ihres Abschnitts: nach einem Klick auf D/W/M, nach der Antwort einer Stufe und nach der URL-Reihe.
+       Ein Ziel im Leerzustand oder ohne Auswertung hat kein Chart (zielFuellen zeigt dort den Leerzustand). */
+    function zieleChartsZeichnen() {
+      var host = elMain && elMain.querySelector('[data-sek="ziele"]'), d = dieDetail(), a = dieAnalyse(), ar = dieReihe();
+      if (!host || !a) return;
+      var liste = regelZiele(d), alle = host.querySelectorAll(".uev-zielsek");
+      liste.forEach(function (zt, i) {
+        var sek = null;
+        for (var j = 0; j < alle.length; j++) if (alle[j].getAttribute("data-ziel-id") === String(zt.id)) sek = alle[j];
+        var z = zielAuswertung(a, zt, i, liste);
+        if (!sek || !z || zielOhneZitate(z, zt)) return;
+        zielChartZeichnen(sek, zt, z, a, ar ? zielAuswertung(ar, zt, i, liste) : null, ar);
+      });
+    }
     function zahlWert(v) { v = num(v); return v == null ? '<span class="up-num is-empty">\u2013</span>' : '<span class="up-num">' + esc(zahl(v)) + '</span>'; }
     /* Die Zeilen und die Tabelle der URLs einer Regel -- gleich im Browser- und im Serverweg. */
     /* ---- URL SHARE: EINE LINIE JE URL (21.10.) -----------------------------------------------------------------------------
@@ -4427,7 +4461,8 @@
             var d = erg.ok && erg.daten && isArr(erg.daten.urls) && isArr(erg.daten.points) ? erg.daten : null;
             if (d) { URLSER.stand = true; rec.daten = d; rec.fehler = false; if (d.granularity != null) GRAN_DA.reihe = true; } else rec.fehler = true;
           }
-          if (root.isConnected !== false && state.ansicht === "detail") renderZiele();
+          /* Nur die Charts (22.10. abends): die URL-Reihe aendert an Tabelle und Sitemap nichts. */
+          if (root.isConnected !== false && state.ansicht === "detail") zieleChartsZeichnen();
         });
       }
       var d = rec.daten, mitSummen = !!d && isArr(d.totals) && d.totals.length > 0;
@@ -5613,7 +5648,7 @@
       modusStellen();
       /* Die Startstufe der Charts vor dem ersten Bild eines neuen Zeitraums (sonst zeigte ein gemerktes Detail kurz die Stufe des vorigen).
          Kam sie erst mit dem Event (Tiefenlink) und ist die Analyse schon mit der vorigen Stufe bestellt, die neue nachfragen. */
-      if (granStartSetzen() && granDa() && state.analyseSigLief === analyseSig() && !dieReihe()) analyseAnfordern();
+      if (granStartSetzen() && granDa() && state.analyseSigLief === analyseSig() && !dieReihe()) analyseAnfordern(false, !!dieAnalyse());
       renderKopf(); renderGeplant(); renderHinweise(); renderKpis(); renderBericht(); renderChart(); renderMarkt(); renderZiele(); renderUrls(); renderScope(); renderResp();
       if (anleitung && anleitung.laeuft()) anleitung.neu();
     }
@@ -5637,6 +5672,12 @@
          warten -- ohne Antwort zeigen sie nach der Uhr den Fehler, nie ein Skelett ohne Ende. */
       var ohneDetail = !dieDetail(), ohneAnalyse = !dieAnalyse() || !dieReihe();
       if (!ohneDetail && !ohneAnalyse) return;
+      /* Fehlt nur die Reihe einer anderen Stufe: der Fehler nur in den Charts (Kennzahlen und Tabellen stehen). */
+      if (!ohneDetail && dieAnalyse() && !dieReihe() && !(UC.istSichtbar && !UC.istSichtbar(root))) {
+        state.analyseLaden = false; state.analyseFehler = true;
+        renderChart(); zieleChartsZeichnen();
+        return;
+      }
       if (UC.istSichtbar && !UC.istSichtbar(root)) { detailUhrId = setTimeout(detailVerdeckt, 1000); return; }
       if (ohneDetail) { state.detailLaden = false; state.detailFehler = true; }
       if (ohneAnalyse) { state.analyseLaden = false; state.analyseFehler = true; }
@@ -5668,7 +5709,9 @@
       if (seitAktiv(dasEvent())) { body.p_window_days = null; body.p_window = "since"; }
       return body;
     }
-    function analyseAnfordern(spaet) {
+    /* nurStufe (22.10. abends): die Anfrage holt nur eine andere Stufe derselben Analyse (Klick auf D/W/M, Startstufe erst mit dem Event).
+       Ihre Antwort ersetzt die Kennzahlen-Analyse nicht und zeichnet nur die Charts -- die Tabelle der URLs fragt sonst neu (rec.a !== a). */
+    function analyseAnfordern(spaet, nurStufe) {
       state.analyseLaden = true; state.analyseFehler = false;
       detailUhr();
       /* Die Stufe geht mit (22.10.), solange nicht feststeht, dass die Datenbank sie nicht kennt -- NICHT in analyseKoerper: dessen
@@ -5677,7 +5720,7 @@
       var body = analyseKoerper();
       if (!demo && GRAN_DA.analyse !== false) body.p_granularity = state.gran;
       state.analyseSigLief = analyseSig();
-      rufen("uevAnalysis", body, { sig: state.analyseSigLief, gran: body.p_granularity || null }, spaet);
+      rufen("uevAnalysis", body, { sig: state.analyseSigLief, gran: body.p_granularity || null, nurStufe: !!nurStufe }, spaet);
     }
     /* Das Fenster der Responses: ab dem Event-Tag bis zum Ende des Analysefensters, hoechstens
        heute (Vertrag 3.10: "das gewaehlte Analyse-Fenster uebergeben"). Ab dem Event-Tag und nicht
@@ -5792,7 +5835,12 @@
       var grb = e.target.closest(".uev-gran [data-gran]");
       if (grb) { granKlick(grb); return; }
       var zm = e.target.closest("[data-zm]");
-      if (zm) { var zw = zm.getAttribute("data-zm"); state.zielMetrik = zw === "abs" || zw === "urls" ? zw : "share"; persist(); zielMetrikSetzen(); renderZiele(); return; }
+      if (zm) {
+        var zw = zm.getAttribute("data-zm"); state.zielMetrik = zw === "abs" || zw === "urls" ? zw : "share"; persist(); zielMetrikSetzen(); renderZiele();
+        /* Zurueck aus URL Share auf einer Stufe, deren Reihe der Analyse noch fehlt (dort nur die URL-Reihe gefragt): jetzt holen. */
+        if (granDa() && dieAnalyse() && !dieReihe()) analyseAnfordern(false, true);
+        return;
+      }
       var qb = e.target.closest("[data-quelle]");
       if (qb) { var qs = qb.closest(".uev-zielsek"); if (qs) { state.quelle[qs.getAttribute("data-ziel-id")] = qb.getAttribute("data-quelle") === "sm" ? "sm" : "urls"; quellenStellen(qs); } return; }
       if (e.target.closest(".uev-pinknopf")) { pinUmschalten(); return; }
@@ -9980,12 +10028,15 @@
         if (planAuf && state.ansicht === "detail" && state.eventId === id) popupAnlegen(id);
         return true;
       },
-      setAnalysis: function (raw, bestellt) {
+      setAnalysis: function (raw, bestellt, nurStufe) {
         var a = objekt(raw);
         state.analyseLaden = false;
+        /* nurStufe (22.10. abends): Antwort auf einen Wechsel von D/W/M -- siehe analyseAnfordern. */
+        var nurCharts = !!nurStufe && !!dieAnalyse() && state.ansicht === "detail";
         if (!a || (a.event_id == null && !a.windows)) {
           state.analyseFehler = true;
-          if (state.ansicht === "detail") renderDetail();
+          if (nurCharts) { renderChart(); zieleChartsZeichnen(); }
+          else if (state.ansicht === "detail") renderDetail();
           return false;
         }
         state.analyseFehler = false;
@@ -9997,11 +10048,20 @@
         /* bestellt (17.10.): die Signatur der eigenen Anfrage -- eine Kampagne und das Fenster
            "Since event" tragen keine Fensterlaenge, an der sich die Antwort einsortieren liesse. */
         var sig = typeof bestellt === "string" && bestellt ? bestellt : analyseSig(id, fen);
+        var vorher = state.analyse[sig];
         state.analyse[sig] = a;
         /* Die Reihen je Stufe (22.10.): unter der Stufe, die die Antwort selbst nennt -- eine spaete Antwort einer anderen Stufe landet
            so nie unter der gerade gewaehlten. Ohne granularity (alte Datenbank, Bubble, Vorfuehrung) nur state.analyse, wie bisher. */
         var ag = UC.normGran ? UC.normGran(a.granularity) : null;
         if (ag) state.analyseJe[sig + "|" + ag] = a;
+        /* Nur eine andere Stufe: die Kennzahlen-Analyse bleibt dasselbe Objekt (dieselben Zahlen, ein Treffer im selben Cache-Eintrag),
+           gezeichnet werden nur die Charts. */
+        if (nurCharts && ag && vorher && vorher !== a && state.eventId === id) {
+          state.analyse[sig] = vorher;
+          persist();
+          renderChart(); zieleChartsZeichnen();
+          return true;
+        }
         persist();
         if (state.ansicht === "detail" && state.eventId === id) renderDetail();
         return true;
