@@ -66,7 +66,7 @@
 
   var FN = { kopf: "brand_detail_v1" };
   var IDS = { daten: "drawer-brand-daten", filter: "drawer-brand-filter", modelle: "drawer-brand-models",
-              maerkte: "drawer-brand-markets", topics: "drawer-brand-topics",
+              maerkte: "drawer-brand-markets", topics: "drawer-brand-topics", chips: "chips-drawer-brand",
               ubd: "drawer-brand-detail", tcd: "drawer-brand-topcitations", urt: "drawer-brand-responses" };
 
   var B = {
@@ -95,10 +95,19 @@
   }
   B.resp = respStart();
 
+  /* intent (22.10.): die Parameter des eigenen Intent-Stands dieses Drawers (UC.drawerIntent, E4) -- die
+     Datenbausteine nehmen sie statt der Brille der App. */
+  var IKEY = "drawer-brand";
+  function intentParams() {
+    if (UC.drawerIntent) return UC.drawerIntent(IKEY).params();
+    return UC.intentFilterParams ? UC.intentFilterParams() : {};
+  }
   function filterStand() {
     return { team: UC.getTeam ? UC.getTeam() : "", von: B.f.von, bis: B.f.bis, modelle: B.f.modelle,
-             maerkte: B.f.maerkte, topics: B.f.topics, tagmode: B.f.tagmode };
+             maerkte: B.f.maerkte, topics: B.f.topics, tagmode: B.f.tagmode, intent: intentParams() };
   }
+  /* Der Stand dieses Drawers fuer einen Drawer, der aus ihm aufgeht (22.10., E2, UC.drawerKontextLesen). */
+  function kontext() { return UC.drawerKontextLesen && B.slot ? UC.drawerKontextLesen(B.slot, IKEY) : null; }
   /* Eine Anfrage mit einem Zusatz-Parameter und neuer Signatur -- sonst mischte der Speicher des
      Laders die Antworten zweier Marken. */
   function mit(a, zusatz) {
@@ -236,7 +245,7 @@
      warten muesste -- die Bausteine sind ohnehin ausgeblendet. */
   /* Der Kopf haengt seit dem 14.10. am Intent-Filter (first/last seen bzw. last mentioned,
      audit_14_10) -- also auch sein Speicher: je Filterstand ein Eintrag. */
-  function kopfSchluessel(x) { return x + "|" + JSON.stringify(UC.intentFilterParams ? UC.intentFilterParams() : {}); }
+  function kopfSchluessel(x) { return x + "|" + JSON.stringify(intentParams()); }
   function kopfAuftrag() {
     var id = B.id, ks = kopfSchluessel(id);
     return {
@@ -254,7 +263,7 @@
         return teamWarten().then(function (team) {
           if (nr !== B.nr) return null;
           if (!team) return { ok: false, status: 0, fehler: { message: "not authenticated" } };
-          return (UC.rpcMitIntent || UC.rpc)(FN.kopf, { p_team: team, p_company: id }, { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
+          return (UC.rpcMitIntent || UC.rpc)(FN.kopf, { p_team: team, p_company: id }, { timeoutMs: 60000, signal: ab ? ab.signal : undefined }, intentParams());
         }).then(function (erg) {
           if (!erg || nr !== B.nr) return null;
           var roh = erg.ok ? erg.daten : null;
@@ -503,13 +512,16 @@
           '</div>' +
           '<div class="up-dk-filterzeile ubdr-filterzeile">' +
             '<div class="up-root udr-root ubdr-daten" data-instance="' + esc(IDS.daten) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
+            /* data-intent-lokal und data-chips-ziel (22.10.): wie im Domain-Drawer. */
             '<div class="up-root ufb-root ubdr-filterleiste" data-instance="' + esc(IDS.filter) + '" data-topics-instance="' + esc(IDS.topics) + '"' +
-              ' data-models-instance="' + esc(IDS.modelle) + '" data-markets-instance="' + esc(IDS.maerkte) + '" data-isdark="' + dk + '"></div>' +
+              ' data-models-instance="' + esc(IDS.modelle) + '" data-markets-instance="' + esc(IDS.maerkte) + '"' +
+              ' data-intent-lokal="' + esc(IKEY) + '" data-chips-ziel="' + esc(IDS.chips) + '" data-isdark="' + dk + '"></div>' +
             '<div class="up-root utf-root" data-instance="' + esc(IDS.topics) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
             '<div class="up-root umf-root" data-instance="' + esc(IDS.modelle) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
             '<div class="up-root umk-root" data-instance="' + esc(IDS.maerkte) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
           '</div>' +
           '</div>' +
+          '<div class="up-dk-chipzeile ubdr-chips" id="' + esc(IDS.chips) + '"></div>' +
         '</div>' +
         '<div class="ubdr-main">' +
           /* data-form="abschnitte" NUR am grossen Chart oben (Brand Detail): ohne Kartenrahmen wie
@@ -537,7 +549,7 @@
       if (!e.target.closest) return;
       if (e.target.closest("[data-ubdr-retry]")) { alleLaden(true, true); return; }
       var dom = e.target.closest("[data-ubdr-domain]");
-      if (dom && UC.drawerOeffnen) UC.drawerOeffnen("domain", dom.getAttribute("data-ubdr-domain"), "brand-drawer");
+      if (dom && UC.drawerOeffnen) UC.drawerOeffnen("domain", dom.getAttribute("data-ubdr-domain"), "brand-drawer", kontext());
     });
     /* Kalender: nur ein WIRKLICH anderer Zeitraum (er meldet sich auch beim Einrichten). */
     s.addEventListener("change", function (e) {
@@ -549,9 +561,17 @@
     s.addEventListener("umf-models", function (e) { if (setzen("modelle", auswahl("modelle", e.detail, "model_keys"))) filterGeaendert(); });
     /* Intent-Filter der App (13.10.): gemeinsamer Stand in core, Ereignis am window. Einmal je
        Schale -- einsetzen() kann fuer dieselbe Schale erneut laufen. */
+    /* Seit 22.10. mit eigenem Stand (UC.drawerIntent), wie im Domain-Drawer. */
     if (!s.__intentHoerer) {
-      s.__intentHoerer = function () { if (document.contains(s)) filterGeaendert(true); };
+      s.__intentHoerer = function () {
+        if (!document.contains(s) || (UC.drawerIntent && !UC.drawerIntent(IKEY).folgt())) return;
+        filterGeaendert(true);
+      };
       window.addEventListener("up-intentfilter", s.__intentHoerer);
+      window.addEventListener("up-intentfilter-lokal", function (e) {
+        var d = (e && e.detail) || {};
+        if (d.key === IKEY && !d.still && document.contains(s)) filterGeaendert(true);
+      });
     }
     s.addEventListener("umk-markets", function (e) { if (setzen("maerkte", auswahl("maerkte", e.detail, "market_codes"))) filterGeaendert(); });
     s.addEventListener("utf-topics", function (e) {
@@ -595,7 +615,7 @@
     });
     an("tcd-tcdRowClick", function (d) {
       var id = str(wert(d)).trim();
-      if (id && UC.drawerOeffnen) UC.drawerOeffnen(B.top.modus === "url" ? "url" : "domain", id, "brand-drawer");
+      if (id && UC.drawerOeffnen) UC.drawerOeffnen(B.top.modus === "url" ? "url" : "domain", id, "brand-drawer", kontext());
     });
     function respNeu(fn) { return function (d) { fn(d); B.resp.requestId = null; teilLaden("resp"); }; }
     an("urt-urtSearch", function (d) {
@@ -662,7 +682,9 @@
         domains: D.topListe(f, "domain", { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen }).params,
         urls: D.topListe(f, "url", { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen, urlTypen: tp.modus === "url" ? tp.urlTypen : null }).params,
         prompt_runs: resp ? resp.params : {}
-      }
+      },
+      /* Der Intent dieses Drawers statt der Brille der App (22.10., export-data brille). */
+      brille: f.intent
     };
   }
 
@@ -678,7 +700,8 @@
 
   UC.kernDrawer("brand", {
     aufbauen: aufbauen,
-    zeigen: function (id) {
+    /* kontext (22.10., E2): der Stand des Drawers, aus dem geoeffnet wurde -- Startwert, still gesetzt. */
+    zeigen: function (id, kontext) {
       id = str(id).trim();
       if (!id) return;
       if (id !== B.id) {
@@ -701,7 +724,9 @@
          Hoechstens 1,5s; fehlt date-range.js, nehmen die RPCs ihre Vorgabe. */
       var n = 0;
       (function warten() {
-        if (!kalender() && n++ < 50) { setTimeout(warten, 30); return; }
+        var bereit = UC.drawerFilterBereit ? UC.drawerFilterBereit(B.slot) : !!kalender();
+        if (!bereit && n++ < 50) { setTimeout(warten, 30); return; }
+        if (kontext && UC.drawerKontextSetzen) UC.drawerKontextSetzen(B.slot, kontext, IKEY);
         filterAbgleichen();
         granBeimOeffnen();
         alleLaden(false, true);

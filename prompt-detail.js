@@ -60,7 +60,7 @@
   function teamWarten() { return UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(UC.getTeam ? UC.getTeam() : ""); }
 
   var FN = { kopf: "prompt_detail_v1" };
-  var IDS = { daten: "drawer-prompt-daten", filter: "drawer-prompt-filter", modelle: "drawer-prompt-models",
+  var IDS = { daten: "drawer-prompt-daten", filter: "drawer-prompt-filter", modelle: "drawer-prompt-models", chips: "chips-drawer-prompt",
               vot: "drawer-prompt-visibility", tcd: "drawer-prompt-topcitations", urt: "drawer-prompt-responses" };
 
   var P = {
@@ -576,12 +576,15 @@
             '<div class="uprd-meta up-dk-meta"></div>' +
             '<div class="up-dk-filterzeile uprd-filterzeile">' +
             '<div class="up-root udr-root uprd-daten" data-instance="' + esc(IDS.daten) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
+            /* data-chips-ziel (22.10.): die Chips in eigener Zeile unter dem Titel, wie in den anderen Drawern. */
             '<div class="up-root ufb-root uprd-filterleiste" data-instance="' + esc(IDS.filter) + '"' +
-              ' data-models-instance="' + esc(IDS.modelle) + '" data-topics-visible="no" data-markets-visible="no" data-intents-visible="no" data-isdark="' + dk + '"></div>' +
+              ' data-models-instance="' + esc(IDS.modelle) + '" data-topics-visible="no" data-markets-visible="no" data-intents-visible="no"' +
+              ' data-chips-ziel="' + esc(IDS.chips) + '" data-isdark="' + dk + '"></div>' +
             '<div class="up-root umf-root" data-instance="' + esc(IDS.modelle) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
           '</div>' +
           '</div>' +
           '<h2 class="uprd-titel up-dk-titel"></h2>' +
+          '<div class="up-dk-chipzeile uprd-chips" id="' + esc(IDS.chips) + '"></div>' +
           /* Die Kennzahlen UNTER dem Kalender: sie gelten fuer den Zeitraum, den er zeigt (wie bei
              URL Detail, 12.10.). */
           '<div class="uprd-kpis up-dk-leiste"></div>' +
@@ -668,7 +671,7 @@
       if (JSON.stringify(neu) === JSON.stringify(P.vis.firmen)) return;
       P.vis.firmen = neu; teilLaden("vis");
     });
-    an("vot-votRowClick", function (d) { var id = str(wert(d)).trim(); if (id && UC.drawerOeffnen) UC.drawerOeffnen("brand", id, "prompt-detail"); });
+    an("vot-votRowClick", function (d) { var id = str(wert(d)).trim(); if (id && UC.drawerOeffnen) UC.drawerOeffnen("brand", id, "prompt-detail", kontext()); });
     an("tcd-tcdMode", function (d) {
       var m = wert(d) === "url" ? "url" : "domain";
       if (m === P.top.modus) return;
@@ -686,7 +689,7 @@
     });
     an("tcd-tcdRowClick", function (d) {
       var id = str(wert(d)).trim();
-      if (id && UC.drawerOeffnen) UC.drawerOeffnen(P.top.modus === "url" ? "url" : "domain", id, "prompt-detail");
+      if (id && UC.drawerOeffnen) UC.drawerOeffnen(P.top.modus === "url" ? "url" : "domain", id, "prompt-detail", kontext());
     });
     function respNeu(fn) { return function (d) { fn(d); P.resp.requestId = null; teilLaden("resp"); }; }
     an("urt-urtSearch", function (d) {
@@ -758,9 +761,13 @@
     };
   }
 
+  /* Der Stand dieses Drawers fuer einen Drawer, der aus ihm aufgeht (22.10., E2): Zeitraum und Models. Kein Intent --
+     der Prompt-Drawer filtert nicht danach (ohneIntent), der Ziel-Drawer behaelt seinen. */
+  function kontext() { return UC.drawerKontextLesen && P.slot ? UC.drawerKontextLesen(P.slot, null) : null; }
   UC.kernDrawer("prompt", {
     aufbauen: aufbauen,
-    zeigen: function (id) {
+    /* kontext (22.10., E2): Zeitraum und Models des Drawers, aus dem geoeffnet wurde, still als Startwert. */
+    zeigen: function (id, kontext) {
       id = str(id).trim();
       if (!id) return;
       if (id !== P.id) {
@@ -784,7 +791,9 @@
          Hoechstens 1,5s; fehlt date-range.js, nehmen die RPCs ihre Vorgabe. */
       var n = 0;
       (function warten() {
-        if (!kalender() && n++ < 50) { setTimeout(warten, 30); return; }
+        var bereit = UC.drawerFilterBereit ? UC.drawerFilterBereit(P.slot) : !!kalender();
+        if (!bereit && n++ < 50) { setTimeout(warten, 30); return; }
+        if (kontext && UC.drawerKontextSetzen) UC.drawerKontextSetzen(P.slot, kontext, null);
         kalenderLesen();
         granBeimOeffnen();
         var m = P.slot && P.slot.querySelector(".umf-root");

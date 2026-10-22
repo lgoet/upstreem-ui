@@ -61,8 +61,11 @@
      fuer jede URL-Typ-Auswahl eine eigene Kopie derselben Domains-Liste. */
   /* Intent-Filter der App (13.10., core: UC.intentFilterParams). Leer, solange die Intents nicht
      freigegeben sind -- dann geht kein neuer Parameter hinaus. */
-  function intentDazu(o) {
-    var U = window.UpstreemCore, x = U && U.intentFilterParams ? U.intentFilterParams() : {};
+  /* f.intent (22.10.): die Parameter des eigenen Stands eines Drawers (UC.drawerIntent(...).params()) --
+     dort gilt SEIN Intent, nicht die Brille der App. */
+  function intentDazu(o, f) {
+    var U = window.UpstreemCore, x = f && f.intent && typeof f.intent === "object" ? f.intent
+      : (U && U.intentFilterParams ? U.intentFilterParams() : {});
     for (var k in x) if (Object.prototype.hasOwnProperty.call(x, k)) o[k] = x[k];
     return o;
   }
@@ -77,7 +80,7 @@
       p_citation_types: liste(f.citationTypen)
     };
     if (art !== "domains") b.p_url_types = liste(f.urlTypen);
-    return f.ohneIntent ? b : intentDazu(b);
+    return f.ohneIntent ? b : intentDazu(b, f);
   }
   function mit(o, x) { for (var k in x) if (Object.prototype.hasOwnProperty.call(x, k)) o[k] = x[k]; return o; }
   function anfrage(art, params) { return { art: art, fn: FN[art], params: params, sig: FN[art] + "|" + JSON.stringify(params) }; }

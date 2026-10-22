@@ -992,7 +992,7 @@
       /* Die Domain in der Meta-Zeile oeffnet den Domain-Drawer -- derselbe Weg wie der Globus der
          Kopfleiste (openDrawer der Host-App, Ebene 1). */
       var dm = e.target.closest && e.target.closest(".uud-domain[data-domain]");
-      if (dm) { if (UC.drawerOeffnen) UC.drawerOeffnen("domain", dm.getAttribute("data-domain"), "url-detail"); return; }
+      if (dm) { if (UC.drawerOeffnen) UC.drawerOeffnen("domain", dm.getAttribute("data-domain"), "url-detail", duKontextFuer(root)); return; }
       /* Chip und Tabellenzeile feuern DASSELBE Ereignis -- es ist derselbe Sprung zur Marke, und
          zwei Ereignisse fuer einen Weg sind eines zu viel. */
       var ziel = e.target.closest && e.target.closest(".uud-ment, .uud-cbody");
@@ -1007,7 +1007,7 @@
            openDrawer der Host-App oeffnet den Brand-Drawer und meldet die Kennung selbst an
            bubble_fn_drawer_brand, derselbe Weg wie die Zeilen im Power Dashboard. Das Ereignis
            feuert weiter, fuer alles, was ZUSAETZLICH passieren soll. */
-        if (UC.drawerOeffnen) UC.drawerOeffnen("brand", markeId, "url-detail");
+        if (UC.drawerOeffnen) UC.drawerOeffnen("brand", markeId, "url-detail", duKontextFuer(root));
       }
     });
     root.addEventListener("keydown", function (e) {
@@ -1200,7 +1200,10 @@
     FN: { detail: "url_detail_v1" },
     slot: null, root: null, kopf: null, url: "", kanon: "", inRange: true, gezeigt: "", nr: 0, rnr: 0, ab: null, rab: null,
     speicher: {}, reihe: [], zeile: null,
-    ids: { daten: "drawer-url-daten", seite: "drawer-url", urt: "drawer-url-responses" },
+    ids: { daten: "drawer-url-daten", seite: "drawer-url", urt: "drawer-url-responses", filter: "drawer-url-filter",
+           topics: "drawer-url-topics", modelle: "drawer-url-models", maerkte: "drawer-url-markets", chips: "chips-drawer-url" },
+    /* Schluessel des eigenen Intent-Stands (UC.drawerIntent, 22.10.). */
+    intentKey: "drawer-url",
     resp: null
   };
   function duRespStart() {
@@ -1235,14 +1238,40 @@
     return null;
   }
 
+  /* DIE FILTER DES DRAWERS (22.10., Entscheidung E1): Topics, Models und Markets aus ihren Wurzeln in der Leiste
+     (wie im Domain-Drawer), Intent und Branded aus dem eigenen Stand des Drawers (UC.drawerIntent, E4). Bis
+     hierher hatte der URL-Drawer nur den Kalender und filterte trotzdem: mit dem Intent der App, ohne ihn
+     irgendwo zu nennen (gemessen 21.10.). url_detail_v1 und die Responses kennen alle diese Filter. */
+  function duListe(csv) {
+    var l = duStr(csv).split(",").map(function (x) { return x.trim(); }).filter(Boolean);
+    return l.length ? l : null;
+  }
+  function duStand() {
+    var s = DU.slot, f = { modelle: null, maerkte: null, topics: null, tagmode: "or" }, x;
+    var t = s && s.querySelector(".utf-root"), m = s && s.querySelector(".umf-root"), mk = s && s.querySelector(".umk-root");
+    try { if (t && t.__utfCtrl) { x = t.__utfCtrl.getSelected(); f.topics = duListe(x.topic_ids); f.tagmode = x.tag_mode === "and" ? "and" : "or"; } } catch (e) {}
+    try { if (m && m.__umfCtrl) f.modelle = duListe(m.__umfCtrl.getSelected().model_keys); } catch (e) {}
+    try { if (mk && mk.__umkCtrl) f.maerkte = duListe(mk.__umkCtrl.getSelected().market_codes); } catch (e) {}
+    return f;
+  }
+  /* Dieselbe Grundmenge fuer Seite, Antworten und Export (dashboard-data.js basis: f.intent ist der Intent des Drawers). */
+  function duGrund(team, z) {
+    var f = duStand();
+    return { team: team, von: z.von, bis: z.bis, modelle: f.modelle, maerkte: f.maerkte, topics: f.topics, tagmode: f.tagmode, intent: duIntent() };
+  }
+
   /* ---- Die Seite ---- */
-  function duIntent() { return UC.intentFilterParams ? UC.intentFilterParams() : {}; }
+  function duIntent() {
+    if (UC.drawerIntent) return UC.drawerIntent(DU.intentKey).params();
+    return UC.intentFilterParams ? UC.intentFilterParams() : {};
+  }
   function duLaden(frisch) {
     var c = DU.root ? initRoot(DU.root) : null;
     if (!c || !DU.url) return;
     /* Der Intent-Filter der App gehoert in die Signatur: der Speicher hielte sonst die Zahlen der
        vorigen Wahl (VTR-02, 17.10.). */
-    var iv = duIntent(), z = duZeitraum(), sig = DU.url + "|" + z.von + "|" + z.bis + "|" + JSON.stringify(iv);
+    var iv = duIntent(), z = duZeitraum(), fs = duStand();
+    var sig = DU.url + "|" + z.von + "|" + z.bis + "|" + JSON.stringify(iv) + "|" + JSON.stringify(fs);
     if (!frisch && DU.speicher[sig]) {
       var e = DU.speicher[sig];
       if (DU.gezeigt !== sig) { DU.zeile = e.row; DU.zeileFuer = DU.url; c.setV1(e.row); DU.gezeigt = sig; duKopf(e.row); }
@@ -1263,12 +1292,12 @@
     (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(UC.getTeam ? UC.getTeam() : "")).then(function (team) {
       if (nr !== DU.nr) return null;
       if (!team) return { ok: false, status: 0, fehler: { message: "not authenticated" } };
-      /* Dieselbe Grundmenge wie Tabelle, Domain-Drawer und die Antworten darunter: Intent-Filter und
-         Branded-Vorgabe der App (p_branded "non_branded"). Ohne sie rechnete die DB mit "all", und
-         die Zitatzahl hier passte nicht zur Zeile, die man angeklickt hat (VTR-02, 17.10.). Die
-         Seitenfilter (Modelle, Maerkte, Topics) gelten im Drawer bewusst nicht, wie im
-         Domain-Drawer: er hat seine eigene Leiste, der Zeitraum ist der des Drawers. */
-      var p = { p_team: team, p_url: url, p_date_from: z.von, p_date_to: z.bis };
+      /* Dieselbe Grundmenge wie die Antworten darunter: Zeitraum und Filter der Leiste dieses Drawers,
+         Intent und Branded aus seinem eigenen Stand (Vorgabe p_branded "non_branded"; ohne sie rechnete
+         die DB mit "all", VTR-02, 17.10.). Die Filter der Seite, von der aus man kam, gelten nicht (FLT-07);
+         aus einem anderen Drawer kommen dessen Filter als Startwert (zeigen, kontext). */
+      var p = { p_team: team, p_url: url, p_date_from: z.von, p_date_to: z.bis,
+                p_models: fs.modelle, p_markets: fs.maerkte, p_tag_ids: fs.topics, p_tagmode: fs.tagmode };
       for (var ik in iv) if (Object.prototype.hasOwnProperty.call(iv, ik)) p[ik] = iv[ik];
       return UC.rpc(DU.FN.detail, p, { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
     }).then(function (erg) {
@@ -1336,7 +1365,7 @@
   }
   function duKopfKlick(art) {
     var d = DU.zeile || {}, url = DU.kanon || DU.url, titel = duStr(d.title).trim(), fav = duStr(d.favicon).trim();
-    if (art === "domain" && d.domain && UC.drawerOeffnen) UC.drawerOeffnen("domain", duStr(d.domain), "url-detail");
+    if (art === "domain" && d.domain && UC.drawerOeffnen) UC.drawerOeffnen("domain", duStr(d.domain), "url-detail", duKontextFuer(DU.root));
     else if (art === "ai" && UC.openCreateWithAi) UC.openCreateWithAi({ url: url, lead_title: titel, lead_favicon: fav });
     else if (art === "mira" && UC.anMira && UC.miraBezug) {
       var b = UC.miraBezug({ type: "url", url: url, title: titel, favicon: fav });
@@ -1387,6 +1416,14 @@
       if (!UC.filterBereinigen) return false;
       return UC.filterBereinigen(erg, {
         schluessel: "uud|" + DU.url, wurzel: function () { return DU.root; },
+        /* Seit dem 22.10. hat der Drawer einen Topic-Filter (wie der Domain-Drawer). */
+        topics: {
+          lesen: function () { return duStand().topics || []; },
+          setzen: function (rest) {
+            var tp = DU.slot && DU.slot.querySelector(".utf-root"), tc = tp && tp.__utfCtrl;
+            if (tc && typeof tc.setSelected === "function") { try { tc.setSelected(rest.join(",")); } catch (e) {} }
+          }
+        },
         felder: {
           p_company_ids: {
             lesen: function () { return isArr(DU.resp.firmen) ? DU.resp.firmen : []; },
@@ -1397,13 +1434,14 @@
             }
           }
         },
-        danach: function () { duRespLaden(false); }
+        /* Seite UND Antworten: ein geraeumtes Topic aendert auch die Kennzahlen oben. */
+        danach: function () { duLaden(false); }
       });
     });
     var nr = ++DU.rnr, url = DU.kanon, z = duZeitraum(), reqId = DU.resp.requestId;
     (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(UC.getTeam ? UC.getTeam() : "")).then(function (team) {
       if (nr !== DU.rnr) return null;
-      var teile = DDx.responsesTeile({ team: team, von: z.von, bis: z.bis }, DU.resp).map(function (a) {
+      var teile = DDx.responsesTeile(duGrund(team, z), DU.resp).map(function (a) {
         var params = {}, k;
         for (k in a.params) params[k] = a.params[k];
         params.p_url = url;
@@ -1435,6 +1473,29 @@
     });
   }
   function duAn(name, fn) { DU.slot.addEventListener(name, function (e) { fn(e.detail || {}); }); }
+  /* Der Stand dieses Drawers fuer einen Drawer, der aus ihm aufgeht (22.10., E2) -- nur, wenn die Komponente
+     wirklich im Drawer steht (sie laeuft auch allein, etwa auf der Landingpage). */
+  function duKontextFuer(el) {
+    if (!DU.slot || !el || !DU.slot.contains(el) || !UC.drawerKontextLesen) return null;
+    return UC.drawerKontextLesen(DU.slot, DU.intentKey);
+  }
+  /* Filter der Leiste oder Intent des Drawers geaendert (22.10.): Seite und Antworten neu, ab Seite 1. Gebuendelt
+     wie im Domain-Drawer (120ms, Clear All meldet jeden Filter einzeln), und nur, wenn sich der Stand wirklich
+     geaendert hat -- ein Filter meldet sich auch beim Einrichten. */
+  var duFilterUhr = null;
+  function duFilterSig() { return JSON.stringify(duStand()) + "|" + JSON.stringify(duIntent()); }
+  function duFilterGeaendert() {
+    clearTimeout(duFilterUhr);
+    duFilterUhr = setTimeout(function () {
+      duFilterUhr = null;
+      if (!DU.url) return;
+      var sig = duFilterSig();
+      if (sig === DU.fLetzt) return;
+      DU.fLetzt = sig;
+      DU.resp.offset = 0;
+      duLaden(false);
+    }, 120);
+  }
   function duRespNeu(fn) { return function (d) { fn(d); DU.resp.requestId = null; duRespLaden(); }; }
 
   if (UC.kernDrawer) UC.kernDrawer("url", {
@@ -1445,8 +1506,19 @@
         .split("__UUD_BRAND__").join(esc(mk ? duStr(mk.name) : "")).split("__UUD_BRANDLOGO__").join(esc(mk ? duStr(mk.logo_url) : ""));
       ctx.slot.innerHTML =
         '<div class="uud-dw">' +
+          /* Kalender und Filterknopf (22.10., E1): dieselbe Leiste wie im Domain-Drawer -- Topics, Models, Markets
+             als lokale Filter, die Leiste bringt Intent und Branded selbst mit (data-intent-lokal: der eigene Stand
+             dieses Drawers). Die Chips stehen in einer eigenen Zeile unter Titel und Adresse (data-chips-ziel). */
           '<div class="up-dk-filterzeile uud-dw-leiste"><div class="up-root udr-root uud-dw-daten" data-instance="' + esc(DU.ids.daten) +
-            '" data-local="yes" data-isdark="' + dk + '"></div></div>' +
+            '" data-local="yes" data-isdark="' + dk + '"></div>' +
+            '<div class="up-root ufb-root uud-dw-filterleiste" data-instance="' + esc(DU.ids.filter) + '" data-topics-instance="' + esc(DU.ids.topics) + '"' +
+              ' data-models-instance="' + esc(DU.ids.modelle) + '" data-markets-instance="' + esc(DU.ids.maerkte) + '"' +
+              ' data-intent-lokal="' + esc(DU.intentKey) + '" data-chips-ziel="' + esc(DU.ids.chips) + '" data-isdark="' + dk + '"></div>' +
+            '<div class="up-root utf-root" data-instance="' + esc(DU.ids.topics) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
+            '<div class="up-root umf-root" data-instance="' + esc(DU.ids.modelle) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
+            '<div class="up-root umk-root" data-instance="' + esc(DU.ids.maerkte) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
+          '</div>' +
+          '<div class="up-dk-chipzeile uud-dw-chips" id="' + esc(DU.ids.chips) + '"></div>' +
           /* data-local: der Klick auf eine Marke oeffnet den Brand-Drawer selbst; ein Bubble-Ereignis
              hat im Drawer aus core keinen Empfaenger (und meldete das sonst in der Konsole). */
           '<div class="up-root uud-root uud-im-drawer" data-local="yes" data-instance="' + esc(DU.ids.seite) + '"></div>' +
@@ -1459,13 +1531,21 @@
       r.__uudNeuLaden = function () { duLaden(true); };
       /* Intent oder Branded geaendert, waehrend der Drawer offen ist: Seite und Antworten neu, wie im
          Domain-Drawer. Einmal je Fenster. */
+      /* Seit 22.10. hat der Drawer einen eigenen Stand (UC.drawerIntent): die Brille der App wirkt nur,
+         solange er ihr folgt; eine Wahl in SEINER Leiste meldet sich lokal. Still (Uebernahme beim Oeffnen):
+         zeigen() laedt ohnehin. */
       if (!DU.__intentHoerer) {
         DU.__intentHoerer = function () {
           if (!DU.root || !document.contains(DU.root) || !DU.url) return;
-          DU.resp.offset = 0;
-          duLaden(false);
+          if (UC.drawerIntent && !UC.drawerIntent(DU.intentKey).folgt()) return;
+          duFilterGeaendert();
         };
         window.addEventListener("up-intentfilter", DU.__intentHoerer);
+        window.addEventListener("up-intentfilter-lokal", function (e) {
+          var d = (e && e.detail) || {};
+          if (d.key !== DU.intentKey || d.still || !DU.root || !document.contains(DU.root) || !DU.url) return;
+          duFilterGeaendert();
+        });
       }
       r.__uudZeitraum = duZeitraumAufZitat;
       DU.root = r;
@@ -1480,6 +1560,14 @@
       /* Seit der zweiten Runde (13.10.) in die META-Zeile, auf Hoehe von "zuletzt gesehen". */
       var leiste = ctx.slot.querySelector(".uud-dw-leiste"), zeile = r.querySelector(".uud-head .uud-metazeile");
       if (leiste && zeile) zeile.appendChild(leiste);
+      /* Die Chips unter Titel und Adresse, ueber den Kennzahlen (22.10.): Kalender und Filters bleiben oben rechts
+         stehen, wenn Chips dazukommen. */
+      var chips = ctx.slot.querySelector(".uud-dw-chips"), held = r.querySelector(".uud-head .uud-heldtext");
+      if (chips && held && held.parentNode) held.parentNode.insertBefore(chips, held.nextSibling);
+      /* Topics, Models, Markets: ihre eigenen Ereignisse, gebuendelt (Clear All feuert drei). */
+      ["utf-topics", "umf-models", "umk-markets"].forEach(function (n) {
+        ctx.slot.addEventListener(n, function () { duFilterGeaendert(); });
+      });
       ctx.eigen.addEventListener("click", function (e) {
         var b = e.target.closest ? e.target.closest("[data-uud-kopf]") : null;
         if (b) duKopfKlick(b.getAttribute("data-uud-kopf"));
@@ -1502,9 +1590,12 @@
         /* Seit 16.10. dazu Zeitraum und Filter der Tabelle (Suche, Brand, Brands, Rank, Sentiment)
            als Chips im Dialog, jeder abwaehlbar -- dieselben Parameter wie beim Laden (export-data.js
            KENNT); die Adresse bleibt der Filter des Drawers. */
-        var z = duZeitraum(), DDy = window.UpstreemDashboardDaten, teil0 = DDy && DDy.responsesTeile ? DDy.responsesTeile({ team: UC.getTeam ? UC.getTeam() : "", von: z.von, bis: z.bis }, DU.resp)[0] : null;
+        var z = duZeitraum(), DDy = window.UpstreemDashboardDaten, teil0 = DDy && DDy.responsesTeile ? DDy.responsesTeile(duGrund(UC.getTeam ? UC.getTeam() : "", z), DU.resp)[0] : null;
+        /* brille: der Intent dieses Drawers (UC.drawerIntent), nicht der der App -- sonst haengte der Export einen
+           Intent an, den der Drawer gerade nicht anwendet (22.10.). */
         try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: "prompt_runs", url: DU.kanon,
-          date_from: z.von || "", date_to: z.bis || "", preset: z.preset, params: { prompt_runs: teil0 ? teil0.params : {} } }); } catch (err) {}
+          date_from: z.von || "", date_to: z.bis || "", preset: z.preset, params: { prompt_runs: teil0 ? teil0.params : {} },
+          brille: duIntent() }); } catch (err) {}
       }, true);
       /* Neuer Zeitraum: Seite und Antworten neu (die Kennzahlen gelten fuer den Zeitraum). */
       ctx.slot.addEventListener("change", function (e) {
@@ -1553,7 +1644,10 @@
         if (id && UC.drawerOeffnen) UC.drawerOeffnen("response", id, "url-detail");
       });
     },
-    zeigen: function (id) {
+    /* kontext (22.10., E2): der Stand des Drawers, aus dem geoeffnet wurde (UC.drawerKontextLesen) -- Zeitraum,
+       Topics, Models, Markets und Intent als Startwert, still gesetzt, die Chips zeigen sie. Ohne kontext (von
+       einer Seite, aus der Adresse, Cmd+K) behaelt der Drawer seinen Stand (E3). */
+    zeigen: function (id, kontext) {
       var url = duStr(id).trim();
       if (!url) return;
       if (url !== DU.url) {
@@ -1565,15 +1659,19 @@
         DU.url = url; DU.kanon = ""; DU.inRange = true;
         try { duSetter("resetResponsesTable")(DU.ids.urt); } catch (e) {}
       }
-      /* Erst wenn der Kalender steht (er richtet sich einen Takt nach dem Drawer ein), sonst ginge
-         der erste Abruf ohne Zeitraum hinaus und der zweite gleich hinterher. Hoechstens 1,5s;
-         fehlt date-range.js, laedt der Drawer ohne Zeitraum (die RPC nimmt ihre Vorgabe). */
+      /* Erst wenn Kalender und Filter stehen (sie richten sich einen Takt nach dem Drawer ein), sonst ginge
+         der erste Abruf ohne Zeitraum hinaus und der zweite gleich hinterher -- und ein mitgegebener Stand
+         liefe ins Leere. Hoechstens 1,5s; fehlt date-range.js, laedt der Drawer ohne Zeitraum (die RPC nimmt
+         ihre Vorgabe). */
       var n = 0;
       (function warten() {
         var k = DU.slot && DU.slot.querySelector(".uud-dw-daten");
-        if (!(k && k.__udrCtrl) && n++ < 50) { setTimeout(warten, 30); return; }
+        var bereit = UC.drawerFilterBereit ? UC.drawerFilterBereit(DU.slot) : !!(k && k.__udrCtrl);
+        if (!bereit && n++ < 50) { setTimeout(warten, 30); return; }
+        if (kontext && UC.drawerKontextSetzen) UC.drawerKontextSetzen(DU.slot, kontext, DU.intentKey);
         var z = duZeitraum();
         DU.zLetzt = z.von + "|" + z.bis;
+        DU.fLetzt = duFilterSig();
         duLaden(false);
       })();
     },

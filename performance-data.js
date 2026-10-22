@@ -75,7 +75,7 @@
     if (m) p.p_models = m;
     if (k) p.p_markets = k;
     if (t) { p.p_tag_ids = t; p.p_tagmode = f.tagmode === "and" ? "and" : "or"; }
-    return intentDazu(p);
+    return intentDazu(p, f);
   }
   /* Die Topics einer ZELLE: ihr eigenes, und bei "and" dazu alle der Filterleiste -- dann zaehlt
      der Radar nur Laeufe, die jedes gewaehlte Topic tragen, und das Detail derselben Zelle soll
@@ -100,7 +100,7 @@
     var m = texte(f.modelle), k = texte(f.maerkte);
     if (m) p.p_models = m;
     if (k) p.p_markets = k;
-    intentDazu(p);
+    intentDazu(p, f);
     /* Die Stufe kommt seit dem 14.10. mit (z.gran, D/W/M-Schalter im Radar-Detail); ohne Angabe Day. */
     if (art === "kurve") { p.p_mode = "visibility"; p.p_granularity = z.gran === "week" || z.gran === "month" ? z.gran : "day"; }
     /* Die ganze Liste in einem Aufruf: das Detail blaettert und sucht im Browser (Vertrag 4.3). */
@@ -121,8 +121,11 @@
   }
   /* Intent-Filter der App (13.10., core: UC.intentFilterParams). Leer, solange die Intents nicht
      freigegeben sind -- dann geht kein neuer Parameter hinaus. */
-  function intentDazu(o) {
-    var U = window.UpstreemCore, x = U && U.intentFilterParams ? U.intentFilterParams() : {};
+  /* f.intent (22.10.): die Parameter des eigenen Stands eines Drawers (UC.drawerIntent(...).params()) --
+     dort gilt SEIN Intent, nicht die Brille der App. */
+  function intentDazu(o, f) {
+    var U = window.UpstreemCore, x = f && f.intent && typeof f.intent === "object" ? f.intent
+      : (U && U.intentFilterParams ? U.intentFilterParams() : {});
     for (var k in x) if (Object.prototype.hasOwnProperty.call(x, k)) o[k] = x[k];
     return o;
   }
@@ -130,7 +133,7 @@
     f = f || {};
     return intentDazu({ p_team: str(f.team), p_company: uuid(firma), p_date_from: datum(f.von), p_date_to: datum(f.bis),
              p_models: texte(f.modelle), p_markets: texte(f.maerkte), p_tag_ids: uuids(f.topics),
-             p_tagmode: f.tagmode === "and" ? "and" : "or" });
+             p_tagmode: f.tagmode === "and" ? "and" : "or" }, f);
   }
   function markenKurve(f, firma, o) {
     o = o || {};

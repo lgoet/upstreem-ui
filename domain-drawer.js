@@ -68,7 +68,7 @@
 
   var FN = { kopf: "domain_detail_v1", stats: "domain_detail_stats_v1", anteil: "domain_url_share_v1", zaehlen: "domain_classify_v1" };
   var IDS = { daten: "drawer-domain-daten", filter: "drawer-domain-filter", modelle: "drawer-domain-models",
-              maerkte: "drawer-domain-markets", topics: "drawer-domain-topics",
+              maerkte: "drawer-domain-markets", topics: "drawer-domain-topics", chips: "chips-drawer-domain",
               udd: "drawer-domain-detail", uvw: "drawer-domain-switch", uut: "drawer-domain-urls", urt: "drawer-domain-responses" };
 
   var S = {
@@ -144,10 +144,19 @@
     });
   });
 
+  /* intent (22.10.): die Parameter des eigenen Intent-Stands dieses Drawers (UC.drawerIntent, Schluessel IKEY) --
+     die Datenbausteine nehmen sie statt der Brille der App (dashboard-data/citations-data basis). */
+  var IKEY = "drawer-domain";
+  function intentParams() {
+    if (UC.drawerIntent) return UC.drawerIntent(IKEY).params();
+    return UC.intentFilterParams ? UC.intentFilterParams() : {};
+  }
   function filterStand() {
     return { team: UC.getTeam ? UC.getTeam() : "", von: S.f.von, bis: S.f.bis, modelle: S.f.modelle,
-             maerkte: S.f.maerkte, topics: S.f.topics, tagmode: S.f.tagmode };
+             maerkte: S.f.maerkte, topics: S.f.topics, tagmode: S.f.tagmode, intent: intentParams() };
   }
+  /* Der Stand dieses Drawers fuer einen Drawer, der aus ihm aufgeht (22.10., E2, UC.drawerKontextLesen). */
+  function kontext() { return UC.drawerKontextLesen && S.slot ? UC.drawerKontextLesen(S.slot, IKEY) : null; }
   function marke() { return eigeneMarke() || S.eigene || null; }
   function anfrage(fn, params) { return { art: fn, fn: fn, params: params, sig: fn + "|" + JSON.stringify(params) }; }
   function mit(a, zusatz) {
@@ -161,7 +170,7 @@
   /* Intent-Filter der App (13.10., core: UC.intentFilterParams). Leer, solange die Intents nicht
      freigegeben sind -- dann geht kein neuer Parameter hinaus. */
   function intentDazu(o) {
-    var U = window.UpstreemCore, x = U && U.intentFilterParams ? U.intentFilterParams() : {};
+    var x = intentParams();
     for (var k in x) if (Object.prototype.hasOwnProperty.call(x, k)) o[k] = x[k];
     return o;
   }
@@ -417,7 +426,7 @@
 
   /* Der Kopf haengt seit dem 14.10. am Intent-Filter (first/last seen bzw. last mentioned,
      audit_14_10) -- also auch sein Speicher: je Filterstand ein Eintrag. */
-  function kopfSchluessel(x) { return x + "|" + JSON.stringify(UC.intentFilterParams ? UC.intentFilterParams() : {}); }
+  function kopfSchluessel(x) { return x + "|" + JSON.stringify(intentParams()); }
   function kopfAuftrag() {
     var dom = S.domain, ks = kopfSchluessel(dom);
     return {
@@ -435,7 +444,7 @@
         return teamWarten().then(function (team) {
           if (nr !== S.nr) return null;
           if (!team) return { ok: false, status: 0, fehler: { message: "not authenticated" } };
-          return (UC.rpcMitIntent || UC.rpc)(FN.kopf, { p_team: team, p_domain: dom }, { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
+          return (UC.rpcMitIntent || UC.rpc)(FN.kopf, { p_team: team, p_domain: dom }, { timeoutMs: 60000, signal: ab ? ab.signal : undefined }, intentParams());
         }).then(function (erg) {
           if (!erg || nr !== S.nr) return null;
           var roh = zeileAus(erg), d = roh && roh.row && typeof roh.row === "object" ? roh.row : null;
@@ -531,7 +540,7 @@
   function urlsAuftrag() {
     var f = filterStand(), u = S.urls;
     var cf = { team: f.team, von: f.von, bis: f.bis, modelle: f.modelle, maerkte: f.maerkte, topics: f.topics, tagmode: f.tagmode,
-               erwaehnt: u.erwaehnt, marken: u.marken, citationTypen: u.citationTypen, urlTypen: null };
+               erwaehnt: u.erwaehnt, marken: u.marken, citationTypen: u.citationTypen, urlTypen: null, intent: f.intent };
     var a = C.domainUrls(cf, S.domain, { suche: u.suche, order: u.order, limit: u.limit, offset: u.offset, urlTypen: u.urlTypen });
     var reqId = u.requestId;
     return {
@@ -698,15 +707,19 @@
               '<div class="up-dk-held-sub uddr-sub"></div>' +
             '</div>' +
           '</div>' +
+          /* data-intent-lokal (22.10., E4): Intent und Branded gelten nur in diesem Drawer. data-chips-ziel: die
+             Chips in eigener Zeile unter dem Kopf, Kalender und Filters bleiben oben rechts stehen. */
           '<div class="up-dk-filterzeile uddr-filterzeile">' +
             '<div class="up-root udr-root uddr-daten" data-instance="' + esc(IDS.daten) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
             '<div class="up-root ufb-root uddr-filterleiste" data-instance="' + esc(IDS.filter) + '" data-topics-instance="' + esc(IDS.topics) + '"' +
-              ' data-models-instance="' + esc(IDS.modelle) + '" data-markets-instance="' + esc(IDS.maerkte) + '" data-isdark="' + dk + '"></div>' +
+              ' data-models-instance="' + esc(IDS.modelle) + '" data-markets-instance="' + esc(IDS.maerkte) + '"' +
+              ' data-intent-lokal="' + esc(IKEY) + '" data-chips-ziel="' + esc(IDS.chips) + '" data-isdark="' + dk + '"></div>' +
             '<div class="up-root utf-root" data-instance="' + esc(IDS.topics) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
             '<div class="up-root umf-root" data-instance="' + esc(IDS.modelle) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
             '<div class="up-root umk-root" data-instance="' + esc(IDS.maerkte) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
           '</div>' +
           '</div>' +
+          '<div class="up-dk-chipzeile uddr-chips" id="' + esc(IDS.chips) + '"></div>' +
         '</div>' +
         '<div class="uddr-main">' +
           /* data-form="abschnitte": Domain Detail in der Form der Vorlage (Abschnitte statt
@@ -732,7 +745,7 @@
       if (!e.target.closest) return;
       if (e.target.closest("[data-uddr-retry]")) { alleLaden(true, true); return; }
       var mk2 = e.target.closest("[data-uddr-marke]");
-      if (mk2 && UC.drawerOeffnen) UC.drawerOeffnen("brand", mk2.getAttribute("data-uddr-marke"), "domain-drawer");
+      if (mk2 && UC.drawerOeffnen) UC.drawerOeffnen("brand", mk2.getAttribute("data-uddr-marke"), "domain-drawer", kontext());
     });
     s.addEventListener("change", function (e) {
       if (!e.target || !e.target.classList || !e.target.classList.contains("uddr-daten")) return;
@@ -743,9 +756,18 @@
     s.addEventListener("umf-models", function (e) { if (setzen("modelle", auswahl("modelle", e.detail, "model_keys"))) filterGeaendert(); });
     /* Intent-Filter der App (13.10.): gemeinsamer Stand in core, Ereignis am window. Einmal je
        Schale -- einsetzen() kann fuer dieselbe Schale erneut laufen. */
+    /* Seit 22.10. mit eigenem Stand (UC.drawerIntent): die Brille der App wirkt nur, solange der Drawer ihr
+       folgt; eine Wahl in seiner Leiste meldet sich lokal. Still (Uebernahme beim Oeffnen): zeigen() laedt selbst. */
     if (!s.__intentHoerer) {
-      s.__intentHoerer = function () { if (document.contains(s)) filterGeaendert(true); };
+      s.__intentHoerer = function () {
+        if (!document.contains(s) || (UC.drawerIntent && !UC.drawerIntent(IKEY).folgt())) return;
+        filterGeaendert(true);
+      };
       window.addEventListener("up-intentfilter", s.__intentHoerer);
+      window.addEventListener("up-intentfilter-lokal", function (e) {
+        var d = (e && e.detail) || {};
+        if (d.key === IKEY && !d.still && document.contains(s)) filterGeaendert(true);
+      });
     }
     s.addEventListener("umk-markets", function (e) { if (setzen("maerkte", auswahl("maerkte", e.detail, "market_codes"))) filterGeaendert(); });
     s.addEventListener("utf-topics", function (e) {
@@ -824,7 +846,7 @@
       var v = str(d.brand_mentioned);
       S.urls.erwaehnt = v === "yes" || v === "no" ? v : "all"; S.urls.offset = 0;
     }));
-    an("uut-uutRowClick", function (d) { var u = str(d.url).trim(); if (u && UC.drawerOeffnen) UC.drawerOeffnen("url", u, "domain-drawer"); });
+    an("uut-uutRowClick", function (d) { var u = str(d.url).trim(); if (u && UC.drawerOeffnen) UC.drawerOeffnen("url", u, "domain-drawer", kontext()); });
     /* Responses-Tabelle (lokal, responses-table.js) -- wie brand-drawer.js */
     function respNeu(fn) { return function (d) { fn(d); S.resp.requestId = null; teilLaden("resp"); }; }
     an("urt-urtSearch", function (d) {
@@ -880,19 +902,24 @@
     var r = null, c = kalender(), f = filterStand(), u = S.urls, aufUrls = typ === "urls";
     try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; }
     var cf = { team: f.team, von: f.von, bis: f.bis, modelle: f.modelle, maerkte: f.maerkte, topics: f.topics, tagmode: f.tagmode,
-               erwaehnt: aufUrls ? u.erwaehnt : "all", marken: aufUrls ? u.marken : null, citationTypen: aufUrls ? u.citationTypen : null, urlTypen: null };
+               erwaehnt: aufUrls ? u.erwaehnt : "all", marken: aufUrls ? u.marken : null, citationTypen: aufUrls ? u.citationTypen : null, urlTypen: null,
+               intent: f.intent };
     var urls = C.domainUrls(cf, S.domain, aufUrls ? { suche: u.suche, order: u.order, urlTypen: u.urlTypen } : { order: u.order });
     var resp = D.responsesTeile(f, aufUrls ? { order: S.resp.order } : S.resp)[0];
     return {
       export_type: typ, domain: S.domain,
       date_from: r && r.from ? r.from : S.f.von, date_to: r && r.to ? r.to : S.f.bis, preset: r && r.preset ? r.preset : "",
-      params: { urls: urls.params, prompt_runs: resp ? resp.params : {} }
+      params: { urls: urls.params, prompt_runs: resp ? resp.params : {} },
+      /* Der Intent dieses Drawers statt der Brille der App (22.10., export-data brille). */
+      brille: f.intent
     };
   }
 
   UC.kernDrawer("domain", {
     aufbauen: aufbauen,
-    zeigen: function (id) {
+    /* kontext (22.10., E2): der Stand des Drawers, aus dem geoeffnet wurde -- Startwert, still gesetzt, die Chips
+       zeigen ihn. Ohne kontext (von einer Seite, aus der Adresse) bleibt der Stand dieses Drawers (E3). */
+    zeigen: function (id, kontext) {
       var dom = domainNorm(id);
       if (!dom) return;
       if (dom !== S.domain) {
@@ -913,7 +940,9 @@
       tabZeigen();
       var n = 0;
       (function warten() {
-        if (!kalender() && n++ < 50) { setTimeout(warten, 30); return; }
+        var bereit = UC.drawerFilterBereit ? UC.drawerFilterBereit(S.slot) : !!kalender();
+        if (!bereit && n++ < 50) { setTimeout(warten, 30); return; }
+        if (kontext && UC.drawerKontextSetzen) UC.drawerKontextSetzen(S.slot, kontext, IKEY);
         filterAbgleichen();
         granBeimOeffnen();
         alleLaden(false, true);

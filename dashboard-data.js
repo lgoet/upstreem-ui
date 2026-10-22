@@ -76,8 +76,11 @@
 
   /* Intent-Filter der App (13.10., core: UC.intentFilterParams). Leer, solange die Intents nicht
      freigegeben sind -- dann geht kein neuer Parameter hinaus. */
-  function intentDazu(o) {
-    var U = window.UpstreemCore, x = U && U.intentFilterParams ? U.intentFilterParams() : {};
+  /* f.intent (22.10.): die Parameter des eigenen Stands eines Drawers (UC.drawerIntent(...).params()) --
+     dort gilt SEIN Intent, nicht die Brille der App. */
+  function intentDazu(o, f) {
+    var U = window.UpstreemCore, x = f && f.intent && typeof f.intent === "object" ? f.intent
+      : (U && U.intentFilterParams ? U.intentFilterParams() : {});
     for (var k in x) if (Object.prototype.hasOwnProperty.call(x, k)) o[k] = x[k];
     return o;
   }
@@ -85,11 +88,12 @@
   function basis(f) {
     f = f || {};
     /* f.ohneIntent: ein Teil, in dem der Filter der App keinen Sinn hat (Prompt-Detail: EIN Prompt). */
-    return (f.ohneIntent ? function (o) { return o; } : intentDazu)({
+    var b = {
       p_team: str(f.team), p_date_from: str(f.von) || null, p_date_to: str(f.bis) || null,
       p_models: liste(f.modelle), p_markets: liste(f.maerkte), p_tag_ids: uuids(f.topics),
       p_tagmode: f.tagmode === "and" ? "and" : "or"
-    });
+    };
+    return f.ohneIntent ? b : intentDazu(b, f);
   }
   function anfrage(art, params) { return { art: art, fn: FN[art], params: params, sig: FN[art] + "|" + JSON.stringify(params) }; }
 
@@ -176,7 +180,7 @@
     t = t || {};
     return { team: f.team, von: f.von, bis: f.bis, modelle: f.modelle, maerkte: f.maerkte, topics: f.topics, tagmode: f.tagmode,
              erwaehnt: t.erwaehnt, marken: null, citationTypen: t.citationTypen || null, urlTypen: t.urlTypen || null,
-             ohneIntent: !!f.ohneIntent };
+             ohneIntent: !!f.ohneIntent, intent: f.intent };
   }
   function topTypen(f, modus, t) {
     t = t || {};

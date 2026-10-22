@@ -1745,6 +1745,38 @@ Greifer bleibt frei.
 
 ---
 
+## 8d. Filter in Drawern: Leiste, Chips, Vererbung (seit 22.10.)
+
+Gemeldet 21.10. („alles sehr unintuitiv“): der URL-Drawer hatte keine Filterleiste und filterte trotzdem, mit dem
+Intent der App, ohne ihn zu nennen; aus dem Domain-Drawer geöffnet zeigte er für dieselbe Seite 10,79 % Domain share,
+die angeklickte Zeile 8,59 %. Seitdem gilt für jeden Drawer mit Listen (Domain, Brand, Prompt, URL):
+
+```
+Leiste          Kalender + "Filters" aus core oben rechts im Kopf (.up-dk-filterzeile); Topics, Models, Markets
+                als lokale Filter (data-local), Intent und Branded bringt die Leiste mit. Prompt: nur Models.
+Chips           in EIGENER Zeile unter Titel/Kopf, linksbündig (.up-dk-chipzeile, an der Leiste
+                data-chips-ziel="<id>"): Kalender und Filters bleiben stehen, wenn Chips dazukommen
+                (vorher rückten sie mit zwei Chips 250px nach links). Vorbild Polaris IndexFilters,
+                Cloudscape Property Filter. Ohne Chip keine Zeile. Die Id beginnt NIE mit "drawer-":
+                das Kopf-Skript behandelt jedes [id^="drawer-"] als Drawer und schiebt es aus dem Bild.
+Drawer → Drawer Der Ziel-Drawer übernimmt Zeitraum, Topics, Models, Markets und Intent des Drawers, aus dem
+                geklickt wurde, als Startwert -- still gesetzt, als Chips sichtbar, jeder abwählbar. Was das
+                Ziel nicht kennt, fällt weg. Wie Search Console: der Klick auf eine Zeile wird Filter, die
+                übrigen bleiben stehen.
+Seite → Drawer  nichts (FLT-07, 17.10.): der Drawer behält seinen eigenen Stand.
+Intent/Branded  im Drawer LOKAL (UC.drawerIntent(key), data-intent-lokal an der Leiste): der Drawer folgt der
+                App, bis in ihm gewählt wird; eine Wahl dort stellt nie die Seiten dahinter um.
+Schließen       behält Zeitraum und Filter bis zum Neuladen (wie Search Console, Sentry; Primer: „Don't …
+                reset on every navigation“).
+```
+
+Bauen: die Quelle gibt ihren Stand mit `UC.drawerOeffnen(art, id, wer, UC.drawerKontextLesen(slot, intentKey))`,
+das Ziel bekommt ihn in `zeigen(id, kontext)`, wartet auf `UC.drawerFilterBereit(slot)` und setzt ihn mit
+`UC.drawerKontextSetzen(slot, kontext, intentKey)`, bevor es EINMAL lädt. Daten mit lokalem Intent: `f.intent`
+(Parameter des Stands) an die Bauer in dashboard-, citations- und performance-data; der Export bekommt ihn als
+`brille` in `upstreemExportSetContext`. Gegenstück zum Lesen ist `up-intentfilter-lokal` (detail.key, detail.still:
+still = Übernahme beim Öffnen, der Drawer lädt selbst).
+
 ## 9. Skeleton / Loading (Geist, seit 15.10.)
 
 **Eine Form für alle Skelette**, gelesen an vercel.com/geist/skeleton: ein wandernder Glanz statt

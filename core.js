@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261181;
+  var BUILD = 20261182;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -6696,17 +6696,24 @@
       .filter(function(k){ return !!intentArt(k); });
     return { intents: l, branded: v.branded === "all" || v.branded === "branded" ? v.branded : "non_branded" };
   }
-  function intentFilterSet(v){
-    var alt = intentFilterGet();
+  /* Ein Stand aus einer Wahl: was v nicht nennt, bleibt wie in alt. Geteilt von der App (intentFilterSet)
+     und dem Stand eines Drawers (drawerIntent). */
+  function intentStandNorm(v, alt){
     v = v || {};
     var neu = {
-      intents: Array.isArray(v.intents) ? v.intents.map(String).filter(function(k){ return !!intentArt(k); }) : alt.intents,
+      intents: Array.isArray(v.intents) ? v.intents.map(String).filter(function(k){ return !!intentArt(k); }) : alt.intents.slice(),
       branded: v.branded === "all" || v.branded === "branded" || v.branded === "non_branded" ? v.branded : alt.branded
     };
     /* In der Reihenfolge der Buyer Journey, damit derselbe Stand immer dieselbe Signatur ergibt
        (die Lader cachen ueber die Parameter). */
     neu.intents = INTENTE.map(function(a){ return a.key; }).filter(function(k){ return neu.intents.indexOf(k) >= 0; });
-    if (neu.intents.join(",") === alt.intents.join(",") && neu.branded === alt.branded) return false;
+    return neu;
+  }
+  function intentStandGleich(a, b){ return a.intents.join(",") === b.intents.join(",") && a.branded === b.branded; }
+  function intentFilterSet(v){
+    var alt = intentFilterGet();
+    var neu = intentStandNorm(v, alt);
+    if (intentStandGleich(neu, alt)) return false;
     try { window.localStorage.setItem(prefKey(IF_KEY), JSON.stringify(neu)); } catch(e){}
     try { window.dispatchEvent(new CustomEvent("up-intentfilter", { detail: neu })); } catch(e){}
     return true;
@@ -6717,8 +6724,10 @@
      ein PGRST202 (Schema-Cache, Signaturaenderung), zeigte der Drawer still ungefilterte Werte, als
      waeren sie gefiltert -- leer und kaputt sahen gleich aus. Jetzt geht der Fehler an den Aufrufer
      und steht als Fehlerzustand im Drawer. */
-  function rpcMitIntent(fn, params, opts){
-    var x = intentFilterParams(), mit = {}, k;
+  /* intent (22.10.): die Parameter eines eigenen Stands (drawerIntent(...).params()) statt der Brille der
+     App -- ein Drawer filtert mit SEINEM Intent. */
+  function rpcMitIntent(fn, params, opts, intent){
+    var x = intent && typeof intent === "object" ? intent : intentFilterParams(), mit = {}, k;
     for (k in params) if (Object.prototype.hasOwnProperty.call(params, k)) mit[k] = params[k];
     for (k in x) if (Object.prototype.hasOwnProperty.call(x, k)) mit[k] = x[k];
     return rpc(fn, mit, opts);
@@ -6736,12 +6745,58 @@
   }
   /* Die Parameter fuer einen Aufruf. opts.branded === false: ohne p_branded (Prompts-Tabelle).
      Nicht freigegeben: leer -- dann geht kein einziger neuer Parameter hinaus. */
-  function intentFilterParams(opts){
+  function intentParamsVon(f, opts){
     if (!intentsLive()) return {};
-    var f = intentFilterGet(), p = {};
+    var p = {};
     if (intentWirksam(f.intents)) p.p_intents = f.intents.slice();
     if (!opts || opts.branded !== false) p.p_branded = f.branded;
     return p;
+  }
+  function intentFilterParams(opts){
+    if (!intentsLive()) return {};
+    return intentParamsVon(intentFilterGet(), opts);
+  }
+
+  /* ---- INTENT UND BRANDED IM DRAWER (22.10., Entscheidung E4) -----------------------------------
+     Bis hierher galt im Drawer die Brille der App: wer im Domain-Drawer einen Intent waehlte, stellte
+     damit die Seiten dahinter um (gemessen 21.10.: Dashboard und Citations luden mit p_intents neu),
+     und ein X am Intent-Chip im Drawer haette die ganze App umgestellt. Jetzt hat jeder Drawer einen
+     eigenen Stand: solange er nichts Eigenes hat, folgt er der App; eine Wahl im Drawer gilt nur dort
+     und bleibt bis zum Neuladen, wie Zeitraum und Filter des Drawers (E3, Search Console und Sentry
+     behalten ihre Auswahl). Ein Drawer, der aus einem anderen aufgeht, uebernimmt dessen Stand
+     (drawerKontextSetzen).
+     Eine Aenderung meldet "up-intentfilter-lokal" (detail.key, detail.still) am window, nie
+     "up-intentfilter": an dem laden die Seiten neu. still heisst: nur Anzeige nachziehen, der Drawer
+     laedt selbst (Uebernahme beim Oeffnen, sonst liefe derselbe Abruf zweimal). */
+  var INTENT_LOKAL = window.__upIntentLokal || (window.__upIntentLokal = {});
+  function drawerIntent(key){
+    key = String(key || "");
+    function eigen(){ var e = INTENT_LOKAL[key]; return e ? { intents: e.intents.slice(), branded: e.branded } : null; }
+    function get(){ return eigen() || intentFilterGet(); }
+    function melden(still){
+      try { window.dispatchEvent(new CustomEvent("up-intentfilter-lokal", { detail: { key: key, still: !!still } })); } catch(e){}
+    }
+    return {
+      key: key,
+      folgt: function(){ return !INTENT_LOKAL[key]; },
+      get: get,
+      eigen: eigen,
+      set: function(v){
+        var alt = get(), neu = intentStandNorm(v, alt);
+        INTENT_LOKAL[key] = neu;
+        if (intentStandGleich(neu, alt)) return false;
+        melden(false);
+        return true;
+      },
+      /* e: der eigene Stand eines anderen Drawers, null = der folgt der App (dann folgt dieser auch). */
+      uebernehmen: function(e){
+        var alt = get();
+        if (e && typeof e === "object") INTENT_LOKAL[key] = intentStandNorm(e, intentFilterGet());
+        else delete INTENT_LOKAL[key];
+        if (!intentStandGleich(get(), alt)) melden(true);
+      },
+      params: function(opts){ return intentParamsVon(get(), opts); }
+    };
   }
   /* STEHT AUF DER SEITE EIN DATENFILTER? (15.10., fuer den Leerzustand der Charts: "No matching
      data" mit der Lupe statt "No data yet".) f ist der Filterstand der Seiten (dashboard-,
@@ -22995,13 +23050,19 @@
      (Ebene 1) also sauber auf, statt unter dem offenen zu liegen.
      Gibt es openDrawer auf der Seite nicht (Pruefstand, Landingpage), steht eine Zeile in der
      Konsole -- kein stiller Ausfall. wer: Name der Komponente fuer genau diese Zeile. */
-  function drawerOeffnen(art, id, wer){
+  /* kontext (22.10.): der Stand des Drawers, aus dem geoeffnet wird (drawerKontextLesen). Der Oeffnen-Hook
+     unten gibt ihn an zeigen(id, kontext) des Ziels weiter -- nur fuer genau diesen Aufruf, darum wird
+     er danach geraeumt, auch wenn die Host-App das Oeffnen verweigert. */
+  var KD_KONTEXT = {};
+  function drawerOeffnen(art, id, wer, kontext){
     id = String(id == null ? "" : id).trim();
     if (!art || !id) return false;
     var name = "[" + (wer || "upstreem") + "] openDrawer(\"" + art + "\")";
     if (typeof window.openDrawer === "function"){
+      if (kontext && typeof kontext === "object") KD_KONTEXT[art] = kontext; else delete KD_KONTEXT[art];
       try { window.openDrawer(art, id); return true; }
       catch(e){ if (window.console) console.warn(name + " hat geworfen:", e); return false; }
+      finally { delete KD_KONTEXT[art]; }
     }
     if (window.console) console.warn(name + " gibt es auf dieser Seite nicht. Das Ereignis ist " +
       "trotzdem gefeuert.");
@@ -23222,7 +23283,7 @@
     var p = (kd.aufgebaut || kd.dateienDa) ? null : kdDateien(kd.art);
     if (!p){
       kdAufbauen(kd);
-      if (mitZeigen && kd.offen && kd.id && typeof kd.handler.zeigen === "function"){ try { kd.handler.zeigen(kd.id); } catch(e){} }
+      if (mitZeigen && kd.offen && kd.id && typeof kd.handler.zeigen === "function"){ try { kd.handler.zeigen(kd.id, kdKontextNehmen(kd)); } catch(e){} }
       return;
     }
     kd.wartetDateien = true;
@@ -23232,7 +23293,7 @@
       if (!kd.el || !document.contains(kd.el)) return;
       kdAufbauen(kd);
       if (kd.offen && kd.id && kd.handler && typeof kd.handler.zeigen === "function"){
-        try { kd.handler.zeigen(kd.id); } catch(e){ if (window.console) console.warn("[drawer] " + kd.art + ": zeigen hat geworfen:", e); }
+        try { kd.handler.zeigen(kd.id, kdKontextNehmen(kd)); } catch(e){ if (window.console) console.warn("[drawer] " + kd.art + ": zeigen hat geworfen:", e); }
       }
     }
     p.then(fort, fort);
@@ -23318,13 +23379,18 @@
        Bubble nichts meldet. */
     if (!id) return;
     kd.id = id;
+    /* Der Stand des Drawers, aus dem geoeffnet wurde (drawerOeffnen), gilt fuer dieses eine Zeigen --
+       auch wenn der Aufbau erst noch auf seine Dateien wartet (kdAufbauenWennDa nimmt ihn dann). */
+    kd.kontext = KD_KONTEXT[art] || null;
+    delete KD_KONTEXT[art];
     /* Wartet der erste Aufbau noch auf die Dateien (kdAufbauenWennDa), zeigt er selbst, sobald
        er steht -- mit dieser Kennung, kd.id ist eben gesetzt. */
     if (kd.handler && kd.wartetDateien) return;
     if (kd.handler && typeof kd.handler.zeigen === "function"){
-      try { kd.handler.zeigen(id); } catch(e){ if (window.console) console.warn("[drawer] " + art + ": zeigen hat geworfen:", e); }
+      try { kd.handler.zeigen(id, kdKontextNehmen(kd)); } catch(e){ if (window.console) console.warn("[drawer] " + art + ": zeigen hat geworfen:", e); }
     } else kdOhneBaustein(kd);
   });
+  function kdKontextNehmen(kd){ var k = kd.kontext || null; kd.kontext = null; return k; }
   /* MELDET SICH KEIN BAUSTEIN AN (12.10. gemeldet: "geht auf, bleibt im Loader, keine RPCs"):
      dann fehlt seine Datei im Kopf-Skript oder sie ist nicht angekommen, und das Skelett liefe
      ohne Ende -- leer und kaputt saehen gleich aus. 10s sind grosszuegig: beim Wiederherstellen
@@ -23357,6 +23423,58 @@
   }
   /* Fuer Pruefstand und Uebergabe: baut core diesen Drawer (oder noch Bubble)? */
   function kernDrawerAktiv(art){ return !!KERN_DRAWER[art] && !kdFremd(art); }
+
+  /* ---- DER STAND EINES DRAWERS, VON DRAWER ZU DRAWER (22.10., Entscheidung E2) ----------------------
+     Gemessen 21.10.: im Domain-Drawer adac.de mit Last 30 Days und Google AI Overviews stand die Zeile
+     "Elektro-Familienautos 2026" bei 8,59 % Domain share; der Klick oeffnete den URL-Drawer mit Last 7
+     Days ohne Modell, und der zeigte 10,79 % -- ohne einen Hinweis, warum. Jetzt nimmt ein Drawer, der
+     aus einem anderen aufgeht, dessen Zeitraum, Topics, Models, Markets und Intent als Startwert, und
+     die Chips seiner Leiste zeigen sie (abwaehlbar wie jeder Filter). Wie Search Console: der Klick
+     auf eine Zeile wird Filter, die uebrigen bleiben stehen. Was der Ziel-Drawer nicht kennt, faellt
+     weg (Prompt: nur Zeitraum und Models). Von einer SEITE aus bleibt es bei FLT-07 (17.10.): der
+     Drawer uebernimmt keine Seitenfilter.
+     Alle Drawer bauen ihre Leiste gleich (Kalender .udr-root, Filter .utf/.umf/.umk-root im Slot, Intent
+     ueber drawerIntent) -- darum steht Lesen und Setzen einmal hier. */
+  function kdWurzel(slot, sel){ return slot && slot.querySelector ? slot.querySelector(sel) : null; }
+  function drawerKontextLesen(slot, intentKey){
+    var k = {}, c = kdWurzel(slot, ".udr-root"), r = null;
+    try { r = c && c.__udrCtrl && c.__udrCtrl.getRange ? c.__udrCtrl.getRange() : null; } catch(e){ r = null; }
+    if (r && r.from && r.to){ k.von = String(r.from); k.bis = String(r.to); k.preset = r.preset ? String(r.preset) : ""; }
+    var t = kdWurzel(slot, ".utf-root"), m = kdWurzel(slot, ".umf-root"), mk = kdWurzel(slot, ".umk-root"), s;
+    try { if (t && t.__utfCtrl){ s = t.__utfCtrl.getSelected(); k.topics = String(s.topic_ids || ""); k.tagmode = s.tag_mode === "and" ? "and" : "or"; } } catch(e){}
+    try { if (m && m.__umfCtrl){ s = m.__umfCtrl.getSelected(); k.modelle = String(s.model_keys || ""); k.modelleModus = s.select_mode || ""; } } catch(e){}
+    try { if (mk && mk.__umkCtrl){ s = mk.__umkCtrl.getSelected(); k.maerkte = String(s.market_codes || ""); k.maerkteModus = s.select_mode || ""; } } catch(e){}
+    if (intentKey){ k.intentDa = true; k.intent = drawerIntent(intentKey).eigen(); }
+    return k;
+  }
+  /* Steht die Leiste? Der Kalender und jede Filterwurzel im Slot haben ihren Controller -- vorher liefe
+     ein Setzen ins Leere (die Filter richten sich ueber UC.watchRoots ein, einen Takt nach dem Drawer). */
+  function drawerFilterBereit(slot){
+    var c = kdWurzel(slot, ".udr-root");
+    if (!c || !c.__udrCtrl) return false;
+    return [[".utf-root", "__utfCtrl"], [".umf-root", "__umfCtrl"], [".umk-root", "__umkCtrl"]].every(function(p){
+      var w = kdWurzel(slot, p[0]);
+      return !w || !!w[p[1]];
+    });
+  }
+  /* Still setzen (kein change, kein Filterereignis): der Drawer laedt danach selbst genau einmal. Ein
+     Preset geht als Preset hinein, damit der Kalender "Last 30 Days" sagt statt eines freien Zeitraums. */
+  function drawerKontextSetzen(slot, k, intentKey){
+    if (!slot || !k || typeof k !== "object") return false;
+    var c = kdWurzel(slot, ".udr-root"), ctrl = c && c.__udrCtrl;
+    try {
+      if (ctrl && k.von && k.bis){
+        if (k.preset && ctrl.setPreset) ctrl.setPreset(k.preset, false);
+        else if (ctrl.setRange) ctrl.setRange(k.von, k.bis, false);
+      }
+    } catch(e){}
+    var t = kdWurzel(slot, ".utf-root"), m = kdWurzel(slot, ".umf-root"), mk = kdWurzel(slot, ".umk-root");
+    try { if (t && t.__utfCtrl && k.topics != null){ t.__utfCtrl.setSelected(k.topics); t.__utfCtrl.setMode(k.tagmode === "and" ? "and" : "or"); } } catch(e){}
+    try { if (m && m.__umfCtrl && k.modelle != null){ if (k.modelleModus) m.__umfCtrl.setMode(k.modelleModus); m.__umfCtrl.setSelected(k.modelle); } } catch(e){}
+    try { if (mk && mk.__umkCtrl && k.maerkte != null){ if (k.maerkteModus) mk.__umkCtrl.setMode(k.maerkteModus); mk.__umkCtrl.setSelected(k.maerkte); } } catch(e){}
+    if (intentKey && k.intentDa) drawerIntent(intentKey).uebernehmen(k.intent);
+    return true;
+  }
   /* AUF DAS TEAM WARTEN (12.10., aus response-detail hierher, seit url-detail es auch braucht):
      ein Drawer kann beim Wiederherstellen aus der Adresse aufgehen, bevor Bubble das Team gesetzt
      hat. Liefert das Team, sobald es da ist, hoechstens nach ms (Vorgabe 10s) -- dann "" . */
@@ -30291,6 +30409,7 @@
     INTENTE: INTENTE, intentArt: intentArt, hatIntent: hatIntent, intentZustand: intentZustand,
     intentHtml: intentHtml, brandedHtml: brandedHtml, intentMenuHtml: intentMenuHtml,
     intentsLive: intentsLive, intentFilterGet: intentFilterGet, intentFilterSet: intentFilterSet, intentFilterParams: intentFilterParams,
+    drawerIntent: drawerIntent,
     seitenFilterAktiv: seitenFilterAktiv,
     makeIntentMenu: makeIntentMenu, intentName: intentName, intentsLiveStart: intentsLiveStart, onIntentDaten: onIntentDaten,
     rpcMitIntent: rpcMitIntent,
@@ -30446,6 +30565,7 @@
     getPref: getPref, setPref: setPref, setLocaleReload: setLocaleReload, kalenderNamen: kalenderNamen,
     openDrawers: openDrawers, closeAllDrawers: closeAllDrawers, drawerOeffnen: drawerOeffnen,
     kernDrawer: kernDrawer, kernDrawerAktiv: kernDrawerAktiv, teamWarten: teamWarten, markenNachladen: markenNachladen,
+    drawerKontextLesen: drawerKontextLesen, drawerKontextSetzen: drawerKontextSetzen, drawerFilterBereit: drawerFilterBereit,
     appStart: appStart, appStartAktiv: appStartAktiv, appTeamWechseln: appTeamWechseln, appTeilNachladen: appTeilNachladen,
     seitenTitel: seitenTitel,
     anMira: anMira, miraBezug: miraBezug,

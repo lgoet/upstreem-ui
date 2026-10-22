@@ -6710,6 +6710,14 @@
   flex: 0 1 auto; min-width: 0; max-width: 100%; }
 .up-dk-filterzeile > .udr-root { flex: 0 0 auto; }
 .up-dk-filterzeile > .ufb-root { flex: 0 1 auto; width: auto; min-width: 0; }
+/* DIE CHIPS DER FILTER IN EIGENER ZEILE (22.10.): unter Kopf und Filtern, linksbuendig, damit Kalender und
+   Filters oben rechts stehen bleiben (Vorbild Polaris IndexFilters, Cloudscape). Die Leiste zieht ihre Chips
+   per data-chips-ziel hierher (filter-bar.js), Anzeige und Verbergen regelt .ufb-chipzeile. Sie steht als Kind
+   im Kopf (.up-dk, Spalte mit 16 Abstand), einen eigenen Rand braucht sie darum nicht. Leer (vor dem Aufbau
+   der Leiste): weg, sonst stuende eine Luecke von 16 im Kopf.
+   Ihre Id darf NICHT mit "drawer-" beginnen: das Kopf-Skript behandelt jedes [id^="drawer-"] als Drawer und
+   schiebt es zu 110 % aus dem Bild (gemessen 22.10.: translateX 1222px). Darum "chips-drawer-<art>". */
+.up-dk-chipzeile:empty { display: none; }
 /* DIE ABSCHNITTSFORM (13.10., Vorbild Domain Detail; "die Borders um die grossen Elemente weg, das
    sieht cleaner aus"). Ein Baustein im Drawer steht ohne Kartenrahmen, Radius und eigene Flaeche
    auf dem Grund des Drawers -- die Luft zwischen den Abschnitten trennt. Gesetzt von der

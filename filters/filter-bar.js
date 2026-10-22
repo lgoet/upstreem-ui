@@ -351,8 +351,13 @@
           '</div>' +
         '</div>';
       var elTrig = w.querySelector(".uif-trigger"), elLbl = w.querySelector(".uif-label");
+      /* IM DRAWER EIN EIGENER STAND (22.10., E4): data-intent-lokal traegt den Schluessel aus UC.drawerIntent.
+         Dann liest und schreibt dieser Filter den Stand des Drawers; die Seiten dahinter laden nicht neu. */
+      var lk = String(w.getAttribute("data-intent-lokal") || "").trim();
+      var stand = lk && UC.drawerIntent ? UC.drawerIntent(lk) : null;
+      function lesen() { return stand ? stand.get() : UC.intentFilterGet(); }
       function sync() {
-        var f = UC.intentFilterGet(), n = f.intents.length;
+        var f = lesen(), n = f.intents.length;
         Array.prototype.forEach.call(w.querySelectorAll(".uif-opt"), function (r) {
           var an = f.intents.indexOf(r.getAttribute("data-key")) >= 0;
           r.classList.toggle("is-checked", an);
@@ -370,13 +375,13 @@
         }
       }
       function setzen(liste) {
-        if (!UC.intentFilterSet(liste)) return;
+        if (stand) stand.set(liste); else UC.intentFilterSet(liste);
       }
       w.addEventListener("click", function (e) {
         if (e.target.closest(".uif-chev-x")) { e.stopPropagation(); setzen({ intents: [] }); return; }
         var r = e.target.closest(".uif-opt");
         if (!r) return;
-        var k = r.getAttribute("data-key"), l = UC.intentFilterGet().intents.slice(), i = l.indexOf(k);
+        var k = r.getAttribute("data-key"), l = lesen().intents.slice(), i = l.indexOf(k);
         if (i >= 0) l.splice(i, 1); else l.push(k);
         setzen({ intents: l });
       });
@@ -386,14 +391,19 @@
         if (!r) return;
         e.preventDefault(); r.click();
       });
-      window.addEventListener("up-intentfilter", function () {
+      function nachziehen() {
         if (!document.contains(w)) return;
         sync();
         try { w.dispatchEvent(new CustomEvent("uif-intents", { bubbles: true,
-          detail: { intent_keys: UC.intentFilterGet().intents.join(",") } })); } catch (e) {}
+          detail: { intent_keys: lesen().intents.join(",") } })); } catch (e) {}
+      }
+      /* Die Brille der App aendert diesen Filter nur, solange der Drawer ihr folgt. */
+      window.addEventListener("up-intentfilter", function () { if (!stand || stand.folgt()) nachziehen(); });
+      window.addEventListener("up-intentfilter-lokal", function (e) {
+        if (stand && e && e.detail && e.detail.key === lk) nachziehen();
       });
       var ctrl = {
-        getSelected: function () { return { intent_keys: UC.intentFilterGet().intents.join(",") }; },
+        getSelected: function () { return { intent_keys: lesen().intents.join(",") }; },
         setSelected: function (csv) {
           setzen({ intents: String(csv == null ? "" : csv).split(",").map(function (x) { return x.trim(); }).filter(Boolean) });
         },
@@ -423,6 +433,7 @@
       w.className = "up-root uif-root";
       w.setAttribute("data-instance", iid);
       w.setAttribute("data-local", "yes");
+      if (root.getAttribute("data-intent-lokal")) w.setAttribute("data-intent-lokal", root.getAttribute("data-intent-lokal"));
       if (root.getAttribute("data-isdark") != null) w.setAttribute("data-isdark", root.getAttribute("data-isdark"));
       if (root.getAttribute("data-theme") != null) w.setAttribute("data-theme", root.getAttribute("data-theme"));
       (root.parentNode || document.body).insertBefore(w, root.nextSibling);
@@ -446,17 +457,27 @@
       if (root.getAttribute("data-theme") != null) host.setAttribute("data-theme", root.getAttribute("data-theme"));
       (root.parentNode || document.body).insertBefore(host, root.nextSibling);
       function tx(x) { return UC.t ? UC.t(x) : x; }
+      /* Im Drawer der eigene Stand (22.10., E4), wie beim Intent-Filter oben. */
+      var lk = String(root.getAttribute("data-intent-lokal") || "").trim();
+      var stand = lk && UC.drawerIntent ? UC.drawerIntent(lk) : null;
+      function lesen() { return stand ? stand.get() : UC.intentFilterGet(); }
       var kit = UC.makeLeistenFilter(host, { instanceId: basis, arten: {
         branded: {
           label: function () { return tx("Branded"); }, chip: function () { return tx("Branded"); }, leer: "Off",
           optionen: function () { return [{ key: "all", name: tx("Include Branded") }, { key: "branded", name: tx("Only Branded") }]; },
-          auswahl: function () { var b = UC.intentFilterGet().branded; return b === "all" || b === "branded" ? [b] : []; },
-          setzen: function (l) { UC.intentFilterSet({ branded: l.length ? l[l.length - 1] : "non_branded" }); },
+          auswahl: function () { var b = lesen().branded; return b === "all" || b === "branded" ? [b] : []; },
+          setzen: function (l) {
+            var v = { branded: l.length ? l[l.length - 1] : "non_branded" };
+            if (stand) stand.set(v); else UC.intentFilterSet(v);
+          },
           einzeln: true
         }
       } });
       kit.sync();
-      window.addEventListener("up-intentfilter", function () { if (document.contains(host)) kit.sync(); });
+      window.addEventListener("up-intentfilter", function () { if (document.contains(host) && (!stand || stand.folgt())) kit.sync(); });
+      window.addEventListener("up-intentfilter-lokal", function (e) {
+        if (stand && document.contains(host) && e && e.detail && e.detail.key === lk) kit.sync();
+      });
     }
 
     function initRoot(root) {
@@ -757,6 +778,24 @@
         return UC.themeParam(root.getAttribute("data-isdark")) || root.getAttribute("data-theme") === "dark";
       }
       if (UC.makeTooltips) UC.makeTooltips(root, isDark);
+      /* DIE CHIPS IN EINER EIGENEN ZEILE (22.10., Drawer): steht die Leiste rechtsbuendig (Kalender und Filters
+         oben rechts im Kopf eines Drawers), schob jeder Chip die beiden Knoepfe nach links, mit zwei Chips um rund
+         250px (gemessen 21.10.). Polaris (IndexFilters), Cloudscape (Tokens "below the trigger"), Linear und
+         Stripe setzen die Chips dann in eine eigene Zeile darunter, linksbuendig, und die Knoepfe bleiben stehen
+         (NN/g: raeumliches Gedaechtnis). data-chips-ziel nennt die Id dieser Zeile; Chips und Clear All ziehen
+         dorthin, Klicks und Tooltips laufen dort ueber dieselben Wege wie in der Leiste (klick, druck unten). */
+      var elZeile = null;
+      (function () {
+        var zid = String(root.getAttribute("data-chips-ziel") || "").trim();
+        var z = zid ? document.getElementById(zid) : null;
+        if (!z) return;
+        elZeile = z;
+        z.classList.add("ufb-chipzeile");
+        z.appendChild(elChips);
+        var cl = root.querySelector(".ufb-clear");
+        if (cl) z.appendChild(cl);
+        if (UC.makeTooltips) UC.makeTooltips(z, isDark);
+      })();
 
       /* ---------------- die Vorfahren aufmachen ----------------
          Bubble legt um jedes HTML-Element eine Gruppe, und steht dort eine Hoehe -- der Normalfall
@@ -1378,6 +1417,10 @@
         zeilenStand();
         gespZeichnen();
         renderChips();
+        if (elZeile) {
+          elZeile.classList.toggle("has-filters", an);
+          elZeile.classList.toggle("has-standard", root.classList.contains("has-standard"));
+        }
         /* Umbrechen haengt NUR an der Seitenbreite; das Hineingehen auch am Oeffnen vom Chip. Beides
            an einem Wert liess die Leiste beim Klick auf einen Chip umbrechen -- der Chip sprang eine
            Zeile tiefer, und das Panel stand an seiner alten Stelle (gemessen 15.10.). */
@@ -1662,7 +1705,7 @@
       if (UC.onTeamChange) {
         try { UC.onTeamChange(function (neu, alt) { if (alt && alt !== neu) { alleLeeren(); gespZeichnen(); } }, root); } catch (e) {}
       }
-      root.addEventListener("click", function (e) {
+      function klick(e) {
         if (!e.target.closest) return;
         if (e.target.closest("[data-ufb-reset]")) { e.stopPropagation(); alleLeeren(); pop.close(true); return; }
         if (e.target.closest("[data-ufb-clear]")) { alleLeeren(); return; }
@@ -1682,9 +1725,11 @@
           if (chipZu === k) { chipZu = null; return; }
           oeffnen(k, co.closest(".ufb-chip") || co);
         }
-      });
+      }
+      root.addEventListener("click", klick);
+      if (elZeile) elZeile.addEventListener("click", klick);
       var chipZu = null;
-      root.addEventListener("pointerdown", function (e) {
+      function druck(e) {
         var co = e.target.closest && e.target.closest("[data-chip-open]");
         var k = co ? co.getAttribute("data-chip-open") : null;
         /* Meist ist das Panel HIER schon zu: core schliesst jedes Dropdown in der Capture-Phase
@@ -1693,7 +1738,9 @@
            oeffnete sonst sofort wieder). */
         var ebenZu = zuVomChip !== null && zuVomChip === k && zuZeit >= e.timeStamp;
         chipZu = k && ((pop.isOpen() && vomChip && sub.current() === k) || ebenZu) ? k : null;
-      });
+      }
+      root.addEventListener("pointerdown", druck);
+      if (elZeile) elZeile.addEventListener("pointerdown", druck);
 
       /* ---------------- auf Aenderungen der Filter hoeren ----------------
          Ihre eigenen aufsteigenden Ereignisse. Am DOKUMENT und nicht an der Wurzel: die Wurzel
@@ -1704,6 +1751,8 @@
       });
       /* Branded aendert sich auch von einer ANDEREN Leiste aus (gemeinsamer Stand in core). */
       window.addEventListener("up-intentfilter", function () { if (document.contains(root)) render(); });
+      /* ... und vom eigenen Stand eines Drawers (UC.drawerIntent, 22.10.). */
+      window.addEventListener("up-intentfilter-lokal", function () { if (document.contains(root)) render(); });
       root.addEventListener("keydown", function (e) {
         if (e.key === "Enter" && e.target && e.target.classList && e.target.classList.contains("ufb-gesp-name")) {
           e.preventDefault(); gespSichern(); return;

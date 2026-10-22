@@ -198,6 +198,11 @@
 .ufb-root:not(.has-filters) .ufb-sep,
 .ufb-root:not(.has-filters) .ufb-chips,
 .ufb-root:not(.has-filters) .ufb-clear { display: none; }
+/* Die eigene Chip-Zeile (data-chips-ziel, 22.10., Kopf der Drawer): dieselbe Reihe wie .ufb-chips, ohne Chip ganz
+   weg (keine leere Zeile), Clear All nur bei einem gesetzten Filter -- dieselben Regeln wie in der Leiste. */
+.ufb-chipzeile { display: flex; align-items: center; gap: 8px; row-gap: 8px; flex-wrap: wrap; min-width: 0; }
+.ufb-chipzeile:not(.has-filters):not(.has-standard),
+.ufb-chipzeile:not(.has-filters) .ufb-clear { display: none; }
 
 /* ---------- das Panel ----------
    .up-menu aus core traegt alles; hier nur die Breite und die linke Ausrichtung. Die Schale ist

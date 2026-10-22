@@ -283,10 +283,15 @@
      (Intent) bzw. als Vorgabe ohne Chip (non_branded). Nur, was die Funktion kennt (KENNT). Die
      Prompts-Tabelle nimmt davon nur die Intents: Branded ist dort ihr eigener Filter (Prompt type),
      "branded: false" wie in der Tabelle selbst. Nicht freigegeben: leer, wie intentFilterParams. */
-  function brille(art){
+  /* eigen (22.10.): die Brille eines Drawers mit eigenem Intent-Stand (setContext brille, UC.drawerIntent) --
+     sonst haengte der Export den Intent der App an, den der Drawer gerade nicht anwendet. */
+  function brille(art, eigen){
     var C = window.UpstreemCore, out = {}, kennt = KENNT[art] || [], f;
-    if (!C || typeof C.intentFilterParams !== "function") return out;
-    try { f = C.intentFilterParams(art === "prompts" ? { branded: false } : undefined) || {}; } catch(e){ f = {}; }
+    if (eigen && typeof eigen === "object") f = eigen;
+    else {
+      if (!C || typeof C.intentFilterParams !== "function") return out;
+      try { f = C.intentFilterParams(art === "prompts" ? { branded: false } : undefined) || {}; } catch(e){ f = {}; }
+    }
     Object.keys(f).forEach(function(n){ if (kennt.indexOf(n) >= 0 && voll(f[n])) out[n] = f[n]; });
     return out;
   }
@@ -743,7 +748,7 @@
 
     /* Die Parameter der Seite fuer einen Datensatz ueber der Brille der App (siehe brille). */
     function seitenParams(art){
-      var out = state.ohneBrille ? {} : brille(art), x = state.params[art];
+      var out = state.ohneBrille ? {} : brille(art, state.eigeneBrille), x = state.params[art];
       if (x) Object.keys(x).forEach(function(n){ if (voll(x[n]) || !Object.prototype.hasOwnProperty.call(out, n)) out[n] = x[n]; });
       return out;
     }
@@ -1462,7 +1467,7 @@
       state.url = ""; state.domain = ""; state.promptId = ""; state.promptTyp = ""; state.brandId = ""; state.filterLabel = "";
       /* Ebenso der Kontext der Seite und die Gruppe von Shopping und Ads: danach gilt wieder die
          Grundgruppe, und ein spaeteres Oeffnen ohne Kontext (Cmd+K) traegt keinen Filter mit. */
-      state.params = {}; state.namen = {}; state.weg = {}; state.zeitVonSeite = false; state.ohneBrille = false;
+      state.params = {}; state.namen = {}; state.weg = {}; state.zeitVonSeite = false; state.ohneBrille = false; state.eigeneBrille = null;
       /* Der eigene Dateiname ebenso: das naechste Oeffnen beginnt mit dem Vorschlag. */
       state.eigenName = null; state.namenEdit = false;
       if (gruppeVon(state.type)) state.type = state.stammTyp;
@@ -2262,6 +2267,7 @@
            non_branded der App an, und die Datei eines als branded erkannten Prompts waere leer, waehrend der
            Drawer seine Laeufe zeigt (Paritaetsaudit PAR-01, entstanden mit der Behebung von EXP-02). */
         state.ohneBrille = !!opts.ohne_brille;
+        state.eigeneBrille = opts.brille && typeof opts.brille === "object" ? opts.brille : null;
         var pr = opts.params && typeof opts.params === "object" ? opts.params : {};
         Object.keys(pr).forEach(function(n){
           if (typVon(n) && pr[n] && typeof pr[n] === "object" && !Array.isArray(pr[n])) state.params[n] = pr[n];

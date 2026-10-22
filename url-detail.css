@@ -219,8 +219,10 @@
    liesse er sich waehrend des Ladens nicht noch einmal umstellen. Seit dem 13.10. sitzt er in der
    Zeile neben dem Titel -- gedimmt wird darum dort jedes Kind ausser ihm, nicht die Zeile. */
 .uud-root.is-reloading > :not(.uud-head),
-.uud-root.is-reloading .uud-head > :not(.uud-metazeile),
+.uud-root.is-reloading .uud-head > :not(.uud-metazeile):not(.uud-dw-chips),
 .uud-root.is-reloading .uud-metazeile > :not(.uud-dw-leiste) { opacity: .42; pointer-events: none; transition: opacity var(--up-t-1) ease; }
+/* Die Chips der Filter (22.10.) bleiben beim Nachladen bedienbar wie Kalender und Filterknopf: gedimmt waeren
+   sie gerade dann nicht abwaehlbar, wenn man sieht, dass die Zahlen sich aendern. */
 /* Ohne Seite (Fehler) keine Tabelle darunter. */
 .uud-dw.is-fehler .uud-dw-resp { display: none; }
 /* Nicht im Zeitraum: Satz und Knopf in der Leiste der Kennzahlen. */
