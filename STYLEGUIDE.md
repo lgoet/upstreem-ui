@@ -1384,6 +1384,16 @@ Wert, wie die Kachel ihn zeigt (mit Trend, wenn sie einen zeigt), Titel = Etiket
 einem Spaltenwort, nie eine Fußzeile als Erklärung. Shopping, Ads und die Details setzen ihr
 Zeichen weiter dicht hinter das Wort (ohne `.has-info`).
 
+**Erklärkarte mit klickbaren Zeilen** (22.10., Impact: „1 other event in this period“): Nennt die
+Karte Dinge, die man öffnen kann (die anderen Events im Zeitraum), stehen sie als Zeilen auf der
+Platte (Name 12/500, Datum leiser darunter, höchstens 6, sonst 5 und „and n more“), Titel = Etikett
+ohne Zahl, ein Satz zum Nutzen. `UC.makeExplain` schließt beim Verlassen des Zeichens, darum bekommt
+core einen Auslöser, den es nicht gibt, und Zeigen und Schließen stehen in der Komponente: 150 ms
+Nachlauf für den Weg in die Karte, Klick öffnet auch ohne Zeigen (Touch), Enter fokussiert die erste
+Zeile, Pfeiltasten gehen durch die Zeilen, Escape und ein Druck daneben schließen; die Karte ist nur
+im Zustand `.is-on` klickbar (`pointer-events: auto`, wie `.up-anleitung`). Das Zeichen ist sichtbar
+beim Überfahren der Angabe, ohne Zeiger immer (`ovKarte` in events.js, `.uev-ov*` in events.css).
+
 **Tabellenköpfe im Drawer** (seit 15.10. spät, `core.css` „DIE TABELLENKOEPFE IM DRAWER“): jede
 Tabelle in einem Drawer (`.up-kdr`, `[id^="drawer-"]`) trägt den Kopf der Seitentabellen, behält
 aber ihren Kasten mit Rand und Radius 12 — sie wird **nicht** flach. **Im Dunkeln** (nach Geist)
