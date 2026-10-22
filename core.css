@@ -198,6 +198,19 @@
   /* easeOutQuart, wie Chart.js es fuer Linie und Ring faehrt (600ms, core.js makeLine und
      makeTypeChart). Fuer alles, was im selben Bild wie ein Diagramm einfaehrt (Balken). */
   --up-ease-quart: cubic-bezier(.25, 1, .5, 1);
+  /* DAS LAUFPROTOKOLL (22.10.): Arbeitsschritte als wachsende Liste unter einer Uhr -- Mira (ask-mira.css .am-run) und
+     Page Audit (page-audit.css .upa-run). Die Bewegung stand als Zahlen in Miras CSS, Page Audit hatte sie abgeschrieben
+     (Lukas 22.10.: "mach es genauso"); seitdem EINE Quelle hier, der Takt dazu steht in core.js (LAUF_TAKT). Die Werte
+     sind Miras, unveraendert, und liegen bewusst AUSSERHALB von --up-t-*: eine Zeile, die waechst und deren Spinner
+     weich weggeht, braucht mehr als die 260 einer Flaeche, sonst liest sie sich als Ruck. */
+  --up-lauf-auf: 420ms;      /* die Zeile waechst auf (grid-template-rows 0fr -> 1fr) */
+  --up-lauf-blende: 320ms;   /* ihre Deckkraft; der Spinner blendet und schrumpft beim Haken */
+  --up-lauf-platz: 380ms;    /* der Spinner gibt seine Breite ab, die Zeile rueckt an den Rand */
+  --up-lauf-farbe: 460ms;    /* Text und Zeichen gehen in die erste Farbe */
+  --up-lauf-logo: 340ms;     /* die Logos hinter dem Text kommen nach */
+  --up-lauf-kurve: cubic-bezier(.2, .8, .3, 1);
+  --up-lauf-dreh: 720ms;     /* eine Umdrehung des Spinners */
+  --up-lauf-glanz: 1.56s;    /* ein Durchlauf des Glanzes ueber dem laufenden Text */
   /* Der Lichtlauf ueber Skelett-Platzhaltern (.up-sk-*::after, upskt 1200ms). Als Token, seit ihn
      auch Bausteine ausserhalb von core brauchen (14.10.: die Geister-Chips in Prompt Research) --
      vorher stand der Verlauf nur hier, und jede Kopie waere eine eigene Farbe gewesen. */

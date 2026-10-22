@@ -937,7 +937,8 @@
      KEIN gap an der Zeile, sondern Aussenabstaende an den Teilen: ein gap bleibt auch bei Breite 0
      stehen, und die fertige Zeile stuende 10px eingerueckt.
      Der Auftritt einer Zeile laeuft ueber grid-template-rows 0fr -> 1fr: die Liste waechst weich
-     mit, statt um die Zeilenhoehe zu springen. */
+     mit, statt um die Zeilenhoehe zu springen. Die Dauern und die Kurve stehen seit dem 22.10. als
+     --up-lauf-* in core.css (dieselben Werte), weil Page Audit dasselbe Protokoll zeigt. */
   .am-run { width: 100%; max-width: min(100%, 782px); }
   .am-run.is-live { padding-bottom: 30px; }        /* Luft unter dem Laufenden, wie beim alten Ladebild */
   /* Nach der Antwort Luft nach unten: die Liste ist ein eigener Block und soll nicht am Text der
@@ -957,7 +958,7 @@
   .am-run-steps { display: flex; flex-direction: column; }
   .am-run-step {
     display: grid; grid-template-rows: 0fr; opacity: 0;
-    transition: grid-template-rows 420ms cubic-bezier(.2,.8,.3,1), opacity 320ms ease;
+    transition: grid-template-rows var(--up-lauf-auf) var(--up-lauf-kurve), opacity var(--up-lauf-blende) ease;
   }
   .am-run-step.is-in { grid-template-rows: 1fr; opacity: 1; }
   /* min-height:0 und overflow:hidden sind die Bedingung dafuer, dass 0fr die Zeile wirklich zufaltet */
@@ -965,14 +966,14 @@
   .am-run-line { display: flex; align-items: center; padding-top: 11px; min-width: 0; }
   .am-run-spin {
     width: 14px; height: 14px; flex: 0 0 auto; margin-right: 10px;
-    transition: opacity 320ms ease, transform 320ms cubic-bezier(.2,.8,.3,1),
-                width 380ms cubic-bezier(.2,.8,.3,1), margin-right 380ms cubic-bezier(.2,.8,.3,1);
+    transition: opacity var(--up-lauf-blende) ease, transform var(--up-lauf-blende) var(--up-lauf-kurve),
+                width var(--up-lauf-platz) var(--up-lauf-kurve), margin-right var(--up-lauf-platz) var(--up-lauf-kurve);
   }
   /* Innen dreht es, aussen blendet es aus -- sonst kaempfen Drehung und Uebergang um dasselbe transform */
   .am-run-spin i {
     display: block; width: 14px; height: 14px; border-radius: 50%;
     border: 1.8px solid var(--am-border); border-top-color: var(--am-muted);
-    animation: amRunSpin 720ms linear infinite;
+    animation: amRunSpin var(--up-lauf-dreh) linear infinite;
   }
   @keyframes amRunSpin { to { transform: rotate(360deg); } }
   /* Fertig: der Spinner geht weg UND gibt seinen Platz ab -- Zeichen, Text und Chips ruecken in
@@ -985,7 +986,7 @@
   .am-run-ic {
     width: 20px; height: 20px; flex: 0 0 auto; margin-right: 10px;
     display: inline-flex; align-items: center; justify-content: center;
-    color: var(--am-muted-2); transition: color 460ms ease;
+    color: var(--am-muted-2); transition: color var(--up-lauf-farbe) ease;
   }
   .am-run-ic svg { width: 15px; height: 15px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-run-step.is-done .am-run-ic { color: var(--am-muted); }
@@ -996,7 +997,7 @@
   }
   .am-run-ic.is-mira svg { width: 12px; height: 12px; }
   .am-run-step.is-done .am-run-ic.is-mira { color: var(--am-bg); }
-  .am-run-txt { font-size: 14px; font-weight: 500; line-height: 1.45; color: var(--am-muted); min-width: 0; transition: color 460ms ease; }
+  .am-run-txt { font-size: 14px; font-weight: 500; line-height: 1.45; color: var(--am-muted); min-width: 0; transition: color var(--up-lauf-farbe) ease; }
   .am-run-step.is-done .am-run-txt { color: var(--am-text); }
   /* Die Denkzeile traegt ihren Text ABSOLUT positioniert -- das ist die Lauf-Mechanik, mit der er
      wechselt. Absolute Kinder tragen nichts zur Breite bei: ohne flex-grow bliebe der Kasten 0 breit,
@@ -1019,7 +1020,7 @@
     background-size: 200% 100%; background-repeat: no-repeat; background-position: -120% 0;
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: amShimmer 1.56s linear infinite reverse;
+    animation: amShimmer var(--up-lauf-glanz) linear infinite reverse;
   }
   .am-run-step.is-done .am-run-txt, .am-run-step.is-done .am-think-text {
     background: none; animation: none; -webkit-text-fill-color: currentColor;
@@ -1040,7 +1041,7 @@
      sind das 2px sichtbare Ueberlappung auf 17px Chipbreite. Die Chips tragen Rahmen und Polster,
      deshalb ist der margin groesser als die Ueberlappung, die am Ende zu sehen ist. */
   .am-run-lead > * + * { margin-left: -5px; }
-  .am-run-lead > * { opacity: 0; transform: translateX(7px) scale(.86); transition: opacity 340ms ease, transform 340ms cubic-bezier(.2,.8,.3,1); }
+  .am-run-lead > * { opacity: 0; transform: translateX(7px) scale(.86); transition: opacity var(--up-lauf-logo) ease, transform var(--up-lauf-logo) var(--up-lauf-kurve); }
   .am-run-step.is-in .am-run-lead > * { opacity: 1; transform: none; }
   /* Der 24er-Favicon-Kasten des Hauses (.up-logo-box) auf 20px: helle Platte --vt-logo-bg, 1px
      Polster, Radius und Bildmasse im selben Verhaeltnis (8*20/24, 22*20/24, 7*20/24). Ohne die

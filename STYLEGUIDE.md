@@ -2039,6 +2039,33 @@ nachrüstet: `stop(fertig)` mit Rückruf, die vier Aufrufer warten darauf.
 
 ---
 
+## 9c. Das Laufprotokoll (Mira `.am-run`, Page Audit `.upa-run`; Takt aus core seit 22.10.)
+
+Ein Lauf, dessen Schritte man kennt, zeigt sie als wachsende Liste unter einer Uhr: Mira (Werkzeuge
+der Antwort) und Page Audit (Schritte aus `get_page_audit_progress_v1`). Beide folgen **denselben
+Regeln aus core** (Nutzer 22.10.: „bei mira haben wir die regeln ja auch … mach es genauso"):
+
+| Regel | Wert | Quelle |
+|---|---|---|
+| Mindeststandzeit je Schritt; wer früher kommt, wartet in einer Schlange (nichts fällt weg) | 1500 ms | `UC.LAUF_TAKT.schritt`, `UC.laufWarten(seit)` |
+| Der nächste Schritt beginnt im selben Zug, in dem der vorige fertig wird | – | Mira `runPush`, Page Audit `anzeigeTakt` |
+| Ende des Laufs: der Rest der Schlange wird auf einmal nachgetragen und abgehakt | – | Mira `runFinish` |
+| Auftritt: einsetzen ohne `is-in`, Lage erzwingen, `is-in` per setTimeout (nicht rAF) | 20 ms | `UC.laufAuftritt(el)` |
+| Haken: Klasse des fertigen Zustands, danach `is-cold` (Spinner dreht nicht mehr) | 480 ms | `UC.laufAbhaken(el, klasse, gilt)` |
+| Neuaufbau: gezeigte Zeilen ohne Auftritt; eine jünger als `frisch` abgehakte noch laufend bauen, nach `haken` abhaken | 520 / 30 ms | `LAUF_TAKT.frisch`, `.haken` |
+| Logos einer Zeile nacheinander | 70 ms je Logo | `LAUF_TAKT.logo` |
+| Uhr: nur ihr Text, nie das Protokoll | 1000 ms | `LAUF_TAKT.uhr` |
+| Bewegung: Zeile 420 (`grid-template-rows`), Deckkraft 320, Spinner-Platz 380, Farbe 460, Logos 340, Umdrehung 720, Glanz 1.56s, Kurve `cubic-bezier(.2,.8,.3,1)` | – | `--up-lauf-*` in core.css |
+
+Page Audit wartet am Ende zusätzlich `LAUF_TAKT.frisch`, bevor das Ergebnis das Protokoll ersetzt:
+Miras Liste bleibt über der Antwort stehen, die von Page Audit wäre sonst weg, bevor man die
+nachgetragenen Schritte sieht. Ein Schritt, den der Server nicht gemeldet hat, steht nie da
+(„render" nur, wenn er gemeldet wurde). Ein drittes Protokoll nimmt dieselben Regeln und Tokens,
+nie eigene Zahlen. `prefers-reduced-motion`: kein Auftritt, kein Glanz, kein Drehen, harte Wechsel;
+die Reihenfolge und die Mindestzeit bleiben (Inhalt, keine Bewegung).
+
+---
+
 ## 10. Layout-Verhalten (Responsive)
 
 ### Kopfzeile: 64px Mindestabstand, gemessen statt geraten
