@@ -1,0 +1,301 @@
+{
+  "_zweck": "Werkzeuge des Mira-Agenten (Plan bubble/mira_agent_22_10, Entscheidung Q4): je Werkzeug die App-Funktion(en), die die UI selbst ruft, mit Parametern fuer das Modell. Eine neue Version einer Funktion wird HIER im selben Commit nachgezogen wie in der UI; .check_mira_werkzeuge.py bricht sonst ab. Beschreibungen englisch (das Modell liest sie).",
+  "version": 1,
+  "stand": "2026-10-22",
+  "filter": {
+    "date_from": { "rpc": "p_date_from", "schema": { "type": "string", "format": "date" }, "beschreibung": "First day of the period (Berlin calendar day). Omit both dates for the app default, the last 30 days." },
+    "date_to": { "rpc": "p_date_to", "schema": { "type": "string", "format": "date" }, "beschreibung": "Last day of the period (Berlin calendar day)." },
+    "models": { "rpc": "p_models", "schema": { "type": "array", "items": { "type": "string" }, "maxItems": 20 }, "beschreibung": "AI models to include, by model key. Omit for all tracked models." },
+    "markets": { "rpc": "p_markets", "schema": { "type": "array", "items": { "type": "string" }, "maxItems": 50 }, "beschreibung": "Markets to include, by market code. Omit for all markets." },
+    "topic_ids": { "rpc": "p_tag_ids", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 20 }, "beschreibung": "Topics to include, by topic id (resolve names with search_entities or prompts_meta first)." },
+    "topic_mode": { "rpc": "p_tagmode", "schema": { "type": "string", "enum": ["or", "and"] }, "vorgabe": "or", "beschreibung": "or = prompts in any of the topics, and = prompts in all of them." },
+    "intents": { "rpc": "p_intents", "schema": { "type": "array", "items": { "type": "string", "enum": ["informational", "recommendation", "transactional", "other"] } }, "beschreibung": "Prompt intents to include. Omit for all intents." },
+    "branded": { "rpc": "p_branded", "schema": { "type": "string", "enum": ["non_branded", "branded", "all"] }, "vorgabe": "non_branded", "beschreibung": "Branded prompts are excluded by default (non_branded), like everywhere in the app. Use all or branded only when the user asks for branded prompts." }
+  },
+  "werkzeuge": [
+    {
+      "name": "search_entities",
+      "bereich": "suche",
+      "klasse": "lesen",
+      "beschreibung": "Find brands, prompts, domains or URLs by name or text and get their ids. Use this before any tool that needs an id.",
+      "aufrufe": [{ "fn": "quick_search_v1" }],
+      "filter": [],
+      "parameter": {
+        "query": { "rpc": "p_query", "pflicht": true, "schema": { "type": "string", "minLength": 1, "maxLength": 200 } },
+        "scope": { "rpc": "p_scope", "schema": { "type": "string", "enum": ["brand", "prompt", "domain", "url"] }, "beschreibung": "Restrict to one kind. Omit to search all kinds." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 20 }, "vorgabe": 8 }
+      }
+    },
+    {
+      "name": "brands_overview",
+      "bereich": "dashboard",
+      "klasse": "lesen",
+      "beschreibung": "Brand leaderboard for the period: visibility, rank (lower is better), sentiment (0-100), mentions, with deltas against the previous period. The own brand is always included.",
+      "aufrufe": [{ "fn": "cached_dashboard_overview_v1" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["visibility_desc", "visibility_asc", "visibility_delta_desc", "visibility_delta_asc", "rank_asc", "rank_desc", "sentiment_desc", "sentiment_asc", "mentions_desc", "mentions_asc", "name_asc", "name_desc"] }, "vorgabe": "visibility_desc" },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25 },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 } },
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 } },
+        "brand_ids": { "rpc": "p_companies", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 } },
+        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" } }
+      }
+    },
+    {
+      "name": "brands_visibility_trend",
+      "bereich": "dashboard",
+      "klasse": "lesen",
+      "beschreibung": "Visibility over time per brand (time series for a line chart).",
+      "aufrufe": [{ "fn": "cached_dashboard_visibility_v1" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "granularity": { "rpc": "p_granularity", "schema": { "type": "string", "enum": ["day", "week", "month"] }, "vorgabe": "day" },
+        "brand_ids": { "rpc": "p_companies", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 10 } },
+        "series_limit": { "rpc": "p_series_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 10 }, "vorgabe": 8 },
+        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" } }
+      }
+    },
+    {
+      "name": "brand_detail",
+      "bereich": "marken",
+      "klasse": "lesen",
+      "beschreibung": "Everything about one brand: key numbers, models, markets, topics, top sources.",
+      "aufrufe": [{ "fn": "brand_detail_v1" }],
+      "filter": ["intents", "branded"],
+      "parameter": {
+        "brand_id": { "rpc": "p_company", "pflicht": true, "schema": { "type": "string", "format": "uuid" } }
+      }
+    },
+    {
+      "name": "brand_name_variations",
+      "bereich": "marken",
+      "klasse": "lesen",
+      "beschreibung": "How AI answers spell or name a brand (name variations and their counts).",
+      "aufrufe": [{ "fn": "performance_brand_variations_v1" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "brand_id": { "rpc": "p_company", "pflicht": true, "schema": { "type": "string", "format": "uuid" } },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 200 }, "vorgabe": 50 },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 } }
+      }
+    },
+    {
+      "name": "brands_tracked",
+      "bereich": "marken",
+      "klasse": "lesen",
+      "beschreibung": "The team's tracked brands with status (active or inactive) and the brand quota.",
+      "aufrufe": [{ "fn": "brands_page_meta_v1" }],
+      "filter": [],
+      "parameter": {}
+    },
+    {
+      "name": "prompts",
+      "bereich": "prompts",
+      "klasse": "lesen",
+      "beschreibung": "Prompt list with visibility, rank and sentiment per prompt, plus the totals row for the same filters.",
+      "aufrufe": [{ "fn": "cached_prompts_list_v1", "rolle": "liste" }, { "fn": "cached_prompts_summary_v1", "rolle": "summe", "fest": { "p_fields": ["visibility_pct", "prompts_mentioned", "prompts_zero_vis", "avg_rank", "rank1_count", "rank_top3_count", "avg_sentiment", "sentiment_below_50", "topics_used", "avg_brands_per_prompt", "competitors_seen", "top_intent", "top_intent_share", "markets_used", "top_market", "top_market_share", "newest_created", "added_last_7d"] }, "ohne": ["order", "limit", "offset"] }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 } },
+        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "Only prompts where the selected brands are mentioned (yes) or not (no)." },
+        "brand_ids": { "rpc": "p_company_ids", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 } },
+        "status": { "rpc": "p_status", "schema": { "type": "string", "enum": ["active", "inactive"] }, "vorgabe": "active" },
+        "untagged": { "rpc": "p_untagged", "schema": { "type": "boolean" } },
+        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["visibility_desc", "visibility_asc", "rank_asc", "rank_desc", "sentiment_desc", "sentiment_asc", "name_asc", "name_desc", "created_at_desc", "created_at_asc"] }, "vorgabe": "visibility_desc" },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25 },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 } }
+      }
+    },
+    {
+      "name": "prompt_groups",
+      "bereich": "prompts",
+      "klasse": "lesen",
+      "beschreibung": "Prompts grouped by topic or by intent, with visibility, rank and sentiment per group.",
+      "aufrufe": [{ "fn": "cached_prompts_groups_v1" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "group_by": { "rpc": "p_group_by", "schema": { "type": "string", "enum": ["topic", "intent"] }, "vorgabe": "topic" },
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 } },
+        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all" },
+        "brand_ids": { "rpc": "p_company_ids", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 } },
+        "status": { "rpc": "p_status", "schema": { "type": "string", "enum": ["active", "inactive"] }, "vorgabe": "active" }
+      }
+    },
+    {
+      "name": "prompts_meta",
+      "bereich": "prompts",
+      "klasse": "lesen",
+      "beschreibung": "The team's topics (ids, names, prompt counts), intent counts and the prompt quota.",
+      "aufrufe": [{ "fn": "prompts_page_meta_v1" }],
+      "filter": [],
+      "parameter": {}
+    },
+    {
+      "name": "prompt_detail",
+      "bereich": "prompts",
+      "klasse": "lesen",
+      "beschreibung": "One prompt in detail: text, topics, intent, results per model.",
+      "aufrufe": [{ "fn": "prompt_detail_v1" }],
+      "filter": [],
+      "parameter": {
+        "prompt_id": { "rpc": "p_prompt_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" } }
+      }
+    },
+    {
+      "name": "sources_domains",
+      "bereich": "citations",
+      "klasse": "lesen",
+      "beschreibung": "Cited domains with share of citations, delta, citation type and URL count, plus the totals row. With mentioned/mentioned_brand_ids it answers which sources name a brand.",
+      "aufrufe": [{ "fn": "cached_citations_domains_v1", "rolle": "liste" }, { "fn": "cached_citations_domains_summary_v1", "rolle": "summe", "fest": { "p_fields": ["own_share_pct", "top10_share_pct", "citations_total", "avg_citations_per_domain", "top_type", "top_type_share", "types_used", "active_last_7d", "new_in_period"] }, "ohne": ["order", "limit", "offset", "url_types", "prompt_id", "brand_id"] }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "Only sources where the selected brands are named on the page (yes) or not (no)." },
+        "mentioned_brand_ids": { "rpc": "p_mentioned_brands", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 } },
+        "citation_types": { "rpc": "p_citation_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["Editorial", "UGC_Community", "Knowledge_Base", "Brand_Platform", "Institutional", "Competition", "You"] } } },
+        "url_types": { "rpc": "p_url_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["homepage", "product_service", "marketplace", "company_info", "article", "listicle", "guide", "comparison", "review", "documentation", "forum", "directory", "video", "social_post"] } } },
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 } },
+        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["share_desc", "share_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "last_used_asc", "domain_asc", "domain_desc", "urls_count_desc", "urls_count_asc"] }, "vorgabe": "share_desc" },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25 },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 } },
+        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" } },
+        "brand_id": { "rpc": "p_brand", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only answers in which this brand appears." }
+      }
+    },
+    {
+      "name": "sources_urls",
+      "bereich": "citations",
+      "klasse": "lesen",
+      "beschreibung": "Cited URLs (exact pages) with share of citations, delta, citation type and URL type, plus the totals row.",
+      "aufrufe": [{ "fn": "cached_citations_urls_v1", "rolle": "liste" }, { "fn": "cached_citations_urls_summary_v1", "rolle": "summe", "fest": { "p_fields": ["own_share_pct", "top10_share_pct", "top_url_type", "top_url_type_share", "mention_rate_pct", "avg_brands_per_url", "brands_seen", "active_last_7d", "new_in_period"] }, "ohne": ["order", "limit", "offset", "prompt_id", "brand_id"] }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all" },
+        "mentioned_brand_ids": { "rpc": "p_mentioned_brands", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 } },
+        "citation_types": { "rpc": "p_citation_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["Editorial", "UGC_Community", "Knowledge_Base", "Brand_Platform", "Institutional", "Competition", "You"] } } },
+        "url_types": { "rpc": "p_url_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["homepage", "product_service", "marketplace", "company_info", "article", "listicle", "guide", "comparison", "review", "documentation", "forum", "directory", "video", "social_post"] } } },
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 } },
+        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["share_desc", "share_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "last_used_asc", "domain_asc", "url_asc"] }, "vorgabe": "share_desc" },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25 },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 } },
+        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" } },
+        "brand_id": { "rpc": "p_brand", "schema": { "type": "string", "format": "uuid" } }
+      }
+    },
+    {
+      "name": "sources_domain_urls",
+      "bereich": "citations",
+      "klasse": "lesen",
+      "beschreibung": "The cited URLs of one domain with their share within the domain.",
+      "aufrufe": [{ "fn": "cached_citations_domain_urls_v1" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "domain": { "rpc": "p_domain", "pflicht": true, "schema": { "type": "string", "minLength": 1, "maxLength": 253 } },
+        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all" },
+        "mentioned_brand_ids": { "rpc": "p_mentioned_brands", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 } },
+        "url_types": { "rpc": "p_url_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["homepage", "product_service", "marketplace", "company_info", "article", "listicle", "guide", "comparison", "review", "documentation", "forum", "directory", "video", "social_post"] } } },
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 } },
+        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["domainshare_desc", "domainshare_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "url_asc"] }, "vorgabe": "domainshare_desc" },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25 },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 } }
+      }
+    },
+    {
+      "name": "sources_trend",
+      "bereich": "citations",
+      "klasse": "lesen",
+      "beschreibung": "Citation share over time for the top domains or URLs (time series for a line chart) and the share per citation type (for a doughnut chart).",
+      "aufrufe": [{ "fn": "cached_citations_overview_v1" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "mode": { "rpc": "p_mode", "schema": { "type": "string", "enum": ["domain", "url"] }, "vorgabe": "domain" },
+        "granularity": { "rpc": "p_granularity", "schema": { "type": "string", "enum": ["day", "week", "month"] }, "vorgabe": "day" },
+        "series_limit": { "rpc": "p_series_limit", "schema": { "type": "integer", "minimum": 0, "maximum": 10 }, "vorgabe": 7 },
+        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all" },
+        "mentioned_brand_ids": { "rpc": "p_mentioned_brands", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 } },
+        "citation_types": { "rpc": "p_citation_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["Editorial", "UGC_Community", "Knowledge_Base", "Brand_Platform", "Institutional", "Competition", "You"] } } },
+        "url_types": { "rpc": "p_url_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["homepage", "product_service", "marketplace", "company_info", "article", "listicle", "guide", "comparison", "review", "documentation", "forum", "directory", "video", "social_post"] } } },
+        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" } },
+        "brand_id": { "rpc": "p_brand", "schema": { "type": "string", "format": "uuid" } }
+      }
+    },
+    {
+      "name": "domain_detail",
+      "bereich": "citations",
+      "klasse": "lesen",
+      "beschreibung": "One domain in detail: role (own, competitor, other), citation type, share, trend, top URLs.",
+      "aufrufe": [{ "fn": "domain_detail_v1" }],
+      "filter": ["intents", "branded"],
+      "parameter": {
+        "domain": { "rpc": "p_domain", "pflicht": true, "schema": { "type": "string", "minLength": 1, "maxLength": 253 } }
+      }
+    },
+    {
+      "name": "url_detail",
+      "bereich": "citations",
+      "klasse": "lesen",
+      "beschreibung": "One cited URL in detail: page summary, URL type, citation share, the brands named on the page, the answers that cite it and citation conversion per brand.",
+      "aufrufe": [{ "fn": "url_detail_v1" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "url": { "rpc": "p_url", "pflicht": true, "schema": { "type": "string", "minLength": 4, "maxLength": 2048 } }
+      }
+    },
+    {
+      "name": "responses",
+      "bereich": "antworten",
+      "klasse": "lesen",
+      "beschreibung": "AI answers (one row per model run) with mentioned brands, rank and sentiment, plus the totals row (mention rate, average rank, rank 1 share, sentiment below 50). Use response_detail to read an answer's content.",
+      "aufrufe": [{ "fn": "cached_dashboard_responses_v1", "rolle": "liste" }, { "fn": "cached_dashboard_responses_summary_v1", "rolle": "summe", "fest": { "p_fields": ["mention_rate_pct", "mentioned_count", "avg_sentiment", "sentiment_below_50", "avg_rank", "rank1_count", "avg_brands_per_response", "brands_seen", "avg_citations_per_response", "responses_with_citations_pct", "models_used", "top_model", "top_model_share", "first_date", "last_date", "responses_last_7d"] }, "ohne": ["order", "limit", "offset"] }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all" },
+        "brand_ids": { "rpc": "p_company_ids", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 } },
+        "sentiment_min": { "rpc": "p_sentiment_min", "schema": { "type": "integer", "minimum": 0, "maximum": 100 } },
+        "sentiment_max": { "rpc": "p_sentiment_max", "schema": { "type": "integer", "minimum": 0, "maximum": 100 } },
+        "rank_min": { "rpc": "p_rank_min", "schema": { "type": "integer", "minimum": 1 } },
+        "rank_max": { "rpc": "p_rank_max", "schema": { "type": "integer", "minimum": 1 } },
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 } },
+        "url": { "rpc": "p_url", "schema": { "type": "string", "maxLength": 2048 } },
+        "domain": { "rpc": "p_domain", "schema": { "type": "string", "maxLength": 253 } },
+        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" } },
+        "brand_id": { "rpc": "p_brand", "schema": { "type": "string", "format": "uuid" } },
+        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["run_at_desc", "run_at_asc", "rank_asc", "rank_desc", "sentiment_asc", "sentiment_desc"] }, "vorgabe": "run_at_desc" },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 30 }, "vorgabe": 15 },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 } }
+      }
+    },
+    {
+      "name": "response_detail",
+      "bereich": "antworten",
+      "klasse": "lesen",
+      "beschreibung": "One AI answer in full: text, mentioned brands with rank and sentiment, cited sources, shopping products and ads.",
+      "aufrufe": [{ "fn": "response_detail_v1" }],
+      "filter": [],
+      "parameter": {
+        "response_id": { "rpc": "p_prompt_run_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" } }
+      }
+    },
+    {
+      "name": "opportunities",
+      "bereich": "opportunities",
+      "klasse": "lesen",
+      "beschreibung": "The team's saved Opportunities (Tasks on one exact URL) with status, type, priority and reason.",
+      "aufrufe": [{ "fn": "dashboard_opportunities_v1" }],
+      "filter": [],
+      "parameter": {}
+    },
+    {
+      "name": "get_knowledge",
+      "bereich": "wissen",
+      "klasse": "lesen",
+      "beschreibung": "Background knowledge on GEO/AEO, metrics, citation and URL types, and how upstreem works, by topic slug (see the knowledge index in the instructions).",
+      "aufrufe": [],
+      "wissen": true,
+      "filter": [],
+      "parameter": {
+        "slugs": { "pflicht": true, "schema": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 4 } }
+      }
+    }
+  ]
+}
