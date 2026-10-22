@@ -76,6 +76,9 @@
     "Delete Audit": "Audit löschen", "Open page": "Seite öffnen",
     "Audit started": "Audit gestartet", "This page is already being audited": "Diese Seite wird schon geprüft",
     "Audit deleted": "Audit gelöscht", "Schedule updated": "Zeitplan geändert", "Audit cancelled": "Audit abgebrochen",
+    "Page Audit completed": "Page Audit abgeschlossen", "Page Audit failed": "Page Audit fehlgeschlagen",
+    "You're now viewing the latest audit.": "Du siehst jetzt das neueste Audit.", "Your new audit is ready.": "Dein neues Audit ist fertig.",
+    "You're still viewing the previous result.": "Du siehst weiter das vorige Ergebnis.", "View latest audit": "Neuestes Audit ansehen",
     "Stopping the audit…": "Audit wird gestoppt…",
     "Platforms": "Plattformen", "Findings": "Befunde", "Runs": "Läufe", "Checks": "Checks",
     "Measurements": "Messwerte", "Evidence": "Belege", "Run details": "Details zum Lauf",
@@ -696,10 +699,12 @@
       /* Reiter des Details (Variante B der Leinwand, 21.10. gewaehlt): core makePageNav, nur sichtbar,
          wenn ein Ergebnis da ist -- ein wartender Lauf hat nichts, das sich aufteilen liesse. */
       '<div class="up-ph-nav upa-nav" role="tablist" hidden></div>' +
-      '<div class="upa-main">' + startGeruest() + listeGeruest() + '<div class="upa-detail" hidden></div></div>';
+      /* Der Lauf-Kasten (lbSync) steht VOR der Liste und dem Detail, nicht in .upa-detail: der Inhalt wird je Reiter neu
+         gezeichnet, der Kasten soll stehen bleiben. */
+      '<div class="upa-main"><div class="upa-lb" role="status" aria-live="polite"></div>' + startGeruest() + listeGeruest() + '<div class="upa-detail" hidden></div></div>';
     var elKopf = root.querySelector(".upa-kopfrechts");
     var elListe = root.querySelector(".upa-liste"), elDetail = root.querySelector(".upa-detail");
-    var elStart = root.querySelector(".upa-start"), elNav = root.querySelector(".upa-nav");
+    var elStart = root.querySelector(".upa-start"), elNav = root.querySelector(".upa-nav"), elLb = root.querySelector(".upa-lb");
     var tips = UC.makeTooltips ? UC.makeTooltips(root, isDark) : null;
     UC.widthTiers(root);
 
@@ -918,6 +923,11 @@
     });
 
     if (elStart) elStart.addEventListener("click", function (e) { if (e.target.closest("[data-upa-anlegen]")) anlegenOeffnen(); });
+    /* Der Lauf-Kasten steht ausserhalb von .upa-detail, darum ein eigener Hoerer. */
+    if (elLb) elLb.addEventListener("click", function (e) {
+      if (e.target.closest("[data-upa-lb-zu]")) { lbZu(false); return; }
+      if (e.target.closest("[data-upa-lb-neu]")) { lbZu(false); detailOeffnen(state.pageId, "", true); }
+    });
 
     var kleber = UC.makeSticky(elListe, elListe.querySelector(".up-head"));
     function kleben() { if (state.ansicht === "liste" && kleber) kleber.applySticky(); }
@@ -1488,6 +1498,97 @@
         t(ph ? ph.text : OHNE_SCHRITT.text).replace(/^./, function (c) { return c.toLowerCase(); }))) +
         " " + t("Started {time}.").replace("{time}", wann(a.acceptedAt));
     }
+    /* ---- Der Lauf-Kasten unter den Reitern (22.10., Lukas) ---------------------------------------------------------------
+       "Run again" im Detail: direkt unter der Reiterleiste ein Kasten, der auf JEDEM Reiter steht und in 200 ms ease aufzieht.
+       Vorn ein Punkt in der Farbe des Zustands (Flaechentoene aus core wie der Punkt "Active": laeuft Amber, wartet grau,
+       fertig gruen, gescheitert rot). Ist der Lauf fertig, bleibt der Kasten mit "Page Audit completed" und dem Satz, dass
+       jetzt das neue Ergebnis zu sehen ist; er geht nach 5 s oder per X (rechts, mittig), ebenfalls in 200 ms. Ein
+       gescheiterter Lauf bleibt stehen, bis man ihn schliesst: dort steht weiter das vorige Ergebnis, das muss man sehen.
+       Ersetzt im Overview die Laufzeile; ohne Ergebnis (Reiter verborgen) bleibt es bei Protokoll bzw. Laufzeile. */
+    var LB_WEG_MS = 5000, LB_ZU_MS = 260;
+    var LB = { page: "", lauf: "", ende: "", timer: 0, zuTimer: 0 };
+    function lbLaufend(a) {
+      var k = anzeigeJetzt(a.id), wartet = k ? k === "queued" : a.status === "queued";
+      /* Hat die Anzeige ihre Schritte schon abgespielt, waehrend der Server noch speichert, bleibt der letzte Schritt
+         stehen -- sonst blinkte fuer einen Augenblick "Auditing this page" auf (gemessen 240 ms vor dem Ende). */
+      var ph = wartet ? phaseVon("queued") : (k ? phaseVon(k) : null) || (LB.schritt && LB.schritt.lauf === a.id ? LB.schritt.ph : null);
+      ph = ph || OHNE_SCHRITT;
+      LB.schritt = { lauf: a.id, ph: ph };
+      return { ton: wartet ? "leise" : "warn", titel: wartet ? "Queued" : "Running",
+               satz: t(ph.text) + ". " + t("Started {time}.").replace("{time}", wann(a.acceptedAt)) };
+    }
+    function lbRechtsHtml(o) {
+      return (o.neuester ? '<button type="button" class="up-btn-sec upa-lb-los" data-upa-lb-neu>' + esc(t("View latest audit")) + '</button>' : '') +
+        (o.zu ? '<button type="button" class="up-iconbtn upa-lb-zu" data-upa-lb-zu aria-label="' + esc(t("Close")) + '">' + UC.icon("x", 2) + '</button>' : '');
+    }
+    /* Setzen statt neu zeichnen: so wechselt der Punkt seine Farbe in 200 ms (laeuft -> fertig) und der Text springt nicht. */
+    function lbSetzen(o) {
+      if (!elLb) return;
+      clearTimeout(LB.zuTimer);
+      var box = elLb.querySelector(".upa-lb-box"), rechts = lbRechtsHtml(o);
+      if (!box) {
+        elLb.innerHTML = '<div class="upa-lb-in"><div class="up-box upa-lb-box"><span class="upa-lb-punkt is-' + o.ton + '" aria-hidden="true"></span>' +
+          '<span class="upa-lb-text"><span class="upa-lb-titel">' + esc(t(o.titel)) + '</span><span class="upa-lb-satz">' + esc(o.satz || "") + '</span></span>' +
+          '<span class="upa-lb-rechts">' + rechts + '</span></div></div>';
+      } else {
+        var p = box.querySelector(".upa-lb-punkt"), ti = box.querySelector(".upa-lb-titel"), sa = box.querySelector(".upa-lb-satz"), re = box.querySelector(".upa-lb-rechts");
+        if (p.className !== "upa-lb-punkt is-" + o.ton) p.className = "upa-lb-punkt is-" + o.ton;
+        if (ti.textContent !== t(o.titel)) ti.textContent = t(o.titel);
+        if (sa.textContent !== (o.satz || "")) sa.textContent = o.satz || "";
+        if (re.getAttribute("data-k") !== rechts) { re.innerHTML = rechts; re.setAttribute("data-k", rechts); }
+      }
+      if (!elLb.classList.contains("is-offen")) { void elLb.offsetHeight; elLb.classList.add("is-offen"); }
+    }
+    function lbZu(sofort) {
+      clearTimeout(LB.timer); LB.timer = 0;
+      if (!elLb) return;
+      if (sofort) {
+        clearTimeout(LB.zuTimer);
+        elLb.classList.add("is-sofort"); elLb.classList.remove("is-offen"); elLb.innerHTML = "";
+        void elLb.offsetHeight; elLb.classList.remove("is-sofort");
+        return;
+      }
+      if (!elLb.classList.contains("is-offen")) return;
+      elLb.classList.remove("is-offen");
+      /* Leeren erst nach dem Zuziehen (--up-t-2 plus Rand), sonst faellt der Inhalt mitten in der Bewegung weg. */
+      clearTimeout(LB.zuTimer);
+      LB.zuTimer = setTimeout(function () { if (!elLb.classList.contains("is-offen")) elLb.innerHTML = ""; }, LB_ZU_MS);
+    }
+    function lbSync() {
+      if (!elLb) return;
+      var d = state.ansicht === "detail" ? dasDetail() : null;
+      if (!d || LB.page !== state.pageId) {
+        if (LB.lauf || elLb.firstChild) lbZu(true);
+        LB.lauf = ""; LB.ende = ""; LB.page = d ? state.pageId : "";
+        if (!d) return;
+      }
+      var s = d.selected, mitErgebnis = !!s && (s.run.status === "completed" || s.run.status === "partial");
+      var a = aktiverLauf(d);
+      if (a && mitErgebnis && s.run.id !== a.id) {
+        if (LB.lauf !== a.id) { LB.lauf = a.id; LB.ende = ""; clearTimeout(LB.timer); LB.timer = 0; }
+        lbSetzen(lbLaufend(a));
+        return;
+      }
+      /* Nichts verfolgt, oder der Endzustand steht schon (er bleibt bis 5 s bzw. X, auch beim Reiterwechsel). */
+      if (!LB.lauf || LB.ende) return;
+      var r = null;
+      d.runs.forEach(function (x) { if (x.id === LB.lauf) r = x; });
+      if (!r || D.laeuft(r.status) || !mitErgebnis) { LB.lauf = ""; lbZu(true); return; }
+      LB.ende = r.status;
+      if (r.status === "completed" || r.status === "partial") {
+        /* Nach "Run again" steht die Auswahl auf "neuestes Ergebnis" (nochmal), das ist jetzt dieser Lauf. Hat man
+           inzwischen einen alten Lauf gewaehlt, sagt der Kasten das und bietet den Weg zum neuen. */
+        var sieht = s.run.id === r.id;
+        lbSetzen({ ton: "pos", titel: "Page Audit completed", satz: t(sieht ? "You're now viewing the latest audit." : "Your new audit is ready."), neuester: !sieht, zu: true });
+        if (sieht) LB.timer = setTimeout(function () { lbZu(false); }, LB_WEG_MS);
+      } else if (r.status === "cancelled") {
+        lbSetzen({ ton: "leise", titel: "Audit cancelled", satz: t("You're still viewing the previous result."), zu: true });
+        LB.timer = setTimeout(function () { lbZu(false); }, LB_WEG_MS);
+      } else {
+        var grund = D.LAUF_FEHLER[r.errorCode] || "This audit could not be completed. It was not charged.";
+        lbSetzen({ ton: "neg", titel: "Page Audit failed", satz: t(grund) + " " + t("You're still viewing the previous result."), zu: true });
+      }
+    }
     /* Ein Lauf ohne Ergebnis: der wartende/laufende bekommt das Ladebild (lange Laeufe nur ueber
        UC.makeLadebild), der gescheiterte einen Satz mit dem Grund. */
     /* ---- v2: Arbeitsprotokoll statt Ladebild (Lukas: "gerne bei Mira in der Ladeanimation bedienen") ----------------
@@ -1633,6 +1734,7 @@
         if (tx && tx.textContent !== satz) tx.textContent = satz;
       });
       [].forEach.call(root.querySelectorAll('.upa-laufstatus[data-upa-lauf="' + id + '"]'), function (el) { laufZelleNachziehen(el, id); });
+      if (LB.lauf === id && !LB.ende) { var la = aktiverLauf(dasDetail()); if (la && la.id === id) lbSetzen(lbLaufend(la)); }
     }
     /* Alle laufenden Laeufe der Ansicht nachziehen (nach jeder Abfrage und wenn die Funktion fehlt). */
     function anzeigeAlle() {
@@ -2466,7 +2568,8 @@
         } catch (e) {}
       }
     }
-    function detailZeichnen() {
+    function detailZeichnen() { detailInhaltZeichnen(); lbSync(); }
+    function detailInhaltZeichnen() {
       var e = detailEintrag(), d = e && e.daten;
       if (e && e.fehler) {
         navZeigen(false);
@@ -2501,7 +2604,7 @@
         else if (r === "runs") html = laeufeHtml(d) + laufDetailsHtml(d);
         else {
           html = '<div class="upa-kopfzone is-k"><div class="upa-kopfzone-l">' + identHtml(d) + kpiKleinHtml(d) + '</div>' + browserHtml(d) + '</div>' +
-            laufzeileHtml(d) + teilHinweisHtml(s.run) + zugangHinweisHtml(d) + plattformenHtml(d) + befundeHtml(d);
+            teilHinweisHtml(s.run) + zugangHinweisHtml(d) + plattformenHtml(d) + befundeHtml(d);
         }
       }
       if (!(s && D.laeuft(s.run.status))) laufStand = null;
@@ -2791,7 +2894,7 @@
       root.classList.toggle("is-detail", detail);
       kopfZeichnen(); krumenNeu();
       if (detail) detailZeichnen();
-      else { tabelleZeichnen(); kleben(); }
+      else { lbSync(); tabelleZeichnen(); kleben(); }
     }
     function detailOeffnen(pageId, runId, neuerEintrag) {
       if (!D.uuidOk(pageId)) return;

@@ -247,6 +247,31 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-root.has-upa-nav .upa-pagehead { margin-bottom: 0; }
 .upa-root.has-upa-nav .upa-nav + .upa-main { margin-top: 16px; }
 
+/* ---------- Lauf-Kasten unter den Reitern (22.10., Lukas: "Run again" im Detail) ----------
+   Erstes Kind von .upa-main, also direkt unter der Reiterleiste und ausserhalb von .upa-detail (das je Reiter neu
+   gezeichnet wird). Zu ist er 0 hoch (Raster 0fr) und unsichtbar, offen zieht er in 200 ms ease auf, samt 16 Abstand zum
+   Inhalt darunter, dem Abstand unter den Reitern. visibility erst nach dem Zuziehen weg: zu steht er weder im Tab-Kreis
+   noch in der Vorlesung. Polster links 16 wie eine Karte, rechts 8, damit das X (32) mittig in 48 Hoehe sitzt. Punkt 8
+   in den Flaechentoenen aus core (wie der Punkt "Active": Grafik, 3:1), Farbwechsel ebenfalls 200 ms. */
+.upa-lb { display: grid; grid-template-rows: 0fr; opacity: 0; margin-bottom: 0; visibility: hidden;
+  transition: grid-template-rows var(--up-t-2) ease, opacity var(--up-t-2) ease, margin-bottom var(--up-t-2) ease, visibility 0s linear var(--up-t-2); }
+.upa-lb.is-offen { grid-template-rows: 1fr; opacity: 1; margin-bottom: 16px; visibility: visible; transition-delay: 0s; }
+.upa-lb.is-sofort { transition: none; }
+.upa-lb-in { min-height: 0; overflow: hidden; }
+/* Oben und unten 7: Rand 1 + 7 + X 32 + 7 + Rand 1 = 48, mit X genauso hoch wie ohne (mit 8 waren es 50, der Kasten
+   wuchs beim Fertigwerden um 2). */
+.upa-lb-box { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 7px 8px 7px 16px; }
+.upa-lb-punkt { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--vc-third); transition: background-color var(--up-t-2) ease; }
+.upa-lb-punkt.is-warn { background: var(--vt-warn-flaeche); }
+.upa-lb-punkt.is-pos { background: var(--vt-up-flaeche); }
+.upa-lb-punkt.is-neg { background: var(--vt-down-flaeche); }
+.upa-lb-text { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; row-gap: 2px; padding: 4px 0; }
+.upa-lb-titel { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); line-height: 20px; color: var(--vc-text); }
+.upa-lb-satz { font-size: var(--up-fs-m); line-height: 20px; color: var(--vc-muted); }
+.upa-lb-rechts { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.upa-lb-rechts:empty { display: none; }
+@media (prefers-reduced-motion: reduce) { .upa-lb, .upa-lb-punkt { transition: none; } }
+
 /* ---------- Befunde: Etiketten je Plattform und Profilansicht (UMSETZUNGSPLAN 14) ----------
    NEU (nicht in core): die Liste je Plattform im Befund und die aufklappbare Plattformzeile. Marken aus core (.up-marke.is-leise). */
 .upa-jp { display: flex; flex-direction: column; gap: 14px; margin-top: 4px; }
