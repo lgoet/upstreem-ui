@@ -738,7 +738,7 @@
     "Nothing to compare": "Nichts zu vergleichen",
     "Measurement failed": "Messung fehlgeschlagen",
     "Raw data expired": "Rohdaten abgelaufen",
-    "Observed": "Erfasst",
+    "Observed": "Beobachtet", /* gleich wie ads.js: der Katalog ist global, sonst gewinnt je nach Ladefolge eine Fassung */
     "Missing": "Fehlt",
     /* Vergleich mit dem vorigen Lauf (Tooltips der Marken) */
     "There is no earlier result to compare with.": "Es gibt kein früheres Ergebnis zum Vergleichen.",
