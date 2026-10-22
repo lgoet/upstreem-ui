@@ -1,0 +1,188 @@
+/* upstreem oauth-consent.css — die Zustimmungsseite fuer MCP-Clients als GANZE Seite (Praefix `uoc`).
+
+   ── Was hier aus core kommt, und was nicht ──────────────────────────────
+   Aus core, unveraendert:
+     .up-btn-pri.is-lg / .up-btn-sec.is-lg   Allow access / Cancel (die grosse Stufe)
+     .up-iconbtn                             der Themenknopf oben rechts
+     .up-tsk-bar / .up-tsk-logo              das Skelett
+     .up-entchip.is-static                   der Chip "Unverified app"
+     .up-ring                                der Ring im Knopf (UC.ringHtml)
+     --vc-* / --vt-* / --up-*                alle Farben, Dauern, Kurven, Radien
+   Die Masse der Seite sind die der Einladungsseite (invite-page.css), WORTGLEICH: Wurzel, Kopfzeile,
+   Mitte, Spalte 400, Kachel 64, Ueberschrift, Kontext, Knoepfe, Kontozeile, Einzug. Neu ist nur, was es
+   hier genau einmal gibt: die Liste "kann / kann nicht" und die Zeile mit dem Ziel. */
+
+.uoc-root {
+  --uoc-in: 420ms;   /* wortgleich zu --uiv-in und --uau-in: der Einzug einer Seite, kein UI-Uebergang */
+  --uoc-px: clamp(16px, 3vw, 32px);
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--up-surface);
+  padding: clamp(16px, 2.4vh, 24px) var(--uoc-px) clamp(16px, 2.4vh, 28px);
+}
+.uoc-root *::before, .uoc-root *::after { box-sizing: border-box; }
+.uoc-root [hidden] { display: none; }
+
+/* ---------- Kopfzeile (wie .uiv-top) ---------- */
+.uoc-top {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding-inline: max(0px, calc(32px - var(--uoc-px)));
+  min-height: 32px;
+}
+.uoc-logo { height: 18px; width: auto; flex: 0 0 auto; display: block; }
+.uoc-top .up-iconbtn:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+
+/* ---------- Mitte und Buehne (wie .uiv-mid / .uiv-stage / .uiv-pane) ---------- */
+.uoc-mid {
+  flex: 1 1 auto; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding-block: clamp(24px, 6vh, 64px);
+}
+.uoc-stage { display: grid; width: 100%; max-width: 640px; }
+.uoc-pane {
+  grid-area: 1 / 1; min-width: 0; align-self: center; justify-self: center;
+  width: 100%; max-width: 400px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity var(--up-t-2) var(--up-ease), visibility 0ms linear var(--up-t-3);
+}
+.uoc-pane.is-an {
+  opacity: 1; visibility: visible; pointer-events: auto;
+  transition: opacity var(--up-t-2) var(--up-ease), visibility 0ms linear 0ms;
+}
+
+/* ---------- Skelett (Masse wie die echte Seite) ---------- */
+.up-tsk-bar.uoc-sk-eyebrow { display: block; width: 180px; height: 12px; border-radius: var(--up-r-voll); margin-block: 4px; }
+.up-tsk-logo.uoc-sk-logo   { display: block; width: 64px; height: 64px; border-radius: var(--up-r-2xl); margin-top: 20px; }
+.up-tsk-bar.uoc-sk-name    { display: block; width: 220px; max-width: 80%; height: 32px; border-radius: var(--up-r-m); margin-top: 24px; }
+.up-tsk-bar.uoc-sk-list    { display: block; width: 100%; height: 96px; border-radius: var(--up-r-2xl); margin-top: 24px; }
+.up-tsk-bar.uoc-sk-cta     { display: block; width: 100%; height: 40px; border-radius: var(--up-r-l); margin-top: 24px; }
+@keyframes uoc-fade { from { opacity: 0; } }
+.uoc-stage .uoc-skel.is-an { animation: uoc-fade var(--uoc-in) var(--up-ease) backwards; }
+
+/* ---------- Kopf: Oberzeile, Kachel, Name (wie .uiv-eyebrow / .uiv-brand*) ---------- */
+.uoc-eyebrow {
+  margin: 0; font-size: 14px; line-height: 1.45; font-weight: 500; color: var(--vc-muted);
+  text-wrap: balance;
+}
+.uoc-brand { margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 18px; max-width: 100%; }
+/* Die Kachel traegt nur den Anfangsbuchstaben: ein Logo des Clients waere selbst angegeben. */
+.uoc-brand-logo {
+  position: relative; flex: 0 0 auto;
+  width: 64px; height: 64px; border-radius: var(--up-r-2xl);
+  background: var(--vc-bg); border: 1px solid var(--vc-border);
+  box-shadow: var(--up-e-1);
+  display: grid; place-items: center; overflow: hidden;
+}
+.uoc-root[data-theme="dark"] .uoc-brand-logo { border-color: transparent; background: var(--vt-logo-bg); }
+.uoc-brand-ltr { font-size: 28px; line-height: 1; font-weight: 600; color: var(--vc-third); }
+.uoc-root[data-theme="dark"] .uoc-brand-ltr { color: var(--vc-text-invert); }
+.uoc-brand-name {
+  margin: 0; max-width: 100%;
+  font-size: clamp(26px, min(3.1vw, 4.6vh), 44px); line-height: 1.06;
+  font-weight: 600; letter-spacing: -.025em; color: var(--vc-text);
+  text-wrap: balance; overflow-wrap: anywhere;
+}
+.uoc-brand-name.is-klein { font-size: clamp(22px, min(2.2vw, 3.4vh), 28px); line-height: 1.2; }
+
+/* "Unverified app" + Satz, wie .uiv-ctx mit der Rolle. */
+.uoc-ctx {
+  margin: 14px 0 0; max-width: 100%;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px;
+  font-size: 14px; line-height: 1.45; color: var(--vc-muted);
+}
+.uoc-ctx .up-entchip.uoc-chip { padding: 0 10px; }
+.uoc-chiplbl { font-size: 12px; font-weight: 500; color: var(--vc-text); }
+
+/* ---------- Was der Zugriff kann ----------
+   Eine Karte (Radius 12 nach Rolle, STYLEGUIDE §1c), links ausgerichtet: zwei Saetze, die man lesen
+   soll, mittig gesetzt laesen sie sich wie Werbung. Das Zeichen in der Farbe der Aussage. */
+.uoc-list {
+  list-style: none; margin: 24px 0 0; padding: 12px 16px; width: 100%;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); background: var(--up-feld-bg);
+  display: flex; flex-direction: column; gap: 10px; text-align: left;
+}
+.uoc-li { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.45; color: var(--vc-text); }
+.uoc-li-ic { flex: 0 0 auto; display: grid; place-items: center; width: 20px; height: 20px; }
+.uoc-li-ic svg { width: 16px; height: 16px; display: block; }
+.uoc-li.is-ja .uoc-li-ic { color: var(--vt-up); }
+.uoc-li.is-nein .uoc-li-ic { color: var(--vt-down); }
+
+/* Wohin es danach geht: leise Zeile, der Host fett -- wie die Kontozeile. */
+.uoc-dest {
+  margin: 14px 0 0; max-width: 100%;
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 0 5px;
+  font-size: 13px; line-height: 1.45; color: var(--vc-third);
+}
+.uoc-dest b { font-weight: 600; color: var(--vc-text); overflow-wrap: anywhere; }
+
+/* ---------- Meldung und Knoepfe (wie .uiv-act) ---------- */
+.uoc-act { width: 100%; margin-top: 14px; }
+.uoc-errmsg {
+  margin: 0 auto; max-width: 400px;
+  font-size: 14px; line-height: 1.45; color: var(--vc-muted);
+  text-align: center; text-wrap: balance; overflow-wrap: anywhere;
+}
+.uoc-actions { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+.uoc-cta, .uoc-cta2 { width: 100%; }
+/* Der Ring tritt NEBEN die Beschriftung, solange die App weiterleitet. */
+.uoc-ring { display: none; }
+.uoc-cta.is-busy .uoc-ring, .uoc-cta2.is-busy .uoc-ring { display: inline-flex; }
+.uoc-root .uoc-cta:is(.is-busy):hover, .uoc-root .uoc-cta2:is(.is-busy):hover { opacity: 1; }
+.uoc-cta[aria-disabled="true"], .uoc-cta2[aria-disabled="true"] { cursor: default; }
+/* Auf dem dunklen Hauptknopf traegt der Bogen die Schrift des Knopfes, nicht die Textfarbe der Seite. */
+.uoc-cta .up-ring-bogen { stroke: currentColor; }
+.uoc-cta .up-ring-spur { stroke: color-mix(in srgb, currentColor 28%, transparent); }
+
+/* ---------- Konto (wie .uiv-who / .uiv-notyou) ---------- */
+.uoc-who {
+  margin: 16px 0 0; max-width: 100%;
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 0 5px;
+  font-size: 13px; line-height: 1.45; color: var(--vc-third);
+}
+.uoc-who b { font-weight: 500; color: var(--vc-muted); overflow-wrap: anywhere; }
+.uoc-notyou {
+  margin-left: 8px;
+  font: inherit; font-weight: 600; color: var(--vc-text);
+  background: none; border: 0; padding: 0; cursor: pointer; border-radius: var(--up-r-xs);
+  transition: opacity var(--up-t-2) var(--up-ease);
+}
+.uoc-notyou:hover { opacity: .7; }
+.uoc-notyou:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+
+/* ---------- Einzug beim ersten Erscheinen (wie uiv-rise/uiv-pop) ---------- */
+@keyframes uoc-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes uoc-pop {
+  from { opacity: 0; transform: translateY(12px) scale(.94); }
+  to   { opacity: 1; transform: none; }
+}
+.uoc-root.is-entering .uoc-eyebrow,
+.uoc-root.is-entering .uoc-brand-name,
+.uoc-root.is-entering .uoc-ctx,
+.uoc-root.is-entering .uoc-list,
+.uoc-root.is-entering .uoc-dest,
+.uoc-root.is-entering .uoc-act,
+.uoc-root.is-entering .uoc-who {
+  animation: uoc-rise var(--uoc-in) var(--up-ease-auf) backwards;
+}
+.uoc-root.is-entering .uoc-brand-logo { animation: uoc-pop var(--uoc-in) var(--up-ease-auf) backwards; }
+.uoc-root.is-entering .uoc-eyebrow    { animation-delay: 0ms; }
+.uoc-root.is-entering .uoc-brand-logo { animation-delay: 70ms; }
+.uoc-root.is-entering .uoc-brand-name { animation-delay: 110ms; }
+.uoc-root.is-entering .uoc-ctx,
+.uoc-root.is-entering .uoc-list       { animation-delay: 220ms; }
+.uoc-root.is-entering .uoc-dest,
+.uoc-root.is-entering .uoc-act        { animation-delay: 330ms; }
+.uoc-root.is-entering .uoc-who        { animation-delay: 330ms; }
+
+/* ---------- schmal (wie die Einladungsseite) ---------- */
+.uoc-root.is-vnarrow .uoc-mid { padding-block: 20px; }
+.uoc-root.is-vnarrow .uoc-notyou { flex-basis: 100%; margin-left: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .uoc-root { --uoc-in: 1ms; }
+  .uoc-root.is-entering * { animation: none; }
+}
