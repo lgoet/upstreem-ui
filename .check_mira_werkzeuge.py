@@ -14,6 +14,11 @@ wie die UI, und diese Datei sorgt dafuer, dass beide nicht auseinanderlaufen:
 
 Eine neue Version wird also im selben Commit in der UI UND im Manifest nachgezogen.
 
+Ausnahme "nur_mira" (22.10.): Funktionen, die es nur fuer Mira gibt, weil die UI keine Ansicht dafuer
+hat (Nachfolger alter n8n-Werkzeuge: Marken auf Quellen, Seitenzusammenfassungen, Prompt-Katalog,
+Opportunities mit Filtern). Der Aufruf traegt dann "nur_mira": "<Begruendung>"; ohne Begruendung ist
+es ein Fehler, und steht die Funktion doch im UI-Code, ebenfalls (dann gilt die normale Pruefung).
+
 Warum die Beschreibung Pflicht ist (22.10.): Das Modell sieht nur Name, Beschreibung und
 Parameterbeschreibungen. Ohne Text raet es die Bedeutung aus dem Namen -- "mentioned" hielt es
 fuer "die gewaehlten Marken" (gemeint ist die eigene Marke) und sagte im echten Test "keine Domain
@@ -147,6 +152,13 @@ for w in werkzeuge:
                 f(wo + ": %s.fest hat ungueltigen Parameter %s" % (fn, k))
             if k in ziele or k in [filter_def.get(x, {}).get("rpc") for x in filt]:
                 f(wo + ": %s.fest setzt %s, das auch das Modell setzt" % (fn, k))
+        nur = a.get("nur_mira")
+        if nur is not None:
+            if not isinstance(nur, str) or len(nur.strip()) < 15:
+                f(wo + ": %s.nur_mira braucht eine Begruendung" % fn)
+            if zitiert(fn):
+                f(wo + ": %s steht im UI-Code -- nur_mira entfernen" % fn)
+            continue
         if not zitiert(fn):
             f(wo + ": %s steht nicht im UI-Code -- ruft die UI sie nicht (mehr)?" % fn)
             continue
