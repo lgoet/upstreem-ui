@@ -13,11 +13,14 @@
    MAERKTE UND THEMEN kommen aus den Ablagen von core (setUpstreemAllMarkets, setUpstreemTopics),
    nicht aus einem eigenen Aufruf.
    START: start-job (Edge Function) legt den Job an und stoesst n8n an. Danach hoert die Seite auf
-   dessen Realtime-Kanal (prompt_research_job:<id>, seit 10.10. statt Abfragen im Takt): bei
-   success holt sie einmal prompt_research_result_v1, bei error kommt der Grund als Meldung.
-   Seit dem 22.10. wartet der Start im Popup "Start Research": setRunning nach angenommenem Start
-   schliesst es, setError davor schreibt den Grund unter das Feld darin. Laeuft beim Aufbau schon
-   ein Job (Neuladen, anderer Tab), zeigt die Seite das Ladebild und hoert auf seinen Kanal.
+   dessen Realtime-Kanal (prompt_research_job:<id>, seit 10.10. statt Abfragen im Takt). Bei
+   success laedt sie seit dem 22.10. nur die Liste neu und meldet den Job mit setResearchReady:
+   der Laufstreifen ueber der Liste wird gruen mit "View Research", das Ergebnis
+   (prompt_research_result_v1) kommt erst, wenn man ihn oeffnet -- die Seite springt nicht mehr von
+   selbst ins Ergebnis. Ohne neue Prompts eine Meldung; bei error kommt der Grund als Meldung.
+   Der Start wartet im Popup "Start Research": setRunning nach angenommenem Start schliesst es,
+   setError davor schreibt den Grund unter das Feld darin. Laeuft beim Aufbau schon ein Job
+   (Neuladen, anderer Tab), zeigt die Startseite den gelben Laufstreifen und hoert auf seinen Kanal.
    ENTSCHEIDEN: Track / Ignore / alle -> prompt_research_decide_v1, danach das Ergebnis neu. Das
    Kontingent aus der Antwort geht an setUpstreemQuota, und die Maerkte und Themen der App melden
    sich ueber die bekannten Signale neu (marketsChanged, topicsChanged).
@@ -227,12 +230,17 @@
         pr("setError", t(D.jobFehlerSatz(zeile.error && typeof zeile.error === "object" ? str(zeile.error.code) : "")));
         return;
       }
-      gem.offen = lauf.id;
-      lader.laden("ergebnis", D.ergebnis(lauf.team, lauf.id), { frisch: true }).then(function (erg) {
-        if (erg.ueberholt || gem.offen !== lauf.id || lauf.team !== team()) return;
-        var z = erg.ok ? D.zuErgebnis(erg.daten) : null;
-        if (z) ergebnisZeigen(lauf.id, z, true);
-        else { gem.offen = null; pr("setError", t("The research could not be loaded. Please try again.")); }
+      /* SEIT DEM 22.10. (Lukas, Canvas R3): die Seite springt nicht mehr von selbst in die Vorschlaege.
+         Der Streifen ueber der Liste wird gruen und bietet "View Research" (setResearchReady); geoeffnet
+         wird wie aus der Liste (oeffnen). Die Zahl der offenen Vorschlaege kommt aus der frischen Liste --
+         das Ereignis traegt sie auch, aber die Liste ist die Quelle, die der Streifen danach neben sich hat.
+         Ohne offene Vorschlaege steht die Recherche nicht in der Liste: dann die Meldung wie bisher. */
+      jobsLaden(true).then(function (j) {
+        if (lauf.team !== team()) return;
+        var z = (j && j.rows || []).filter(function (r) { return str(r.job_id) === lauf.id; })[0] || zeile;
+        if (Number(z.prompt_count) > 0) { pr("setResearchReady", z); return; }
+        pr("setIdle");
+        satz("The research found no new prompts", "neutral");
       });
     }
 

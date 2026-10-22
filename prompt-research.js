@@ -28,7 +28,7 @@
      Bubble calls these by name as soon as its own workflows run, which is regularly before
      core.js has finished loading. Queue everything and replay it in call order once the real
      implementations exist (STYLEGUIDE §25 step 2). */
-  var API_NAMES = ["setRunning", "setIdle", "setError", "setComplete", "setPrompts",
+  var API_NAMES = ["setRunning", "setIdle", "setError", "setComplete", "setPrompts", "setResearchReady",
                    "setResearchMeta", "setPreviousResearches", "openHistory", "closeHistory",
                    "setTags", "setActionLoading", "setBusy", "setTheme", "setMarkets",
                    "setMarket", "setBusinessModel", "setPersona"];
@@ -352,7 +352,10 @@
       'Search researches…': 'Recherchen durchsuchen …',
       'Search researches': 'Recherchen durchsuchen',
       'No research matches your search': 'Keine Recherche passt zu deiner Suche',
-      'Audience': 'Zielgruppe'
+      'Audience': 'Zielgruppe',
+      'View Research': 'Recherche ansehen',
+      '1 prompt ready to review': '1 Prompt zum Durchsehen',
+      '{n} prompts ready to review': '{n} Prompts zum Durchsehen'
     });
   }
   var START = {
@@ -361,24 +364,35 @@
     karteTitel: 'How a research works',
     karteSatz: 'Enter keywords or a topic and choose a market. We write up to 20 prompts that people in that market are likely to ask, estimate how often each one is asked and match them to your topics. You choose which ones to track. Tracked prompts count toward your plan.'
   };
-  /* Die Grafik: dasselbe Feld wie auf Page Audit (fensterHtml dort) -- drei Kaskaden zu je 18 Karten,
-     120 x 84, je Schritt 16 nach rechts und 32 nach unten, Kaskaden 168 auseinander; eine
-     hervorgehoben, die zwei dahinter fehlen, damit sie frei steht, ihre Mitte auf der Mitte der
-     Flaeche; gestaffelt um 18 ms. Statt Browserfenstern sind es Prompts: zwei Textzeilen je Karte, die
-     hervorgehobene traegt das Zeichen der Seite (Teleskop, wie Krume und Ladebild). */
+  /* DIE GRAFIK (Lukas 22.10., Canvas Reihe 4, G3): Fragen, wie Menschen sie KI-Suchen stellen, als
+     Sprechblasen, abwechselnd links und rechts, eine hervorgehoben mit dem Zeichen der Seite. Die
+     Fragen sind bewusst allgemein und nicht die des Teams ("sehr allgemein gehalten, nicht auf das
+     Team bezogen"). Eine Blase bricht nie um (white-space: nowrap), darum ist jede Frage kurz.
+     Alle 5 s wechselt eine: sie verschwimmt, tauscht den Text und kommt an derselben Stelle wieder
+     (blasenTakt unten). Dahinter das Punktmuster der Karten der Landingpage (.ulh-vis-muster). */
+  var BLASEN = [
+    'Best project management tool for small teams',
+    'Which running shoes are best for flat feet?',
+    'Is a heat pump worth it for an old house?',
+    'Best CRM for a growing sales team',
+    'How do I pick a good coffee grinder?',
+    'Most reliable used cars under $15,000',
+    'Which e-bike has the longest range?',
+    'Best laptop for video editing on a budget',
+    'How to choose a mattress for back pain',
+    'Which VPN is fastest for streaming?',
+    'Best accounting software for freelancers',
+    'Are robot vacuums worth it with pets?',
+    'Best noise-cancelling headphones for travel',
+    'How much does solar for a home cost?',
+    'Which airline has the most legroom?'
+  ];
   function grafikHtml(){
-    var f = { w: 120, h: 84, dx: 16, dy: 32, spalte: 168, n: 18, hl: [1, 4], weg: ['1|5', '1|6'] }, h = '';
-    /* Die Laenge der Zeilen wechselt von Karte zu Karte, sonst liest sich das Feld als Raster und nicht als Text. */
-    var LANG = [[78, 46], [64, 58], [86, 34], [70, 52]];
-    for (var c = 0; c < 3; c++) for (var i = 0; i < f.n; i++){
-      if (f.weg.indexOf(c + '|' + i) >= 0) continue;
-      var hl = c === f.hl[0] && i === f.hl[1], l = LANG[(c + i) % LANG.length];
-      h += '<div class="upr-grafik-karte' + (hl ? ' is-hl' : '') + '" style="left:' + (c * f.spalte + i * f.dx) + 'px;top:' + (i * f.dy) + 'px;animation-delay:' + (i * 18) + 'ms">' +
-        (hl ? '<span class="upr-grafik-ic">' + UC.icon('telescope', 1.8) + '</span>'
-            : '<span class="upr-grafik-zeilen"><i style="width:' + l[0] + '%"></i><i style="width:' + l[1] + '%"></i></span>') + '</div>';
-    }
-    var mx = f.hl[0] * f.spalte + f.hl[1] * f.dx + f.w / 2, my = f.hl[1] * f.dy + f.h / 2;
-    return '<div class="upr-grafik" aria-hidden="true"><div class="upr-grafik-feld" style="transform:translate(' + (-mx) + 'px,' + (-my) + 'px)">' + h + '</div></div>';
+    return '<div class="upr-grafik" aria-hidden="true"><div class="upr-blasen-muster"></div>' +
+      BLASEN.slice(0, 5).map(function(text, i){
+        return '<span class="upr-blase' + (i === 2 ? ' is-hl' : '') + '">' + (i === 2 ? UC.icon('telescope', 1.8) : '') +
+          '<span class="upr-blase-t">' + esc(text) + '</span></span>';
+      }).join('') + '</div>';
   }
   function startHtml(){
     return '<section class="upr-start">' +
@@ -391,11 +405,23 @@
       grafikHtml() +
     '</section>';
   }
-  /* Die eine Leiste wie auf Page Audit: rechts Suche und Table Settings, der Kopf klebt (makeSticky),
-     Gesamtzeile und Pagination kleben unten (data-kleb-fuss). Links steht nichts -- es gibt keinen
-     Filter, der die Liste aendert. */
+  /* DER LAUFSTREIFEN (Lukas 22.10., Canvas Reihe 6, R3): laeuft eine Recherche, bleibt die Startansicht
+     stehen (frueher fuellte das Ladebild die Seite), und ueber der Liste steht ein Streifen mit einer
+     Form in Gelb/Orange davor ("Building" wie bei Vercel); ist sie fertig, wird die Form gruen und
+     rechts, senkrecht mittig, steht "View Research". Die Zeile der Recherche steht dazu in der Liste. */
+  function laufHtml(){
+    return '<div class="up-box upr-lauf" role="status" aria-live="polite" hidden>' +
+      '<span class="upr-lauf-form" aria-hidden="true"></span>' +
+      '<span class="upr-lauf-text"><span class="upr-lauf-h"></span><span class="upr-lauf-s"></span></span>' +
+      '<button type="button" class="up-btn-pri upr-lauf-knopf" hidden><span>' + esc(tt('View Research')) + '</span>' + UC.icon('arrowRightLong', 2) + '</button>' +
+    '</div>';
+  }
+  /* Die eine Leiste wie auf Page Audit: rechts Suche und Table Settings, der Kopf klebt (makeSticky).
+     Links steht nichts -- es gibt keinen Filter, der die Liste aendert. KEINE SEITEN UND KEINE
+     GESAMTZEILE (Lukas 22.10., Canvas Reihe 5, L1): die DB liefert hoechstens die fuenf juengsten
+     fertigen Recherchen mit offenen Vorschlaegen (n8n raeumt den Rest weg) plus die laufende. */
   function listeHtml(){
-    return '<section class="up-root upr-liste" data-flach="yes" data-leiste="yes" data-kleb-fuss="yes" data-sticky-top="16" data-instance="' + esc(instanceId + '_liste') + '">' +
+    return '<section class="up-root upr-liste" data-flach="yes" data-leiste="yes" data-sticky-top="16" data-instance="' + esc(instanceId + '_liste') + '">' +
       '<div class="up-head upr-liste-head">' +
         '<div class="up-leiste-scope"></div>' +
         '<div class="up-head-tools">' +
@@ -414,20 +440,39 @@
         '</div>' +
       '</div>' +
       '<div class="up-box upr-liste-box"><div class="up-table" role="table" data-table></div></div>' +
-      '<div class="up-foot">' +
-        '<div class="up-pagesize"><span class="up-pagesize-lbl">' + esc(tt('Rows per page')) + '</span>' +
-          '<div class="up-pagesize-seg" role="group" aria-label="' + esc(tt('Rows per page')) + '"></div></div>' +
-        '<div class="up-pager"></div>' +
-      '</div>' +
     '</section>';
   }
   var startAnsicht = document.createElement('div');
   startAnsicht.className = 'upr-startansicht';
-  startAnsicht.innerHTML = startHtml() + listeHtml();
+  startAnsicht.innerHTML = startHtml() + laufHtml() + listeHtml();
   (function(){
     var schale = root.querySelector('.upr-shell');
     if (schale) schale.insertBefore(startAnsicht, resultsStage && resultsStage.parentNode === schale ? resultsStage : schale.firstChild);
   })();
+
+  /* Der Wechsel der Fragen: alle 5 s eine, nie dieselbe Blase zweimal hintereinander und nie eine Frage,
+     die schon steht. Die Blende (Unschaerfe und Deckkraft) laeuft in der CSS ueber --up-t-3; der Text
+     wechselt, wenn sie zu ist. Nur, solange die Startansicht zu sehen ist, und ohne Bewegung (reduzierte
+     Bewegung) gar nicht. Die Uhr endet mit der Wurzel. */
+  var BLENDE_MS = 260;   /* = --up-t-3, die Dauer der Blende in prompt-research.css */
+  var blasenLetzte = -1;
+  function blasenTakt(){
+    if (!root.isConnected){ clearInterval(blasenUhr); return; }
+    if (document.hidden || root.classList.contains('is-results') || (UC.istSichtbar && !UC.istSichtbar(startAnsicht))) return;
+    var l = startAnsicht.querySelectorAll('.upr-blase');
+    if (l.length < 2) return;
+    var i;
+    do { i = Math.floor(Math.random() * l.length); } while (i === blasenLetzte);
+    blasenLetzte = i;
+    var gezeigt = [].map.call(l, function(b){ return b.textContent; });
+    var frei = BLASEN.filter(function(x){ return gezeigt.indexOf(x) < 0; });
+    if (!frei.length) return;
+    var b = l[i], t = b.querySelector('.upr-blase-t'), neu = frei[Math.floor(Math.random() * frei.length)];
+    b.classList.add('is-weg');
+    setTimeout(function(){ if (t) t.textContent = neu; b.classList.remove('is-weg'); }, BLENDE_MS);
+  }
+  var ruhig = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var blasenUhr = ruhig ? null : setInterval(blasenTakt, 5000);
   var elListe = startAnsicht.querySelector('.upr-liste'), elTable = elListe.querySelector('[data-table]');
   var elSuche = elListe.querySelector('.upr-liste-suche'), elSucheIn = elListe.querySelector('.up-search-input');
   if (UC.widthTiers) UC.widthTiers(elListe);
@@ -453,17 +498,16 @@
   var ZYKLEN = { research: ['research:asc', 'research:desc'], prompts: ['prompts:desc', 'prompts:asc'], market: ['market:asc', 'market:desc'],
                  intent: ['intent:asc', 'intent:desc'], audience: ['audience:asc', 'audience:desc'],
                  branded: ['branded:desc', 'branded:asc'], created: ['created:desc', 'created:asc'] };
-  /* Der Stand der Liste ueber einen Neuaufbau hinweg (Themenwechsel): Suche, Sortierung, Seite. */
-  var L = (vorrat && vorrat.liste) ? vorrat.liste : { query: '', sort: 'created', dir: 'desc', page: 1, pageSize: UC.DEFAULT_PAGE_SIZE || 15 };
+  /* Der Stand der Liste ueber einen Neuaufbau hinweg (Themenwechsel): Suche und Sortierung. */
+  var L = (vorrat && vorrat.liste) ? vorrat.liste : { query: '', sort: 'created', dir: 'desc' };
   /* geliefert: die Seite hat die Liste geschickt (sonst Skelett); fehler: sie war nicht lesbar. */
   var listeGeliefert = false;
-  var lst = { query: L.query, page: L.page, pageSize: L.pageSize, sortField: L.sort, sortDir: L.dir, loading: false, cols: {}, widths: {} };
+  var lst = { query: L.query, sortField: L.sort, sortDir: L.dir, loading: false, cols: {}, widths: {} };
   var colsKit = UC.makeColumns({
     root: elListe, state: lst, columns: SPALTEN, storePrefix: 'upr', instanceId: instanceId,
     /* Wie Page Audit (firstShare 0.24): die erste Spalte traegt kurze Begriffe, keine Ueberschrift. */
     firstKey: 'research', firstMin: 240, firstShare: 0.24, noActions: true,
-    badgeSel: '.upr-cols-badge', cellPrefixes: ['up', 'upr', 'up-sum'],
-    nachspann: function(){ return zaehl ? zaehl.schalter() : null; },
+    badgeSel: '.upr-cols-badge', cellPrefixes: ['up', 'upr'],
     onChange: function(){ tabelleZeichnen(); }
   });
   lst.cols = colsKit.readCols(); lst.widths = colsKit.readWidths();
@@ -489,7 +533,7 @@
     onFire: function(p){
       var q = String(p.query || '').trim();
       if (q === L.query) return;
-      L.query = q; L.page = 1; lst.page = 1;
+      L.query = q;
       tabelleZeichnen(); merke();
     },
     persist: function(){}
@@ -505,34 +549,20 @@
   });
   function sucheLeeren(){
     elSucheIn.value = ''; lst.query = ''; elSuche.classList.remove('has-text'); suche.cancel();
-    if (L.query){ L.query = ''; L.page = 1; lst.page = 1; tabelleZeichnen(); merke(); }
+    if (L.query){ L.query = ''; tabelleZeichnen(); merke(); }
   }
   if (L.query){ elSucheIn.value = L.query; elSuche.classList.add('is-open', 'has-text'); suche.syncTakeover(); }
-  var pager = UC.makePager({
-    root: elListe, state: lst,
-    total: function(){ return gefiltert().length; },
-    onChange: function(){ L.page = lst.page; L.pageSize = lst.pageSize; tabelleZeichnen(); merke(); },
-    onClamp: function(){ L.page = lst.page; tabelleZeichnen(); }
-  });
   var kopfSort = UC.makeHeadSort({
     root: elListe, state: lst, cycles: ZYKLEN, defaultSort: { field: 'created', dir: 'desc' },
     onSort: function(feld, dir){
-      lst.sortField = feld; lst.sortDir = dir; L.sort = feld; L.dir = dir; L.page = 1; lst.page = 1;
+      lst.sortField = feld; lst.sortDir = dir; L.sort = feld; L.dir = dir;
       kopfSort.syncHeadSorters(); tabelleZeichnen(); merke();
     }
   });
   var kleber = UC.makeSticky ? UC.makeSticky(elListe, elListe.querySelector('.up-head')) : null;
-  function kleben(){ if (kleber && !root.classList.contains('is-running') && !root.classList.contains('is-results')) kleber.applySticky(); }
+  function kleben(){ if (kleber && !root.classList.contains('is-results')) kleber.applySticky(); }
   if (UC.aufResize) UC.aufResize(kleben); else window.addEventListener('resize', kleben);
   if (UC.onResize) UC.onResize(elListe, function(){ colsKit.applyCols(); });
-  /* Die Gesamtzeile wie auf Page Audit: links die Anzahl, keine Berechnungen (Minus je Spalte). */
-  var zaehl = UC.makeZaehlZeile ? UC.makeZaehlZeile({
-    root: elListe, nach: elTable, instanceId: instanceId, praefix: 'upr',
-    cols: function(){ return colsKit; }, rechnen: {},
-    spalten: function(){ return SPALTEN.map(function(c){ return c.key; }); },
-    anzahl: function(){ return listeFehler ? null : (listeGeliefert ? gefiltert().length : null); },
-    laedt: function(){ return !listeGeliefert && !listeFehler; }
-  }) : null;
 
   function laeuftNoch(it){ return it.status === 'queued' || it.status === 'running'; }
   function begriffeText(it){ return (it.keywords && it.keywords.length) ? it.keywords.join(', ') : tt('Untitled research'); }
@@ -544,7 +574,7 @@
   function modellText(it){ return it.business_model ? (MODELL[String(it.business_model).toLowerCase()] || String(it.business_model)) : ''; }
   function personaZeile(it){ return it.persona ? tt(personaLabelVon(it.persona)) : ''; }
   function zielgruppe(it){ return [modellText(it), personaZeile(it)].filter(Boolean).join(', '); }
-  /* Gefiltert und sortiert -- die Grundlage fuer Seite, Gesamtzeile und Pagination. */
+  /* Gefiltert und sortiert -- alle Zeilen auf einmal (keine Seiten, siehe listeHtml). */
   function gefiltert(){
     var q = String(L.query || '').toLowerCase();
     var rows = !q ? previousResearches.slice() : previousResearches.filter(function(it){
@@ -567,11 +597,6 @@
       if (a.v < b.v) return -r; if (a.v > b.v) return r;
       return a.i - b.i;
     }).map(function(x){ return x.it; });
-  }
-  function seite(rows){
-    var n = Math.max(1, Math.ceil(rows.length / L.pageSize));
-    if (L.page > n){ L.page = n; lst.page = n; }
-    return rows.slice((L.page - 1) * L.pageSize, L.page * L.pageSize);
   }
   function leer(){ return '<span class="upr-cell-empty">–</span>'; }
   function wann(v){
@@ -656,25 +681,15 @@
       elTable.innerHTML = kopf + '<div class="up-tbody">' + skelett(4) + '</div>';
     } else {
       var rows = listeFehler ? [] : gefiltert();
-      sichtbar = seite(rows);
+      sichtbar = rows;
       elTable.innerHTML = kopf + (sichtbar.length ? '<div class="up-tbody" role="rowgroup">' + sichtbar.map(zeileHtml).join('') + '</div>' : leerListeHtml());
     }
     colsKit.applyCols(); colsKit.syncColsBadge(); kopfSort.syncHeadSorters();
-    elListe.classList.toggle('is-onepage', !listeGeliefert);
-    lst.page = L.page; lst.pageSize = L.pageSize;
-    pager.renderPageSize(); pager.renderPager();
-    if (zaehl) zaehl.zeichnen();
     if (elListe.classList.contains('up-sticky') && kleber && kleber.syncTheadOffset) kleber.syncTheadOffset();
     kleben();
   }
   elListe.addEventListener('click', function(e){
     if (e.target.closest('.up-grip')) return;
-    var ps = e.target.closest('[data-pagesize]');
-    if (ps){ pager.setPageSize(Number(ps.getAttribute('data-pagesize'))); return; }
-    if (e.target.closest('.up-page-prev')){ pager.goToPage(lst.page - 1); return; }
-    if (e.target.closest('.up-page-next')){ pager.goToPage(lst.page + 1); return; }
-    var pg = e.target.closest('.up-page[data-page]');
-    if (pg){ pager.goToPage(Number(pg.getAttribute('data-page'))); return; }
     var so = e.target.closest('.up-th.is-sortable[data-sort]');
     if (so){ kopfSort.headSortClick(so.getAttribute('data-sort')); return; }
     if (e.target.closest('[data-upr-suche-weg]')){ sucheLeeren(); return; }
@@ -696,6 +711,62 @@
     var z = e.target.closest && e.target.closest('.up-row.upr-zeile[data-index]');
     if (z && e.target === z && !z.classList.contains('is-still')){ e.preventDefault(); emitOpenResearchJob(sichtbar[Number(z.getAttribute('data-index'))]); }
   });
+  /* ---------- Der Laufstreifen (R3, siehe laufHtml) ----------
+     art "laeuft": Form gelb/orange, die Begriffe, darunter wechselnd die Saetze, die vorher das Ladebild
+     zeigte (LOADER_PHRASES). art "fertig": Form gruen, "n prompts ready to review", rechts "View
+     Research". art "aus": nicht da. Er steht ueber einen Neuaufbau hinweg (Vorrat) und geht weg, sobald
+     die Recherche geoeffnet, eine neue gestartet oder der Lauf gescheitert ist. */
+  var elLauf = startAnsicht.querySelector('.upr-lauf');
+  var streifen = (vorrat && vorrat.streifen && vorrat.streifen.art) ? vorrat.streifen : { art: 'aus', job: null };
+  var satzUhr = null, satzBlende = null, satzNr = 0;
+  function streifenBegriffe(){
+    var kw = streifen.art === 'fertig' && streifen.job ? parseKeywords(streifen.job.keywords) : (currentResearchMeta.keywords || []);
+    return kw.length ? kw.join(', ') : tt('Prompt research');
+  }
+  function streifenZeichnen(){
+    var art = streifen.art;
+    clearInterval(satzUhr); satzUhr = null;
+    /* Eine Blende, die gerade laeuft, darf nach dem Wechsel auf "fertig" keinen Ladesatz mehr schreiben. */
+    clearTimeout(satzBlende); satzBlende = null;
+    elLauf.querySelector('.upr-lauf-s').classList.remove('is-weg');
+    elLauf.hidden = art === 'aus';
+    elLauf.classList.toggle('is-fertig', art === 'fertig');
+    if (art === 'aus') return;
+    var h = elLauf.querySelector('.upr-lauf-h'), s = elLauf.querySelector('.upr-lauf-s'), k = elLauf.querySelector('.upr-lauf-knopf');
+    h.textContent = streifenBegriffe();
+    k.hidden = art !== 'fertig';
+    if (art === 'fertig'){
+      var n = Math.max(0, Math.round(Number(streifen.job && streifen.job.prompt_count) || 0));
+      s.textContent = n === 1 ? tt('1 prompt ready to review') : tt('{n} prompts ready to review').replace('{n}', String(n));
+      return;
+    }
+    /* Der Satz wechselt alle 3 s mit einer kurzen Blende (CSS --up-t-2); ohne Bewegung steht der erste. */
+    satzNr = 0;
+    s.textContent = tt(LOADER_PHRASES[0]);
+    if (ruhig) return;
+    satzUhr = setInterval(function(){
+      if (!root.isConnected || streifen.art !== 'laeuft'){ clearInterval(satzUhr); satzUhr = null; return; }
+      s.classList.add('is-weg');
+      satzBlende = setTimeout(function(){
+        satzBlende = null;
+        if (!root.isConnected || streifen.art !== 'laeuft') return;
+        satzNr = (satzNr + 1) % LOADER_PHRASES.length;
+        s.textContent = tt(LOADER_PHRASES[satzNr]);
+        s.classList.remove('is-weg');
+      }, 200);   /* = --up-t-2 */
+    }, 3000);
+  }
+  function streifenSetzen(art, job){
+    streifen = { art: art, job: job || null };
+    streifenZeichnen();
+    merke();
+  }
+  elLauf.querySelector('.upr-lauf-knopf').addEventListener('click', function(){
+    var job = streifen.job;
+    if (!job) return;
+    emitOpenResearchJob(normalizeResearchMeta(job));
+  });
+
   /* Start einer neuen Recherche: Knopf im Kopf und Knopf der Startkarte, beide ueber denselben Weg. */
   root.addEventListener('click', function(e){
     var neu = e.target.closest && e.target.closest('[data-upr-neu]');
@@ -773,7 +844,7 @@
       mitTags: acceptWithTags,
       aktion: root.classList.contains('is-action-loading'),
       eingabe: eingabe.stand(),
-      fehler: fehlerText, listeFehler: listeFehler,
+      fehler: fehlerText, listeFehler: listeFehler, streifen: streifen,
       liste: L
     };
   }
@@ -941,7 +1012,7 @@
     root.classList.toggle('is-results', isResults);
     root.classList.toggle('is-error', isError);
     /* Zurueck in der Startansicht: die Leiste der Liste neu messen (sie war verborgen). */
-    if (!isRunning && !isResults) setTimeout(kleben, 0);
+    if (!isResults) setTimeout(kleben, 0);
     if (krumen) krumen.zeichnen();
     if (textarea) textarea.disabled = isRunning;
     if (settingsToggle) settingsToggle.disabled = isRunning;
@@ -953,7 +1024,13 @@
     root.querySelectorAll('.upr-chip, .upr-dd-trigger, .upr-dd-option, .upr-dd-clear, .upr-dd-search, [data-upr-neu]').forEach(function(el){ if ('disabled' in el) el.disabled = isRunning; });
     if (isRunning && settingsPanel){ settingsPanel.classList.remove('is-open', 'is-steht'); if (settingsToggle){ settingsToggle.setAttribute('aria-expanded', 'false'); settingsToggle.classList.remove('is-active'); } }
     if (tableMenu && !isResults) tableMenuPop.close();
-    if (isRunning) startLoaderAnim(); else stopLoaderAnim();
+    /* Seit dem 22.10. (Lukas, R3) laeuft eine Recherche im Streifen ueber der Liste; das Ladebild bleibt
+       aus. Ein Lauf, der ohne "fertig" endet (Fehler, Teamwechsel), nimmt den Streifen mit. */
+    stopLoaderAnim();
+    if (streifen){
+      if (isRunning && streifen.art !== 'laeuft') streifenSetzen('laeuft');
+      else if (!isRunning && streifen.art === 'laeuft') streifenSetzen('aus');
+    }
     merke();
   }
 
@@ -1126,6 +1203,8 @@
   /* ---------- events out (names unchanged) ---------- */
   function emitOpenResearchJob(item){
     if (!item || !item.job_id) return;
+    /* Die fertige Recherche aus dem Streifen ist damit angesehen. */
+    if (streifen && streifen.art === 'fertig' && streifen.job && String(streifen.job.job_id) === String(item.job_id)) streifenSetzen('aus');
     updateResearchContext(item); renderResultsContext(); closeHistoryPanel();
     ergebnisSkelett();
     setResearchState('results');
@@ -2060,7 +2139,17 @@
   api.setResearchMeta = function(meta){
     if (typeof meta === 'string'){ try { meta = JSON.parse(meta); } catch(e){ meta = {}; } }
     updateResearchContext(meta || {}); renderResultsContext();
+    if (streifen.art === 'laeuft') streifenZeichnen();
     merke();
+  };
+  /* Die Recherche ist fertig (22.10., R3): der Streifen wird gruen und bietet "View Research"; die Seite
+     springt nicht mehr von selbst in die Vorschlaege. job = die Zeile aus prompt_research_jobs_v1 bzw.
+     dem Realtime-Ereignis (job_id, keywords, prompt_count ...). */
+  api.setResearchReady = function(job){
+    if (typeof job === 'string'){ try { job = JSON.parse(job); } catch(e){ job = null; } }
+    if (!job || typeof job !== 'object' || !(job.job_id || job.id)) return;
+    setResearchState('idle');
+    streifenSetzen('fertig', job);
   };
   api.setPreviousResearches = function(items){
     if (typeof items === 'string'){ try { items = JSON.parse(items); } catch(e){ items = []; } }
@@ -2208,6 +2297,8 @@
     try { wiederherstellen(vorrat); }
     catch(e){ if (window.console) console.error('[prompt-research] restoring after rebuild failed:', e); }
   }
+  /* Ein fertiger Streifen aus dem Vorrat (ein laufender kam schon ueber setResearchState zurueck). */
+  streifenZeichnen();
   aufbau = false;
   merke();
 

@@ -1994,9 +1994,11 @@ Kasten (vorher: Balkenliste kompakt oben).
 ## 9b. Das Ladebild langer Läufe (`UC.makeLadebild`, Variante A seit 16.10.)
 
 Ein Baustein für jeden Lauf, der Sekunden dauert und seinen Fortschritt nicht kennt: Explore
-Brands (Scan), Prompt Research (Recherche), Opportunities (Suche) und die Sitemap im
-Anlegen-Dialog der Events. Keine Seite trägt eine eigene Kopie; die Träger (`.udb-loading`,
-`.uo-suche`, `.upr-loading-inner`, `.uev-sm-lb`) geben nur Fläche und Abstand.
+Brands (Scan), Opportunities (Suche) und die Sitemap im Anlegen-Dialog der Events. Keine Seite
+trägt eine eigene Kopie; die Träger (`.udb-loading`, `.uo-suche`, `.uev-sm-lb`) geben nur Fläche
+und Abstand. Prompt Research zeigt seit dem 22.10. statt des Ladebilds einen Laufstreifen über der
+Liste (`.upr-lauf`, Punkt Amber/Grün wie der Lauf-Kasten `.upa-lb` von Page Audit): die Seite bleibt
+bedienbar, während die Recherche läuft (der Träger `.upr-loading-inner` steht still).
 
 Am 16.10. gewählt: **Variante A, entschlackt** (Nutzer: „Loader: bitte Variante A, entschlackt").
 Die Form vom 01.10. bleibt, ohne das, was sie schwer machte:

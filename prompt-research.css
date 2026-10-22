@@ -64,8 +64,7 @@
    SEIT DEM 22.10. OHNE ZENTRIERTEN STARTBILDSCHIRM: die Startansicht ist der Startbereich nach dem
    Vorbild von Page Audit samt Liste (.upr-startansicht, unten), oben buendig wie jede Seite; das
    Eingabefeld steht im Popup "Start Research". Die Schale hat darum kein Polster und keine
-   Mindesthoehe mehr -- nur waehrend eines Laufs: dort steht das Ladebild allein und mittig in einer
-   Flaeche, die bis an den unteren Rand des Fensters reicht (Kopf 48 + 16 darunter, 32 Luft unten). */
+   Mindesthoehe mehr. Auch waehrend eines Laufs bleibt die Startansicht stehen (Laufstreifen, R3). */
 .upr-shell {
   width: 100%;
   height: auto;
@@ -75,24 +74,6 @@
   position: relative;
   overflow: visible;
 }
-.upr-root.is-running .upr-shell { min-height: max(520px, calc(100dvh - 96px)); }
-/* Das Rasterpapier hinter dem Ladebild (vorher hinter dem ganzen Startbildschirm). Zur Mitte hin
-   ausgeblendet, damit es nie an die Kanten stoesst. */
-.upr-root.is-running .upr-shell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(to right, var(--vc-raster-linie) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--vc-raster-linie) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.76), transparent 72%);
-  -webkit-mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.76), transparent 72%);
-  opacity: 0.42;
-}
-/* Im Dunkeln Weiss zu 3,5 % statt Schrift zu 2,5 %: die Marke --vc-raster-linie dreht mit dem
-   Thema (core, 17.10.), die eigene dunkle Regel ist entfallen. */
 /* Der fruehere Startbildschirm ist nur noch der Ruheplatz des Eingabefelds, solange das Popup zu
    ist (prompt-research.js, neueRecherche): nie zu sehen. */
 .upr-content { display: none; }
@@ -719,15 +700,11 @@
 .upr-results-stage.is-empty .upr-box { display: none; }
 .upr-results-stage.is-empty .upr-results-empty { display: block; }
 
-/* ---------- loading stage ---------- */
-.upr-loading-stage {
-  position: absolute; inset: 0; z-index: 5; display: grid; place-items: center;
-  padding: clamp(24px, 4vw, 52px);
-  opacity: 0; transform: translateY(10px) scale(0.985); pointer-events: none;
-  transition: opacity 320ms ease, transform 320ms ease;
-}
+/* ---------- loading stage ----------
+   Seit dem 22.10. (Lukas, R3) laeuft eine Recherche im Streifen ueber der Liste; das Ladebild wird nicht
+   mehr gezeigt. Die Buehne bleibt im Markup der Vorlage und hier verborgen. */
+.upr-loading-stage { display: none; }
 .upr-root.is-running .upr-content { opacity: 0; transform: translateY(-8px) scale(0.985); pointer-events: none; filter: blur(3px); }
-.upr-root.is-running .upr-loading-stage { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 .upr-loading-inner { width: min(100%, 620px); display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; }
 
 /* ---------- Das Ladebild ----------
@@ -832,10 +809,10 @@
 /* ---------- Die Startansicht (22.10.): Startbereich und Liste der Recherchen ----------
    Nach dem Vorbild der Startseite von Page Audit (Lukas: "Layout wie die Startseite von Page Audit"):
    die Werte aus page-audit.css (.upa-start*, .upa-startkarte, .upa-sk-*, .upa-fenster*, Liste),
-   dieselben Zahlen, nicht aehnliche. Nur im Ruhezustand zu sehen; Lauf und Ergebnis haben ihre
-   eigene Ansicht. 64 Luft unter der Liste wie .upa-main. */
+   dieselben Zahlen, nicht aehnliche. Verborgen nur, solange eine Recherche geoeffnet ist; ein Lauf steht
+   im Streifen ueber der Liste (R3). 64 Luft unter der Liste wie .upa-main. */
 .upr-startansicht { display: block; padding-bottom: 64px; }
-.upr-root.is-running .upr-startansicht, .upr-root.is-results .upr-startansicht { display: none; }
+.upr-root.is-results .upr-startansicht { display: none; }
 
 /* Raster wie Page Audit: zwei Spalten mit 16 Abstand; links oben Ueberschrift und ein Satz,
    senkrecht mittig, darunter die Karte; rechts ueber beide Zeilen die Grafik. 32 bis zur Leiste. */
@@ -854,28 +831,38 @@
 .upr-sk-fuss { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 4px; }
 .upr-sk-los { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
 .upr-sk-los svg { width: 14px; height: 14px; }
-/* NEU (nicht in core): die Grafik, das Feld aus Karten wie auf Page Audit (Vorlage dort: Vercels Feld
-   aus Browserfenstern). Statt der drei Punkte eines Fensters zwei Textzeilen: es sind Prompts. Rand
-   per Maske ausgeblendet (Deckkraft, keine Themenfarbe); Karten, Rahmen und Zeilen aus --vc-*. */
+/* NEU (nicht in core): die Grafik (Lukas 22.10., Canvas G3) -- Fragen als Sprechblasen, abwechselnd
+   links und rechts, eine hervorgehoben; rechts ueber beide Zeilen wie die Grafik auf Page Audit. Rand per
+   Maske ausgeblendet (Deckkraft, keine Themenfarbe). Eine Blase bricht nie um. */
 .upr-grafik { grid-column: 2; grid-row: 1 / span 2; position: relative; min-height: 0; overflow: hidden;
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent), linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 0 40px;
+  --upr-punkt: color-mix(in srgb, var(--vc-text) 14%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent), linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
   -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent), linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent), linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
   mask-composite: intersect; }
-.upr-grafik-feld { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
-.upr-grafik-karte { position: absolute; display: flex; flex-direction: column; width: 120px; height: 84px; box-sizing: border-box;
-  border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); background: var(--vc-bg); box-shadow: var(--up-e-1);
-  animation: upr-grafik-ein var(--up-t-3) var(--up-ease-auf) backwards; }
-/* Die Zeilen sitzen, wo im Fenster die Punkte sassen (8 vom Rand), nur zwei Zeilen statt einer Reihe. */
-.upr-grafik-zeilen { display: flex; flex-direction: column; gap: 6px; padding: 12px 12px 0; }
-.upr-grafik-zeilen i { display: block; height: 4px; border-radius: var(--up-r-voll); background: color-mix(in srgb, var(--vc-text) 14%, transparent); }
-.upr-grafik-karte.is-hl { z-index: 1; border-color: color-mix(in srgb, var(--vc-text) 45%, transparent); }
-.upr-grafik-ic { display: flex; flex: 1 1 auto; align-items: center; justify-content: center; color: var(--vc-text); }
-.upr-grafik-ic svg { width: 24px; height: 24px; }
-/* Start bei 30 % statt 0 wie auf Page Audit: laeuft die Zeitleiste nicht (verdeckte Ansicht,
-   Vorschaubild), bleibt die Grafik sichtbar statt leer. */
-@keyframes upr-grafik-ein { from { opacity: .3; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .upr-grafik-karte { animation: none; } }
+/* DAS MUSTER DAHINTER ist das der Karten der Landingpage (.ulh-vis-muster in landing-hero.css): 1px-Punkte
+   im 8px-Raster, Blende als Oval etwas unter der Mitte. Nur die Farbe ist abgeleitet: dort #d8dbe0 fest (die
+   Landing kennt nur hell), hier Schrift zu 14 % -- hell fast derselbe Ton, und sie dreht mit dem Thema. */
+.upr-blasen-muster { position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(circle, var(--upr-punkt) 1px, transparent 1px);
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 45%, transparent 100%);
+  mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 45%, transparent 100%); }
+/* Die Blase liegt UEBER dem Muster. Radius 16 wie eine Sprechblase der Toast-Karte (--up-r-3xl), Tiefe e-1 (liegt
+   auf der Flaeche). nth-of-type zaehlt nur die Blasen (das Muster ist ein div): die zweite und vierte rechts. */
+.upr-blase { position: relative; z-index: 1; align-self: flex-start; max-width: 100%; display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 14px; box-sizing: border-box; border: 1px solid var(--vc-border); border-radius: var(--up-r-3xl);
+  background: var(--vc-bg); box-shadow: var(--up-e-1); font-size: var(--up-fs-m); line-height: 1.4; color: var(--vc-muted);
+  white-space: nowrap; transition: filter var(--up-t-3) var(--up-ease), opacity var(--up-t-3) var(--up-ease); }
+.upr-blase:nth-of-type(2n) { align-self: flex-end; }
+.upr-blase.is-hl { border-color: color-mix(in srgb, var(--vc-text) 45%, transparent); color: var(--vc-text); }
+.upr-blase svg { width: 16px; height: 16px; flex: 0 0 auto; }
+.upr-blase-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Der Wechsel alle 5 s (prompt-research.js, blasenTakt): die Blase verschwimmt, der Text wechselt, sie kommt an
+   derselben Stelle scharf zurueck. */
+.upr-blase.is-weg { filter: blur(6px); opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .upr-blase { transition: none; } }
 /* Schmal: die Grafik weicht, Text und Karte stehen untereinander. */
 .upr-root.is-narrow .upr-start { grid-template-columns: minmax(0, 1fr); }
 .upr-root.is-narrow .upr-grafik { display: none; }
@@ -907,6 +894,34 @@
 .upr-zustand.is-dreht .upr-zustand-ic svg { animation: upModalDreh 1s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .upr-zustand.is-dreht .upr-zustand-ic svg { animation: none; } }
 
+/* ---------- Der Laufstreifen (Lukas 22.10., Canvas R3) ----------
+   Eine Karte aus core (.up-box) ueber der Liste: vorn die Form im Ton des Zustands -- Geists Amber 700
+   (--vt-warn-flaeche), solange die Recherche laeuft, Green 700 (--vt-up-flaeche), sobald sie fertig ist (wie
+   der Status eines Deployments bei Vercel) --, daneben Begriffe und Satz, fertig rechts senkrecht mittig "View
+   Research". Polster 16 seitlich wie die Startkarte, 16 bis zur Leiste. Punkt, Schrift und Zeilenhoehen wie der
+   Lauf-Kasten von Page Audit (.upa-lb, am selben Tag gebaut): Punkt 8, Titel 14/500, beide Zeilen 20. Anders als
+   dort stehen Titel und Satz untereinander (R3) und der fertige Streifen bleibt, bis die Recherche geoeffnet wird. */
+.upr-lauf { display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin: 0 0 16px; min-width: 0; }
+.upr-lauf[hidden] { display: none; }
+.upr-lauf-form { flex: 0 0 auto; width: 8px; height: 8px; border-radius: var(--up-r-voll); background: var(--vt-warn-flaeche);
+  transition: background-color var(--up-t-2) ease; }
+.upr-lauf.is-fertig .upr-lauf-form { background: var(--vt-up-flaeche); }
+.upr-lauf-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.upr-lauf-h { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); line-height: 20px; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upr-lauf-s { font-size: var(--up-fs-m); line-height: 20px; color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: opacity var(--up-t-2) var(--up-ease); }
+.upr-lauf-s.is-weg { opacity: 0; }
+.upr-lauf-knopf { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; }
+.upr-lauf-knopf[hidden] { display: none; }
+.upr-lauf-knopf svg { width: 14px; height: 14px; }
+@media (prefers-reduced-motion: reduce) { .upr-lauf-s, .upr-lauf-form { transition: none; } }
+/* Telefon (eigene Box, is-vnarrow): neben "View Research" blieben dem Text 137 px, Begriffe und
+   "12 prompts ready to review" waren beide gekuerzt. Der Knopf geht darum in eine eigene Zeile, rechts
+   wie "Start Research" in der Karte; der Text bekommt die volle Breite neben dem Punkt (8 + 12). */
+.upr-root.is-vnarrow .upr-lauf { flex-wrap: wrap; row-gap: 12px; }
+.upr-root.is-vnarrow .upr-lauf-text { flex-basis: calc(100% - 20px); }
+.upr-root.is-vnarrow .upr-lauf-knopf { margin-left: auto; }
+
 /* ---------- Das Popup "Start Research" (22.10.) ----------
    Karte, Kopf, Fuss und Fokus aus core (UC.makeModal, .up-modal nach Geists Modal). Darin dieselben
    Knoten wie vorher auf dem Startbildschirm: das Eingabefeld mit den Einstellungen als Pillen und
@@ -915,6 +930,11 @@
 .upr-neu { display: flex; flex-direction: column; gap: 16px; }
 .upr-neu button, .upr-neu input, .upr-neu textarea { font-family: inherit; }
 .upr-neu .upr-composer-area { width: 100%; margin-top: 0; }
+/* "Mach das aber ausreichend gross" (Lukas 22.10.): breiter als Geists 540 (core .up-modal, is-breit 560),
+   damit Begriffe und die vier Einstellungen in einer Reihe stehen, und ein hoeheres Feld. Unter 540 bleibt es
+   das Blatt aus core (max-width 100 %). */
+.up-topicmodal-card.up-modal.upr-neu-karte { max-width: 720px; }
+.upr-neu .upr-composer .upr-tag-editor { min-height: 140px; }
 .upr-neu .upr-start-btn, .upr-neu .upr-settings-toggle { display: none; }
 /* Der Satz "Tip: Be specific ..." unter dem Feld faellt im Popup weg (Memory "Keine Meta-Unterzeilen": keine
    Erklaerzeilen unter Bauteilen); was das Feld nimmt, sagt der Untertitel des Popups. */
