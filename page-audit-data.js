@@ -566,7 +566,7 @@
   /* Erst uebersetzen, dann fuellen: t() findet nur den ganzen Satz, und der steht im Katalog mit
      Platzhalter. Gefuellt fand die Seite ihn nie, "Different response for PerplexityBot" blieb im
      Deutschen englisch. t() der Seite laesst den fertigen deutschen Satz danach unveraendert. */
-  function tl(x) { var U = window.UC; return x && U && U.t ? U.t(x) : x; }
+  function tl(x) { var U = window.UpstreemCore; return x && U && U.t ? U.t(x) : x; }
   function fuellen(muster, ohne, w) {
     if (!muster) return "";
     muster = tl(muster);
@@ -604,6 +604,7 @@
      auf die der erste Schritt verweist ("the rule shown above"). Beide Formen werden gelesen. */
   function pfadAus(u) { var m = /^https?:\/\/[^\/?#]+([^#]*)/i.exec(str(u)); return m ? (m[1] || "/") : ""; }
   function regelText(r) {
+    if (typeof r === "string") return r.trim().slice(0, 500);
     if (!obj(r)) return "";
     var art = str(r.art).toLowerCase(), muster = str(r.muster);
     if ((art !== "allow" && art !== "disallow") || !muster) return "";

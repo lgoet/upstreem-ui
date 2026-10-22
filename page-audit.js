@@ -478,6 +478,17 @@
     "{x} of {n} characters of the main text are in the initial HTML.": "{x} von {n} Zeichen des Haupttexts stehen im ersten HTML.",
     "Our browser added the rest after running JavaScript (up to 10 seconds, no clicks).": "Den Rest hat unser Browser nach dem Ausführen von JavaScript ergänzt (bis zu 10 Sekunden, ohne Klicks).",
     "Added by JavaScript, for example": "Per JavaScript ergänzt, zum Beispiel",
+    "Published robots policy excludes {token}": "Die veröffentlichte robots-Regel schließt {token} aus",
+    "The captured robots file excludes the requested {path} path for {token}. This is a public policy observation.": "Die erfasste robots.txt schließt den Pfad {path} für {token} aus. Das ist eine Beobachtung der veröffentlichten Regel.",
+    "robots.txt excludes a search crawler": "Die robots.txt schließt einen Such-Crawler aus",
+    "The captured robots file excludes the requested path for a search crawler. This is a public policy observation.": "Die erfasste robots.txt schließt den geprüften Pfad für einen Such-Crawler aus. Das ist eine Beobachtung der veröffentlichten Regel.",
+    "The main text only appears after JavaScript": "Der Haupttext erscheint erst nach JavaScript",
+    "The main content area is empty in the initial HTML. Our browser filled it after running JavaScript (Chromium, up to 10 seconds, no interaction). Systems that read only the initial HTML do not receive this text.": "Der Hauptinhaltsbereich ist im ersten HTML leer. Unser Browser hat ihn nach dem Ausführen von JavaScript gefüllt (Chromium, bis zu 10 Sekunden, ohne Interaktion). Systeme, die nur das erste HTML lesen, bekommen diesen Text nicht.",
+    "Part of the text is missing from the initial HTML. Our browser added it after running JavaScript (Chromium, up to 10 seconds, no interaction). Systems that read only the initial HTML do not receive this text.": "Ein Teil des Texts fehlt im ersten HTML. Unser Browser hat ihn nach dem Ausführen von JavaScript ergänzt (Chromium, bis zu 10 Sekunden, ohne Interaktion). Systeme, die nur das erste HTML lesen, bekommen diesen Text nicht.",
+    "Rule": "Regel",
+    "Path": "Pfad",
+    "Directive": "Direktive",
+    "Redirect target": "Weiterleitungsziel",
     "A noindex rule asks search engines not to show this page, also in their AI answers.": "Eine noindex-Regel bittet Suchmaschinen, diese Seite nicht zu zeigen, auch nicht in ihren KI-Antworten.",
     "Google doesn't index pages with noindex, and AI Overviews and AI Mode only link to indexed pages. Bing names noindex as the way to keep a page out of Bing search, Copilot and grounding results.": "Google indexiert Seiten mit noindex nicht, und AI Overviews und AI Mode verlinken nur indexierte Seiten. Bing nennt noindex als den Weg, eine Seite aus der Bing-Suche, aus Copilot und aus Grounding-Ergebnissen herauszuhalten.",
     "Find noindex or none in the robots meta tag of the page or in its X-Robots-Tag HTTP header.": "Such noindex oder none im Robots-Meta-Tag der Seite oder in ihrem X-Robots-Tag-Header.",
@@ -2062,8 +2073,9 @@
       });
       if (pl.length) z = z.concat(["", "## " + t("Affected platforms")], liste(pl));
       /* "Run the audit again." ist hier kein Schritt fuer die KI: den erneuten Lauf macht der Mensch, und er steht
-         als letzte Pruefung unter "How to check" (sonst zweimal im selben Auftrag). */
-      var kiSchritte = schritte.filter(function (x) { return x !== "Run the audit again."; });
+         als letzte Pruefung unter "How to check" (sonst zweimal im selben Auftrag). Beide Sprachen, weil befundText
+         die Schritte schon uebersetzt liefert. */
+      var kiSchritte = schritte.filter(function (x) { return x !== "Run the audit again." && x !== t("Run the audit again."); });
       if (kiSchritte.length) z = z.concat(["", "## " + t("How to fix")], kiSchritte.map(function (x, j) { return (j + 1) + ". " + t(x); }));
       /* Fertig wenn: der Gutfall-Satz jedes Checks hinter dem Befund (D.CHECK_ZIEL), nicht ein eigener. */
       var ziele = f.checkKeys.filter(function (k) { return D.CHECK[k] && D.CHECK_ZIEL[k]; }).map(function (k) {
