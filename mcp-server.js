@@ -81,7 +81,7 @@
     nochmal:     "Try again",
     neu:         "Refresh",
     bauen:       "What you can build",
-    inClaude:    "Open in Claude",
+    kopierPrompt: "Copy prompt",
     fragTitel:   "Revoke Access",
     fragSatz:    "{name} will no longer be able to read your upstreem data. You can connect it again at any time.",
     fragKnopf:   "Revoke Access",
@@ -119,19 +119,22 @@
   var FRAGEN = {
     code: ["Turn this week's visibility data into a client report.", "Build a content plan from the prompts where competitors win."]
   };
-  /* "What you can build" (Lukas 23.10., Variante B im Canvas): die Auswahlkarte aus core (UC.wkKarteHtml, kompakt), ein
-     Klick oeffnet Claude mit dem Auftrag im Chat (claude.ai/new?q=, wie "Open in Claude" in Create with AI). Der Auftrag
-     steht nicht auf der Karte; er nennt upstreem, damit Claude den Connector auch nimmt. Titel und Satz uebersetzt
-     wkKarteHtml selbst, den Auftrag die Seite beim Klick (Deutsch fuer deutsche Nutzer). Nie Teamdaten. */
+  /* "What you can build" (Lukas 23.10., Variante B im Canvas): die Auswahlkarte aus core (UC.wkKarteHtml, kompakt) als
+     Kopierkarte -- ein Klick kopiert einen fertigen Prompt (Lukas: "die cards sollen nicht mehr zu claude fuehren sondern
+     einen fertigen prompt kopieren"), Zeichen Kopieren statt Pfeil, Tooltip "Copy prompt". Die Prompts nach Anthropics
+     "Prompting best practices" (platform.claude.com, "Be clear and direct", "Add context", "Control the format") und den
+     Vorlagen von Peec (MCP use cases): Datenquelle ausdruecklich (upstreem), Zweck und Leser, nummerierte Schritte mit
+     festen Zeitraeumen und Schwellen, Form der Antwort, nur Zahlen aus upstreem, bei mehreren Teams erst fragen. Jeder
+     Schritt nutzt nur, was die Werkzeuge des Servers liefern (brands_overview, explain_change, prompts, sources_*,
+     url_summaries, opportunities). Titel und Satz uebersetzt wkKarteHtml, den Prompt die Seite beim Klick. Nie Teamdaten. */
   var WORKFLOWS = [
     { titel: "Weekly AI visibility brief", satz: "Every Monday: what changed in AI search, and why.", icon: "newspaper",
-      auftrag: "Use upstreem to write our weekly AI visibility brief: what changed and why?" },
+      auftrag: "Use my upstreem data to write our weekly AI visibility brief. It goes to the marketing team on Monday, so keep it short and concrete.\n\n1. Compare the last 7 days with the 7 days before for our own brand: visibility, average position and sentiment, each with the change.\n2. Explain the biggest change: which topics, prompts and AI models drove it.\n3. Show the 5 prompts with the largest gains and the 5 with the largest losses.\n4. Compare us with our top 3 competitors by visibility and flag anyone who moved more than 5 points.\n5. List the sources (domains and URLs) that gained or lost the most citations.\n\nStart with three sentences that sum up the week. Then add one section per step with a short table, and end with three concrete actions for next week. Only use numbers from upstreem; if something is missing, say so instead of estimating. If I have more than one team in upstreem, ask me which one first." },
     { titel: "Pages losing citations", satz: "Find the pages AI answers cite less, and what to update first.", icon: "chartBarDec",
-      auftrag: "Use upstreem to find the pages that lost citations this month, and what we should update first." },
+      auftrag: "Use my upstreem data to build a refresh list of our pages that AI answers cite less than before, so we know which content to update first.\n\n1. Compare the citations of URLs on our own domains for the last 30 days with the 30 days before.\n2. Take the 10 URLs with the biggest drop and show citations before and now plus the change in %.\n3. For each URL, find the prompts and topics it was cited for and which pages AI answers cite there now instead.\n4. Read the page summary and name the most likely reason it lost ground, for example outdated content, no direct answer or a competitor with a better page.\n5. Check whether an Opportunity already exists for the URL.\n\nReturn one table sorted by the size of the drop with these columns: URL, citations before and now, change, main prompts, replaced by, likely reason, recommended fix. Below the table, describe the three fixes with the biggest expected impact. Only use data from upstreem and say when data is missing. If I have more than one team in upstreem, ask me which one first." },
     { titel: "Competitor snapshot", satz: "Before a pitch or launch: where competitors win and you don't.", icon: "swords",
-      auftrag: "Use upstreem to show where competitors win in AI answers for our top topics, and why." }
+      auftrag: "Use my upstreem data to prepare a competitor snapshot for a pitch or launch, so I know where competitors win in AI answers and where we can catch up.\n\n1. Rank our brand and all tracked competitors by visibility for the last 30 days, with average position and the change versus the 30 days before.\n2. For our top 3 competitors, show the topics and prompts where they appear and we don't.\n3. List the sources (domains and URLs) that AI answers cite for those prompts and say who owns them: us, a competitor or a third party.\n4. Point out where we are ahead and should defend our position.\n\nStart with a summary in five bullet points. Then add one table per competitor, and end with five concrete steps to win visibility, ordered by impact. Only use numbers from upstreem; say so when data is missing. If I have more than one team in upstreem, ask me which one first." }
   ];
-  var CLAUDE_NEU = "https://claude.ai/new?q=";
 
   /* Ein Ladezustand muss IMMER enden (CLAUDE.md 2). Wie oauth-consent.js. */
   var LADEN_MAX = 15000;
@@ -198,7 +201,7 @@
             '<div class="up-sec-head"><div class="up-sec-titles"><h2 class="up-heading up-sec-h">' + esc(t(T.bauen)) + '</h2></div></div>' +
             '<div class="umc-wf-raster">' + WORKFLOWS.map(function(w, i){
               return UC.wkKarteHtml ? UC.wkKarteHtml({ titel: w.titel, satz: w.satz, icon: w.icon, kompakt: true, klasse: "umc-wk",
-                daten: { "umc-wf": String(i), tip: t(T.inClaude) } }) : "";
+                kopieren: true, daten: { "umc-wf": String(i), tip: t(T.kopierPrompt) } }) : "";
             }).join("") + '</div>' +
           '</section>' +
           '<section class="umc-abschnitt">' +
@@ -317,7 +320,7 @@
           id ? kopie("id", id) : '<span class="up-tsk-bar umc-sk-kasten" aria-hidden="true"></span>') +
         schritt(4, satz("Click {a}, sign in to upstreem and choose {b}.", { a: b("Connect"), b: b("Allow access") })) +
         /* Die Auftraege stehen als Karten oben ("What you can build"); hier nur der Verweis, sonst stuenden sie zweimal da. */
-        schritt(5, satz("Start a chat and try one of the workflows above."));
+        schritt(5, satz("Start a chat and paste one of the prompts above."));
     }
     function anleitungZeichnen(){
       var html = schritteHtml();
@@ -390,9 +393,13 @@
       return '<div class="up-table" role="table" aria-label="' + esc(t(T.apps)) + '">' + kopfHtml() +
         '<div class="up-tbody">' + apps.map(zeileHtml).join("") + '</div></div>';
     }
+    /* Die Aktionsspalte nach dem Knopf messen (core, wie Explore Brands und Prompt Research): die Beschriftung kommt
+       uebersetzt, "Zurueckziehen" ist breiter als "Revoke". */
+    var aktionsSpur = UC.makeAktionsSpur ? UC.makeAktionsSpur({ root: elApps, zellen: ".up-row .up-td.is-aktion",
+      anwenden: function(w){ elApps.style.setProperty("--umc-act-w", w + "px"); } }) : null;
     function appsZeichnen(){
       var html = appsHtml();
-      if (elApps.__umcHtml !== html){ elApps.__umcHtml = html; elApps.innerHTML = html; }
+      if (elApps.__umcHtml !== html){ elApps.__umcHtml = html; elApps.innerHTML = html; if (aktionsSpur) aktionsSpur.messen(); }
       /* Neu laden mit Daten: die Tabelle bleibt stehen und dimmt; der Knopf traegt den Ring, solange gefragt wird. */
       var laeuft = !!gem.neu || gem.phase === "laden";
       elApps.classList.toggle("is-umc-dimm", !!gem.neu);
@@ -458,8 +465,8 @@
       if (!el || !root.contains(el)) return;
       if (el.hasAttribute("data-umc-wf")){
         var wf = WORKFLOWS[Number(el.getAttribute("data-umc-wf"))];
-        /* Neuer Tab ohne Verweis auf diese Seite (noopener): Claude bekommt nur den festen Auftrag, nie Daten der Seite. */
-        if (wf) window.open(CLAUDE_NEU + encodeURIComponent(t(wf.auftrag)), "_blank", "noopener,noreferrer");
+        /* Kopieren wie der Kopierkasten: Haken 2 s an Stelle des Zeichens, "Copied" in der Live-Region, Fehler als Toast. */
+        if (wf && UC.kopierBoxKopieren) UC.kopierBoxKopieren(el, t(wf.auftrag));
         return;
       }
       if (el.hasAttribute("data-umc-reiter")){

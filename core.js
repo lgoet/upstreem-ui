@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261199;
+  var BUILD = 20261200;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -693,18 +693,17 @@
     "Filter": "Filtern",
     "Research settings": "Recherche einstellen",
     /* Seite MCP Server (mcp-server.js, 22.10.): ganze Saetze, die Namen aus Claudes Oberflaeche als {a}/{b}/{c} (bleiben englisch). */
+    "Use my upstreem data to write our weekly AI visibility brief. It goes to the marketing team on Monday, so keep it short and concrete.\n\n1. Compare the last 7 days with the 7 days before for our own brand: visibility, average position and sentiment, each with the change.\n2. Explain the biggest change: which topics, prompts and AI models drove it.\n3. Show the 5 prompts with the largest gains and the 5 with the largest losses.\n4. Compare us with our top 3 competitors by visibility and flag anyone who moved more than 5 points.\n5. List the sources (domains and URLs) that gained or lost the most citations.\n\nStart with three sentences that sum up the week. Then add one section per step with a short table, and end with three concrete actions for next week. Only use numbers from upstreem; if something is missing, say so instead of estimating. If I have more than one team in upstreem, ask me which one first.": "Schreib mit meinen upstreem-Daten unseren Wochenbericht zur AI Visibility. Er geht montags an das Marketing-Team, also halte ihn kurz und konkret.\n\n1. Vergleiche für unsere eigene Brand die letzten 7 Tage mit den 7 Tagen davor: Visibility, durchschnittliche Position und Sentiment, jeweils mit der Veränderung.\n2. Erkläre die größte Veränderung: welche Topics, Prompts und AI-Modelle sie ausgelöst haben.\n3. Zeig die 5 Prompts mit den größten Gewinnen und die 5 mit den größten Verlusten.\n4. Vergleiche uns mit unseren 3 wichtigsten Wettbewerbern nach Visibility und markiere jeden, der sich um mehr als 5 Punkte bewegt hat.\n5. Liste die Quellen (Domains und URLs) auf, die am meisten Zitate gewonnen oder verloren haben.\n\nBeginne mit drei Sätzen, die die Woche zusammenfassen. Dann je Schritt ein Abschnitt mit einer kurzen Tabelle, und zum Schluss drei konkrete Maßnahmen für nächste Woche. Nutze nur Zahlen aus upstreem; fehlt etwas, sag es, statt zu schätzen. Wenn ich in upstreem mehr als ein Team habe, frag mich zuerst, welches.",
+    "Use my upstreem data to build a refresh list of our pages that AI answers cite less than before, so we know which content to update first.\n\n1. Compare the citations of URLs on our own domains for the last 30 days with the 30 days before.\n2. Take the 10 URLs with the biggest drop and show citations before and now plus the change in %.\n3. For each URL, find the prompts and topics it was cited for and which pages AI answers cite there now instead.\n4. Read the page summary and name the most likely reason it lost ground, for example outdated content, no direct answer or a competitor with a better page.\n5. Check whether an Opportunity already exists for the URL.\n\nReturn one table sorted by the size of the drop with these columns: URL, citations before and now, change, main prompts, replaced by, likely reason, recommended fix. Below the table, describe the three fixes with the biggest expected impact. Only use data from upstreem and say when data is missing. If I have more than one team in upstreem, ask me which one first.": "Erstelle mit meinen upstreem-Daten eine Liste unserer Seiten, die AI-Antworten seltener zitieren als vorher, damit wir wissen, welche Inhalte wir zuerst überarbeiten.\n\n1. Vergleiche die Zitate der URLs auf unseren eigenen Domains in den letzten 30 Tagen mit den 30 Tagen davor.\n2. Nimm die 10 URLs mit dem größten Rückgang und zeig die Zitate vorher und jetzt sowie die Veränderung in %.\n3. Finde für jede URL die Prompts und Topics, für die sie zitiert wurde, und welche Seiten AI-Antworten dort jetzt stattdessen zitieren.\n4. Lies die Seitenzusammenfassung und nenne den wahrscheinlichsten Grund für den Verlust, zum Beispiel veraltete Inhalte, keine direkte Antwort oder ein Wettbewerber mit der besseren Seite.\n5. Prüf, ob es für die URL schon eine Opportunity gibt.\n\nGib eine Tabelle aus, sortiert nach der Größe des Rückgangs, mit diesen Spalten: URL, Zitate vorher und jetzt, Veränderung, wichtigste Prompts, ersetzt durch, wahrscheinlicher Grund, empfohlene Maßnahme. Beschreib unter der Tabelle die drei Maßnahmen mit der größten erwarteten Wirkung. Nutze nur Daten aus upstreem und sag, wenn Daten fehlen. Wenn ich in upstreem mehr als ein Team habe, frag mich zuerst, welches.",
+    "Use my upstreem data to prepare a competitor snapshot for a pitch or launch, so I know where competitors win in AI answers and where we can catch up.\n\n1. Rank our brand and all tracked competitors by visibility for the last 30 days, with average position and the change versus the 30 days before.\n2. For our top 3 competitors, show the topics and prompts where they appear and we don't.\n3. List the sources (domains and URLs) that AI answers cite for those prompts and say who owns them: us, a competitor or a third party.\n4. Point out where we are ahead and should defend our position.\n\nStart with a summary in five bullet points. Then add one table per competitor, and end with five concrete steps to win visibility, ordered by impact. Only use numbers from upstreem; say so when data is missing. If I have more than one team in upstreem, ask me which one first.": "Bereite mit meinen upstreem-Daten einen Wettbewerber-Überblick für einen Pitch oder Launch vor, damit ich weiß, wo Wettbewerber in AI-Antworten gewinnen und wo wir aufholen können.\n\n1. Ordne unsere Brand und alle getrackten Wettbewerber nach Visibility in den letzten 30 Tagen, mit durchschnittlicher Position und der Veränderung gegenüber den 30 Tagen davor.\n2. Zeig für unsere 3 wichtigsten Wettbewerber die Topics und Prompts, in denen sie vorkommen und wir nicht.\n3. Liste die Quellen (Domains und URLs) auf, die AI-Antworten für diese Prompts zitieren, und sag, wem sie gehören: uns, einem Wettbewerber oder einem Dritten.\n4. Zeig, wo wir vorne liegen und unsere Position verteidigen sollten.\n\nBeginne mit einer Zusammenfassung in fünf Stichpunkten. Dann eine Tabelle je Wettbewerber, und zum Schluss fünf konkrete Schritte, um Visibility zu gewinnen, sortiert nach Wirkung. Nutze nur Zahlen aus upstreem; sag, wenn Daten fehlen. Wenn ich in upstreem mehr als ein Team habe, frag mich zuerst, welches.",
+    "Start a chat and paste one of the prompts above.": "Starte einen Chat und füg einen der Prompts oben ein.",
     "What you can build": "Was du damit bauen kannst",
-    "Open in Claude": "In Claude öffnen",
     "Weekly AI visibility brief": "Wochenbericht zur AI Visibility",
     "Every Monday: what changed in AI search, and why.": "Jeden Montag: was sich in der AI-Suche geändert hat und warum.",
     "Pages losing citations": "Seiten, die Zitate verlieren",
     "Find the pages AI answers cite less, and what to update first.": "Seiten, die AI seltener zitiert, und was zuerst dran ist.",
     "Competitor snapshot": "Wettbewerber-Überblick",
     "Before a pitch or launch: where competitors win and you don't.": "Vor einem Pitch oder Launch: wo Wettbewerber gewinnen und du nicht.",
-    "Use upstreem to write our weekly AI visibility brief: what changed and why?": "Schreib mit upstreem unseren Wochenbericht zur AI Visibility: Was hat sich geändert und warum?",
-    "Use upstreem to find the pages that lost citations this month, and what we should update first.": "Finde mit upstreem die Seiten, die diesen Monat Zitate verloren haben, und was wir zuerst überarbeiten sollten.",
-    "Use upstreem to show where competitors win in AI answers for our top topics, and why.": "Zeig mit upstreem, wo Wettbewerber bei unseren wichtigsten Topics in AI-Antworten gewinnen, und warum.",
-    "Start a chat and try one of the workflows above.": "Starte einen Chat und probier einen der Workflows oben aus.",
     "Build custom workflows with your data": "Eigene Workflows mit deinen Daten bauen",
     "Connect upstreem to Claude and turn your live AI visibility data into weekly briefs, competitor snapshots and content plans.": "Verbinde upstreem mit Claude und mach aus deinen aktuellen Daten zur AI Visibility Wochenberichte, Wettbewerber-Überblicke und Content-Pläne.",
     "Connect an app": "App verbinden",
@@ -28493,8 +28492,12 @@
   /* DIE AUSWAHLKARTE (21.10., core.css .up-wk; Nutzer: "Die Cards gehoeren nach Core"). Die Karte aus dem Dialog
      "Create" von Impact als geteilter Baustein: Titel mit Pfeil, ein Satz, die gekippte Tafel mit dem Zeichen.
      o: { titel, satz, icon, invers, kompakt, klasse, daten: { name: wert } (als data-name, Werte escaped),
-     deaktiviert }. Titel und Satz englisch, uebersetzt wird hier (t_). Das Verhalten (Klick, Pfeiltasten im Raster)
-     bleibt beim Aufrufer -- die Karte weiss nicht, wohin sie fuehrt. */
+     deaktiviert, kopieren }. Titel und Satz englisch, uebersetzt wird hier (t_). Das Verhalten (Klick, Pfeiltasten im Raster)
+     bleibt beim Aufrufer -- die Karte weiss nicht, wohin sie fuehrt.
+     kopieren (23.10., MCP Server "What you can build", Lukas: "anstelle des arrow up right icon soll ein copy icon da
+     erscheinen"): die Karte kopiert etwas statt zu fuehren. Statt des Pfeils das Zeichen Kopieren, dazu Haken und
+     Live-Region wie im Kopierkasten -- der Aufrufer ruft beim Klick UC.kopierBoxKopieren(karte, text), das setzt
+     .is-kopiert fuer KOPIER_HAKEN_MS und sagt "Copied" an. */
   function wkKarteHtml(o){
     o = o || {};
     var attr = "", daten = o.daten && typeof o.daten === "object" ? o.daten : {};
@@ -28502,9 +28505,13 @@
     return '<button type="button" class="up-wk' + (o.invers ? " is-invers" : "") + (o.kompakt ? " is-kompakt" : "") +
       (o.klasse ? " " + esc(o.klasse) : "") + '"' + attr + (o.deaktiviert ? " disabled" : "") + '>' +
       '<span class="up-wk-kopf"><span class="up-wk-t">' + esc(t_(o.titel || "")) + '</span>' +
-        '<span class="up-wk-pfeil" aria-hidden="true">' + icon("arrowUpRight", 2) + '</span></span>' +
+        (o.kopieren
+          ? '<span class="up-wk-pfeil is-kopie" aria-hidden="true"><span class="up-wk-kopie">' + icon("copy", 2) + '</span>' +
+            '<span class="up-wk-haken">' + icon("check", 2) + '</span></span>'
+          : '<span class="up-wk-pfeil" aria-hidden="true">' + icon("arrowUpRight", 2) + '</span>') + '</span>' +
       (o.satz ? '<span class="up-wk-s">' + esc(t_(o.satz)) + '</span>' : '') +
       '<span class="up-wk-tafel" aria-hidden="true"><span class="up-wk-feld">' + icon(o.icon || "plus", 1.8) + '</span></span>' +
+      (o.kopieren ? '<span class="up-kopierbox-live" aria-live="polite"></span>' : '') +
     '</button>';
   }
 

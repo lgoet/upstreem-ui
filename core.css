@@ -9708,5 +9708,15 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up
 .up-wk-feld svg { width: 32px; height: 32px; }
 .up-wk.is-kompakt { height: 160px; }
 .up-wk.is-kompakt .up-wk-tafel { top: 88px; padding-top: 32px; }
+/* Die Kopierkarte (23.10., wkKarteHtml mit kopieren): statt des Pfeils das Zeichen Kopieren, nach dem Kopieren der gruene
+   Haken wie im Kopierkasten (.up-kopierbox-haken, gleiche Werte) -- und so lange bleibt das Zeichen auch ohne Hover stehen. */
+.up-wk-pfeil.is-kopie { display: inline-grid; }
+.up-wk-kopie, .up-wk-haken { grid-area: 1 / 1; display: grid; place-items: center;
+  transition: opacity var(--up-t-1) var(--up-ease), transform var(--up-t-1) var(--up-ease); }
+.up-wk-haken { opacity: 0; transform: scale(.6); color: var(--vt-up); }
+.up-wk.is-kopiert .up-wk-kopie { opacity: 0; transform: scale(.6); }
+.up-wk.is-kopiert .up-wk-haken { opacity: 1; transform: none; }
+.up-wk.is-kopiert .up-wk-pfeil { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce){ .up-wk-kopie, .up-wk-haken { transition: none; } }
 @media (max-width: 640px) { .up-wk-raster { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .up-wk, .up-wk-pfeil, .up-wk-tafel { transition: none; } }

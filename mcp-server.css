@@ -120,7 +120,10 @@
 .umc-zugriff-fuss { margin: 8px -16px 0; padding: 12px 16px 0; border-top: 1px solid var(--vc-border); font-size: var(--up-fs-m); line-height: 18px; color: var(--vc-muted); }
 
 /* Verbundene Apps: die Tabelle aus core (.up-table, Kopf 45, Zeile 55 = --up-h-row), ohne Klick auf der Zeile. */
-.umc-apps .up-table { --up-cols: minmax(220px, 2fr) minmax(140px, 1fr) minmax(140px, 1fr) 104px; }
+/* Die Aktionsspalte so breit wie ihr Knopf (UC.makeAktionsSpur, Memory "Aktionsspalte fit width"): fest 104 war fuer
+   "Revoke" gerechnet, "Zurueckziehen" ist 109 breit und stand 17 in der Spalte davor (gemessen 23.10.). 104 nur, bis
+   die Seite gemessen hat. */
+.umc-apps .up-table { --up-cols: minmax(220px, 2fr) minmax(140px, 1fr) minmax(140px, 1fr) var(--umc-act-w, 104px); }
 .umc-apps .up-row { height: var(--up-h-row); flex: 0 0 var(--up-h-row); cursor: default; }
 .umc-apps .up-row:hover { background: transparent; }
 .umc-apps .up-td.is-aktion { justify-content: flex-end; padding-right: 12px; }
@@ -141,7 +144,7 @@
    noch um zwei Zeichen mit "..." (kopiert wird immer der ganze Wert). */
 .umc-root.is-narrow .umc-schritte { padding: 16px 12px 20px; }
 .umc-root.is-narrow .umc-schritt-in > :is(.up-kopierbox, .umc-fragen) { margin-left: -32px; max-width: calc(100% + 32px); }
-.umc-root.is-narrow .umc-apps .up-table { --up-cols: minmax(0, 1fr) 104px; }
+.umc-root.is-narrow .umc-apps .up-table { --up-cols: minmax(0, 1fr) var(--umc-act-w, 104px); }
 .umc-root.is-narrow .umc-apps .is-breit { display: none; }
 .umc-root.is-narrow .umc-app-unter { display: block; }
 
