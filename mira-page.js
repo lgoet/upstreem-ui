@@ -74,7 +74,10 @@
     "This can no longer be undone.": "Das lässt sich nicht mehr rückgängig machen.",
     "This action has already been started.": "Diese Aktion wurde schon gestartet.",
     "You already have a research running.": "Bei dir läuft schon eine Recherche.",
-    "Your plan has no free brand slots.": "Dein Tarif hat keinen freien Markenplatz mehr."
+    "Your plan has no free brand slots.": "Dein Tarif hat keinen freien Markenplatz mehr.",
+    "Mira couldn't hear anything. Try again a little louder.": "Mira hat nichts verstanden. Versuch es etwas lauter noch einmal.",
+    "Voice messages can be up to 30 seconds long.": "Sprachnachrichten dürfen höchstens 30 Sekunden lang sein.",
+    "This browser can't convert the recording. Type your question instead.": "Dieser Browser kann die Aufnahme nicht umwandeln. Tippe deine Frage stattdessen."
   });
   /* Je Instanz ueber einen Neuaufbau hinweg (Themenwechsel): Lader, Kanal, die Nachrichten je
      Chat, laufende Antworten. Nichts davon gehoert der Wurzel. */
@@ -493,9 +496,37 @@
         gesendet(g, body.message);
       });
     }
+    /* Sprache auf dem neuen Weg (Q19): im Browser zu WAV, Text von /api/mira/sprache, die Blase der Frage
+       bekommt ihn, dann geht er wie getippt an /api/mira. */
+    function spracheNeu(tm, d, mid) {
+      var fehlschlag = function (satzText) { am("askMiraRejectVoice", mid); satz("The voice message couldn't be sent", "error", satzText || "Try again."); };
+      D.wavAus(str(d.audio_base64), str(d.mime_type)).then(function (w) {
+        return UC.sitzungsToken().then(function (token) {
+          var lang = UC.getPref && String(UC.getPref("locale") || "").toLowerCase() === "de" ? "de" : "";
+          return D.transkribieren(token, { team_id: tm, audio_base64: w.b64, format: "wav", language: lang || undefined });
+        });
+      }).then(function (erg) {
+        if (!erg.ok) {
+          var m = str(erg.fehler && erg.fehler.message);
+          fehlschlag(m === "mira_audio_empty" ? t("Mira couldn't hear anything. Try again a little louder.")
+            : m === "mira_audio_too_long" ? t("Voice messages can be up to 30 seconds long.")
+            : sendeFehlerSatz(erg, true));
+          return;
+        }
+        am("askMiraResolveVoice", erg.text, mid);
+        sendenNeu(tm, { chat_id: str(d.chat_id), message: erg.text });
+      }, function () { fehlschlag(t("This browser can't convert the recording. Type your question instead.")); });
+    }
     function sprache(d) {
       var tm = team();
       var mid = str(d.message_id);
+      if (tm && str(d.audio_base64) && UC.sitzungsToken) {
+        D.weg().then(function (w) { if (w === "neu") spracheNeu(tm, d, mid); else spracheAlt(tm, d, mid); });
+        return;
+      }
+      spracheAlt(tm, d, mid);
+    }
+    function spracheAlt(tm, d, mid) {
       if (!tm || !UC.edge || !str(d.audio_base64)) {
         am("askMiraRejectVoice", mid);
         satz("The voice message couldn't be sent", "error", "Try again.");

@@ -294,6 +294,54 @@
     });
   }
 
+  /* SPRACHE (Q19): die Aufnahme (webm/opus aus MediaRecorder) wird im Browser zu WAV, 16 kHz, mono, 16 bit --
+     so im Plan entschieden: ein Format, das jeder Anbieter liest, und ein Viertel der Groesse von 44,1 kHz
+     Stereo. Gibt { b64, sekunden } oder wirft. */
+  function wavAus(b64, mime) {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!AC || !OAC || !b64) return Promise.reject(new Error("audio_unsupported"));
+    var roh = atob(String(b64).replace(/^data:[^,]*,/, ""));
+    var bytes = new Uint8Array(roh.length);
+    for (var i = 0; i < roh.length; i++) bytes[i] = roh.charCodeAt(i);
+    var ac = new AC();
+    return ac.decodeAudioData(bytes.buffer).then(function (audio) {
+      try { ac.close(); } catch (e) {}
+      var rate = 16000, n = Math.max(1, Math.ceil(audio.duration * rate));
+      var off = new OAC(1, n, rate);
+      var quelle = off.createBufferSource();
+      quelle.buffer = audio; quelle.connect(off.destination); quelle.start(0);
+      return off.startRendering();
+    }).then(function (r) {
+      var pcm = r.getChannelData(0), n = pcm.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+      function txt(o, t) { for (var k = 0; k < t.length; k++) v.setUint8(o + k, t.charCodeAt(k)); }
+      txt(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); txt(8, "WAVE"); txt(12, "fmt ");
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, r.sampleRate, true);
+      v.setUint32(28, r.sampleRate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+      txt(36, "data"); v.setUint32(40, n * 2, true);
+      for (var j = 0; j < n; j++) { var x = Math.max(-1, Math.min(1, pcm[j])); v.setInt16(44 + j * 2, x < 0 ? x * 0x8000 : x * 0x7fff, true); }
+      var b = new Uint8Array(buf), aus = "";
+      for (var p = 0; p < b.length; p += 0x8000) aus += String.fromCharCode.apply(null, b.subarray(p, p + 0x8000));
+      return { b64: btoa(aus), sekunden: n / r.sampleRate };
+    });
+  }
+  /* POST /api/mira/sprache (upstreem-app): { text } bzw. Fehler in der Form von senden(). */
+  function transkribieren(token, body) {
+    return fetch(API + "/sprache", {
+      method: "POST", credentials: "same-origin",
+      headers: { "content-type": "application/json", authorization: "Bearer " + str(token) },
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.text().then(function (t) {
+        var j = null;
+        try { j = t ? JSON.parse(t) : null; } catch (e) {}
+        j = obj(j) || {};
+        if (r.ok && typeof j.text === "string") return { ok: true, status: r.status, text: j.text };
+        return { ok: false, status: r.status, fehler: { code: str(j.code), message: str(j.code || ("http_" + r.status)), hint: str(j.hint), details: "" } };
+      });
+    }, function () { return { ok: false, status: 0, fehler: { code: "", message: "network", hint: "", details: "" } }; });
+  }
+
   /* Die Fehler des neuen Wegs, zusaetzlich zu fehlerArt: Kontingent und Tagesgrenze (Q11), ein zweiter
      laufender Chat (mira_user_busy), eine schon laufende gleiche Frage (mira_duplicate), Anmeldung. */
   function fehlerArtNeu(erg) {
@@ -317,6 +365,7 @@
     zuChats: zuChats, zuNachrichten: zuNachrichten, zuStand: zuStand, zuEinstellungen: zuEinstellungen, zuGesendet: zuGesendet,
     fehlerArt: fehlerArt,
     weg: weg, nachrichtenNeu: nachrichtenNeu, sendeBodyNeu: sendeBodyNeu, streamLesen: streamLesen,
-    sendenNeu: senden, wiederanhaengen: wiederanhaengen, fehlerArtNeu: fehlerArtNeu, kennung: kennung, aktion: aktion
+    sendenNeu: senden, wiederanhaengen: wiederanhaengen, fehlerArtNeu: fehlerArtNeu, kennung: kennung, aktion: aktion,
+    wavAus: wavAus, transkribieren: transkribieren
   };
 })();

@@ -8379,7 +8379,7 @@
     if (userId){
       for (var i = S.messages.length - 1; i >= 0; i--){
         var m = S.messages[i];
-        if (m && m.role === 'user' && /^local_/.test(String(m.id || ''))){ m.id = String(userId); break; }
+        if (m && m.role === 'user' && /^(local_|voice_)/.test(String(m.id || ''))){ m.id = String(userId); break; }
       }
     }
     stummUhrStellen();
