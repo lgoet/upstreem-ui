@@ -70,6 +70,9 @@
     "Your session has expired. Reload the page and sign in again.": "Deine Sitzung ist abgelaufen. Lade die Seite neu und melde dich wieder an.",
     "This answer couldn't be saved": "Diese Antwort konnte nicht gespeichert werden",
     "Couldn't start this action": "Diese Aktion konnte nicht gestartet werden",
+    "Couldn't undo this action": "Diese Aktion konnte nicht rückgängig gemacht werden",
+    "A research is already running in this team.": "In diesem Team läuft schon eine Recherche.",
+    "This didn't work right now. Please try again later.": "Das hat gerade nicht geklappt. Versuch es später noch einmal.",
     "This action isn't available yet.": "Diese Aktion ist noch nicht verfügbar.",
     "This can no longer be undone.": "Das lässt sich nicht mehr rückgängig machen.",
     "This action has already been started.": "Diese Aktion wurde schon gestartet.",
@@ -609,6 +612,9 @@
       if (m === "action_not_startable") return t("This action has already been started.");
       if (m === "page_audit_quota_exhausted" && UC.pageAuditFehlerSatz) return UC.pageAuditFehlerSatz(erg);
       if (m === "prompt_research_user_busy") return t("You already have a research running.");
+      if (m === "prompt_research_running") return t("A research is already running in this team.");
+      if (m === "mira_action_failed") return t("This didn't work right now. Please try again later.");
+      if (m === "edge_unauthorized" || erg.status === 401) return t("Your session has expired. Reload the page and sign in again.");
       if (m === "brands_limit_reached") return t("Your plan has no free brand slots.");
       if (/_rate_limited$/.test(m) || erg.status === 429) return UC.warteSatz ? UC.warteSatz(erg, t("Wait a minute and try again.")) : t("Wait a minute and try again.");
       if (/^team_access_/.test(m) || erg.status === 402) return t("Your team doesn't have access right now.");
@@ -625,7 +631,11 @@
         var j = erg.daten || {};
         if (j.card) am("askMiraActionCard", amid, j.card, j.opportunity || null);
         if (erg.ok) { jobUhrStellen(false); return; }
-        am("askMiraActionFailed", amid, aid, t("Couldn't start this action") + ". " + aktionSatz(erg));
+        /* Bringt die Antwort die Karte mit, sagt deren status_text den Grund schon in der Sprache der Karte
+           (P3, mira/AKTIONSKARTE.md); der eigene Satz nur, wenn sie keinen hat. */
+        var grund = j.card && str(j.card.status_text);
+        am("askMiraActionFailed", amid, aid, grund ||
+          (t(body.op === "undo" ? "Couldn't undo this action" : "Couldn't start this action") + ". " + aktionSatz(erg)));
       });
     }
 
