@@ -24,6 +24,8 @@
    LAEUFT EIN AUDIT (queued, running), laedt die Seite leise nach: das Detail 2 s lang in den ersten
    20 s nach der Annahme, danach alle 5 s; die Liste alle 5 s, solange eine Zeile laeuft (HANDOFF 16).
    Nur, solange die Seite zu sehen ist. Kein Skelett dabei: das gibt es nur beim ersten Laden.
+   Wird die Seite WIEDER sichtbar (Ansichtswechsel, Zurueck/Vor, Krume aus dem Detail, Tab, Fenster), laedt sie einmal
+   leise nach (sichtWechsel, 23.10.): Audits entstehen auch anderswo (Impact, anderer Tab).
 
    Was fehlt, sagt die Oberflaeche ausdruecklich (CLAUDE.md 2): unlesbare Antwort -> Lesefehler,
    keine Audits -> Leerzustand, noch nicht da -> Skelett. Die drei sehen nie gleich aus. */
@@ -152,7 +154,6 @@
     "Auditing this page": "Seite wird geprüft",
     "A new audit is waiting to start.": "Ein neues Audit wartet auf den Start.",
     "Started {time}.": "Gestartet {time}.",
-    "You can leave this page, the audit keeps running.": "Du kannst die Seite verlassen, das Audit läuft weiter.",
     "Requesting the page": "Seite abrufen",
     "Requesting the page like the AI crawlers": "Seite abrufen wie die KI-Crawler",
     "Requests": "Abrufe",
@@ -1300,6 +1301,7 @@
       UC.rpc(a.fn, a.params, { timeoutMs: 20000 }).then(function (erg) {
         if (nr !== listeNr) return;
         var d = erg && erg.ok ? D.zuListe(erg.daten) : null;
+        if (d) versatzAus(d.meta);
         if (!d) {
           if (window.console) console.warn("[page-audit] liste:", erg && erg.ok ? "Antwort ohne rows" : (erg && erg.fehler));
           /* Ein leises Nachladen, das scheitert, laesst die gezeigte Liste stehen -- der naechste
@@ -1360,41 +1362,88 @@
       return D.fehlerSatz({ ok: false, fehler: { message: "page_audit_quota_exhausted",
         details: JSON.stringify({ allowance: q.allowance, resets_at: q.resetsAt || null }) } }, { t: t, datum: UC.fmtDate }).satz;
     }
-    var SPERR_SEL = "[data-upa-anlegen], .upa-nochmal, [data-upa-nochmal]";
+    /* SPERRE JE SEITE (23.10., Lukas: "pro URL nur einmal alle 10 min"; page_audit_cooldown_23_10_v1.sql). Die DB nennt in
+       Liste und Detail next_allowed_at (null = frei), beim Absenden sonst page_audit_url_cooldown (PT429, hint Sekunden).
+       Run again ist bis dahin gesperrt wie beim Kontingent: aria-disabled, der Satz aus core als Grund. Das Kontingent geht
+       vor (die laengere Sperre, auch die DB prueft es zuerst). Ohne das Feld (alte DB) ist nichts gesperrt, wie bisher.
+       Gerechnet in der Uhr des Servers: der Versatz kommt aus meta.generated_at jeder Antwort (eine falsch gehende Uhr im
+       Browser hielte die Sperre sonst zu kurz oder zu lang). gem.sperreBis: was ein PT429 gemeldet hat, je Seite, in
+       Browserzeit -- es gilt auch, wenn das Detail (noch) ohne Feld kommt. */
+    var uhrVersatz = 0;
+    function versatzAus(meta) { var g = meta && Date.parse(meta.generatedAt || ""); if (g) uhrVersatz = g - Date.now(); }
+    var SPERR_BIS = gem.sperreBis || (gem.sperreBis = {});
+    function sperreBisVon(pageId, nextAllowedAt) {
+      var a = Date.parse(nextAllowedAt || ""), bis = a ? a - uhrVersatz : 0;
+      return Math.max(bis, SPERR_BIS[pageId] || 0);
+    }
+    function sperrSatzBis(bis) {
+      var rest = bis - Date.now();
+      if (!(rest > 0)) return "";
+      return D.fehlerSatz({ ok: false, status: 429, fehler: { message: "page_audit_url_cooldown", hint: String(Math.ceil(rest / 1000)) } }, { t: t }).satz;
+    }
+    /* Ein PT429 page_audit_url_cooldown -> ab wann (Browserzeit) wieder; 0 fuer jede andere Antwort. Ohne lesbaren hint eine
+       Minute: das leise Nachladen danach bringt next_allowed_at. */
+    function cooldownBis(erg) {
+      var f = erg && !erg.ok ? erg.fehler : null;
+      if (!f || str(f.message) !== "page_audit_url_cooldown") return 0;
+      var s = num(f.hint);
+      return Date.now() + (s != null && s > 0 ? s * 1000 : 60000);
+    }
+    function seitenSperre() {
+      var d = state.ansicht === "detail" ? dasDetail() : null;
+      return d && d.page ? sperrSatzBis(sperreBisVon(d.page.id, d.page.nextAllowedAt)) : "";
+    }
+    var SPERR_SEL = "[data-upa-anlegen], .upa-nochmal, [data-upa-nochmal]", NOCHMAL_SEL = ".upa-nochmal, [data-upa-nochmal]";
+    function sperreSetzen(b, grund) {
+      if (grund) {
+        if (b.getAttribute("aria-disabled") !== "true") b.setAttribute("aria-disabled", "true");
+        if (b.getAttribute("data-upa-grund") !== grund) b.setAttribute("data-upa-grund", grund);
+      } else if (b.getAttribute("aria-disabled") === "true") {
+        b.removeAttribute("aria-disabled"); b.removeAttribute("data-upa-grund");
+      }
+    }
     function sperreAnwenden() {
-      var grund = sperrGrund();
-      [].forEach.call(root.querySelectorAll(SPERR_SEL), function (b) {
-        if (grund) {
-          if (b.getAttribute("aria-disabled") !== "true") b.setAttribute("aria-disabled", "true");
-          if (b.getAttribute("data-upa-grund") !== grund) b.setAttribute("data-upa-grund", grund);
-        } else if (b.getAttribute("aria-disabled") === "true") {
-          b.removeAttribute("aria-disabled"); b.removeAttribute("data-upa-grund");
-        }
-      });
+      var grund = sperrGrund(), seite = grund ? "" : seitenSperre();
+      [].forEach.call(root.querySelectorAll(SPERR_SEL), function (b) { sperreSetzen(b, grund || (b.matches(NOCHMAL_SEL) ? seite : "")); });
+      sperrUhrPlanen();
+    }
+    /* Die Sperre geht von selbst auf: eine Uhr nur, solange eine Seitensperre steht, und nur bis zur naechsten vollen Minute
+       des Rests (der Satz nennt Minuten) bzw. bis zum Ende -- kein Abruf, nur sperreAnwenden. */
+    var sperrUhr = 0;
+    function sperrUhrPlanen() {
+      if (sperrUhr) { clearTimeout(sperrUhr); sperrUhr = 0; }
+      var d = state.ansicht === "detail" ? dasDetail() : null;
+      var rest = d && d.page ? sperreBisVon(d.page.id, d.page.nextAllowedAt) - Date.now() : 0;
+      if (!(rest > 0) || !root.isConnected) return;
+      sperrUhr = setTimeout(function () { sperrUhr = 0; if (root.isConnected) sperreAnwenden(); }, (rest % 60000 || 60000) + 50);
     }
     /* Der Grund einer Sperre ist ein ganzer Satz (bis 122 Zeichen): als data-tip stand er einzeilig, 695 px breit, und lief
        bei 375 aus dem Bild (gemessen 22.10.). Darum die breite, umbrechende Form aus core (makeTooltips showTipWide, 340,
        mehrzeilig wie die Kuerzungs-Tooltips), ueber dasselbe Verhalten wie der Weg mit data-tip: 60 ms Verzug, weg beim
-       Verlassen, ein Klick davor hebt die Sperre des Tooltips auf (unsuppress). */
-    var grundEl = null, grundUhr = 0;
-    root.addEventListener("mouseover", function (e) {
-      var el = e.target.closest && e.target.closest("[data-upa-grund]");
-      if (!el || el === grundEl || !tips || !tips.showTipWide) return;
-      grundEl = el;
-      clearTimeout(grundUhr);
-      grundUhr = setTimeout(function () {
-        if (grundEl !== el || !el.isConnected) return;
-        if (tips.unsuppress) tips.unsuppress();
-        tips.showTipWide(el, el.getAttribute("data-upa-grund") || "");
-      }, 60);
-    });
-    root.addEventListener("mouseout", function (e) {
-      var el = e.target.closest && e.target.closest("[data-upa-grund]");
-      if (!el || el !== grundEl) return;
-      if (e.relatedTarget && el.contains(e.relatedTarget)) return;
-      grundEl = null; clearTimeout(grundUhr);
-      if (tips && tips.hideTip) tips.hideTip();
-    });
+       Verlassen, ein Klick davor hebt die Sperre des Tooltips auf (unsuppress). Auch fuer das Popup Create Audit (es haengt
+       am <body>, ausserhalb der Wurzel): grundTips(api.el, eigeneTips). */
+    function grundTips(wo, tp) {
+      var grundEl = null, grundUhr = 0;
+      wo.addEventListener("mouseover", function (e) {
+        var el = e.target.closest && e.target.closest("[data-upa-grund]");
+        if (!el || el === grundEl || !tp || !tp.showTipWide) return;
+        grundEl = el;
+        clearTimeout(grundUhr);
+        grundUhr = setTimeout(function () {
+          if (grundEl !== el || !el.isConnected) return;
+          if (tp.unsuppress) tp.unsuppress();
+          tp.showTipWide(el, el.getAttribute("data-upa-grund") || "");
+        }, 60);
+      });
+      wo.addEventListener("mouseout", function (e) {
+        var el = e.target.closest && e.target.closest("[data-upa-grund]");
+        if (!el || el !== grundEl) return;
+        if (e.relatedTarget && el.contains(e.relatedTarget)) return;
+        grundEl = null; clearTimeout(grundUhr);
+        if (tp && tp.hideTip) tp.hideTip();
+      });
+    }
+    grundTips(root, tips);
     /* Nach jedem Zeichnen des Kopfs (auch wenn er unveraendert bleibt): die Startkarte und der Leerzustand des Details
        stehen ausserhalb von elKopf, und das Kontingent kommt mit jeder Antwort neu. */
     function kopfZeichnen() { kopfInhaltZeichnen(); sperreAnwenden(); }
@@ -1566,7 +1615,10 @@
         ]
       });
       var feld = api.body.querySelector(".upa-urlfeld"), fz = api.body.querySelector(".upa-urlfehler"), vor = api.body.querySelector(".upa-vorschlag");
-      var elQuota = api.body.querySelector(".upa-quotahinweis");
+      var elQuota = api.body.querySelector(".upa-quotahinweis"), okKnopf = api.knopf("ok");
+      if (okKnopf) okKnopf.classList.add("upa-anlegen-ok");
+      /* Das Popup haengt am <body>: der Grund am gesperrten Knopf braucht eigene Tooltips (wie Prompt Research). */
+      if (UC.makeTooltips) grundTips(api.el, UC.makeTooltips(api.el, isDark));
       if (vorgabe) feld.value = vorgabe;
       if (!quotaSatz()) elQuota.hidden = true;
       function feldFehler(text) {
@@ -1574,12 +1626,38 @@
         fz.classList.toggle("is-on", !!text);
         feld.setAttribute("aria-invalid", text ? "true" : "false");
       }
+      /* SPERRE JE SEITE IM POPUP (23.10.): ist die eingegebene Seite gerade erst geprueft worden, ist "Create Audit" gesperrt,
+         der Satz steht unter dem Feld und als Grund am Knopf; er geht von selbst auf, sobald die Zeit um ist oder die Eingabe
+         eine andere Seite nennt. Woher: die Zeilen der Liste (next_allowed_at, Schluessel wie url_norm_v1, seitenSchluessel)
+         und ein PT429 dieses Popups (die DB nennt die Seite in detail.url; die woertliche Eingabe gilt dazu, falls der
+         Schluessel sie nicht lesen kann). */
+      var gesperrtEingabe = "", gesperrtBis = 0, modalUhr = 0, sperrSatzGezeigt = "";
+      function eingabeSperreBis() {
+        var roh = feld.value.trim(), k = seitenSchluessel(roh), bis = 0;
+        if (gesperrtEingabe && roh === gesperrtEingabe) bis = gesperrtBis;
+        if (k) {
+          bis = Math.max(bis, SPERR_BIS["url:" + k] || 0);
+          (L.daten ? L.daten.rows : []).forEach(function (r) { if (r.url === k) bis = Math.max(bis, sperreBisVon(r.id, r.nextAllowedAt)); });
+        }
+        return bis > Date.now() ? bis : 0;
+      }
+      function modalSperre() {
+        if (modalUhr) { clearTimeout(modalUhr); modalUhr = 0; }
+        var bis = eingabeSperreBis(), satz = bis ? sperrSatzBis(bis) : "";
+        if (okKnopf) sperreSetzen(okKnopf, satz);
+        /* Nur den eigenen Satz austauschen oder wegnehmen -- eine andere Meldung im Feld (ungueltige URL) bleibt stehen. */
+        if (satz || (sperrSatzGezeigt && fz.firstChild.textContent === sperrSatzGezeigt)) { feldFehler(satz); sperrSatzGezeigt = satz; }
+        if (bis && api.el.isConnected) modalUhr = setTimeout(modalSperre, ((bis - Date.now()) % 60000 || 60000) + 50);
+        return satz;
+      }
       feld.addEventListener("input", function () {
         /* Eine andere Eingabe ist ein anderer Auftrag: neuer Schluessel (sonst meldete die DB
            idempotency_conflict fuer denselben Schluessel mit anderer URL). */
         if (letzte != null && feld.value.trim() !== letzte) { schl = D.schluessel(); letzte = null; }
-        feldFehler(""); vor.hidden = true;
+        feldFehler(""); vor.hidden = true; sperrSatzGezeigt = "";
+        modalSperre();
       });
+      modalSperre();
       feld.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); absenden(api); } });
       vor.addEventListener("click", function () {
         feld.value = vor.getAttribute("data-url") || ""; vor.hidden = true; feldFehler("");
@@ -1591,6 +1669,7 @@
         if (laeuftGerade) return;
         var url = feld.value.trim();
         if (!url) { feldFehler(t("Enter the URL of a page.")); try { feld.focus(); } catch (e) {} return; }
+        if (modalSperre()) { try { feld.focus(); } catch (e) {} return; }
         if (!team()) { feldFehler(t("Something went wrong on our side. Please try again.")); return; }
         laeuftGerade = true; letzte = url;
         a.busy("ok", true); feldFehler(""); vor.hidden = true;
@@ -1611,9 +1690,44 @@
           if (f.neuerSchluessel) { schl = D.schluessel(); letzte = null; }
           feldFehler(f.satz);
           if (f.vorschlag) { vor.setAttribute("data-url", f.vorschlag); vor.textContent = t("Use {url}").replace("{url}", f.vorschlag); vor.hidden = false; }
+          var bis = cooldownBis(erg);
+          if (bis) {
+            var dt = {};
+            try { dt = JSON.parse(str(erg.fehler.details)) || {}; } catch (e) {}
+            gesperrtEingabe = url; gesperrtBis = bis;
+            if (str(dt.url)) SPERR_BIS["url:" + str(dt.url)] = bis;
+            sperrSatzGezeigt = fz.firstChild.textContent;
+            modalSperre();
+            /* Die Liste dahinter kennt die Sperre vielleicht noch nicht (Start anderswo): leise nachladen. */
+            if (state.ansicht === "liste") listeLaden({ leise: L.hatDaten && !L.fehler });
+          }
           try { feld.focus(); } catch (e) {}
         });
       }
+    }
+    /* Der Schluessel einer Seite wie app.url_norm_v1 (ohne www., immer https, "/" am Ende weg, Tracking-Parameter weg), nur
+       um eine Eingabe im Popup mit den Zeilen der Liste zu vergleichen. Lieber zu streng: alles, was die DB ablehnen
+       wuerde oder anders schreiben koennte (Zugangsdaten, Fragment, fremder Port, Leerzeichen), gibt "" -- dann sperrt erst
+       die Antwort der DB, nie eine Vermutung. */
+    var TRACKING_PARAM = /^(utm_.*|gclid|fbclid|ref|igshid|mc_cid|mc_eid|t|si|feature|pp|list)$/;
+    function seitenSchluessel(u) {
+      var s = str(u).trim(), x;
+      if (!s || /[\s\\]/.test(s)) return "";
+      if (!/^[a-z][a-z0-9+.-]*:/i.test(s)) s = "https://" + s;
+      try { x = new URL(s); } catch (e) { return ""; }
+      if ((x.protocol !== "https:" && x.protocol !== "http:") || x.username || x.password || x.hash.length > 1) return "";
+      if (x.port && x.port !== "443") return "";
+      var h = x.hostname.toLowerCase();
+      while (/^www\.[^.]/.test(h) && h.slice(4).indexOf(".") >= 0) h = h.slice(4);
+      var p = x.pathname || "/";
+      if (p !== "/") p = p.replace(/\/+$/, "") || "/";
+      var q = x.search ? x.search.slice(1).split("&").filter(function (teil) {
+        if (!teil) return false;
+        var k = teil.split("=")[0];
+        try { k = decodeURIComponent(k.replace(/\+/g, " ")); } catch (e) {}
+        return !TRACKING_PARAM.test(k);
+      }) : [];
+      return "https://" + h + p + (q.length ? "?" + q.join("&") : "");
     }
 
     /* ============================================================================================
@@ -1645,6 +1759,7 @@
       UC.rpc(a.fn, a.params, { timeoutMs: 20000 }).then(function (erg) {
         if (nr !== detailNr) return;
         var d = erg && erg.ok ? D.zuDetail(erg.daten) : null;
+        if (d) versatzAus(d.meta);
         if (!d) {
           if (window.console) console.warn("[page-audit] detail:", erg && erg.ok ? "Antwort unlesbar" : (erg && erg.fehler));
           if (o.leise && e.daten) { planen(); return; }
@@ -2879,9 +2994,11 @@
        sobald sich die Antwort aendert, etwa queued -> running) tauscht nur den Teil, der anders ist -- das Protokoll bleibt
        stehen. Ein neu eingesetzter Kasten startete jeden Spinner und jeden Auftritt von vorn. */
     var laufStand = null;
+    /* Unter der Kopfzone stehen nur noch die frueheren Laeufe (im Abstand der Abschnitte, 32): der Satz "You can leave this
+       page, the audit keeps running." ist am 23.10. weg (Lukas: "kann da weg. Juckt keinen."). */
     function laufTeile(d) {
       return { lauf: d.selected.run.id, ident: identHtml(d, { ohneMeta: true }), browser: browserHtml(d),
-               rest: (d.runs.length > 1 ? laeufeHtml(d) : '') + '<p class="upa-run-weg">' + esc(t("You can leave this page, the audit keeps running.")) + '</p>' };
+               rest: d.runs.length > 1 ? laeufeHtml(d) : '' };
     }
     function laufFlicken(tl) {
       var zone = elDetail.querySelector(".upa-kopfzone.is-lauf");
@@ -3199,7 +3316,7 @@
     var schreibt = false;
     function nochmal() {
       var d = dasDetail();
-      if (!d || schreibt || sperrGrund()) return;
+      if (!d || schreibt || sperrGrund() || seitenSperre()) return;
       schreibt = true;
       var knopf = elKopf.querySelector(".upa-nochmal");
       if (knopf) knopf.disabled = true;
@@ -3207,7 +3324,13 @@
         schreibt = false;
         if (knopf) knopf.disabled = false;
         var q = erg && erg.ok ? D.zuQuittung(erg.daten) : null;
-        if (!q) { UC.toast(D.fehlerSatz(erg, { t: t, datum: UC.fmtDate, sonst: "The audit couldn't be started. Please try again." }).satz, { kind: "error", roh: true }); return; }
+        if (!q) {
+          UC.toast(D.fehlerSatz(erg, { t: t, datum: UC.fmtDate, sonst: "The audit couldn't be started. Please try again." }).satz, { kind: "error", roh: true });
+          /* Die DB sperrt die Seite (ein Start anderswo, etwa aus Impact oder einem anderen Tab, war schneller als unsere
+             Anzeige): den Knopf sofort sperren, bis zur gemeldeten Zeit, und das Detail leise holen (next_allowed_at). */
+          if (cooldownBis(erg)) { SPERR_BIS[d.page.id] = cooldownBis(erg); sperreAnwenden(); detailLaden({ leise: true }); }
+          return;
+        }
         UC.toast(t(q.deduplicated && !q.replayed ? "This page is already being audited" : "Audit started"), { kind: "success" });
         aufListeStale();
         /* Zurueck auf die Vorgabe (neuestes Ergebnis): der neue Lauf steht dann in der Laufzeile. */
@@ -3334,17 +3457,62 @@
       /* Nach zeigen(): die Liste steht mit ihren gemerkten Zeilen schon da, die Lage passt also wieder (ein leises
          Nachladen danach tauscht nur Zeilen gleicher Hoehe). Ohne gemerkte Lage oben, nicht dort, wo das Detail stand. */
       if (warDetail) { try { var m = hauptBereich(); if (m) m.scrollTop = gem.listeLage || 0; } catch (e) {} }
-      if (!L.hatDaten || L.alt) listeLaden({ leise: L.hatDaten && !L.fehler });
+      /* IMMER leise nachladen, nicht nur nach einer eigenen Aenderung (L.alt): waehrend man im Detail war, kann ein Audit
+         anderswo entstanden oder fertig geworden sein (anderer Tab, Impact; gemeldet 23.10.: "aktualisiert sich nicht
+         automatisch"). Unveraendert zeichnet listeLaden nichts neu (standVon); Seite, Sortierung, Suche bleiben. */
+      listeLaden({ leise: L.hatDaten && !L.fehler });
     }
     function ausAdresse() {
       var a = adresseLesen();
       if (a.pageId) detailOeffnen(a.pageId, a.runId, false);
       else if (state.ansicht !== "liste" || !L.hatDaten) zurListe(false);
     }
+    /* IST DIE ANSICHT OFFEN? Am Element der Ansicht (#view-audits.view-on), nicht an UC.currentView(): das kennt nur Wechsel
+       ueber showView. Zurueck/Vor schaltet die Ansicht im Kopf-Skript ohne showView um (popstate -> _viewUmschalten), danach
+       nannte currentView() weiter die vorige Ansicht -- Zurueck aus Impact in Page Audit lud darum nichts nach, und ein
+       Zurueck innerhalb der Seite (Detail -> Liste) blieb danach stumm (gemessen 23.10. im Pruefstand). Das Kopf-Skript hoert
+       popstate vor dieser Datei (es laedt zuerst), die Klasse stimmt also schon, wenn der Hoerer unten laeuft. Ohne Huelle
+       (Pruefstand, eigene Seite) gilt die Seite als offen. */
+    var elAnsicht = root.closest ? root.closest('[id^="view-"]') : null;
+    function ansichtOffen() { return !elAnsicht || elAnsicht.classList.contains("view-on"); }
+    /* SICHTBAR GEWORDEN -> LEISE NACHLADEN (23.10., Lukas: "Die Startseite Page Audit aktualisiert sich nicht automatisch,
+       wenn man ein neues Audit erstellt, z.B. aus Impact"). Ein Audit entsteht auch ausserhalb dieser Seite (Impact "Run
+       audit", ein anderer Tab, jemand im Team). Ohne Realtime (die page_audit-Tabellen sind fuer Clients gesperrt und in
+       keiner Publikation) holt die Seite den Stand, sobald sie wieder zu sehen ist: Ansichtswechsel (showView), Zurueck/Vor
+       in die Ansicht (Klasse view-on), Rueckkehr in den Tab oder das Fenster. Kein Takt, solange nichts laeuft -- das
+       Nachladen waehrend eines Laufs bleibt bei planen(). Alle Wege enden hier und werden zu EINEM Abruf zusammengelegt:
+       showView meldet sich vor dem Umschalten (onViewChange), der Beobachter danach, Tab und Fenster oft beide zugleich. */
+    var sichtUhr = 0, sichtStark = false, sichtZuletzt = 0, SICHT_MIN_MS = 1000;
+    function sichtWechsel(o) {
+      if (!(o && o.leiseNurSichtbar)) sichtStark = true;
+      if (sichtUhr) return;
+      sichtUhr = setTimeout(function () {
+        var stark = sichtStark;
+        sichtUhr = 0; sichtStark = false;
+        if (!root.isConnected || !ansichtOffen() || !team()) return;
+        /* Tab und Fenster: nur, wenn die Seite wirklich zu sehen ist, und nicht doppelt kurz hintereinander. Ein Wechsel der
+           Ansicht oder der Adresse geht immer durch (dort aendert sich, WAS gezeigt wird). */
+        if (!stark && (!sichtbar(root) || Date.now() - sichtZuletzt < SICHT_MIN_MS)) return;
+        sichtZuletzt = Date.now();
+        var a = adresseLesen();
+        if (a.pageId && (a.pageId !== state.pageId || a.runId !== state.runId || state.ansicht !== "detail")) detailOeffnen(a.pageId, a.runId, false);
+        else if (!a.pageId && state.ansicht === "detail") zurListe(false);
+        else if (state.ansicht === "detail") detailLaden({ leise: true });
+        else listeLaden({ leise: L.hatDaten && !L.fehler });
+      }, 0);
+    }
     window.addEventListener("popstate", function () {
-      if (!root.isConnected || (UC.currentView && UC.currentView() && UC.currentView() !== "audits")) return;
-      ausAdresse();
+      if (!root.isConnected || !ansichtOffen()) return;
+      sichtWechsel();
     });
+    if (elAnsicht && window.MutationObserver) {
+      var warOffen = ansichtOffen();
+      new MutationObserver(function () {
+        var jetzt = ansichtOffen();
+        if (jetzt && !warOffen) sichtWechsel();
+        warOffen = jetzt;
+      }).observe(elAnsicht, { attributes: true, attributeFilter: ["class"] });
+    }
     window.addEventListener("up-page-audit-open", function (e) {
       if (!root.isConnected) return;
       var dt = (e && e.detail) || {};
@@ -3352,17 +3520,11 @@
     });
     if (UC.ansichtsParameter) UC.ansichtsParameter({ ansicht: "audits", schluessel: ["page_id", "run_id"], owner: root,
       onTeamWechsel: function () { leeren(); state.ansicht = "liste"; state.pageId = ""; state.runId = ""; zeigen(); } });
+    /* Nach dem Wechsel liest die Seite die Adresse (ein Einstieg von aussen hat page_id gesetzt) und holt leise nach, was sich
+       inzwischen getan hat (sichtWechsel, oben). */
     if (UC.onViewChange) UC.onViewChange(function (v) {
       if (!root.isConnected || v !== "audits") return;
-      /* Nach dem Wechsel liest die Seite die Adresse (ein Einstieg von aussen hat page_id gesetzt)
-         und holt leise nach, was sich inzwischen getan hat. */
-      setTimeout(function () {
-        var a = adresseLesen();
-        if (a.pageId && (a.pageId !== state.pageId || a.runId !== state.runId || state.ansicht !== "detail")) detailOeffnen(a.pageId, a.runId, false);
-        else if (!a.pageId && state.ansicht === "detail") zurListe(false);
-        else if (state.ansicht === "detail") detailLaden({ leise: true });
-        else listeLaden({ leise: L.hatDaten && !L.fehler });
-      }, 0);
+      sichtWechsel();
     });
     function leeren() {
       L.daten = null; L.hatDaten = false; L.fehler = ""; L.page = 1; L.alt = true; gem.listeLage = 0;
@@ -3460,7 +3622,15 @@
         anzeigeVerteilen(a.id);
       }, UC.LAUF_TAKT.uhr);
     }
-    document.addEventListener("visibilitychange", function () { if (!document.hidden && root.isConnected && !uhr) planen(); });
+    /* Zurueck in den Tab oder ins Fenster (ein Audit aus einem anderen Tab, etwa Impact daneben): einmal leise nachladen
+       (sichtWechsel, oben), der Takt laeuft wie bisher nur, solange etwas laeuft. focus kommt beim Wechsel zwischen zwei
+       sichtbaren Fenstern, in denen visibilitychange schweigt. */
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden || !root.isConnected) return;
+      if (!uhr) planen();
+      sichtWechsel({ leiseNurSichtbar: true });
+    });
+    window.addEventListener("focus", function () { if (root.isConnected) sichtWechsel({ leiseNurSichtbar: true }); });
 
     var ctrl = { root: root, neuLaden: function () { leeren(); ausAdresse(); if (state.ansicht === "liste") listeLaden({}); } };
     root.__upaCtrl = ctrl;

@@ -99,6 +99,8 @@
         id: str(r.page_id), url: str(r.url), fetchUrl: str(r.fetch_url) || str(r.url), host: str(r.host),
         title: str(r.title), favicon: str(r.favicon), schedule: str(r.schedule) || "once",
         nextRunAt: str(r.next_run_at), runCount: num(r.run_count), createdAt: str(r.created_at),
+        /* Ab wann ein manueller Start wieder geht (23.10., page_audit_cooldown_23_10_v1.sql); leer = jetzt bzw. alte DB. */
+        nextAllowedAt: str(r.next_allowed_at),
         latest: la ? { runId: str(la.run_id), status: str(la.status), trigger: str(la.trigger),
                        acceptedAt: str(la.accepted_at), finishedAt: str(la.finished_at) } : null,
         result: re ? {
@@ -145,7 +147,8 @@
     var p = o.page;
     var page = { id: str(p.page_id), url: str(p.url), fetchUrl: str(p.fetch_url) || str(p.url), host: str(p.host),
                  title: str(p.title), favicon: str(p.favicon), schedule: str(p.schedule) || "once",
-                 nextRunAt: str(p.next_run_at), runCount: num(p.run_count), createdAt: str(p.created_at) };
+                 nextRunAt: str(p.next_run_at), runCount: num(p.run_count), createdAt: str(p.created_at),
+                 nextAllowedAt: str(p.next_allowed_at) };
     if (!uuidOk(page.id) || !page.url) return null;
     var runs = o.runs.map(zuLauf).filter(Boolean);
     var s = obj(o.selected), sel = null;
