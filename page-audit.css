@@ -68,7 +68,13 @@
 .upa-leise { font-size: var(--up-fs-m); color: var(--vc-muted); }
 
 /* ---------- Liste ---------- */
-.upa-root .upa-liste .up-row.upa-zeile { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }
+/* Das Skelett (.up-tsk aus UC.skeletonRows) so hoch wie die Zeilen danach: vorher 72 gegen 55, die Liste sprang beim
+   Laden um 5 x 17 px zusammen (gemessen 22.10., nx_pa laden). */
+.upa-root .upa-liste .up-row:is(.upa-zeile, .up-tsk) { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }
+/* Ein Strich in einer TEXT-Spalte steht links wie der Text darin (CLAUDE.md 1d: Text- und Datumsspalten links). core rueckt
+   jede Zelle mit .up-num nach rechts, auch den leeren Strich (.up-num.is-empty) -- gemessen 22.10.: robots.txt-Zelle 196
+   breit, Strich bei 172; Raw data "JSON" links, "–" rechts in derselben Spalte. */
+.upa-liste .up-td.up-td-result, .upa-kasten .up-td:is(.upa-td-zugang, .upa-td-robots, .upa-td-js, .upa-td-roh), .upa-fixplattformen .upa-fixp > .up-td { justify-content: flex-start; }
 .upa-root .upa-liste .up-td-page { gap: 10px; }
 .upa-seite { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .upa-name, .upa-seite .up-zeilenname { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -121,7 +127,8 @@ a.upa-ident-url:hover span { text-decoration: underline; }
    auch beim Ueberfahren (.upt-root .up-row.is-selected), nicht --up-wahl-bg der Navigation. */
 .upa-root .upa-kasten .up-row.upa-lauf.is-gewaehlt,
 .upa-root .upa-kasten .up-row.upa-lauf.is-gewaehlt:hover { background: var(--vt-row-hover); }
-.upa-zeit { font-size: var(--up-fs-l); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Kuerzen mit "…" wie jede Zelle: bei 375 stand "21. Oct 2026, 12" hart abgeschnitten (22.10.). */
+.upa-zeit { min-width: 0; font-size: var(--up-fs-l); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .upa-gruppe { display: flex; align-items: flex-end; height: 36px; padding: 0 12px 7px; border-bottom: 1px solid var(--vc-border); }
 .upa-root .up-logo-box.upa-plogo { width: 24px; height: 24px; }
 .upa-checkkey { flex: 0 0 24px; color: var(--vc-third); }
@@ -310,6 +317,10 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-tab-plattformen .upa-pkoerper > .upa-klapp-in { box-shadow: inset 0 -1px 0 var(--vc-border); }
 .upa-tab-plattformen .up-tbody > .up-row:nth-last-child(2) { border-bottom: 0; }
 .upa-tab-plattformen .up-tbody > .upa-pkoerper:last-child > .upa-klapp-in { box-shadow: inset 0 1px 0 var(--vc-border); }
+/* Zugang mit Marke "Was reachable"/"Now reachable": reicht die Breite nicht, rutscht die Marke unter den Zustand, statt ihn zu
+   kuerzen. Vorher (gemessen 22.10., ChatGPT Search auf example.com/pricing): bei 1440 "Not rea…" (61 von 90 px), bei 375
+   0 px -- es stand nur noch "Was reachable" da, also das Gegenteil der Aussage. Zwei Zeilen passen in 55. */
+.upa-kasten .up-td.upa-td-zugang { flex-wrap: wrap; row-gap: 4px; align-content: center; }
 /* "Tracked" hinter dem Namen (statt der Gruppenzeilen): Name und Marke in einer Zeile, der Name kuerzt, die Marke nie. */
 .upa-pname { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .upa-pname .up-zeilenname { min-width: 0; }
@@ -498,7 +509,10 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 
 /* Checks B und C: Zeile mit Zeichen, Zielzustand (Schluessel leise darunter), Messwert rechts. */
 .upa-crows { display: flex; flex-direction: column; }
-.upa-crow { display: grid; grid-template-columns: 16px minmax(0, 1fr) minmax(0, auto) auto auto; column-gap: 12px; align-items: center; min-height: 55px; padding: 8px 16px; box-sizing: border-box; }
+/* Der Abstand 12 sitzt am Element (margin), nicht im Raster (column-gap): fehlen "Previously" und "See finding", stuenden sonst
+   zwei leere Spuren mit 24 px Abstand am Ende, und der Wert endete 24 px vor der Kante (gemessen 22.10.). */
+.upa-crow { display: grid; grid-template-columns: 16px minmax(0, 1fr) minmax(0, auto) auto auto; column-gap: 0; align-items: center; min-height: 55px; padding: 8px 16px; box-sizing: border-box; }
+.upa-crow > * + * { margin-left: 12px; }
 .upa-crow + .upa-crow { border-top: 1px solid var(--vc-border); }
 .upa-crow > .upa-zustand { align-self: center; }
 .upa-crow-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -518,12 +532,19 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-cgruppe-in > .up-box { border: 0; border-radius: 0; }
 .upa-root.is-vnarrow .upa-crow { grid-template-columns: 16px minmax(0, 1fr); row-gap: 4px; }
 .upa-root.is-vnarrow .upa-crow-w { grid-column: 2; text-align: left; white-space: normal; }
+/* Auch "Previously" und "See finding" in die zweite Spalte, linksbuendig: vorher landete "Previously: Passed" in der Spur des
+   Zeichens (16 px, zweizeilig) und lief in den auf 281 px gezogenen Knopf (gemessen 22.10. bei 375). */
+.upa-root.is-vnarrow .upa-crow > :nth-child(n+4) { grid-column: 2; justify-self: start; }
 
 /* Evidence B: Abrufe mit User-Agent unter dem Namen, Spalte "Compared" fuer die Crawler. */
 .upa-tab-abrufe { --up-cols: minmax(300px, 2.6fr) minmax(64px, .4fr) minmax(150px, .9fr) minmax(84px, .5fr) minmax(70px, .4fr) minmax(130px, .7fr); }
 .upa-tab-abrufe .upa-url { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-xs); }
 .upa-root.is-narrow .upa-tab-abrufe { --up-cols: minmax(0, 2fr) minmax(56px, .4fr) minmax(130px, .9fr) minmax(110px, .7fr); }
 .upa-root.is-narrow .upa-tab-abrufe .upa-td-groesse, .upa-root.is-narrow .upa-tab-abrufe .upa-td-dauer { display: none; }
+/* Ganz schmal: Abruf und Status. Die Regel fuer .upa-tab-belege (vor v2) traf die umbenannte Tabelle nicht mehr: bei 375
+   standen 3 Zellen in den 4 Spuren von is-narrow, der Abruf bekam 45 px ("R…"), "Compared" 130 (gemessen 22.10.). */
+.upa-root.is-vnarrow .upa-tab-abrufe { --up-cols: minmax(0, 1fr) minmax(56px, auto); }
+.upa-root.is-vnarrow .upa-tab-abrufe .upa-td-gleich { display: none; }
 .upa-bereich-kopf .upa-bgruppe-n { margin-right: auto; }
 .upa-sek > .upa-kpis + .upa-absatz { margin-top: 16px; }
 /* Liste: der laufende Schritt leise neben dem Status (Datei 5, get_page_audit_progress_v1). */
