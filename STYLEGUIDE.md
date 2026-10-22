@@ -2246,6 +2246,29 @@ Aufruf, so wie er kommt (`start-step`, `tool-input-available`, `tool-output-avai
 nie eine eigene Kopie. Page Audit trägt noch seine (`.upa-run-step.is-laeuft .upa-run-txt`) und zieht
 nach, wenn die Seite ohnehin drankommt.
 
+### Mira seit P2 (22.10. nachts): die Antwort als Blöcke, live
+
+Das Fenster spricht mit dem Agenten der App (`/api/mira` in upstreem-app), solange der Schalter
+`MIRA_NEU` es sagt (`GET /api/mira`, mira-data.js `weg()`); sonst wie bisher mit `mira-send` (n8n,
+Rückfall bis P6). Antworten des neuen Wegs stehen als Blöcke in `mira_chat_message.blocks` (Form:
+upstreem-app `lib/mira/bloecke.ts`) und werden in **dieselben Formen** gezeichnet wie das HTML der alten:
+
+| Block | Gezeichnet als | Wo |
+|---|---|---|
+| Text (Markdown) | Absätze, Listen, ganz fette Zeile als Überschrift (`promoteStrongHeadings`); Bezug `[Label](ref:b2)` als `span[data-mira-entity-type]` → `decorateEntitySpans` (Chip, Drawer, URL-Popover wie bisher); Logos für Bezüge des neuen Wegs aus dem Marken-Store bzw. `UC.faviconUrl` | `blkMd`, `blkInline`, `blkItems` |
+| Tabelle | `.am-table-scroll` mit `<table>` (waagerecht scrollbar); Zahlenspalten (drei von vier Zellen Zahlen) rechtsbündig samt Kopf (`.am-zahl`) | `blkTabelle` |
+| Erklärkarte | `.am-karte`: Kopf 32 hoch, Titel 12/500 links, Kopieren rechts (der Knopf der Antwort, `.am-act-btn`), Text darunter | `blkKarte` |
+| Chart | `.am-chart` mit den Bausteinen aus core: Linie `makeLine` (Legende `.up-legend`, unter 500 Breite aus wie überall), Balken `makeBarList`, Ring `makeTypeChart`. Der Knoten bleibt über jedes Neuzeichnen der Liste (`_blkCharts`), ein Chart aus dem Lauf wird zum Chart der fertigen Antwort | `blkChartBauen`, `blkChartsEinhaengen` |
+| Aktionskarte | `.am-akt` in allen Zuständen nach upstreem-app `mira/AKTIONSKARTE.md` (Start/Rückgängig über die Seite an `/api/mira/aktion`) | `blkAktion`, `askMiraActionCard` |
+| Hervorhebung | `{+…+}` positiv, `{-…-}` negativ, `{~…~}` wahrscheinliche Quelle, `{?…?}` unklar: dieselben Spans und Farben wie im alten HTML | `BLK_HL` |
+
+**Live:** Text, Bezüge und Charts kommen während des Laufs über die Seite (`askMiraStreamText`,
+`-Refs`, `-Chart`) und stehen in einer Blase unter dem Protokoll (`.am-live`, höchstens alle 120 ms neu,
+derselbe Renderer). Der Abschluss (`askMiraStreamFertig`) geht über `askMiraSetMessages`: ohne Tippen
+und ohne Sprung (gemessen 4 px). Nach Neuladen hängt sich die Seite an einen laufenden Lauf
+(`GET /api/mira?resume=…`, nur auf derselben Server-Instanz; sonst Realtime wie bisher).
+Antworten des neuen Wegs tragen keine Daumen (Plan, „bewusst nicht übernommen“).
+
 ---
 
 ## 10. Layout-Verhalten (Responsive)
