@@ -137,6 +137,30 @@ core.css                   Marken am dunklen .up-root und an :where(html[data-up
                            Block "DAS DUNKEL NACH GEIST: SEITE UND INHALT" spiegelt jede Regel des grauen Hells
 ```
 
+**Der Rand im Dark ist der Rand im Light** (22.10., „Im Darkmode fehlen um die freistehenden Tabellen
+Borders. Im Lightmode sind sie da.“ und „Cards: im Darkmode sollen die bitte auch wie im Lightmode ne
+Border bekommen.“): jede Tabelle und jede Karte trägt im Dark denselben 1px-Rand auf denselben Seiten
+wie im Light, in `--vc-border` des Themas (`#222222`). Es gibt dafür **keine Dunkel-Regel** – der Rand
+kommt aus der Grundregel der Fläche, in beiden Themen gleich (`core.css` „IM DUNKELN DER RAND WIE IM
+HELLEN“). Bis zum 22.10. galt das Gegenteil: „Dark: kein Rand um die äußeren Flächen“ (`.up-box`,
+`.up-vartable`, Kopf und Körper der klebenden Tabelle, die Diagrammkästen, die Detail-, Antwort- und
+Settings-Karten farblos, an den Seiten Breite 0), mit der Ausnahme Drawer und Settings. Beides ist weg.
+
+```
+Klebend     Kopf und Körper zeichnen den Rand, der Kasten bleibt farblos – in beiden Themen; innen
+            links 26 hell wie dunkel (vorher dunkel 24), Kopf und Körper auf demselben Pixel
+Doppelt     wo ein Kasten in einer Karte mit eigenem Rand steht (Band im Kasten, Variantentabelle,
+            flache Tabelle), nimmt schon die helle Regel den inneren Rand weg; gemessen 0 Doppel-
+            linien hell und dunkel
+Drilldown   neben dem offenen Panel der Domains-Tabelle steht die Kante der Tabelle in --vc-border,
+            wie im Light (vorher ein farbloser Rand, durch den der Grund des Kastens schien)
+Bleibt      ohne Rand im Dark nur Bedienelemente, keine Flächen: Zitat-Chips (.up-rb-cite,
+            .up-rb-cgroup), Logoplatten (.up-stack-vis), leiser Chip (.up-entchip.is-soft),
+            gleitender Segmentknopf
+Neu         eine Fläche nimmt ihren Rand aus --vc-border in der Grundregel; keine Dunkel-Regel, die
+            ihn nimmt
+```
+
 Gemessen an vercel.com/geist im dunklen Thema (Stylesheet `.dark-theme`, sRGB, 15.10.):
 Background 1 `#0a0a0a`, Background 2 `#000000`, Gray 100 `#1a1a1a`, 200 `#1f1f1f`, 300 `#292929`,
 400 `#2e2e2e`, 500 `#454545`, 600 `#878787`, 700 `#8f8f8f`, 800 `#7d7d7d`, 900 `#a1a1a1`, 1000
@@ -1405,10 +1429,10 @@ beim Überfahren der Angabe, ohne Zeiger immer (`ovKarte` in events.js, `.uev-ov
 
 **Tabellenköpfe im Drawer** (seit 15.10. spät, `core.css` „DIE TABELLENKOEPFE IM DRAWER“): jede
 Tabelle in einem Drawer (`.up-kdr`, `[id^="drawer-"]`) trägt den Kopf der Seitentabellen, behält
-aber ihren Kasten mit Rand und Radius 12 — sie wird **nicht** flach. **Im Dunkeln** (nach Geist)
-behält der Kasten im Drawer seinen Rand `--vc-border` (`#2e2e2e`): Drawer und Kasten sind dort beide
-`#0a0a0a`, ohne Rand wäre er unsichtbar (`core.css` „IM DRAWER NACH GEIST BLEIBT DER RAND“). Klebend
-zeichnen Kopf und Körper den Rand, der Kasten bleibt durchsichtig wie im Light.
+aber ihren Kasten mit Rand und Radius 12 — sie wird **nicht** flach. **Im Dunkeln** trägt der Kasten
+im Drawer seinen Rand `--vc-border` (`#222222`) wie jede Fläche (seit 22.10. keine Ausnahme mehr,
+Abschnitt „Der Rand im Dark ist der Rand im Light“; bis dahin `core.css` „IM DRAWER NACH GEIST BLEIBT
+DER RAND“). Klebend zeichnen Kopf und Körper den Rand, der Kasten bleibt durchsichtig wie im Light.
 
 ```
 Höhe     48 (var(--up-flach-h, 48px)), in beiden Themen; vorher 45, Conversion (URL-Drawer)
@@ -1425,8 +1449,8 @@ Gilt für Responses, URLs, Conversion, Variations, Brand-Editor (Alias, Tracking
 **Tabellen der Settings-Seite** (seit 16.10.; vom 15.10. bis dahin flach): Team Organisation
 (Mitglieder, Einladungen, Protokoll) und Billing stehen **im Kasten wie im Drawer** („Border drum
 herum und Roundness, nicht full width gestreckt“). Kein `data-flach` mehr an `.uto-root`/`.ubl-root`
-(`settings-page.js`); den Kasten bringen die Schalen selbst mit (`.uto-table`, `.ubl-table`), Kopf
-und dunkler Rand kommen aus denselben core-Regeln wie im Drawer, dort um `.uss-root` ergänzt.
+(`settings-page.js`); den Kasten bringen die Schalen selbst mit (`.uto-table`, `.ubl-table`), der Kopf
+kommt aus derselben core-Regel wie im Drawer; den dunklen Rand trägt seit 22.10. jede Fläche.
 
 ```
 Kasten   Rand 1px --vc-border rundum, Radius 12 (--up-r-2xl), Grund --vc-bg; kein overflow:
@@ -1434,7 +1458,7 @@ Kasten   Rand 1px --vc-border rundum, Radius 12 (--up-r-2xl), Grund --vc-bg; kei
 Kopf     48, im Light ohne eigenen Grund; Protokoll-Zeilen bleiben 34
 Breite   höchstens 720 wie Your Brand (.usb-body) und Billing (.ubl-body); Team .uto-body
          seit 16.10. ebenso. team-orga schaltet erst unter 720 auf drei Spalten (narrowAt)
-Dunkel   Rand bleibt (#222 gemessen), wie im Drawer; Billing hatte ihn schon
+Dunkel   Rand wie im Hellen (#222 gemessen), wie jede Fläche seit 22.10.
 Telefon  343 bei 375, 16 Rand, kein waagrechter Überlauf (wie die Drawer-Tabellen)
 ```
 
@@ -1774,8 +1798,9 @@ Trennlinie   der Rand der zweiten Einheit: nebeneinander links (Top Citations be
              gestapelt (.is-narrow, .is-max) oben; über die volle Höhe bzw. Breite
 Ecken        overflow bleibt sichtbar (Menüs der Überschriftzeile); die Tabelle rundet an der
              Ecke des Kastens selbst mit 11 (unten rechts, gestapelt beide unteren)
-Dunkel       der Rand bleibt (Drawer und Kasten tragen beide Background 1, die Füllung trennt
-             nicht); Tabellenkopf behält --vt-head-bg; die Trennlinie bleibt
+Dunkel       der Rand wie im Hellen (seit 22.10. für jede Fläche; hier galt es schon vorher,
+             Drawer und Kasten tragen beide Background 1); Tabellenkopf behält --vt-head-bg; die
+             Trennlinie bleibt
 Luft         die 16 unter dem Band (--up-band-luft) gilt im Drawer nicht, der Stapel hält 64
 Schmal       fällt die letzte Spalte weg, verliert die dann letzte sichtbare ihre Linie rechts
              (sonst doppelt neben dem Rand des Kastens)

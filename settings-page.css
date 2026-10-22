@@ -16,8 +16,9 @@
 .uss-tab { min-width: 0; }
 /* Die Tabellen der Reiter Team Organisation und Billing stehen seit dem 16.10. im Kasten wie in
    den Drawern (vorher die flache Fassung, data-flach): Rand rundum und Radius 12 bringen ihre
-   Schalen mit (.uto-table, .ubl-table), Kopf 48 ohne Grund im Hellen und der Rand im Dunkeln
-   kommen aus denselben core-Regeln wie im Drawer (core.css "DIE TABELLENKOEPFE IM DRAWER" und
-   "IM DRAWER NACH GEIST BLEIBT DER RAND", dort um .uss-root ergaenzt). Die Breite ist die
+   Schalen mit (.uto-table, .ubl-table), Kopf 48 ohne Grund im Hellen kommt aus derselben
+   core-Regel wie im Drawer (core.css "DIE TABELLENKOEPFE IM DRAWER"). Der Rand im Dunkeln ist
+   seit 22.10. keine Ausnahme mehr: jede Flaeche traegt ihn wie im Hellen (core "IM DUNKELN DER
+   RAND WIE IM HELLEN", vorher "IM DRAWER NACH GEIST BLEIBT DER RAND" mit .uss-root). Die Breite ist die
    Lesebreite 720 aller drei Reiter (settings-brand.css, team-orga.css, settings-billing.css). */
 .uss-root .uss-tab[hidden] { display: none; }

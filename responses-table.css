@@ -244,7 +244,8 @@
    17 -> 16, Auszug und Kennzahlen 15 -> 14. Die Marken- und Quellen-Chips bleiben im Stil der App
    (eckig, mit Rahmen) -- so bestellt. Eine Spalte, Abstand 14 zwischen Kopf, Text und Fuss.
    Grund wie .up-row (--vc-bg), nicht .up-surface: die Karte ist eine andere Darstellung derselben
-   Zeile. Im Dunkeln nimmt core allen Karten den Rand (core.css, Liste mit .urt-card).
+   Zeile. Im Dunkeln derselbe Rand wie im Hellen (seit 22.10., core "IM DUNKELN DER RAND WIE IM
+   HELLEN"; bis dahin nahm core allen Karten dort den Rand).
    Hover, Druck und Fokus stehen NICHT hier: sie kamen von dieser Karte und sind seit dem 13.10.
    der geteilte Zustand .up-karte-klick in core.css ("alle Cards wie im Card Mode"), den das
    Markup mitbringt (responses-table.js). Das Skelett traegt die Klasse nicht -- es reagiert nicht. */
