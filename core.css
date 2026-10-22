@@ -4480,122 +4480,40 @@
          `clip` sidesteps the conflict entirely instead of working around it with corner masks. */
       overflow: clip;
     }
-    /* ---------- Dark: kein Rand um die aeusseren Flaechen ----------
-       Im Dunkeln traegt die FUELLUNG die Flaeche: --vc-bg (#1b1b1b) auf der Seite (--up-surface
-       #121212). Der Rahmen aus --vc-border (#353535) ist dann eine zweite, hellere Linie um eine
-       Form, die man ohnehin sieht -- im Hellen ist er noetig, dort liegt Weiss auf Weiss.
+    /* ---------- IM DUNKELN DER RAND WIE IM HELLEN (22.10.) ----------
+       Lukas: "Im Darkmode fehlen um die freistehenden Tabellen Borders. Im Lightmode sind sie da."
+       und "Cards: im Darkmode sollen die bitte auch wie im Lightmode ne Border bekommen." Seitdem
+       gilt: JEDE Tabelle und JEDE Karte traegt im Dunkeln denselben Rand wie im Hellen -- dieselbe
+       Breite auf denselben Seiten, Farbe --vc-border des Themas (dunkel #222222). Darum steht hier
+       KEINE Dunkel-Regel mehr; der Rand kommt aus der Grundregel jeder Flaeche, in beiden Themen.
 
-       DAS IST DAS KRITERIUM, und es ist der Grund fuer jede Ausnahme unten: der Rand darf nur dort
-       weg, wo die Fuellung die Flaeche schon von ihrem Grund trennt.
+       Bis zum 22.10. stand hier das Gegenteil, in drei Regeln: "Dark: kein Rand um die aeusseren
+       Flaechen" (border-color: transparent an .up-box, .up-vartable, Kopf und Koerper der klebenden
+       Tabelle, .vot-box, .tcd-box, .ubo-box, .combo-box, .uto-table, .ube-table, .ubd-card,
+       .udd-card, .urd-card, .urd-cite-card, .urt-card, .upt-kpi, .usb-card), dazu an Kasten, Kopf
+       und Koerper die Seiten auf Breite 0, und als Ausnahme davon "Im Drawer nach Geist bleibt
+       der Rand" (Drawer und Settings). Die Begruendung
+       ("die Fuellung traegt die Flaeche") galt seit Geist nur noch halb: Inhalt #0f0f0f auf der
+       Seite #0a0a0a sind 5 Stufen, und im Drawer musste der Rand schon am 16.10. zurueck. Jetzt ist
+       die Ausnahme die Regel, und die Ausnahme entfaellt mit -- eine Regel statt drei.
 
-       Erfasst sind die aeusseren Flaechen -- Tabellenkaesten, Diagrammkaesten, Karten:
-         .up-box            der geteilte Tabellenkasten (Prompts, URLs, Domains, Responses,
-                            prompt-research)
-         .up-sticky .up-thead / .up-tbody
-                            im Sticky-Modus zeichnen Kopf und Koerper den Rand SELBST, weil
-                            .up-box dort overflow:visible braucht. Ohne diese zwei Zeilen bliebe
-                            genau bei den grossen Tabellen die Umrandung stehen.
-         .vot-box .tcd-box .ubo-box .combo-box    die vier Diagramm-/Tabellenkaesten
-         .uto-table .ube-table                    Team-Protokoll und Alias-Tabelle
-         .ubd-card .udd-card .urd-card            die Karten der Detailbereiche
-         .urd-cite-card .urt-card                 Quellen- und Antwortkarten (auch die
-                                                  Skelettfassung, sie traegt dieselbe Klasse)
-         .usb-card                                die Karten der Einstellungen
-
-       NICHT ERFASST, jede mit ihrem Grund:
-         .uo-card .uo-row   Opportunities. Die Bahnen sind im Dunkeln #181818, die Karte #1b1b1b --
-                            drei Werte Unterschied. Dort TRAEGT der Rand die Karte. In Mira liegen
-                            dieselben Karten auf --am-card (#1b1b1b), also auf ihrer eigenen Farbe;
-                            ohne Rand waeren sie unsichtbar.
-         .usb-card-danger   faerbt den Rand absichtlich rot (color-mix mit --vt-down). Deshalb
-                            :not(...) an .usb-card -- diese Regel ist spezifischer und haette das
-                            Warnsignal sonst geschluckt.
-         .unc-card          die Meldung schwebt ueber fremdem Inhalt, ihr Rand IST ihre Kante.
-         Menues, Popover, Modale, Eingabefelder, Knoepfe, Chips
-                            schweben oder sind Bedienelemente, keine Flaechen.
-         .up-rb-table       dort ist der Rand die Trennlinie ZWISCHEN Zellen, nicht die Kante des
-                            Kastens.
-
-       border-color und nicht border: 0 -- der 1px bleibt als Platz stehen, damit keine Flaeche um
-       2px waechst und kein Sticky-Kopf um einen Pixel springt. */
-    .up-root[data-theme="dark"] .up-box,
-    /* .up-vartable ist derselbe Kasten (Rahmen, Radius 16, eigene Flaeche) -- im Dunkeln also
-       auch ohne sichtbaren Rand. Steht sie IN einer Karte, holt die Karte den Rand selbst zurueck
-       (brand-detail.css). */
-    .up-root[data-theme="dark"] .up-vartable,
-    /* .up-sticky liegt auf DERSELBEN Wurzel, nicht darunter -- core.js toggelt die Klasse an
-       root (makeSticky). Als Nachfahrenselektor geschrieben traf die Regel nichts, und genau die
-       sechs grossen Tabellen behielten im Dunkeln ihre Umrandung: Prompts, Responses, Domains,
-       URLs, prompt-research, Teams. Sie sind sticky, sobald die Seite 1000px breit ist, und dort
-       zeichnen Kopf und Koerper den Rand selbst. */
-    .up-root[data-theme="dark"].up-sticky .up-thead,
-    .up-root[data-theme="dark"].up-sticky .up-tbody,
-    .up-root[data-theme="dark"] .vot-box,
-    .up-root[data-theme="dark"] .tcd-box,
-    .up-root[data-theme="dark"] .ubo-box,
-    .up-root[data-theme="dark"] .combo-box,
-    .up-root[data-theme="dark"] .uto-table,
-    .up-root[data-theme="dark"] .ube-table,
-    .up-root[data-theme="dark"] .ubd-card,
-    .up-root[data-theme="dark"] .udd-card,
-    .up-root[data-theme="dark"] .urd-card,
-    .up-root[data-theme="dark"] .urd-cite-card,
-    .up-root[data-theme="dark"] .urt-card,
-    /* Die drei Kennzahlen-Karten ueber der Prompts-Tabelle. Sie sind Chart-Karten wie .combo-box
-       und .tcd-box, also gehoeren sie in DIESE Liste und nicht in eine eigene Regel: derselbe
-       Wert an zwei Orten laeuft irgendwann auseinander. Gemeldet am 03.09. -- die Karten hatten
-       im Dunkeln noch ihren Rand. */
-    .up-root[data-theme="dark"] .upt-kpi,
-    .up-root[data-theme="dark"] .usb-card:not(.usb-card-danger) { border-color: transparent; }
-
-    /* ---------- Dark: an den SEITEN Breite 0, nicht nur farblos ----------
-       Ein farbloser Rahmen ist immer noch ein 1px-Streifen, und er zeigt die Flaeche des Elements,
-       das ihn traegt: bei .up-box ist das --vc-bg (#1b1b1b). Neben den Zeilen faellt das nicht auf,
-       sie haben dieselbe Farbe -- neben einer FLAECHE MIT ANDERER FARBE liest er sich als feine
-       helle Linie. Gemeldet am offenen Drilldown der Domains-Tabelle: das Panel ist dort #171717,
-       gemessen, und links wie rechts stand 1px #1b1b1b daneben.
-       Ueber das Panel legen laesst sich der Streifen nicht: .up-box hat overflow:hidden, und das
-       beschneidet am POLSTERkasten -- Inhalt kommt nie in den Rahmenbereich. Also muss der
-       Streifen selbst weg.
-       NUR links und rechts. Oben und unten bleibt der 1px stehen (farblos), damit keine Hoehe
-       springt und der Sticky-Kopf seinen Platz behaelt.
-       Und ZWINGEND alle drei zusammen: im Sticky-Modus zeichnen Kopf und Koerper den Rand selbst,
-       und schon 1px Unterschied zwischen Kopf und Koerper verschiebt die Spalten gegeneinander --
-       davor warnt der Kommentar am Sticky-Block ausdruecklich. */
-    .up-root[data-theme="dark"] .up-box,
-    .up-root[data-theme="dark"] .up-vartable,
-    .up-root[data-theme="dark"].up-sticky .up-thead,
-    .up-root[data-theme="dark"].up-sticky .up-tbody {
-      border-left-width: 0; border-right-width: 0;
-    }
-
-    /* ---------- IM DRAWER NACH GEIST BLEIBT DER RAND (16.10.) ----------
-       Das Kriterium oben ("der Rand darf nur dort weg, wo die Fuellung die Flaeche schon von
-       ihrem Grund trennt") gilt im Dunkeln nach Geist im Drawer NICHT mehr: Drawer und Kasten sind
-       beide Background 1 (#0a0a0a, seit 15.10. abends beide #0f0f0f), ohne Rand war der Kasten
-       unsichtbar (gemeldet vom Drawer-Umbau: Responses, URLs, Conversion, Brand Editor). Geist traegt hier seinen 1px-Ring --
-       also Farbe UND Breite zurueck, links und rechts mit, und zwar fuer Kasten, Kopf und Koerper
-       der klebenden Tabelle zugleich (siehe "an den SEITEN Breite 0": schon 1px Unterschied
-       zwischen Kopf und Koerper verschiebt die Spalten).
-       Nicht hier: .vot-box und .tcd-box -- im Drawer stehen sie im gemeinsamen Kasten mit eigenem
-       Rand (DAS BAND IM KASTEN); ein Rand mehr waere eine doppelte Linie. Und .ubd-card/.udd-card
-       sind im Drawer seit dem 13.10. rahmenlos. Nur unter html[data-up-dunkel]: ohne den Marker
-       (Landingpage, erstes Bild) liegt der Drawer noch auf dem alten Grund. */
-    /* Klebend zeichnen Kopf und Koerper den Rand, der Kasten bleibt durchsichtig wie im Hellen
-       (gemessen 16.10.: hell .up-box 1px rgba(0,0,0,0), Kopf und Koerper 1px #ebebeb) -- darum
-       .up-box nur ohne .up-sticky darueber, sonst stuende im Dunkeln eine doppelte Linie. Am Kasten
-       selbst gefragt (:not(.up-sticky .up-box)) und nicht an einer .up-root davor: auch die Huelle
-       des Drawers ist eine dunkle .up-root, und die ist nie klebend. */
-    /* DIE SETTINGS-SEITE (.uss-root, 16.10.) traegt ihre Tabellen seitdem im Kasten wie der Drawer
-       ("wie in den Drawern, Border drum herum"), also auch dessen Rand im Dunkeln. Ohne sie haette
-       Team (.uto-table steht in der Liste "kein Rand" oben) im Dunkeln keinen Rand, Billing
-       (.ubl-table steht dort nicht) aber schon -- zwei Kaesten derselben Seite, zwei Bilder. Nur die
-       zweite Zeile: einen klebenden Kasten oder .up-box gibt es in den Settings nicht. */
-    html[data-up-dunkel="geist"] :is(.up-kdr, [id^="drawer-"]) .up-root[data-theme="dark"] .up-box:not(.up-sticky .up-box),
-    html[data-up-dunkel="geist"] :is(.up-kdr, [id^="drawer-"], .uss-root) .up-root[data-theme="dark"] :is(.up-vartable, .uto-table, .ube-table, .urd-card, .urd-cite-card, .urt-card),
-    html[data-up-dunkel="geist"] :is(.up-kdr, [id^="drawer-"]) .up-root[data-theme="dark"].up-sticky :is(.up-thead, .up-tbody) {
-      border-color: var(--vc-border); border-left-width: 1px; border-right-width: 1px;
-    }
+       Was dabei wahr bleiben muss, gemessen 22.10. (_h_dunkel_rand.html):
+         - Klebend zeichnen Kopf und Koerper den Rand, der Kasten bleibt farblos (Sticky-Block
+           oben) -- in BEIDEN Themen gleich, also stehen Kopf und Koerper auf demselben Pixel
+           (innen links 26 hell wie dunkel, vorher dunkel 24 gegen hell 26).
+         - Keine Doppellinie: wo ein Kasten in einer Karte mit eigenem Rand steht, nimmt das schon
+           die helle Regel weg (DAS BAND IM KASTEN, die Variantentabelle in brand-detail.css,
+           die flache Tabelle) -- dunkel zeigt dieselben Linien wie hell (0 Doppellinien in
+           beiden Themen; die Gegenprobe mit einem Rand mehr findet 20).
+         - Der offene Drilldown der Domains-Tabelle: der Streifen links und rechts war ein
+           FARBLOSER Rand, durch den der Grund des Kastens schien. Jetzt steht neben dem Panel die
+           Kante der Tabelle in --vc-border (klebend der Koerper, frei der Kasten), wie im Hellen.
+       Bewusst ohne Rand im Dunkeln bleiben nur Bedienelemente, keine Flaechen: die Zitat-Chips
+       (.up-rb-cite, .up-rb-cgroup), Logoplatten (.up-stack-vis, Logos in Onboarding und Einladung),
+       der leise Chip (.up-entchip.is-soft) und der gleitende Segmentknopf -- je mit eigener Regel
+       und eigenem Grund an ihrer Stelle.
+       Fuer neuen Code: eine Flaeche bekommt ihren Rand aus --vc-border in der Grundregel und KEINE
+       Dunkel-Regel, die ihn nimmt. */
 
     /* ---------- Rang-/Indexspalte ("#") ----------
        Die feste, nie ausblendbare Spalte ganz links, die UC.makeColumns ueber cfg.leadWidth als
@@ -4807,8 +4725,8 @@
          klein"); seit 15.10. spaet steht 14/500 fuer jede Tabelle an .up-root .up-th.
        Andere Zeilenarten einer Tabelle (Gruppenkopf, Unterzeilen eines Drilldowns) braucht die
        Komponente selbst: rechts --up-flach-aus Polster, links nichts.
-       .up-root.up-root: gegen die Regeln von core gewinnt die Spezifitaet, auch gegen die dunklen
-       (.up-root[data-theme="dark"].up-sticky .up-thead) und gegen eine Komponente mit
+       .up-root.up-root: gegen die Regeln von core gewinnt die Spezifitaet (bis 22.10. auch gegen
+       die dunklen ohne Rand, die es seitdem nicht mehr gibt) und gegen eine Komponente mit
        .xyz-root .up-box -- nie die Ladereihenfolge. makeColumns zieht das Polster der Kopfzeile
        von der Breite ab, mit der es Spalten verteilt (boxWidth). */
     .up-root[data-flach="yes"] { --up-flach-aus: 16px; --up-flach-h: 48px; }
@@ -5203,10 +5121,9 @@
     :is(.up-kdr, [id^="drawer-"]) .up-root.up-root[data-flach="yes"].up-band-zwei:is(.is-narrow, .is-max) > .up-band-einheit + .up-band-einheit {
       border-left: 0; border-top: 1px solid var(--vc-border);
     }
-    /* Im Dunkeln BLEIBT der Rand (bewusst keine Ausnahme wie in "Dark: kein Rand um die aeusseren
-       Flaechen"): dessen Kriterium ist, dass die Fuellung den Kasten vom Grund trennt -- im Dunkeln
-       nach Geist (15.10.) tragen Drawer und Kasten beide Background 1 (#0a0a0a, gemessen; seit "eine
-       Stufe ruhiger" beide #0f0f0f), ohne Rand waere vom Kasten nur die Trennlinie zu sehen. */
+    /* Im Dunkeln derselbe Rand wie im Hellen -- seit dem 22.10. fuer jede Flaeche so ("IM DUNKELN
+       DER RAND WIE IM HELLEN"); hier galt es schon vorher, weil Drawer und Kasten beide
+       Background 1 tragen (#0f0f0f) und ohne Rand vom Kasten nur die Trennlinie zu sehen waere. */
     /* Die Luft unter dem Band (DIE ZEILE UNTER DEM BAND, oben) gilt dem offenen Band vor einer
        Leiste. Im Drawer haelt der Stapel seine Abstaende selbst (64 zwischen den Abschnitten);
        ohne das stuenden unter Top Citations 80 statt 64. Dieselbe Form wie oben, eine Stufe

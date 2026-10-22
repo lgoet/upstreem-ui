@@ -42,9 +42,10 @@
   border-radius: var(--up-r-2xl);
 }
 .tcd-root.is-max .tcd-box, .tcd-root.is-narrow .tcd-box { height: 487px; }
-/* Kopfleiste und Kartenrand im Dunkeln stehen jetzt in core.css und gelten fuer JEDE Tabelle und
-   Karte der App -- hier bewusst keine lokale Fassung mehr: derselbe Wert an zwei Orten laeuft
-   irgendwann auseinander. Siehe dort "Dark: kein Rand um die aeusseren Flaechen". */
+/* Kopfleiste und Kartenrand im Dunkeln stehen in core.css und gelten fuer JEDE Tabelle und
+   Karte der App -- hier bewusst keine lokale Fassung: derselbe Wert an zwei Orten laeuft
+   irgendwann auseinander. Seit 22.10. traegt die Karte im Dunkeln denselben Rand wie im Hellen
+   (core "IM DUNKELN DER RAND WIE IM HELLEN"). */
 
 .tcd-panel-body { flex: 1 1 auto; min-height: 0; padding: 16px; position: relative; display: flex; flex-direction: column; transition: opacity 200ms ease; }
 
