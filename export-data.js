@@ -97,7 +97,10 @@
       "This product": "Dieses Produkt",
       "Restore filters": "Filter wiederherstellen",
       "Without filters, every row in the date range is exported.": "Ohne Filter geht jede Zeile im Zeitraum in die Datei.",
-      "Your session has expired": "Deine Sitzung ist abgelaufen", 
+      "Your session has expired": "Deine Sitzung ist abgelaufen",
+      /* Titel der ruhigen Meldung bei der Stundengrenze (scheitern, 17.10.): ging im Deutschen englisch hinaus,
+         gemessen 22.10.; die Zeile darunter (UC.warteSatz) war schon deutsch. */
+      "Export limit reached": "Exportlimit erreicht",
       "Please wait {n} seconds and try again.": "Warte {n} Sekunden und versuch es noch einmal.",
       "Please wait 1 second and try again.": "Warte eine Sekunde und versuch es noch einmal.",
       "The file couldn't be created": "Die Datei konnte nicht erstellt werden",
@@ -823,6 +826,10 @@
         case "brands": return liste(function(k){ var b = finde(C.getBrands ? C.getBrands() : [], ["company_id", "id"], k); return b ? String(b.name || "") : ""; });
         case "citation_types": return liste(function(k){ return C.typLabel ? C.typLabel(k, "citation") : ""; });
         case "url_types": return liste(function(k){ return C.typLabel ? C.typLabel(k, "url") : ""; });
+        /* Das Format wie in der Leiste der Ads (22.10.): dort heisst image_card_v2 "Image Ad" (UC.adFormatLabel, dieselbe
+           Bezeichnung liefert get_ads_filter_options_v2) -- hier stand der Rohwert, "Format: image_card_v2". Ein
+           unbekanntes Format behaelt ihn, wie dort. */
+        case "ad_formats": return liste(function(k){ return C.adFormatLabel ? C.adFormatLabel(k) : ""; });
         case "branded": var b = art === "prompts" ? (v === "branded" ? tr("Branded") : "Non-branded") : tr("Included"); return { kurz: b, lang: b };
         case "mentioned": var me = v === "yes" ? tr("Mentioned") : tr("Not mentioned"); return { kurz: me, lang: me };
         case "segment": var sg = { you: "You", competition: "Competition", other: "Other" }[v]; sg = sg ? tr(sg) : String(v); return { kurz: sg, lang: sg };
