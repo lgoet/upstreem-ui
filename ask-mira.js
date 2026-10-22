@@ -3518,8 +3518,12 @@
   var _runEmitted = false;     // wurde der Block in diesem Render schon ueber eine Antwort gesetzt?
   /* Mindeststandzeit je Schritt. Vorher waren es 5s, und wer waehrend der Sperre kam, wurde
      VERSCHLUCKT: gemerkt wurde nur der jeweils letzte Wunsch. Jetzt wartet eine Schlange, statt zu
-     vergessen -- also darf die Zeit kurz sein, und trotzdem faellt kein Schritt aus der Liste. */
-  var _RUN_DWELL = 1500;
+     vergessen -- also darf die Zeit kurz sein, und trotzdem faellt kein Schritt aus der Liste.
+     Seit dem 22.10. stehen dieser Takt und die uebrigen Zeiten des Protokolls (frisch, haken, kalt,
+     auftritt, logo, uhr) in core als UC.LAUF_TAKT, mit denselben Werten wie vorher hier (1500, 520,
+     30, 480, 20, 70, 1000): Page Audit zeigt dasselbe Protokoll und nimmt sie von dort. */
+  var _KERN = window.UpstreemCore || {}, _TAKT = _KERN.LAUF_TAKT || {};
+  if (!_KERN.LAUF_TAKT && window.console) console.error('[ask-mira] core.js ist aelter als ask-mira.js: LAUF_TAKT fehlt');
   var _RUN_MOMENT = 10000;     // kuerzer gedacht -> "a moment" statt einer Zahl
 
   function runClockText(){
@@ -3596,7 +3600,7 @@
       var c = (st.kind === 'responses')
         ? _tlChip('am-tload-ai', it.src, '', it.label, 'var(--vc-mira-logo-rueckfall)')
         : _tlChip('am-tload-logo', it.src, it.fb_src, it.label, it.color);
-      c.style.transitionDelay = (i * 70) + 'ms';       /* die drei Logos kommen nacheinander */
+      c.style.transitionDelay = (i * _TAKT.logo) + 'ms';   /* die drei Logos kommen nacheinander */
       lead.appendChild(c);
     });
   }
@@ -3611,7 +3615,7 @@
      verschluckt der naechste Renderdurchgang (die Antwort kommt an) genau die Bewegung, die man
      sehen soll: Spinner weg, Text von der zweiten in die erste Farbe. */
   function runRow(st){
-    var frisch = !!st.endTs && (Date.now() - st.endTs) < 520;
+    var frisch = !!st.endTs && (Date.now() - st.endTs) < _TAKT.frisch;
     var row = document.createElement('div');
     row.className = 'am-run-step' + (st.endTs && !frisch ? ' is-done is-cold' : '');
     var inner = document.createElement('div'); inner.className = 'am-run-inner'; row.appendChild(inner);
@@ -3639,25 +3643,24 @@
     var lead = document.createElement('span'); lead.className = 'am-run-lead'; line.appendChild(lead);
     runLead(lead, st);
     st.el = row;
-    if (frisch) setTimeout(function(){ runMarkDone(st, false); }, 30);
+    if (frisch) setTimeout(function(){ runMarkDone(st, false); }, _TAKT.haken);
     return row;
   }
   function runMarkDone(st, umblenden){
     var el = st.el; if (!el) return;
-    el.classList.remove('is-cold');
-    el.classList.add('is-done');
-    if (st.kind === 'thought' && umblenden) setThinkText(st.text);
     /* Wenn der Spinner unsichtbar ist, hoert er auch auf zu drehen -- eine unsichtbare
-       Dauer-Animation je Zeile kostet in einer langen Liste sonst dauerhaft Rechenzeit. */
-    setTimeout(function(){ if (st.el === el) el.classList.add('is-cold'); }, 480);
+       Dauer-Animation je Zeile kostet in einer langen Liste sonst dauerhaft Rechenzeit (is-cold
+       nach LAUF_TAKT.kalt, core laufAbhaken). */
+    _KERN.laufAbhaken(el, 'is-done', function(){ return st.el === el; });
+    if (st.kind === 'thought' && umblenden) setThinkText(st.text);
   }
   function runReveal(st, verzug){
     st.shown = true;
-    var el = st.el; if (!el) return;
-    void el.offsetHeight;                              /* Lage erzwingen, sonst faellt der Uebergang aus */
-    /* setTimeout und nicht requestAnimationFrame: in einem verdeckten Tab feuert rAF nie, und dann
-       stuende die Zeile fuer immer auf 0fr -- also unsichtbar. */
-    setTimeout(function(){ if (st.el) st.el.classList.add('is-in'); }, 20 + (verzug || 0));
+    /* Lage erzwingen, dann is-in per setTimeout und nicht requestAnimationFrame: in einem verdeckten
+       Tab feuert rAF nie, und dann stuende die Zeile fuer immer auf 0fr -- also unsichtbar (core
+       laufAuftritt). Wird die Zeile in der Zwischenzeit neu gebaut, traegt die neue is-in schon
+       (runFill: st.shown). */
+    if (st.el) _KERN.laufAuftritt(st.el, verzug);
   }
   /* Die Liste waechst nach unten. Wenn ihr Ende aus dem Blick rutscht, wird genau um den fehlenden
      Betrag nachgescrollt -- nicht ans Ende des Verlaufs, denn beim Senden wird darunter Platz
@@ -3731,7 +3734,7 @@
       RUN = { valid:true, live:true, startTs:start, endTs:0, steps:[] };
       runPush('thought', '');
     }
-    _runClock = setInterval(runClockTick, 1000);
+    _runClock = setInterval(runClockTick, _TAKT.uhr);
   }
   function runPush(kind, key){
     var vor = RUN.steps[RUN.steps.length - 1];
@@ -3782,7 +3785,7 @@
   }
   function runDrain(){
     if (_runQT || !_runQ.length || !RUN.live) return;
-    var warte = Math.max(0, _RUN_DWELL - (Date.now() - _runStepTs));
+    var warte = _KERN.laufWarten(_runStepTs);
     _runQT = setTimeout(function(){
       _runQT = null;
       if (!RUN.live) return;
@@ -7748,7 +7751,7 @@
     S.currentTool = key;
     if (st === runTail()) return;          // derselbe Typ -> nichts aendert sich
     /* EIN VENTIL GEGEN DIE FLUT (23.09. im Audit gemessen). Jeder wartende Schritt braucht
-       _RUN_DWELL, also 1,5 Sekunden, bis er erscheint. 500 wechselnde Werkzeugmeldungen -- ein
+       LAUF_TAKT.schritt (core), also 1,5 Sekunden, bis er erscheint. 500 wechselnde Werkzeugmeldungen -- ein
        Fehler im sendenden Ablauf reicht dafuer -- ergaeben zwoelf Minuten Warteschlange, und
        runFinish zeichnet sie beim Eintreffen der Antwort ALLE auf einmal. Ein echter Turn hat
        eine Handvoll Schritte; jenseits von 24 ist nichts mehr zu erzaehlen, und die spaeteren

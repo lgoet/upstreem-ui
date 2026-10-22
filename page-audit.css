@@ -324,42 +324,58 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) { .upa-browser-sk { animation: none; } }
 
 /* ---------- v2: Arbeitsprotokoll (Vorlage Mira, ask-mira.css .am-run) ----------
-   Uhr oben mit Haarlinie, je Phase eine Zeile: laufend mit Spinner und Glanz in der zweiten Textfarbe, fertig in der ersten. Werte
-   1:1 aus Miras Protokoll (Zeile 11 Luft, Zeichen 20, Text 14/500, Spinner 14). Die Dauern (420/380/320/460 ms) liegen bewusst
-   ausserhalb der Skala --up-t-*: Lukas 22.10. "wie bei Mira", damit sich beide Protokolle gleich anfuehlen. Aendert Mira sie,
-   hier mitziehen. */
+   Uhr oben mit Haarlinie, je Phase eine Zeile: laufend mit Spinner und Glanz in der zweiten Textfarbe, fertig in der ersten. Masse
+   1:1 aus Miras Protokoll (Zeile 11 Luft, Zeichen 20, Text 14/500, Spinner 14). Die Bewegung (Dauern, Kurve) seit dem 22.10. aus
+   den Tokens --up-lauf-* in core.css, dieselben, die Mira liest (Lukas 22.10.: "mach es genauso") -- vorher standen sie hier als
+   abgeschriebene Zahlen. Den Takt (Mindestzeit je Schritt, kalt, Auftritt) liefert core.js (UC.LAUF_TAKT). */
 .upa-run { width: 100%; max-width: 640px; padding: 8px 0 32px; }
 .upa-run-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 19px; padding-bottom: 11px; border-bottom: 1px solid var(--vc-border); }
 .upa-run-clock { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--vc-muted); line-height: 1; font-variant-numeric: tabular-nums; }
 .upa-run-steps { display: flex; flex-direction: column; }
-.upa-run-step { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 420ms cubic-bezier(.2,.8,.3,1), opacity 320ms ease; }
+/* Der Auftritt: grid-template-rows 0fr -> 1fr, die Liste waechst weich mit, statt um die Zeilenhoehe zu springen. Die Klasse
+   is-in setzt core laufAuftritt kurz nach dem Einsetzen (vorher stand sie schon im Markup: jede Zeile war sofort da). */
+.upa-run-step { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows var(--up-lauf-auf) var(--up-lauf-kurve), opacity var(--up-lauf-blende) ease; }
 .upa-run-step.is-in { grid-template-rows: 1fr; opacity: 1; }
 .upa-run-inner { min-height: 0; overflow: hidden; }
 .upa-run-line { display: flex; align-items: center; padding-top: 11px; min-width: 0; }
 .upa-run-spin { width: 14px; height: 14px; flex: 0 0 auto; margin-right: 10px;
-  transition: opacity 320ms ease, transform 320ms cubic-bezier(.2,.8,.3,1), width 380ms cubic-bezier(.2,.8,.3,1), margin-right 380ms cubic-bezier(.2,.8,.3,1); }
+  transition: opacity var(--up-lauf-blende) ease, transform var(--up-lauf-blende) var(--up-lauf-kurve), width var(--up-lauf-platz) var(--up-lauf-kurve), margin-right var(--up-lauf-platz) var(--up-lauf-kurve); }
 .upa-run-spin i { display: block; width: 14px; height: 14px; box-sizing: border-box; border-radius: 50%; border: 1.8px solid var(--vc-border); border-top-color: var(--vc-muted);
-  animation: upa-run-dreh 720ms linear infinite; }
+  animation: upa-run-dreh var(--up-lauf-dreh) linear infinite; }
 @keyframes upa-run-dreh { to { transform: rotate(360deg); } }
 .upa-run-step:is(.is-fertig, .is-kommt) .upa-run-spin { opacity: 0; transform: scale(.5); width: 0; margin-right: 0; }
+/* Kalt (LAUF_TAKT.kalt nach dem Haken, wie Mira .am-run-step.is-cold): der unsichtbare Spinner hoert auf zu drehen -- eine
+   Dauer-Animation je fertiger Zeile kostete sonst Rechenzeit, ohne dass man sie sieht. */
+.upa-run-step.is-cold .upa-run-spin { visibility: hidden; }
+.upa-run-step.is-cold .upa-run-spin i { animation: none; }
 .upa-run-ic { width: 20px; height: 20px; flex: 0 0 auto; margin-right: 10px; display: inline-flex; align-items: center; justify-content: center; color: var(--vc-third); }
 .upa-run-ic svg { width: 15px; height: 15px; }
 .upa-run-step.is-fertig .upa-run-ic { color: var(--vc-muted); }
-.upa-run-txt { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); line-height: 1.45; color: var(--vc-muted); min-width: 0; transition: color 460ms ease; }
+.upa-run-txt { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); line-height: 1.45; color: var(--vc-muted); min-width: 0; }
+/* Zeichen und Text wechseln beim Haken gemeinsam die Farbe (Mira: beide gleich lang). Vorher sprang das Zeichen hart um. */
+.upa-run-ic, .upa-run-txt { transition: color var(--up-lauf-farbe) ease; }
 .upa-run-step.is-fertig .upa-run-txt { color: var(--vc-text); }
 .upa-run-step.is-kommt .upa-run-txt, .upa-run-step.is-kommt .upa-run-ic { color: var(--vc-fourth); }
 .upa-run-step.is-laeuft .upa-run-txt {
   background-image: linear-gradient(100deg, rgba(255,255,255,0) 30%, var(--vc-mira-lauf-glanz) 50%, rgba(255,255,255,0) 70%);
   background-color: currentColor; background-size: 200% 100%; background-repeat: no-repeat; background-position: -120% 0;
-  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: upa-run-glanz 1.56s linear infinite reverse; }
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: upa-run-glanz var(--up-lauf-glanz) linear infinite reverse; }
 @keyframes upa-run-glanz { from { background-position: -120% 0; } to { background-position: 220% 0; } }
 .upa-run-lead { display: inline-flex; align-items: center; margin-left: 14px; }
 .upa-run-lead .up-logo-box { width: 20px; height: 20px; box-shadow: 0 0 0 2px var(--up-surface); }
 .upa-run-lead .up-logo-box img { width: 16px; height: 16px; }
 .upa-run-lead > * + * { margin-left: -5px; }
+/* Die Logos kommen mit der Zeile, nacheinander (Mira .am-run-lead; den Versatz LAUF_TAKT.logo je Logo setzt schrittAuftritt). */
+.upa-run-lead > * { opacity: 0; transform: translateX(7px) scale(.86); transition: opacity var(--up-lauf-logo) ease, transform var(--up-lauf-logo) var(--up-lauf-kurve); }
+.upa-run-step.is-in .upa-run-lead > * { opacity: 1; transform: none; }
+/* Reduzierte Bewegung wie bei Mira: kein Auftritt, kein Glanz, kein Drehen, kein Ueberblenden -- die Zeilen stehen sofort da,
+   der Zustand wechselt hart. Die Reihenfolge der Schritte und ihre Mindestzeit bleiben: das ist Inhalt, keine Bewegung. */
 @media (prefers-reduced-motion: reduce) {
   .upa-run-step.is-laeuft .upa-run-txt { background: none; animation: none; -webkit-text-fill-color: currentColor; }
-  .upa-run-spin i { animation: none; } }
+  .upa-run-spin i { animation: none; }
+  .upa-run-step, .upa-run-spin, .upa-run-ic, .upa-run-txt, .upa-run-lead > * { transition: none; }
+  .upa-run-step { grid-template-rows: 1fr; opacity: 1; }
+  .upa-run-lead > * { opacity: 1; transform: none; } }
 
 /* ---------- v2 Alternativen (Recherche 21.10., nur Scratch) ---------- */
 /* Plattform B: eine Kette von Fragen je Plattform (Google Search Console, Lumar). Spalten: Zeichen 16, Frage 200, Antwort. */

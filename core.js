@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261186;
+  var BUILD = 20261187;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -19511,6 +19511,43 @@
     return { el: el, zeigen: zeigen };
   }
 
+  /* ---------- DAS LAUFPROTOKOLL: TAKT DER SCHRITTE (22.10.) ----------
+     Zwei Stellen zeigen Arbeitsschritte als wachsende Liste unter einer laufenden Uhr: Mira (ask-mira.js, .am-run) und
+     Page Audit (page-audit.js, .upa-run). Die Regeln dafuer standen nur in Miras Code; Page Audit hatte die Bewegung
+     abgeschrieben, den Takt aber nicht -- und lief sichtbar schlechter (Lukas 22.10.: "bei mira haben wir die regeln ja
+     auch. mindest laufzeit pro loading step etc. mach es genauso"). Seitdem stehen sie EINMAL hier, beide lesen sie von
+     hier; die Dauern und die Kurve der Bewegung stehen als --up-lauf-* in core.css.
+     Die Werte sind Miras, unveraendert (vorher ask-mira.js _RUN_DWELL, runRow, runMarkDone, runReveal, runLead, runStart):
+       schritt   Mindeststandzeit eines Schritts. Wer waehrenddessen kommt, wartet in einer Schlange und wird nicht
+                 vergessen (laufWarten); im selben Zug, in dem der naechste beginnt, wird der vorige fertig. Ist der Lauf zu
+                 Ende, wird der Rest der Schlange auf einmal nachgetragen, nicht weggeworfen (Mira runFinish).
+       frisch    Ein Schritt, der juenger als das fertig wurde, ist noch in Bewegung: ein Neuaufbau baut ihn laufend und
+                 hakt ihn nach `haken` ab -- sonst verschluckt der Neuaufbau genau die Bewegung, die man sehen soll.
+       kalt      So lange nach dem Haken hoert der unsichtbare Spinner auf zu drehen (eine Dauer-Animation je fertiger
+                 Zeile kostete sonst Rechenzeit).
+       auftritt  Verzug vor is-in -- per setTimeout, nicht requestAnimationFrame: in einem verdeckten Tab feuert rAF nie,
+                 und die Zeile stuende fuer immer auf 0fr.
+       logo      Versatz der Logos einer Zeile, sie kommen nacheinander.
+       uhr       Takt der Uhr: jede Sekunde nur ihr Text, nie das Protokoll. */
+  var LAUF_TAKT = { schritt: 1500, frisch: 520, haken: 30, kalt: 480, auftritt: 20, logo: 70, uhr: 1000 };
+  /* Wie lange der laufende Schritt (begonnen um seit) noch stehen muss, bevor der naechste beginnen darf. */
+  function laufWarten(seit){ return Math.max(0, LAUF_TAKT.schritt - (Date.now() - (seit || 0))); }
+  /* Eine frisch eingesetzte Zeile waechst auf (grid-template-rows 0fr -> 1fr, die Klasse is-in). Lage erzwingen, sonst
+     faellt der Uebergang aus. Den Versatz der Logos (logo) setzt, wer die Logos baut -- bei Mira kommen sie auch spaeter. */
+  function laufAuftritt(el, verzug){
+    if (!el) return;
+    void el.offsetHeight;
+    setTimeout(function(){ el.classList.add("is-in"); }, LAUF_TAKT.auftritt + (verzug || 0));
+  }
+  /* Fertig: die Klasse des fertigen Zustands (Mira is-done, Page Audit is-fertig), nach `kalt` auch is-cold -- nur,
+     solange gilt() noch ja sagt (die Zeile ist noch dieselbe). */
+  function laufAbhaken(el, klasse, gilt){
+    if (!el) return;
+    el.classList.remove("is-cold");
+    el.classList.add(klasse);
+    setTimeout(function(){ if (!gilt || gilt()) el.classList.add("is-cold"); }, LAUF_TAKT.kalt);
+  }
+
   /* ---------- DAS LADEBILD FUER LANGE LAEUFE (30.09., zweite Fassung 01.10., dritte 16.10.) ----------
      EIN Ladebild fuer alle langen Laeufe: Opportunities (Suche), Prompt Research (Recherche),
      Explore Brands (Scan) und die Sitemap im Anlegen-Dialog der Events. Bis zum 01.10. trugen zwei
@@ -30735,6 +30772,10 @@
     makeFaecher: makeFaecher,
     logoVorrat: logoVorrat,
     makeLadebild: makeLadebild,
+    LAUF_TAKT: LAUF_TAKT,
+    laufWarten: laufWarten,
+    laufAuftritt: laufAuftritt,
+    laufAbhaken: laufAbhaken,
     rowDwell: rowDwell,
     makePager: makePager,
     makeHeadSort: makeHeadSort,

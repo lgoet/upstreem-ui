@@ -46,7 +46,8 @@
 
   /* Laut sagen, WAS fehlt -- der Name des Kits zeigt auf den veralteten Stand von core. */
   var FEHLT = ["rpc", "makeColumns", "makeSearch", "makePager", "makeHeadSort", "makeSticky", "makePageCrumbs",
-               "makeModal", "toast", "leerHtml", "leseFehlerHtml", "skeletonRows", "kpiKarte", "makePopover", "pageAuditOeffnen", "pageAuditFehlerSatz"]
+               "makeModal", "toast", "leerHtml", "leseFehlerHtml", "skeletonRows", "kpiKarte", "makePopover", "pageAuditOeffnen", "pageAuditFehlerSatz",
+               "laufWarten", "laufAuftritt", "laufAbhaken"]
     .filter(function (k) { return typeof UC[k] !== "function"; });
   if (FEHLT.length && window.console) console.error("[page-audit] Die core.js ist aelter als page-audit.js, es fehlen: " + FEHLT.join(", "));
 
@@ -144,7 +145,12 @@
     "Page loads for {token}": "Seite lädt für {token}",
     "Partly": "Teilweise",
     "Rendering": "Rendern",
-    "Rendering the page in a browser and taking a screenshot": "Seite im Browser rendern und Screenshot aufnehmen",
+    "Rendering the page in a browser": "Seite im Browser rendern",
+    /* Laufprotokoll und Laufzeile (22.10.): standen bisher ohne Deutsch da. */
+    "Auditing this page": "Seite wird geprüft",
+    "A new audit is waiting to start.": "Ein neues Audit wartet auf den Start.",
+    "Started {time}.": "Gestartet {time}.",
+    "You can leave this page, the audit keeps running.": "Du kannst die Seite verlassen, das Audit läuft weiter.",
     "Requesting the page": "Seite abrufen",
     "Requesting the page like the AI crawlers": "Seite abrufen wie die KI-Crawler",
     "Requests": "Abrufe",
@@ -639,22 +645,32 @@
         { w: 80, cls: "up-td-last" }, { w: 60, cls: "up-td-schedule" }
       ] });
     }
-    /* Kurzform des Schritts fuer die Liste (Status steht schon daneben). */
+    /* Kurzform des Schritts fuer die Liste (Status steht schon daneben). Der Schritt ist der, den die Anzeige gerade
+       zeigt (anzeigeJetzt), nicht der letzte vom Server: so laeuft auch die Zelle die Schritte der Reihe nach durch. */
     var SCHRITT_KURZ = { start: "Starting", robots: "Checking robots.txt", fetch: "Requesting the page", render: "Rendering", evaluate: "Assessing", save: "Saving" };
     function laufStatusHtml(la) {
-      var f = FORT[la.runId], st = f && f.status ? f.status : la.status;
-      var kurz = !gem.fortFehlt && f && st === "running" && f.phase ? SCHRITT_KURZ[f.phase] : "";
-      return '<span class="upa-laufstatus" data-upa-lauf="' + esc(la.runId) + '">' + statusHtml(st) + (kurz ? '<span class="upa-leise upa-schritt">' + esc(t(kurz)) + '</span>' : '') + '</span>';
+      var f = FORT[la.runId], st = anzeigeStatus(la.runId, f && f.status ? f.status : la.status), kurz = schrittKurz(la.runId);
+      /* Der Schritt steht immer als eigenes Element da (leer verborgen): ein Wechsel tauscht nur seinen Text. */
+      return '<span class="upa-laufstatus" data-upa-lauf="' + esc(la.runId) + '" data-upa-st="' + esc(st) + '">' + statusHtml(st) +
+        '<span class="upa-leise upa-schritt"' + (kurz ? '' : ' hidden') + '>' + esc(kurz) + '</span></span>';
     }
-    function laufZellenNeu() {
-      if (!L.daten) return;
-      L.daten.rows.forEach(function (r) {
-        if (!r.latest || !D.laeuft(r.latest.status)) return;
-        [].forEach.call(root.querySelectorAll('.upa-laufstatus[data-upa-lauf="' + r.latest.runId + '"]'), function (el) {
-          var neu = laufStatusHtml(r.latest);
-          if (el.outerHTML !== neu) el.outerHTML = neu;
-        });
-      });
+    function schrittKurz(id) { var k = anzeigeJetzt(id); return k && SCHRITT_KURZ[k] ? t(SCHRITT_KURZ[k]) : ""; }
+    /* Vorher ersetzte jede Abfrage die Zelle per outerHTML: der Vergleich mit dem Quelltext schlug immer fehl (der
+       Browser schreibt SVG und Attribute anders zurueck), gemessen 22 neue Zellen und 22 neu startende Drehzeichen in
+       einem Lauf von 35 s. Jetzt wechselt nur, was sich wirklich aendert: der Status bei einem Statuswechsel, sonst der Text. */
+    function laufZelleNachziehen(el, id) {
+      var f = FORT[id];
+      statusTauschen(el, anzeigeStatus(id, f && f.status ? f.status : el.getAttribute("data-upa-st")));
+      var sp = el.querySelector(".upa-schritt"), kurz = schrittKurz(id);
+      if (!sp) return;
+      if (sp.textContent !== kurz) sp.textContent = kurz;
+      if (sp.hidden !== !kurz) sp.hidden = !kurz;
+    }
+    function statusTauschen(el, st) {
+      if (!st || el.getAttribute("data-upa-st") === st) return;
+      var z = el.querySelector(".upa-zustand");
+      if (z) z.outerHTML = statusHtml(st);
+      el.setAttribute("data-upa-st", st);
     }
     function zelleHtml(key, r) {
       var re = r.result, la = r.latest, laeuft = la && D.laeuft(la.status);
@@ -1144,14 +1160,21 @@
       '</section>';
     }
     /* Ein laufender Lauf neben einem gezeigten Ergebnis: eine Zeile darueber, das Ergebnis bleibt
-       das vorige, bis der neue Lauf fertig ist. */
+       das vorige, bis der neue Lauf fertig ist. Status und Satz folgen der Anzeige (anzeigeVerteilen tauscht nur den Text,
+       den Status nur bei einem Statuswechsel) -- vorher stand hier der Schritt vom letzten Neuzeichnen, oft veraltet. */
     function laufzeileHtml(d) {
       var a = aktiverLauf(d), s = d.selected;
       if (!a || (s && s.run.id === a.id)) return "";
-      var ph = phasenStand(a).phasen.filter(function (x) { return x.st === "laeuft"; })[0];
-      var satz = a.status === "queued" ? t("A new audit is waiting to start.") : t("A new audit is running: {phase}.").replace("{phase}", t(ph ? ph.ph.text : "Auditing this page").replace(/^./, function (c) { return c.toLowerCase(); }));
-      return '<div class="upa-laufzeile" role="status">' + statusHtml(a.status) + '<span>' + esc(satz) + ' ' +
-        esc(t("Started {time}.").replace("{time}", wann(a.acceptedAt))) + '</span></div>';
+      anzeigeZiel(a.id, a.status);
+      var st = anzeigeStatus(a.id, a.status);
+      return '<div class="upa-laufzeile" role="status" data-upa-lauf="' + esc(a.id) + '" data-upa-st="' + esc(st) + '">' + statusHtml(st) +
+        '<span class="upa-laufzeile-t">' + esc(laufzeileSatz(a)) + '</span></div>';
+    }
+    function laufzeileSatz(a) {
+      var k = anzeigeJetzt(a.id), ph = k ? phaseVon(k) : null, wartet = k ? k === "queued" : a.status === "queued";
+      return (wartet ? t("A new audit is waiting to start.") : t("A new audit is running: {phase}.").replace("{phase}",
+        t(ph ? ph.text : OHNE_SCHRITT.text).replace(/^./, function (c) { return c.toLowerCase(); }))) +
+        " " + t("Started {time}.").replace("{time}", wann(a.acceptedAt));
     }
     /* Ein Lauf ohne Ergebnis: der wartende/laufende bekommt das Ladebild (lange Laeufe nur ueber
        UC.makeLadebild), der gescheiterte einen Satz mit dem Grund. */
@@ -1169,42 +1192,218 @@
       { k: "start", text: "Starting the test environment", ic: "zap" },
       { k: "robots", text: "Checking robots.txt and access rules", ic: "fileText" },
       { k: "fetch", text: "Requesting the page like the AI crawlers", ic: "globe", logos: true },
-      { k: "render", text: "Rendering the page in a browser and taking a screenshot", ic: "appWindow", bedingt: true },
+      /* Ohne "and taking a screenshot" (Lukas 22.10.: "das juckt den user ueberhaupt nicht"). */
+      { k: "render", text: "Rendering the page in a browser", ic: "appWindow", bedingt: true },
       { k: "evaluate", text: "Comparing and assessing the results", ic: "scanSearch" },
       { k: "save", text: "Saving the result", ic: "checkCircle" }
     ];
     var OHNE_SCHRITT = { k: "lauf", text: "Auditing this page", ic: "scanSearch" };
-    var FORT = gem.fort || (gem.fort = {});
-    function phasenStand(r) {
-      var f = FORT[r.id], status = f && f.status ? f.status : r.status;
-      var jetzt = Date.now() + (f && f.versatz ? f.versatz : 0), an = Date.parse(r.acceptedAt) || jetzt;
-      var sek = Math.max(0, Math.round((jetzt - an) / 1000));
-      if (!f || gem.fortFehlt) return { phasen: [{ ph: status === "queued" ? PHASEN[0] : OHNE_SCHRITT, st: "laeuft" }], sekunden: sek, status: status, ohne: true };
-      var akt = status === "queued" ? "queued" : (f.phase || "start"), ai = 0;
-      PHASEN.forEach(function (ph, i) { if (ph.k === akt) ai = i; });
-      var aus = [];
-      PHASEN.forEach(function (ph, i) {
-        if (i < ai) { if (!ph.bedingt || f.gesehen[ph.k]) aus.push({ ph: ph, st: "fertig" }); }
-        else aus.push({ ph: ph, st: i === ai ? "laeuft" : "kommt" });
-      });
-      return { phasen: aus, sekunden: sek, status: status };
+    function phaseVon(k) {
+      for (var i = 0; i < PHASEN.length; i++) if (PHASEN[i].k === k) return PHASEN[i];
+      return k === OHNE_SCHRITT.k ? OHNE_SCHRITT : null;
     }
-    function protokollHtml(r, kompakt) {
-      var p = phasenStand(r);
-      var zeilen = p.phasen.filter(function (x) { return x.st !== "kommt"; }).map(function (x) {
-        var logos = x.ph.logos ? '<span class="upa-run-lead">' + D.PROFILE.filter(function (q) { return !q.ohneUa; }).slice(0, 5).map(function (q) { return plattformLogo(q, modellVon(q)); }).join("") + '</span>' : '';
-        return '<div class="upa-run-step is-in is-' + x.st + '"><div class="upa-run-inner"><div class="upa-run-line">' +
-          '<span class="upa-run-spin" aria-hidden="true"><i></i></span><span class="upa-run-ic" aria-hidden="true">' + UC.icon(x.ph.ic, 2) + '</span>' +
-          '<span class="upa-run-txt">' + esc(t(x.ph.text)) + '</span>' + logos + '</div></div></div>';
-      }).join("");
-      var uhr = (p.status === "queued" ? t("Waiting for {s}") : t("Auditing for {s}")).replace("{s}", p.sekunden < 60 ? p.sekunden + "s" : Math.floor(p.sekunden / 60) + "m " + (p.sekunden % 60) + "s");
-      return '<div class="upa-run is-live' + (kompakt ? " is-kompakt" : "") + '" role="status" aria-live="polite">' +
-        '<div class="upa-run-head"><span class="upa-run-clock">' + esc(uhr) + '</span></div>' +
-        '<div class="upa-run-steps">' + zeilen + '</div></div>';
+    var FORT = gem.fort || (gem.fort = {});
+
+    /* ---- Die Anzeige der Schritte (22.10., Lukas: "Die loader sind extrem unsmooth ... Oft werden auch loading steps
+       uebersprungen komplett") -------------------------------------------------------------------------------------------
+       Gemessen vorher im Pruefstand (ein Lauf mit Browser, 42 s): die Uhr ersetzte jede Sekunde das ganze Protokoll per
+       replaceWith -- 36 Kaesten, 159 neu gebaute Zeilen und ebenso viele neu startende Spinner fuer sieben Schritte, keine
+       Zeile mit Auftritt. Und die DB kennt je Lauf nur den LETZTEN Schritt (phase): robots und fetch liegen ~0,1 s
+       auseinander, evaluate und save ebenso, die Abfrage traf robots und evaluate nie -- sie standen gleich als fertig da,
+       ohne Browser fehlten evaluate und save ganz.
+       Jetzt sind zwei Dinge getrennt: was der Server meldet (FORT, das Ziel) und was die Anzeige zeigt (ANZ). Die Anzeige
+       folgt dem Ziel mit Miras Regeln (Lukas 22.10.: "bei mira haben wir die regeln ja auch. mindest laufzeit pro loading
+       step etc. mach es genauso"), und die stehen seitdem in core (UC.LAUF_TAKT, laufWarten, laufAuftritt, laufAbhaken),
+       nicht als eigene Zahlen hier:
+         - Eine Schlange statt eines Sprungs: jeder Schritt steht mindestens LAUF_TAKT.schritt laufend da; im selben Zug, in
+           dem er fertig wird, beginnt der naechste (Mira runDrain, runPush).
+         - Ist der Lauf zu Ende, wird der Rest auf einmal nachgetragen und abgehakt, nicht weggeworfen (Mira runFinish).
+           Das Ergebnis ersetzt das Protokoll erst, wenn diese Bewegung durch ist: LAUF_TAKT.frisch -- Miras Mass dafuer,
+           wie lange ein gerade abgehakter Schritt noch in Bewegung ist. Mira braucht das Warten nicht, ihre Liste bleibt
+           ueber der Antwort stehen; hier waere sie sonst weg, bevor man sie sieht.
+         - Wer neu baut, baut gezeigte Zeilen ohne Auftritt und eine gerade abgehakte noch laufend (Mira runFill, runRow).
+       Erfunden wird nichts: "render" kommt nur in die Kette, wenn der Server ihn wirklich gemeldet hat (Laeufe ohne Browser
+       springen fetch -> evaluate, und so bleibt es). Im DOM wird keine Zeile neu gebaut, nur ihre Klasse wechselt; die Uhr
+       aendert nur ihren Text. Der Zustand liegt in gem: ein Neuaufbau (Themenwechsel) setzt die Anzeige fort. */
+    var ANZ = gem.anz || (gem.anz = {});
+    var anzUhr = {};
+    function serverJetzt(id) { var f = FORT[id]; return Date.now() + (f && f.versatz ? f.versatz : 0); }
+    /* Das Ziel: die Kette der Schritte, die WIRKLICH waren, die letzte laeuft (ausser der Lauf ist zu Ende). Ein Endzustand
+       gewinnt, egal woher er kommt (Detail oder Fortschritt): ein Lauf geht nie von completed zurueck. */
+    function zielVon(id, status) {
+      var f = FORT[id], fs = f && f.status;
+      var st = fs && !D.laeuft(fs) ? fs : (status && !D.laeuft(status) ? status : (fs || status));
+      if (st === "queued") return { kette: ["queued"] };
+      var ende = st === "completed" || st === "partial";
+      /* failed, cancelled, skipped: nichts nachtragen, die Ansicht wechselt ohnehin auf den Grund. */
+      if (st !== "running" && !ende) return { kette: null };
+      if (gem.fortFehlt) return { kette: ["queued", OHNE_SCHRITT.k], ende: ende };
+      /* Laeuft, aber noch keine Antwort zum Fortschritt: lieber nichts als ein geratener Schritt (die erste Abfrage kommt sofort). */
+      if (!f && !ende) return { kette: [] };
+      var bis = ende ? "save" : (f.phase || "start"), kette = [];
+      for (var i = 0; i < PHASEN.length; i++) {
+        var ph = PHASEN[i];
+        if (!ph.bedingt || ph.k === bis || (f && f.gesehen[ph.k])) kette.push(ph.k);
+        if (ph.k === bis) break;
+      }
+      return { kette: kette, ende: ende };
+    }
+    /* Ziel setzen und die Anzeige nachziehen; legt sie beim ersten Blick an. Die Schlange beginnt immer beim ersten
+       Schritt -- sie vergisst nichts (Mira), auch nicht bei einem Lauf, den man erst mittendrin sieht. */
+    function anzeigeZiel(id, status) {
+      if (!D.uuidOk(id)) return null;
+      var z = zielVon(id, status), a = ANZ[id], neu = false;
+      if (!a) {
+        if (!z.kette || !z.kette.length || z.ende) return null;
+        a = ANZ[id] = { zeilen: [] };
+        neu = true;
+      }
+      a.ziel = z;
+      anzeigeTakt(id);
+      if (neu) anzeigeVerteilen(id);
+      return a;
+    }
+    /* Ein Takt: die laufende Zeile wird fertig, sobald das Ziel weiter ist UND sie ihre Mindestzeit stand (laufWarten); im
+       selben Zug beginnt der naechste Schritt der Kette. Nie zurueck: steht die gezeigte Zeile nicht in der Kette, wartet sie. */
+    function anzeigeTakt(id) {
+      var a = ANZ[id];
+      if (anzUhr[id]) { clearTimeout(anzUhr[id]); anzUhr[id] = null; }
+      if (!a || !a.ziel || !a.ziel.kette || a.fertigAm) return;
+      var z = a.ziel, k = z.kette, jetzt = Date.now(), neu = false;
+      for (;;) {
+        var letzte = a.zeilen[a.zeilen.length - 1];
+        if (!letzte) {
+          if (!k.length) break;
+          a.zeilen.push({ k: k[0], st: "laeuft", seit: jetzt }); neu = true; continue;
+        }
+        if (letzte.st !== "laeuft") break;
+        var i = k.indexOf(letzte.k);
+        if (i < 0) break;
+        if (z.ende) {
+          letzte.st = "fertig"; letzte.bis = jetzt;
+          k.slice(i + 1).forEach(function (kk) { a.zeilen.push({ k: kk, st: "fertig", seit: jetzt, bis: jetzt }); });
+          a.fertigAm = jetzt; neu = true;
+          break;
+        }
+        if (i === k.length - 1) break;
+        var warte = UC.laufWarten(letzte.seit);
+        if (warte > 0) {
+          anzUhr[id] = setTimeout(function () { anzUhr[id] = null; if (root.isConnected) anzeigeTakt(id); }, warte);
+          break;
+        }
+        letzte.st = "fertig"; letzte.bis = jetzt;
+        a.zeilen.push({ k: k[i + 1], st: "laeuft", seit: jetzt }); neu = true;
+      }
+      if (neu) anzeigeVerteilen(id);
+      if (a.fertigAm) setTimeout(function () {
+        a.durch = true;
+        var nach = a.nachEnde; a.nachEnde = null;
+        if (nach && root.isConnected) nach();
+      }, UC.LAUF_TAKT.frisch);
+    }
+    function anzeigeJetzt(id) {
+      var a = ANZ[id];
+      if (!a) return "";
+      for (var i = a.zeilen.length - 1; i >= 0; i--) if (a.zeilen[i].st === "laeuft") return a.zeilen[i].k;
+      return "";
+    }
+    /* Der Status, wie die Anzeige ihn gerade zeigt: wartet sie noch in der Schlange, steht "Queued" da, auch wenn der Server
+       schon laeuft -- sonst stuende "Running" neben "Waiting in the queue". */
+    function anzeigeStatus(id, sonst) { var k = anzeigeJetzt(id); return k ? (k === "queued" ? "queued" : "running") : sonst; }
+    /* Alle Stellen, die den Lauf zeigen: Protokoll, Laufzeile, Zellen der Liste. Jede tauscht nur, was sich aendert. */
+    function anzeigeVerteilen(id) {
+      [].forEach.call(root.querySelectorAll('.upa-run[data-upa-run="' + id + '"]'), function (box) { protokollSync(box, id); });
+      [].forEach.call(root.querySelectorAll('.upa-laufzeile[data-upa-lauf="' + id + '"]'), function (el) {
+        var a = aktiverLauf(dasDetail());
+        if (!a || a.id !== id) return;
+        statusTauschen(el, anzeigeStatus(id, a.status));
+        var tx = el.querySelector(".upa-laufzeile-t"), satz = laufzeileSatz(a);
+        if (tx && tx.textContent !== satz) tx.textContent = satz;
+      });
+      [].forEach.call(root.querySelectorAll('.upa-laufstatus[data-upa-lauf="' + id + '"]'), function (el) { laufZelleNachziehen(el, id); });
+    }
+    /* Alle laufenden Laeufe der Ansicht nachziehen (nach jeder Abfrage und wenn die Funktion fehlt). */
+    function anzeigeAlle() {
+      if (state.ansicht === "detail") { var a = aktiverLauf(dasDetail()); if (a) anzeigeZiel(a.id, a.status); }
+      else if (L.daten) L.daten.rows.forEach(function (r) { if (r.latest && D.laeuft(r.latest.status)) anzeigeZiel(r.latest.runId, r.latest.status); });
+    }
+
+    /* Eine Zeile. gezeigt: war schon zu sehen (Neuaufbau), also ohne Auftritt. frisch: eben erst abgehakt -- noch laufend
+       gebaut und gleich danach abgehakt, sonst verschluckte der Neuaufbau die Bewegung (Mira runRow). Sonst ist eine
+       fertige Zeile gleich kalt: ihr unsichtbarer Spinner dreht nicht. */
+    function schrittHtml(z, gezeigt, frisch) {
+      var ph = phaseVon(z.k);
+      if (!ph) return "";
+      var logos = ph.logos ? '<span class="upa-run-lead">' + D.PROFILE.filter(function (q) { return !q.ohneUa; }).slice(0, 5).map(function (q) { return plattformLogo(q, modellVon(q)); }).join("") + '</span>' : '';
+      var st = frisch ? "laeuft" : z.st;
+      return '<div class="upa-run-step is-' + st + (gezeigt ? " is-in" : "") + (st === "fertig" ? " is-cold" : "") + '" data-upa-schritt="' + esc(z.k) + '"' +
+        (frisch ? ' data-upa-frisch=""' : '') + '><div class="upa-run-inner"><div class="upa-run-line">' +
+        '<span class="upa-run-spin" aria-hidden="true"><i></i></span><span class="upa-run-ic" aria-hidden="true">' + UC.icon(ph.ic, 2) + '</span>' +
+        '<span class="upa-run-txt">' + esc(t(ph.text)) + '</span>' + logos + '</div></div></div>';
+    }
+    function istFrisch(z) { return z.st === "fertig" && !!z.bis && Date.now() - z.bis < UC.LAUF_TAKT.frisch; }
+    /* Auftritt aus core (laufAuftritt: is-in nach LAUF_TAKT.auftritt, per setTimeout); die Logos nacheinander im Versatz
+       LAUF_TAKT.logo, wie Miras runLead. */
+    function schrittAuftritt(el) {
+      [].forEach.call(el.querySelectorAll(".upa-run-lead > *"), function (c, i) { c.style.transitionDelay = (i * UC.LAUF_TAKT.logo) + "ms"; });
+      UC.laufAuftritt(el);
+    }
+    function schrittAbhaken(el) {
+      el.classList.remove("is-laeuft");
+      el.removeAttribute("data-upa-frisch");
+      UC.laufAbhaken(el, "is-fertig", function () { return el.classList.contains("is-fertig"); });
+    }
+    /* Neue Zeilen anhaengen, fertige abhaken. Eine Zeile, die schon fertig hinzukommt (Rest am Ende), wird wie bei Mira
+       laufend eingesetzt und im selben Zug abgehakt (runClose(runPush(...))). */
+    function protokollSync(box, id) {
+      var a = ANZ[id], liste = box && box.querySelector(".upa-run-steps");
+      if (!a || !liste) return;
+      a.zeilen.forEach(function (z) {
+        var el = liste.querySelector('[data-upa-schritt="' + z.k + '"]');
+        if (!el) {
+          liste.insertAdjacentHTML("beforeend", schrittHtml(z, false, z.st === "fertig"));
+          el = liste.lastElementChild;
+          z.gezeigt = true;
+          schrittAuftritt(el);
+          if (z.st === "fertig") schrittAbhaken(el);
+        } else if (z.st === "fertig" && !el.classList.contains("is-fertig")) schrittAbhaken(el);
+      });
+    }
+    function uhrText(r) {
+      var k = anzeigeJetzt(r.id), wartet = k ? k === "queued" : r.status === "queued";
+      var an = Date.parse(r.acceptedAt), sek = an ? Math.max(0, Math.round((serverJetzt(r.id) - an) / 1000)) : 0;
+      return (wartet ? t("Waiting for {s}") : t("Auditing for {s}")).replace("{s}", sek < 60 ? sek + "s" : Math.floor(sek / 60) + "m " + (sek % 60) + "s");
+    }
+    /* Das Protokoll eines Laufs (nur beim vollen Zeichnen; danach haelt protokollSync es aktuell). Die Live-Region ist die
+       Liste der Schritte, nicht der Kasten: die Uhr aendert sich jede Sekunde, ein Screenreader saehe sonst jede Sekunde
+       eine Meldung. */
+    function protokollHtml(r) {
+      var a = anzeigeZiel(r.id, r.status);
+      var zeilen = a ? a.zeilen.map(function (z) { var h = schrittHtml(z, z.gezeigt, istFrisch(z)); z.gezeigt = true; return h; }).join("") : "";
+      return '<div class="upa-run" data-upa-run="' + esc(r.id) + '">' +
+        '<div class="upa-run-head"><span class="upa-run-clock">' + esc(uhrText(r)) + '</span></div>' +
+        '<div class="upa-run-steps" role="status" aria-live="polite">' + zeilen + '</div></div>';
+    }
+    /* Nach dem Einsetzen: neue Zeilen treten auf, frische werden nach LAUF_TAKT.haken abgehakt (Mira runRow). */
+    function protokollAuftritte() {
+      [].forEach.call(elDetail.querySelectorAll(".upa-run-step:not(.is-in)"), schrittAuftritt);
+      [].forEach.call(elDetail.querySelectorAll(".upa-run-step[data-upa-frisch]"), function (el) {
+        setTimeout(function () { schrittAbhaken(el); }, UC.LAUF_TAKT.haken);
+      });
+    }
+    /* Haelt das Protokoll ein fertiges Ergebnis noch zurueck? Ja, solange der Rest gerade nachgetragen wird (sonst waeren
+       evaluate und save nie zu sehen): bis LAUF_TAKT.frisch nach dem letzten Haken, dann zeichnet nachEnde das Ergebnis. */
+    function protokollHaelt(run) {
+      var a = ANZ[run.id];
+      if (!a || a.durch || !elDetail.querySelector('.upa-run[data-upa-run="' + run.id + '"]')) return false;
+      anzeigeZiel(run.id, run.status);
+      if (!a.fertigAm || a.durch) return false;
+      a.nachEnde = function () { if (state.ansicht === "detail") { detailZeichnen(); kopfZeichnen(); krumenNeu(); } };
+      return true;
     }
     function ohneErgebnisHtml(d) {
       var r = d.selected.run;
-      if (D.laeuft(r.status)) return protokollHtml(r, false);
+      if (D.laeuft(r.status)) return protokollHtml(r);
       var satz = D.LAUF_FEHLER[r.errorCode] || (r.status === "cancelled" ? "This audit was cancelled." :
         r.status === "skipped_quota" ? "This scheduled audit was skipped because the weekly quota was used up." :
         "This audit could not be completed. It was not charged.");
@@ -1780,6 +1979,41 @@
           UC.skeletonRows({ count: 7, cols: [{ w: 140, logo: true, jitter: 20 }, { w: 90 }, { w: 16, zahl: true }, { w: 16, zahl: true }, { w: 40, zahl: true }] }) + '</div></div></section>';
     }
     var protokollUhr = null;
+    /* Die Uhr des Protokolls: im Takt LAUF_TAKT.uhr nur ihr Text (vorher ersetzte sie das ganze Protokoll, siehe Anzeige).
+       Ist der Lauf zu Ende, bleibt sie stehen wie Miras (runFinish), waehrend der Rest nachgetragen wird. */
+    function uhrPlanen() {
+      if (protokollUhr || !elDetail.querySelector(".upa-run")) return;
+      protokollUhr = setInterval(function () {
+        var box = elDetail.querySelector(".upa-run[data-upa-run]"), d = dasDetail(), r = d && d.selected && d.selected.run;
+        if (!box || !root.isConnected) { clearInterval(protokollUhr); protokollUhr = null; return; }
+        if (!r || r.id !== box.getAttribute("data-upa-run")) return;
+        var a = ANZ[r.id], uhr = box.querySelector(".upa-run-clock");
+        if (!uhr || (a && a.ziel && a.ziel.ende) || !D.laeuft(r.status)) return;
+        var tx = uhrText(r);
+        if (uhr.textContent !== tx) uhr.textContent = tx;
+      }, UC.LAUF_TAKT.uhr);
+    }
+    /* Der laufende Lauf: die Teile neben dem Protokoll als Text gemerkt. Ein leises Nachladen (2 bzw. 5 s, neu gezeichnet,
+       sobald sich die Antwort aendert, etwa queued -> running) tauscht nur den Teil, der anders ist -- das Protokoll bleibt
+       stehen. Ein neu eingesetzter Kasten startete jeden Spinner und jeden Auftritt von vorn. */
+    var laufStand = null;
+    function laufTeile(d) {
+      return { lauf: d.selected.run.id, ident: identHtml(d, { ohneMeta: true }), browser: browserHtml(d),
+               rest: (d.runs.length > 1 ? laeufeHtml(d) : '') + '<p class="upa-run-weg">' + esc(t("You can leave this page, the audit keeps running.")) + '</p>' };
+    }
+    function laufFlicken(tl) {
+      var zone = elDetail.querySelector(".upa-kopfzone.is-lauf");
+      if (!laufStand || laufStand.lauf !== tl.lauf || !zone || !zone.querySelector('.upa-run[data-upa-run="' + tl.lauf + '"]')) return false;
+      var el;
+      if (tl.ident !== laufStand.ident && (el = zone.querySelector(".upa-ident"))) el.outerHTML = tl.ident;
+      if (tl.browser !== laufStand.browser && (el = zone.querySelector(".upa-browser"))) el.outerHTML = tl.browser;
+      if (tl.rest !== laufStand.rest) {
+        while (zone.nextSibling) elDetail.removeChild(zone.nextSibling);
+        zone.insertAdjacentHTML("afterend", tl.rest);
+      }
+      laufStand = tl;
+      return true;
+    }
     /* Die Reiter erscheinen erst mit einem Ergebnis. Beim Einblenden den Strich neu setzen: makePageNav hat
        ihn im verborgenen Zustand mit Breite 0 gemessen. */
     function navZeigen(an) {
@@ -1798,17 +2032,23 @@
         return;
       }
       var s = d && d.selected, mitErgebnis = !!s && (s.run.status === "completed" || s.run.status === "partial");
+      /* Ist der Lauf gerade fertig geworden, traegt das Protokoll erst seine letzten Schritte nach (protokollHaelt), dann
+         zeichnet nachEnde das Ergebnis. Bis dahin bleibt die Ansicht, wie sie ist. */
+      if (mitErgebnis && protokollHaelt(s.run)) { navZeigen(false); return; }
       navZeigen(mitErgebnis);
-      if (!d) { elDetail.innerHTML = detailSkelett(); return; }
+      if (!d) { laufStand = null; elDetail.innerHTML = detailSkelett(); return; }
       var html;
       if (!s) {
         html = identHtml(d) + laufzeileHtml(d) + UC.leerHtml({ icon: "dna01", titel: "No runs yet", text: "Run the audit to see the result.", knopf: "Run again", knopfAttr: "data-upa-nochmal" });
       } else if (!mitErgebnis) {
         /* v2: auch ohne Ergebnis die Kopfzone -- laeuft der Lauf, zeigt das Fenster die Flaeche mit Glanz, sonst den Grund. */
-        if (D.laeuft(s.run.status))
-          html = '<div class="upa-kopfzone is-lauf"><div class="upa-kopfzone-l">' + identHtml(d, { ohneMeta: true }) + protokollHtml(s.run, false) + '</div>' + browserHtml(d) + '</div>' +
-            (d.runs.length > 1 ? laeufeHtml(d) : '') +
-            '<p class="upa-run-weg">' + esc(t("You can leave this page, the audit keeps running.")) + '</p>';
+        if (D.laeuft(s.run.status)) {
+          var tl = laufTeile(d);
+          anzeigeZiel(s.run.id, s.run.status);
+          if (laufFlicken(tl)) { uhrPlanen(); return; }
+          html = '<div class="upa-kopfzone is-lauf"><div class="upa-kopfzone-l">' + tl.ident + protokollHtml(s.run) + '</div>' + tl.browser + '</div>' + tl.rest;
+          laufStand = tl;
+        }
         else html = '<div class="upa-kopfzone">' + identHtml(d) + browserHtml(d) + '</div>' + laufzeileHtml(d) + ohneErgebnisHtml(d) + (d.runs.length > 1 ? laeufeHtml(d) : '');
       } else {
         var r = reiter();
@@ -1820,16 +2060,10 @@
             laufzeileHtml(d) + teilHinweisHtml(s.run) + zugangHinweisHtml(d) + plattformenHtml(d) + befundeHtml(d);
         }
       }
+      if (!(s && D.laeuft(s.run.status))) laufStand = null;
       elDetail.innerHTML = html;
-      if (protokollUhr) { clearInterval(protokollUhr); protokollUhr = null; }
-      if (elDetail.querySelector(".upa-run") && s && s.run) {
-        protokollUhr = setInterval(function () {
-          var alt = elDetail.querySelector(".upa-run");
-          if (!alt || !root.isConnected) { clearInterval(protokollUhr); protokollUhr = null; return; }
-          var neu = document.createElement("div"); neu.innerHTML = protokollHtml(s.run, alt.classList.contains("is-kompakt"));
-          alt.replaceWith(neu.firstChild);
-        }, 1000);
-      }
+      protokollAuftritte();
+      uhrPlanen();
     }
     /* Erklaerkarten der Kennzahlen (Memory "Erklaerkarten-Format"): helle Platte mit dem Wert, wie die Kachel ihn zeigt (mit
        Trend, wenn sie einen zeigt), Titel = Etikett, Satz aus UC.explainCopy (core EXPLAIN_TEXT pa_*). Ausloeser ist die Kachel
@@ -2157,7 +2391,7 @@
       UC.rpc(D.FN.fortschritt, { p_team: team(), p_run_ids: ids }, { timeoutMs: 10000 }).then(function (erg) {
         fortLaeuft = false;
         var code = erg && erg.fehler ? str(erg.fehler.code) : "";
-        if (code === "PGRST202") { gem.fortFehlt = true; return; }
+        if (code === "PGRST202") { gem.fortFehlt = true; anzeigeAlle(); return; }
         var f = erg && erg.ok ? D.zuFortschritt(erg.daten) : null;
         if (!f) { fortPlanen(code === "PT429" ? 5000 : 3000); return; }
         var ende = false;
@@ -2168,7 +2402,8 @@
           FORT[id] = alt;
           if (!D.laeuft(x.status)) ende = true;
         });
-        if (state.ansicht === "liste") laufZellenNeu();
+        /* Die Anzeige zieht dem Server nach, der Reihe nach (anzeigeTakt) -- auch in der Liste und in der Laufzeile. */
+        anzeigeAlle();
         if (ende) { if (state.ansicht === "detail") detailLaden({ leise: true }); else listeLaden({ leise: true }); }
         fortPlanen();
       });
