@@ -29,8 +29,13 @@
 /* Der Pin-Knopf (16.10.) steht als Kind der Leiste im gap; leer (kein Event, keine Seitenleiste)
    erzeugt die Huelle keinen Kasten und damit keinen Abstand zu viel. */
 .uev-kopfpin { display: contents; }
-/* Am Telefon (is-vnarrow) wandert er ins Menue "…" (.uev-mehr-pin): 40px mehr fuer die Krume. */
-.uev-root.is-vnarrow .uev-pinknopf, .uev-root:not(.is-vnarrow) .uev-mehr-pin { display: none; }
+/* Am Telefon (is-vnarrow) wandert er ins Menue "…" (.uev-mehr-pin): 40px mehr fuer die Krume. Seit 22.10. ebenso die Anleitung und
+   "How Impact works" (.uev-mehr-anl, .uev-mehr-info), nur im Detail: dort steht das Menue, und dort braucht der Name des Events den
+   Platz. In der Uebersicht bleiben beide Knoepfe. */
+.uev-root.is-vnarrow .uev-pinknopf, .uev-root:not(.is-vnarrow) :is(.uev-mehr-pin, .uev-mehr-anl, .uev-mehr-info) { display: none; }
+/* An der Huelle des Menues, nicht am Menue: die steht im Detail von Anfang an, das Menue erst mit den Daten -- sonst stuenden die
+   Knoepfe waehrend des Ladens da und verschwaenden danach. */
+.uev-root.is-vnarrow .uev-kopfaktion:has(> .uev-kopfmehr) > :is(.uev-anl-toggle, .uev-seiteninfo) { display: none; }
 .uev-kopfaktion .up-btn-sec { display: inline-flex; align-items: center; gap: 6px; }
 .uev-kopfaktion .up-btn-sec svg { width: 14px; height: 14px; }
 

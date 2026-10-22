@@ -2348,6 +2348,12 @@
              sonst der Platz fuer die Krume (gemessen 16.10.: "Overview" auf 9px gedrueckt). */
           (wo === "kopf" && pinDa() ? '<button type="button" class="up-optrow uev-mehr-pin" role="menuitem" data-aktion="pin" data-event-id="' + esc(ev.id) + '">' + UC.icon("pin", 2) +
             '<span class="up-aktionsmenue-lbl">' + esc(t(istAngeheftet(ev.id) ? "Unpin from sidebar" : "Pin to sidebar")) + '</span></button>' : '') +
+          /* Ebenso die Anleitung und "How Impact works" (22.10., Lukas: "ja, ins Menue"): bei 375 belegten die fuenf Teile rechts im
+             Kopf 232px, dem Namen des Events blieben 40 von 118. Die Anleitung fehlt im Citation Tracking wie ihr Knopf. */
+          (wo === "kopf" && !istWatch(ev) ? '<button type="button" class="up-optrow uev-mehr-anl" role="menuitem" data-aktion="anleitung">' + UC.icon("libraryBig", 2) +
+            '<span class="up-aktionsmenue-lbl">' + esc(t(anleitung && anleitung.laeuft() ? "Hide guide" : "Show guide")) + '</span></button>' : '') +
+          (wo === "kopf" ? '<button type="button" class="up-optrow uev-mehr-info" role="menuitem" data-aktion="seiteninfo">' + UC.icon("info", 2) +
+            '<span class="up-aktionsmenue-lbl">' + esc(t("How Impact works")) + '</span></button>' : '') +
           (wo === "kopf" && !istWatch(ev) ? notifyZeileHtml(ev) : '') +
           (kannLoeschen ? '<div class="up-aktionsmenue-div"></div><button type="button" class="up-optrow is-gefahr" role="menuitem" data-aktion="delete" data-event-id="' + esc(ev.id) + '">' + UC.icon("trash", 2) + '<span class="up-aktionsmenue-lbl">' + esc(t("Delete")) + '</span></button>' : '') +
         '</div></span>';
@@ -5335,6 +5341,9 @@
         if (ak.getAttribute("data-aktion") === "edit") popupBearbeiten(eid);
         if (ak.getAttribute("data-aktion") === "delete") loeschenFragen(eid);
         if (ak.getAttribute("data-aktion") === "pin") pinUmschalten();
+        if (ak.getAttribute("data-aktion") === "anleitung") anleitungUmschalten();
+        /* Die Karte zeigt auf den Knopf "…": die Zeile, aus der sie kam, ist mit dem Menue weg. */
+        if (ak.getAttribute("data-aktion") === "seiteninfo" && seitenKarte) { var mb = elAktion.querySelector(".uev-kopfmehr .uev-mehrbtn"); if (mb) seitenKarte.show(mb); }
         return;
       }
       if (e.target.closest(".uev-mehr")) return;
@@ -9381,6 +9390,8 @@
       var an = !!(anleitung && anleitung.laeuft());
       b.setAttribute("aria-pressed", String(an));
       b.setAttribute("data-tip", t(an ? "Hide guide" : "Show guide"));
+      var ml = elAktion.querySelector(".uev-mehr-anl .up-aktionsmenue-lbl");
+      if (ml) ml.textContent = t(an ? "Hide guide" : "Show guide");
     }
 
     /* ---- Abos ----------------------------------------------------------------------------- */
