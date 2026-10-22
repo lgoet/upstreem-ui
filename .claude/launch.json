@@ -172,6 +172,43 @@
         "cd /private/tmp/uprt/nx/app_shop && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3153"
       ],
       "port": 3153
+    },
+    {
+      "name": "PRUEFSTAND-br01-8147",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-I",
+        "-c",
+        "import functools,http.server,socketserver;R=functools.partial(http.server.SimpleHTTPRequestHandler,directory='/private/tmp/claude-501/-Users-lukasgotzkes-Documents-GitHub-upstreem-ui/bbe2bef9-60b1-4026-8e33-c34759970113/scratchpad/br01');socketserver.TCPServer.allow_reuse_address=True;socketserver.ThreadingTCPServer(('127.0.0.1',8147),R).serve_forever()"
+      ],
+      "port": 8147
+    },
+    {
+      "name": "PRUEFSTAND-udf-3197",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app_udf && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3197"
+      ],
+      "port": 3197
+    },
+    {
+      "name": "PRUEFSTAND-br-3207",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app_br && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3207"
+      ],
+      "port": 3207
+    },
+    {
+      "name": "PRUEFSTAND-page-audit-3183",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app_pa && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3183"
+      ],
+      "port": 3183
     }
   ]
 }
