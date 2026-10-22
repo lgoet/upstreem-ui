@@ -9,9 +9,16 @@ wie die UI, und diese Datei sorgt dafuer, dass beide nicht auseinanderlaufen:
 
   - jede Funktion im Manifest steht als Zeichenkette im ausgelieferten UI-Code,
   - die UI ruft keine NEUERE Version derselben Funktion (sonst: veraltet),
-  - der Aufbau des Manifests ist in sich stimmig (Namen, Klassen, Filter, Parameter).
+  - der Aufbau des Manifests ist in sich stimmig (Namen, Klassen, Filter, Parameter),
+  - jedes Werkzeug, jeder Parameter und jeder gemeinsame Filter hat eine Beschreibung.
 
 Eine neue Version wird also im selben Commit in der UI UND im Manifest nachgezogen.
+
+Warum die Beschreibung Pflicht ist (22.10.): Das Modell sieht nur Name, Beschreibung und
+Parameterbeschreibungen. Ohne Text raet es die Bedeutung aus dem Namen -- "mentioned" hielt es
+fuer "die gewaehlten Marken" (gemeint ist die eigene Marke) und sagte im echten Test "keine Domain
+nennt LeeUp", tatsaechlich waren es 3. Ein Parameter ohne Beschreibung ist darum ein Fehler, kein
+Schoenheitsmangel.
 
     python3 .check_mira_werkzeuge.py            Fehler und Zahl der Werkzeuge
     python3 .check_mira_werkzeuge.py --liste    dazu je Werkzeug die Funktionen
@@ -31,6 +38,10 @@ VERSION = re.compile(r"^(.+)_v(\d+)$")
 fehler = []
 def f(text):
     fehler.append(text)
+
+def beschrieben(x):
+    """Nicht-leerer Text in "beschreibung" (nur Leerraum zaehlt als leer)."""
+    return isinstance(x, dict) and isinstance(x.get("beschreibung"), str) and x["beschreibung"].strip() != ""
 
 try:
     m = json.load(open(MANIFEST, encoding="utf-8"))
@@ -65,6 +76,8 @@ if not isinstance(filter_def, dict) or not filter_def:
 for name, fd in filter_def.items():
     if not isinstance(fd, dict) or not FN.match(str(fd.get("rpc", ""))) or not isinstance(fd.get("schema"), dict):
         f("filter %s: rpc oder schema fehlt" % name)
+    if not beschrieben(fd):
+        f("filter %s: beschreibung fehlt" % name)
 
 # ---- Werkzeuge ------------------------------------------------------------------------------
 werkzeuge = m.get("werkzeuge")
@@ -81,12 +94,16 @@ for w in werkzeuge:
     gesehen.add(n)
     if w.get("klasse") not in KLASSEN:
         f(wo + ": klasse muss eine von %s sein" % sorted(KLASSEN))
-    if not str(w.get("beschreibung", "")).strip():
+    if not beschrieben(w):
         f(wo + ": beschreibung fehlt")
     params = w.get("parameter")
     if not isinstance(params, dict):
         f(wo + ": parameter fehlt")
         params = {}
+    # Vor dem Wissens-Zweig: auch get_knowledge hat Parameter, die das Modell lesen muss.
+    for pn, p in params.items():
+        if not beschrieben(p):
+            f(wo + ": Parameter %s: beschreibung fehlt" % pn)
     filt = w.get("filter", [])
     for x in filt:
         if x not in filter_def:

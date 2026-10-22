@@ -3,88 +3,88 @@
   "version": 1,
   "stand": "2026-10-22",
   "filter": {
-    "date_from": { "rpc": "p_date_from", "schema": { "type": "string", "format": "date" }, "beschreibung": "First day of the period (Berlin calendar day). Omit both dates for the app default, the last 30 days." },
-    "date_to": { "rpc": "p_date_to", "schema": { "type": "string", "format": "date" }, "beschreibung": "Last day of the period (Berlin calendar day)." },
-    "models": { "rpc": "p_models", "schema": { "type": "array", "items": { "type": "string" }, "maxItems": 20 }, "beschreibung": "AI models to include, by model key. Omit for all tracked models." },
-    "markets": { "rpc": "p_markets", "schema": { "type": "array", "items": { "type": "string" }, "maxItems": 50 }, "beschreibung": "Markets to include, by market code. Omit for all markets." },
-    "topic_ids": { "rpc": "p_tag_ids", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 20 }, "beschreibung": "Topics to include, by topic id (resolve names with search_entities or prompts_meta first)." },
-    "topic_mode": { "rpc": "p_tagmode", "schema": { "type": "string", "enum": ["or", "and"] }, "vorgabe": "or", "beschreibung": "or = prompts in any of the topics, and = prompts in all of them." },
-    "intents": { "rpc": "p_intents", "schema": { "type": "array", "items": { "type": "string", "enum": ["informational", "recommendation", "transactional", "other"] } }, "beschreibung": "Prompt intents to include. Omit for all intents." },
-    "branded": { "rpc": "p_branded", "schema": { "type": "string", "enum": ["non_branded", "branded", "all"] }, "vorgabe": "non_branded", "beschreibung": "Branded prompts are excluded by default (non_branded), like everywhere in the app. Use all or branded only when the user asks for branded prompts." }
+    "date_from": { "rpc": "p_date_from", "schema": { "type": "string", "format": "date" }, "beschreibung": "First day of the period, a Berlin calendar day (YYYY-MM-DD). Pass both dates or neither. Neither = the last 30 days up to today, the same window in every tool. Only one date = the other falls back to the function's own default (date_to: today; date_from: a 30-day window ending at date_to, but only 7 days in the sources_* tools), so results of different tools would not be comparable. At most 366 days (prompts and prompt_groups: 400)." },
+    "date_to": { "rpc": "p_date_to", "schema": { "type": "string", "format": "date" }, "beschreibung": "Last day of the period, inclusive (Berlin calendar day, at most tomorrow). Pass together with date_from. Tools with *_prev / *_delta fields compare against the period directly before date_from, which is half as long (1 to 30 days), not of equal length." },
+    "models": { "rpc": "p_models", "schema": { "type": "array", "items": { "type": "string" }, "maxItems": 20 }, "beschreibung": "AI models to include, by lowercase key: chatgpt, google-aio (Google AI Overviews), perplexity, gemini, deepseek. Omit for all models. A model the team does not track returns no data, not an error." },
+    "markets": { "rpc": "p_markets", "schema": { "type": "array", "items": { "type": "string" }, "maxItems": 50 }, "beschreibung": "Markets to include, by two-letter country code (DE, US, ...). The market belongs to the prompt (each prompt runs in one market), not to the answer. Omit for all markets." },
+    "topic_ids": { "rpc": "p_tag_ids", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 20 }, "beschreibung": "Topics to include, by topic id (tag_id from prompts_meta; search_entities does not find topics). Unknown or other-team ids return an error. Filters by the prompts' current topic assignment, also for past answers. Omit for all prompts." },
+    "topic_mode": { "rpc": "p_tagmode", "schema": { "type": "string", "enum": ["or", "and"] }, "vorgabe": "or", "beschreibung": "How several topic_ids combine: or = prompts in at least one of the topics, and = prompts in all of them. Only matters with two or more topics." },
+    "intents": { "rpc": "p_intents", "schema": { "type": "array", "items": { "type": "string", "enum": ["informational", "recommendation", "transactional", "other"] } }, "beschreibung": "Prompt intents to include (the purpose of the prompt, classified per prompt). Omit for all. Passing all four values is the same as no filter and also keeps prompts that are not classified yet." },
+    "branded": { "rpc": "p_branded", "schema": { "type": "string", "enum": ["non_branded", "branded", "all"] }, "vorgabe": "non_branded", "beschreibung": "Branded prompts are prompts whose own text names one of the team's tracked brands (prompts not yet checked count as non-branded). They are excluded by default (non_branded), like everywhere in the app, so all counts and rates leave them out. Use all (every prompt) or branded (only those) only when the user asks for branded prompts, and then say that they are included." }
   },
   "werkzeuge": [
     {
       "name": "search_entities",
       "bereich": "suche",
       "klasse": "lesen",
-      "beschreibung": "Find brands, prompts, domains or URLs by name or text and get their ids. Use this before any tool that needs an id.",
+      "beschreibung": "Look up ids by name or text: tracked brands (own brand and active competitors; id = company_id), active prompts (id = prompt_id), and domains and URLs that the team's AI answers have cited (no id: the domain or URL string itself is the key). Case-, accent- and umlaut-insensitive substring match, exact and prefix matches first; www. and https:// variants of a host find the same domain. Does NOT find topics (use prompts_meta), inactive or untracked brands (brands_tracked lists inactive ones) or inactive prompts; newly cited domains and URLs can take up to 10 minutes to appear. Hits come as one list grouped by type: brand {id, name}, domain {domain}, url {url, title}, prompt {id, prompt_text, market}. Only call it when a tool needs an id you do not have; list and overview tools already return names with ids.",
       "aufrufe": [{ "fn": "quick_search_v1" }],
       "filter": [],
       "parameter": {
-        "query": { "rpc": "p_query", "pflicht": true, "schema": { "type": "string", "minLength": 1, "maxLength": 200 } },
-        "scope": { "rpc": "p_scope", "schema": { "type": "string", "enum": ["brand", "prompt", "domain", "url"] }, "beschreibung": "Restrict to one kind. Omit to search all kinds." },
-        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 20 }, "vorgabe": 8 }
+        "query": { "rpc": "p_query", "pflicht": true, "schema": { "type": "string", "minLength": 2, "maxLength": 200 }, "beschreibung": "Search text, at least 2 characters (shorter returns nothing): a brand name, words from a prompt, a domain (adac.de) or a URL." },
+        "scope": { "rpc": "p_scope", "schema": { "type": "string", "enum": ["brand", "prompt", "domain", "url"] }, "beschreibung": "Restrict to one kind. Omit to search all four kinds." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 20 }, "vorgabe": 8, "beschreibung": "Maximum hits per kind (not in total), 1-20." }
       }
     },
     {
       "name": "brands_overview",
       "bereich": "dashboard",
       "klasse": "lesen",
-      "beschreibung": "Brand leaderboard for the period: visibility, rank (lower is better), sentiment (0-100), mentions, with deltas against the previous period. The own brand is always included.",
+      "beschreibung": "Brand leaderboard for the period: every active tracked brand (own and competitors) with visibility_pct (share of answers that name the brand, in %), avg_rank (mean of the brand's best position per answer; positions count all brands named in the answer incl. untracked ones, 1 = named first, lower is better), sentiment (0-100, only over the last 30 days of the period), mentions (number of answers naming the brand, not the number of name mentions) and position (place in the full ranking by visibility, independent of order, search, brand_ids and paging). *_prev / *_delta compare with the period directly before date_from, which is half as long (1 to 30 days): visibility_delta_pct in percentage points, avg_rank_delta in rank points (positive = worse), sentiment_delta in points; null when that period had no answers. mentions_prev counts over that shorter period, so never compare it with mentions directly. Each brand counts only inside its tracking window; visibility_pct null = no answers in its window, which is not 0 %. own = the own brand, always present and unaffected by search, brand_ids and paging; field = brand_count, best_rank and the unweighted avg_sentiment of all brands. With prompt_id all numbers are for that one prompt. For trends over time use brands_visibility_trend, for numbers per prompt prompts.",
       "aufrufe": [{ "fn": "cached_dashboard_overview_v1" }],
       "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
       "parameter": {
-        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["visibility_desc", "visibility_asc", "visibility_delta_desc", "visibility_delta_asc", "rank_asc", "rank_desc", "sentiment_desc", "sentiment_asc", "mentions_desc", "mentions_asc", "name_asc", "name_desc"] }, "vorgabe": "visibility_desc" },
-        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25 },
-        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 } },
-        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 } },
-        "brand_ids": { "rpc": "p_companies", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 } },
-        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" } }
+        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["visibility_desc", "visibility_asc", "visibility_delta_desc", "visibility_delta_asc", "rank_asc", "rank_desc", "sentiment_desc", "sentiment_asc", "mentions_desc", "mentions_asc", "name_asc", "name_desc"] }, "vorgabe": "visibility_desc", "beschreibung": "Sort order of rows (position does not change). visibility_delta_* sorts by visibility_delta_pct, brands without a previous value last; rank_asc = best rank first." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25, "beschreibung": "Rows per page, 1-50; meta.total_count = all matching brands." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Rows to skip for paging. Default 0." },
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only brands whose name contains this text (case-insensitive; umlaut spellings like ue/oe/ae also match)." },
+        "brand_ids": { "rpc": "p_companies", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only these brands in rows (company ids; max 50); own stays complete regardless. Inactive brands return no row; unknown or other-team ids return an error." },
+        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Restrict all numbers (rows and own) to this one prompt. A deleted or other-team prompt returns an error." }
       }
     },
     {
       "name": "brands_visibility_trend",
       "bereich": "dashboard",
       "klasse": "lesen",
-      "beschreibung": "Visibility over time per brand (time series for a line chart).",
+      "beschreibung": "Visibility over time per brand (line chart, trend questions). companies[] = the brands shown with position, color and their visibility_pct / avg_rank for the whole period (same values as brands_overview). series[] = one entry per brand and bucket: bucket (start), bucket_from / bucket_to, partial (bucket cut by the period), visibility_pct, avg_rank, runs_with (answers naming the brand), runs_total (answers). visibility_pct and avg_rank are null where a bucket had no answers or lies outside the brand's tracking window: a gap, not 0. Without brand_ids it shows the top series_limit brands by visibility and always includes the own brand (top N-1 plus own). series is sorted by brand, then bucket, and the tool shows at most 50 entries: for long periods use week or month, or fewer brands. For one value per brand use brands_overview.",
       "aufrufe": [{ "fn": "cached_dashboard_visibility_v1" }],
       "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
       "parameter": {
-        "granularity": { "rpc": "p_granularity", "schema": { "type": "string", "enum": ["day", "week", "month"] }, "vorgabe": "day" },
-        "brand_ids": { "rpc": "p_companies", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 10 } },
-        "series_limit": { "rpc": "p_series_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 10 }, "vorgabe": 8 },
-        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" } }
+        "granularity": { "rpc": "p_granularity", "schema": { "type": "string", "enum": ["day", "week", "month"] }, "vorgabe": "day", "beschreibung": "Bucket size: day, week (ISO week from Monday) or month (calendar month). The first and last bucket can be partial." },
+        "brand_ids": { "rpc": "p_companies", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 10 }, "beschreibung": "Exactly these brands (company ids, max 10); the own brand only if included. series_limit is then ignored." },
+        "series_limit": { "rpc": "p_series_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 10 }, "vorgabe": 8, "beschreibung": "Without brand_ids: number of brands shown, 1-10, the top brands by visibility with the own brand always among them." },
+        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Restrict to this one prompt." }
       }
     },
     {
       "name": "brand_detail",
       "bereich": "marken",
       "klasse": "lesen",
-      "beschreibung": "Everything about one brand: key numbers, models, markets, topics, top sources.",
+      "beschreibung": "Header facts of one brand, without period and without numbers: name, domain, role (own or competitor), status (active or inactive), color, tracked_since (start of its current or last tracking window), last_mentioned_at (last answer naming it; intents and branded only affect this field), deactivated_at. Works for inactive brands too. Numbers come from other tools: brands_overview with brand_ids [id], brands_visibility_trend, responses with brand_id (its answers), sources_domains / sources_urls with brand_id (sources cited in its answers), brand_name_variations (its spellings).",
       "aufrufe": [{ "fn": "brand_detail_v1" }],
       "filter": ["intents", "branded"],
       "parameter": {
-        "brand_id": { "rpc": "p_company", "pflicht": true, "schema": { "type": "string", "format": "uuid" } }
+        "brand_id": { "rpc": "p_company", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "company_id of a brand of the team, active or inactive (from search_entities, brands_tracked or a previous result). Unknown or other-team id: not found." }
       }
     },
     {
       "name": "brand_name_variations",
       "bereich": "marken",
       "klasse": "lesen",
-      "beschreibung": "How AI answers spell or name a brand (name variations and their counts).",
+      "beschreibung": "How AI answers spell or name one tracked brand. One row per spelling (case differences merged): name (most frequent spelling), mentioned_count (name mentions), mentioned_runs (answers containing it), share_of_voice_pct = share of THIS brand's own mentions (meta.mentions_total), not the brand's share of voice against competitors. Sorted by mentioned_count. Only answers inside the brand's tracking window count. An inactive brand returns a not-found error. Not for brand KPIs (brands_overview).",
       "aufrufe": [{ "fn": "performance_brand_variations_v1" }],
       "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
       "parameter": {
-        "brand_id": { "rpc": "p_company", "pflicht": true, "schema": { "type": "string", "format": "uuid" } },
-        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 200 }, "vorgabe": 50 },
-        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 } }
+        "brand_id": { "rpc": "p_company", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "company_id of an active tracked brand (own or competitor). Inactive or other-team brand: not found." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 200 }, "vorgabe": 50, "beschreibung": "Rows per page, 1-200; meta.total_count = all spellings." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Rows to skip for paging. Default 0." }
       }
     },
     {
       "name": "brands_tracked",
       "bereich": "marken",
       "klasse": "lesen",
-      "beschreibung": "The team's tracked brands with status (active or inactive) and the brand quota.",
+      "beschreibung": "The team's brands without numbers: brands[] = all active tracked brands, own brand first (company_id, name, role own or competitor, domain, color); inactive[] = deactivated brands (company_id, name, domain, deactivated_at); meta with counts, quota {used, total, remaining, plan} (active competitors against the plan limit; the own brand does not count) and today's remaining daily limits. No period, no filters. Use it to list or resolve brands, also inactive ones, which search_entities does not find.",
       "aufrufe": [{ "fn": "brands_page_meta_v1" }],
       "filter": [],
       "parameter": {}
@@ -93,40 +93,40 @@
       "name": "prompts",
       "bereich": "prompts",
       "klasse": "lesen",
-      "beschreibung": "Prompt list with visibility, rank and sentiment per prompt, plus the totals row for the same filters.",
+      "beschreibung": "Prompt list with numbers per prompt plus the totals row for the same filters. Result: liste (rows; meta.total_count; meta.counts = active, inactive and untagged prompts under the same filters) and summe (totals row). Per row: runs_total (answers in the period), mentioned_runs (answers naming the OWN brand), visibility_pct (= mentioned_runs / runs_total, null without answers), avg_rank (own brand, mean best position per answer, lower is better), avg_sentiment (own brand, only the last 30 days of the period), top_mentions (up to 5 tracked brands with mention_runs and mentioned_pct in this prompt), companies_mentioned_count, tags, intent, branded, last_seen_run_at (last answer that named the own brand). Own-brand numbers count only answers inside the own brand's tracking window. summe: visibility_pct (weighted by answers), prompts_mentioned / prompts_zero_vis (prompts whose answers did / never named the own brand), avg_rank, rank1_count and rank_top3_count (number of PROMPTS whose rank is 1.0 / at most 3.0, not answers), avg_sentiment, sentiment_below_50 (PROMPTS with average sentiment below 50), topics_used, avg_brands_per_prompt, competitors_seen, top_intent / top_market with their share of prompts, markets_used, newest_created, added_last_7d. Branded prompts are excluded by default, so counts can be lower than in prompts_meta. One prompt in detail: prompt_detail; groups: prompt_groups.",
       "aufrufe": [{ "fn": "cached_prompts_list_v1", "rolle": "liste" }, { "fn": "cached_prompts_summary_v1", "rolle": "summe", "fest": { "p_fields": ["visibility_pct", "prompts_mentioned", "prompts_zero_vis", "avg_rank", "rank1_count", "rank_top3_count", "avg_sentiment", "sentiment_below_50", "topics_used", "avg_brands_per_prompt", "competitors_seen", "top_intent", "top_intent_share", "markets_used", "top_market", "top_market_share", "newest_created", "added_last_7d"] }, "ohne": ["order", "limit", "offset"] }],
       "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
       "parameter": {
-        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 } },
-        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "yes / no: only prompts in whose answers the OWN brand was (not) named in the period. For other brands use brand_ids." },
-        "brand_ids": { "rpc": "p_company_ids", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only prompts whose answers name at least one of these brands (company ids)." },
-        "status": { "rpc": "p_status", "schema": { "type": "string", "enum": ["active", "inactive"] }, "vorgabe": "active" },
-        "untagged": { "rpc": "p_untagged", "schema": { "type": "boolean" } },
-        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["visibility_desc", "visibility_asc", "rank_asc", "rank_desc", "sentiment_desc", "sentiment_asc", "name_asc", "name_desc", "created_at_desc", "created_at_asc"] }, "vorgabe": "visibility_desc" },
-        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25 },
-        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 } }
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only prompts whose text contains this text (case- and accent-insensitive substring)." },
+        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "yes = prompts with at least one answer in the period that names the OWN brand; no = prompts whose answers never name it, including prompts without any answer in the period. For other brands use brand_ids; both together = AND." },
+        "brand_ids": { "rpc": "p_company_ids", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only prompts with at least one answer in the period that names one of these tracked brands (company ids, any of them; max 50). Combined with mentioned by AND." },
+        "status": { "rpc": "p_status", "schema": { "type": "string", "enum": ["active", "inactive", "all"] }, "vorgabe": "active", "beschreibung": "active = prompts that currently run, inactive = paused prompts, all = both." },
+        "untagged": { "rpc": "p_untagged", "schema": { "type": "boolean" }, "beschreibung": "true = only prompts without any active topic. Cannot be combined with topic_ids (error)." },
+        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["visibility_desc", "visibility_asc", "rank_asc", "rank_desc", "sentiment_desc", "sentiment_asc", "name_asc", "name_desc", "created_at_desc", "created_at_asc"] }, "vorgabe": "visibility_desc", "beschreibung": "Sort order; prompts without a value go last. visibility_asc, rank_desc and sentiment_asc put the weakest first; rank_asc = best rank first." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25, "beschreibung": "Rows per page, 1-50; liste.meta.total_count = all matching prompts." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Rows to skip for paging. Default 0." }
       }
     },
     {
       "name": "prompt_groups",
       "bereich": "prompts",
       "klasse": "lesen",
-      "beschreibung": "Prompts grouped by topic or by intent, with visibility, rank and sentiment per group.",
+      "beschreibung": "Prompts grouped by topic or by intent. One row per group with prompts_count (active prompts), prompts_count_inactive, runs_total and the OWN brand's visibility_pct, avg_rank and avg_sentiment, weighted by answers, over the prompts that pass the filters and status. By topic: one row per active topic, plus untagged (prompts without topic) last; a prompt with several topics counts in each of them, so groups overlap and must not be added up. By intent: always the four intents (also with 0 prompts), plus pending (not yet classified) when present. Topic groups are sorted by visibility. For single prompts use prompts.",
       "aufrufe": [{ "fn": "cached_prompts_groups_v1" }],
       "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
       "parameter": {
-        "group_by": { "rpc": "p_group_by", "schema": { "type": "string", "enum": ["topic", "intent"] }, "vorgabe": "topic" },
-        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 } },
-        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "yes / no: only prompts in whose answers the OWN brand was (not) named in the period. For other brands use brand_ids." },
-        "brand_ids": { "rpc": "p_company_ids", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only prompts whose answers name at least one of these brands (company ids)." },
-        "status": { "rpc": "p_status", "schema": { "type": "string", "enum": ["active", "inactive"] }, "vorgabe": "active" }
+        "group_by": { "rpc": "p_group_by", "schema": { "type": "string", "enum": ["topic", "intent"] }, "vorgabe": "topic", "beschreibung": "topic = one group per active topic plus untagged; intent = one group per prompt intent." },
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only prompts whose text contains this text (case- and accent-insensitive substring)." },
+        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "yes = prompts with at least one answer in the period that names the OWN brand; no = prompts whose answers never name it, including prompts without any answer in the period. For other brands use brand_ids; both together = AND." },
+        "brand_ids": { "rpc": "p_company_ids", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only prompts with at least one answer in the period that names one of these tracked brands (company ids, any of them; max 50). Combined with mentioned by AND." },
+        "status": { "rpc": "p_status", "schema": { "type": "string", "enum": ["active", "inactive", "all"] }, "vorgabe": "active", "beschreibung": "active = prompts that currently run, inactive = paused prompts, all = both. prompts_count always counts active prompts." }
       }
     },
     {
       "name": "prompts_meta",
       "bereich": "prompts",
       "klasse": "lesen",
-      "beschreibung": "The team's topics (ids, names, prompt counts), intent counts and the prompt quota.",
+      "beschreibung": "The team's prompt setup without numbers or period: topics (active topics with tag_id = the id for topic_ids, name, prompt_count_active, prompt_count_inactive), intent_counts of active prompts (informational, recommendation, transactional, other, pending = not yet classified), markets with prompt counts, the prompt quota (prompts_limit, prompts_active, prompts_remaining, prompts_inactive) and the user's role. Counts include branded prompts. Use it to resolve topic names to ids and for 'how many prompts / topics do we have'.",
       "aufrufe": [{ "fn": "prompts_page_meta_v1" }],
       "filter": [],
       "parameter": {}
@@ -135,152 +135,152 @@
       "name": "prompt_detail",
       "bereich": "prompts",
       "klasse": "lesen",
-      "beschreibung": "One prompt in detail: text, topics, intent, results per model.",
+      "beschreibung": "Header facts of one prompt, without period and without numbers: prompt_text, market, topics (tags), status (active or paused; paused_reason plan_limit), created_at, last_run_at, next_run_at, intent, branded with the brands that make it branded, and models = the AI models the team tracks (not results per model). For its numbers call brands_overview, brands_visibility_trend, sources_domains, sources_urls or responses with prompt_id.",
       "aufrufe": [{ "fn": "prompt_detail_v1" }],
       "filter": [],
       "parameter": {
-        "prompt_id": { "rpc": "p_prompt_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" } }
+        "prompt_id": { "rpc": "p_prompt_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Prompt id from search_entities, prompts or a previous result. Deleted or other-team prompt: not found." }
       }
     },
     {
       "name": "sources_domains",
       "bereich": "citations",
       "klasse": "lesen",
-      "beschreibung": "Cited domains with share of citations, delta, citation type and URL count, plus the totals row. With mentioned (own brand) or mentioned_brand_ids (other brands) it answers which sources name a brand. Row field is_mentioned: the own brand is named on the page (with brand_id: that brand).",
+      "beschreibung": "Cited domains (hosts; each subdomain is its own domain, www. removed) and how often AI answers cite them, plus the totals row. Result: liste (rows; meta.total_count; meta.runs_with_any = answers with at least one citation, the denominator) and summe. share_pct = answers citing the domain / answers with at least one citation, in %: answer-based, so the shares of all domains add up to more than 100. share_prev_pct / share_delta_pct = the same for the period directly before date_from (half as long, 1 to 30 days), delta in percentage points. runs_with_domain = answers citing it; used_total = citations (answer x URL pairs: an answer citing 3 of its pages counts 3); urls_count = its cited URLs in the period; citation_type = who owns the source (You = own site, Competition = a tracked competitor's site, Editorial, UGC_Community, Knowledge_Base, Brand_Platform, Institutional, Misc); is_mentioned = at least one of its cited pages names the OWN brand in its content (with brand_id: that brand); first_used_at / last_used_at = first and last citation inside the period. summe: own_share_pct (citations of domains of type You / all citations: citation-based and about own sites, not about pages naming the brand), top10_share_pct, citations_total, avg_citations_per_domain, top_type / top_type_share / types_used, active_last_7d, new_in_period (domains not cited before the period). summe ignores brand_id, prompt_id and url_types. With mentioned or mentioned_brand_ids it answers which sources name a brand on the page.",
       "aufrufe": [{ "fn": "cached_citations_domains_v1", "rolle": "liste" }, { "fn": "cached_citations_domains_summary_v1", "rolle": "summe", "fest": { "p_fields": ["own_share_pct", "top10_share_pct", "citations_total", "avg_citations_per_domain", "top_type", "top_type_share", "types_used", "active_last_7d", "new_in_period"] }, "ohne": ["order", "limit", "offset", "url_types", "prompt_id", "brand_id"] }],
       "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
       "parameter": {
-        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "yes / no: only sources whose cited pages name (do not name) the OWN brand; for a domain, at least one of its URLs in the period. With brand_id set it means THAT brand instead. To check which pages name another brand, use mentioned_brand_ids; combining both requires both conditions." },
-        "mentioned_brand_ids": { "rpc": "p_mentioned_brands", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only sources whose cited pages name at least one of these brands (company ids); for a domain, at least one of its URLs." },
-        "citation_types": { "rpc": "p_citation_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["Editorial", "UGC_Community", "Knowledge_Base", "Brand_Platform", "Institutional", "Competition", "You"] } } },
-        "url_types": { "rpc": "p_url_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["homepage", "product_service", "marketplace", "company_info", "article", "listicle", "guide", "comparison", "review", "documentation", "forum", "directory", "video", "social_post"] } } },
-        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 } },
-        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["share_desc", "share_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "last_used_asc", "domain_asc", "domain_desc", "urls_count_desc", "urls_count_asc"] }, "vorgabe": "share_desc" },
-        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25 },
-        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 } },
-        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" } },
-        "brand_id": { "rpc": "p_brand", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only citations from answers in which this brand appears. The rows' is_mentioned and the mentioned filter then refer to this brand, not to the own brand." }
+        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "Page-level, not answer-level: yes / no = only domains where at least one cited page (in the period) names / no cited page names the OWN brand in its content. With brand_id set it refers to THAT brand in the list (the totals row keeps the own brand). For other brands use mentioned_brand_ids; both together = AND. Pages that could not be analysed count as not naming the brand, so no is not proof of absence." },
+        "mentioned_brand_ids": { "rpc": "p_mentioned_brands", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only domains with at least one cited page (in the period) whose content names one of these tracked brands (company ids, any of them). Page-level, not answer-level." },
+        "citation_types": { "rpc": "p_citation_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["Editorial", "UGC_Community", "Knowledge_Base", "Brand_Platform", "Institutional", "Misc", "Competition", "You"] } }, "beschreibung": "Only sources whose domain has one of these citation types (who owns the source): You = own site incl. its subdomains, Competition = a tracked competitor's site, Misc = not classified; the others are categories of third-party sites." },
+        "url_types": { "rpc": "p_url_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["homepage", "product_service", "marketplace", "company_info", "article", "listicle", "guide", "comparison", "review", "documentation", "forum", "directory", "video", "social_post", "other", "uncategorized"] } }, "beschreibung": "No effect in this tool: a domain has no page type, the list ignores it (meta.ignored_filters). For page types use sources_urls." },
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only domains whose host contains this text (e.g. reddit, youtu)." },
+        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["share_desc", "share_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "last_used_asc", "domain_asc", "domain_desc", "urls_count_desc", "urls_count_asc"] }, "vorgabe": "share_desc", "beschreibung": "Sort order. share_* sorts by answers citing the domain, share_delta_* by the change in percentage points (no previous value last), urls_count_* by cited URLs." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25, "beschreibung": "Rows per page, 1-50; liste.meta.total_count = all matching domains." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Rows to skip for paging. Default 0." },
+        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only citations from answers to this one prompt. The totals row (summe) ignores it." },
+        "brand_id": { "rpc": "p_brand", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only citations from answers in which this brand is named; shares then use those answers as denominator. is_mentioned and the mentioned filter then refer to THIS brand, not the own brand. The totals row (summe) ignores brand_id and keeps all answers and the own brand." }
       }
     },
     {
       "name": "sources_urls",
       "bereich": "citations",
       "klasse": "lesen",
-      "beschreibung": "Cited URLs (exact pages) with share of citations, delta, citation type and URL type, plus the totals row. Row field is_mentioned: the own brand is named on the page (with brand_id: that brand).",
+      "beschreibung": "Cited URLs (exact pages, normalised: https, no www., no tracking parameters) and how often AI answers cite them, plus the totals row. Result: liste (rows; meta.total_count; meta.runs_with_any = the denominator) and summe. global_share_pct = answers citing the URL / answers with at least one citation, in % (answer-based, adds up to more than 100); share_prev_pct / share_delta_pct = the same for the period directly before date_from (half as long, 1 to 30 days), delta in percentage points; domainshare_pct = answers citing this URL / answers citing its domain; runs_with_url; title; citation_type (owner of its domain); url_type (kind of page; uncategorized = not classified); is_mentioned = the page content names the OWN brand (with brand_id: that brand); mentions[] = up to 4 tracked brands named on the page (own first) with mentions_total; first_used_at / last_used_at inside the period. summe: own_share_pct (citations of URLs on own sites, type You / all citations), top10_share_pct, top_url_type / top_url_type_share, mention_rate_pct (share of the listed URLs whose page names the own brand, counted per URL), avg_brands_per_url, brands_seen, active_last_7d, new_in_period. summe ignores brand_id and prompt_id. Use for which pages are cited, page types and which brands appear on cited pages; one URL in depth: url_detail.",
       "aufrufe": [{ "fn": "cached_citations_urls_v1", "rolle": "liste" }, { "fn": "cached_citations_urls_summary_v1", "rolle": "summe", "fest": { "p_fields": ["own_share_pct", "top10_share_pct", "top_url_type", "top_url_type_share", "mention_rate_pct", "avg_brands_per_url", "brands_seen", "active_last_7d", "new_in_period"] }, "ohne": ["order", "limit", "offset", "prompt_id", "brand_id"] }],
       "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
       "parameter": {
-        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "yes / no: only sources whose cited pages name (do not name) the OWN brand; for a domain, at least one of its URLs in the period. With brand_id set it means THAT brand instead. To check which pages name another brand, use mentioned_brand_ids; combining both requires both conditions." },
-        "mentioned_brand_ids": { "rpc": "p_mentioned_brands", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only sources whose cited pages name at least one of these brands (company ids); for a domain, at least one of its URLs." },
-        "citation_types": { "rpc": "p_citation_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["Editorial", "UGC_Community", "Knowledge_Base", "Brand_Platform", "Institutional", "Competition", "You"] } } },
-        "url_types": { "rpc": "p_url_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["homepage", "product_service", "marketplace", "company_info", "article", "listicle", "guide", "comparison", "review", "documentation", "forum", "directory", "video", "social_post"] } } },
-        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 } },
-        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["share_desc", "share_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "last_used_asc", "domain_asc", "url_asc"] }, "vorgabe": "share_desc" },
-        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25 },
-        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 } },
-        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" } },
-        "brand_id": { "rpc": "p_brand", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only citations from answers in which this brand appears. The rows' is_mentioned and the mentioned filter then refer to this brand, not to the own brand." }
+        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "Page-level, not answer-level: yes / no = only URLs whose page content names / does not name the OWN brand. With brand_id set it refers to THAT brand in the list (the totals row keeps the own brand). For other brands use mentioned_brand_ids; both together = AND. Pages that could not be analysed count as not naming the brand, so no is not proof of absence." },
+        "mentioned_brand_ids": { "rpc": "p_mentioned_brands", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only URLs whose page content names at least one of these tracked brands (company ids, any of them). Page-level, not answer-level." },
+        "citation_types": { "rpc": "p_citation_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["Editorial", "UGC_Community", "Knowledge_Base", "Brand_Platform", "Institutional", "Misc", "Competition", "You"] } }, "beschreibung": "Only sources whose domain has one of these citation types (who owns the source): You = own site incl. its subdomains, Competition = a tracked competitor's site, Misc = not classified; the others are categories of third-party sites." },
+        "url_types": { "rpc": "p_url_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["homepage", "product_service", "marketplace", "company_info", "article", "listicle", "guide", "comparison", "review", "documentation", "forum", "directory", "video", "social_post", "other", "uncategorized"] } }, "beschreibung": "Only URLs of these page kinds (what the page is, independent of who owns it, e.g. listicle, review, forum); uncategorized = page without a type yet." },
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only URLs containing this text (searches the URL, not the title)." },
+        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["share_desc", "share_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "last_used_asc", "domain_asc", "url_asc"] }, "vorgabe": "share_desc", "beschreibung": "Sort order. share_* sorts by answers citing the URL, share_delta_* by the change in percentage points (no previous value last), domain_asc / url_asc alphabetically." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25, "beschreibung": "Rows per page, 1-50; liste.meta.total_count = all matching URLs." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Rows to skip for paging. Default 0." },
+        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only citations from answers to this one prompt. The totals row (summe) ignores it." },
+        "brand_id": { "rpc": "p_brand", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only citations from answers in which this brand is named; shares then use those answers as denominator. is_mentioned and the mentioned filter then refer to THIS brand, not the own brand. The totals row (summe) ignores brand_id and keeps all answers and the own brand." }
       }
     },
     {
       "name": "sources_domain_urls",
       "bereich": "citations",
       "klasse": "lesen",
-      "beschreibung": "The cited URLs of one domain with their share within the domain. Row field is_mentioned: the own brand is named on the page (with brand_id: that brand).",
+      "beschreibung": "The cited URLs of ONE domain (drill-down after sources_domains), with the same row fields as sources_urls. domainshare_pct = answers citing the URL / answers citing the domain (meta.runs_with_domain); global_share_pct and share_delta_pct refer to all answers with a citation (delta in percentage points against the period before, half as long). is_mentioned = the page content names the OWN brand. No totals row, no prompt_id, no brand_id.",
       "aufrufe": [{ "fn": "cached_citations_domain_urls_v1" }],
       "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
       "parameter": {
-        "domain": { "rpc": "p_domain", "pflicht": true, "schema": { "type": "string", "minLength": 1, "maxLength": 253 } },
-        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "yes / no: only sources whose cited pages name (do not name) the OWN brand; for a domain, at least one of its URLs in the period. With brand_id set it means THAT brand instead. To check which pages name another brand, use mentioned_brand_ids; combining both requires both conditions." },
-        "mentioned_brand_ids": { "rpc": "p_mentioned_brands", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only sources whose cited pages name at least one of these brands (company ids); for a domain, at least one of its URLs." },
-        "url_types": { "rpc": "p_url_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["homepage", "product_service", "marketplace", "company_info", "article", "listicle", "guide", "comparison", "review", "documentation", "forum", "directory", "video", "social_post"] } } },
-        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 } },
-        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["domainshare_desc", "domainshare_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "url_asc"] }, "vorgabe": "domainshare_desc" },
-        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25 },
-        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 } }
+        "domain": { "rpc": "p_domain", "pflicht": true, "schema": { "type": "string", "minLength": 1, "maxLength": 253 }, "beschreibung": "The domain, e.g. adac.de; a URL or a www. form is reduced to the host. Each subdomain is its own domain (blog.x.com is not x.com)." },
+        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "Page-level, not answer-level: yes / no = only URLs whose page content names / does not name the OWN brand. For other brands use mentioned_brand_ids; both together = AND. Pages that could not be analysed count as not naming the brand." },
+        "mentioned_brand_ids": { "rpc": "p_mentioned_brands", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only URLs whose page content names at least one of these tracked brands (company ids, any of them). Page-level, not answer-level." },
+        "url_types": { "rpc": "p_url_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["homepage", "product_service", "marketplace", "company_info", "article", "listicle", "guide", "comparison", "review", "documentation", "forum", "directory", "video", "social_post", "other", "uncategorized"] } }, "beschreibung": "Only URLs of these page kinds (what the page is, independent of who owns it, e.g. listicle, review, forum); uncategorized = page without a type yet." },
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only URLs containing this text (searches the URL, not the title)." },
+        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["domainshare_desc", "domainshare_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "url_asc"] }, "vorgabe": "domainshare_desc", "beschreibung": "Sort order. domainshare_* sorts by answers citing the URL, share_delta_* by the change of its global share in percentage points." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25, "beschreibung": "Rows per page, 1-50; meta.total_count = all matching URLs of the domain." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Rows to skip for paging. Default 0." }
       }
     },
     {
       "name": "sources_trend",
       "bereich": "citations",
       "klasse": "lesen",
-      "beschreibung": "Citation share over time for the top domains or URLs (time series for a line chart) and the share per citation type (for a doughnut chart).",
+      "beschreibung": "Citation share over time for the top domains (mode domain) or top URLs (mode url), plus kpis and the split by type. kpis: runs_with_any (answers with at least one citation), citations_total (answer x URL pairs), domains_total, urls_total. series[] = the top series_limit domains or URLs by share, with share_pct over the whole period. timeseries[] = one entry per key and bucket, share_pct = answers citing it / answers with a citation in that bucket (0 when the bucket has none). types[] = share of CITATIONS per type, adding up to 100: citation types in domain mode, URL page types in url mode; the type filter of the kind shown is not applied to types[], and url_types are ignored completely in domain mode. The tool shows at most 50 timeseries entries: for long periods use week or month or a smaller series_limit. series_limit 0 returns only kpis and types.",
       "aufrufe": [{ "fn": "cached_citations_overview_v1" }],
       "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
       "parameter": {
-        "mode": { "rpc": "p_mode", "schema": { "type": "string", "enum": ["domain", "url"] }, "vorgabe": "domain" },
-        "granularity": { "rpc": "p_granularity", "schema": { "type": "string", "enum": ["day", "week", "month"] }, "vorgabe": "day" },
-        "series_limit": { "rpc": "p_series_limit", "schema": { "type": "integer", "minimum": 0, "maximum": 10 }, "vorgabe": 7 },
-        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "yes / no: only sources whose cited pages name (do not name) the OWN brand; for a domain, at least one of its URLs in the period. With brand_id set it means THAT brand instead. To check which pages name another brand, use mentioned_brand_ids; combining both requires both conditions." },
-        "mentioned_brand_ids": { "rpc": "p_mentioned_brands", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only sources whose cited pages name at least one of these brands (company ids); for a domain, at least one of its URLs." },
-        "citation_types": { "rpc": "p_citation_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["Editorial", "UGC_Community", "Knowledge_Base", "Brand_Platform", "Institutional", "Competition", "You"] } } },
-        "url_types": { "rpc": "p_url_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["homepage", "product_service", "marketplace", "company_info", "article", "listicle", "guide", "comparison", "review", "documentation", "forum", "directory", "video", "social_post"] } } },
-        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" } },
-        "brand_id": { "rpc": "p_brand", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only citations from answers in which this brand appears. The rows' is_mentioned and the mentioned filter then refer to this brand, not to the own brand." }
+        "mode": { "rpc": "p_mode", "schema": { "type": "string", "enum": ["domain", "url"] }, "vorgabe": "domain", "beschreibung": "domain = series per domain and split by citation type; url = series per URL and split by page type." },
+        "granularity": { "rpc": "p_granularity", "schema": { "type": "string", "enum": ["day", "week", "month"] }, "vorgabe": "day", "beschreibung": "Bucket size: day, week (ISO week from Monday) or month (calendar month)." },
+        "series_limit": { "rpc": "p_series_limit", "schema": { "type": "integer", "minimum": 0, "maximum": 10 }, "vorgabe": 7, "beschreibung": "Number of top domains or URLs with a time series, 0-10; 0 = only kpis and types." },
+        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "Page-level, not answer-level: yes / no = only sources whose cited pages name / do not name the OWN brand in their content (for a domain: at least one of its URLs). With brand_id set it refers to THAT brand. For other brands use mentioned_brand_ids; both together = AND." },
+        "mentioned_brand_ids": { "rpc": "p_mentioned_brands", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only sources whose cited pages name at least one of these tracked brands (company ids, any of them); for a domain, at least one of its URLs. Page-level, not answer-level." },
+        "citation_types": { "rpc": "p_citation_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["Editorial", "UGC_Community", "Knowledge_Base", "Brand_Platform", "Institutional", "Misc", "Competition", "You"] } }, "beschreibung": "Only sources whose domain has one of these citation types (who owns the source): You = own site incl. its subdomains, Competition = a tracked competitor's site, Misc = not classified; the others are categories of third-party sites. In domain mode this does not narrow types[]." },
+        "url_types": { "rpc": "p_url_types", "schema": { "type": "array", "items": { "type": "string", "enum": ["homepage", "product_service", "marketplace", "company_info", "article", "listicle", "guide", "comparison", "review", "documentation", "forum", "directory", "video", "social_post", "other", "uncategorized"] } }, "beschreibung": "Only URLs of these page kinds; uncategorized = page without a type yet. Ignored in domain mode; in url mode it does not narrow types[]." },
+        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only citations from answers to this one prompt." },
+        "brand_id": { "rpc": "p_brand", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only citations from answers in which this brand is named; shares then use those answers as denominator, and the mentioned filter refers to this brand." }
       }
     },
     {
       "name": "domain_detail",
       "bereich": "citations",
       "klasse": "lesen",
-      "beschreibung": "One domain in detail: role (own, competitor, other), citation type, share, trend, top URLs.",
+      "beschreibung": "Header facts of one domain, without period: citation_type (effective type used everywhere: You / Competition from the team's brands or a manual override, subdomains inherit it from the parent host; otherwise the source category), citation_type_auto (type without this domain's own override), override (own, competitor or null), company (the tracked brand whose website is this host or its parent host, else null), first_seen / last_seen (the team's first and last citation of the domain over all time; intents and branded only affect these two). A domain that was never cited is not an error (Misc, last_seen null). No share, trend or URLs: use sources_domains (search = the domain), sources_trend and sources_domain_urls for those.",
       "aufrufe": [{ "fn": "domain_detail_v1" }],
       "filter": ["intents", "branded"],
       "parameter": {
-        "domain": { "rpc": "p_domain", "pflicht": true, "schema": { "type": "string", "minLength": 1, "maxLength": 253 } }
+        "domain": { "rpc": "p_domain", "pflicht": true, "schema": { "type": "string", "minLength": 1, "maxLength": 253 }, "beschreibung": "The domain, e.g. adac.de; a URL or a www. form is reduced to the host. Each subdomain is its own domain. An invalid host returns not found." }
       }
     },
     {
       "name": "url_detail",
       "bereich": "citations",
       "klasse": "lesen",
-      "beschreibung": "One cited URL in detail: page summary, URL type, citation share, the brands named on the page, the answers that cite it and citation conversion per brand.",
+      "beschreibung": "One cited URL in depth for the period: title, domain, url_type (kind of page), citation_type (owner of its domain), cited_runs (answers citing it), global_share (cited_runs / answers with any citation, %), domain_share (cited_runs / answers citing its domain, %), global_rank (place among all URLs cited in the team's answers, by citing answers), description, summary (AI summary of the page content, in the page's language; null if none), brands[] = tracked brands detected ON the page, and conversion[] for exactly those brands: cited_runs, mentioned_runs (answers citing this URL that also name the brand) and citation_conversion_pct = mentioned_runs / cited_runs. Brands not named on the page get no conversion row. first_cited_at / last_cited_at cover all time and ignore filters; scope_first_cited_at / scope_last_cited_at respect intents and branded. in_range false = not cited in the period (numbers 0, conversion empty); branded_only true = cited in the period only for branded prompts, which are excluded by default. Use meta.url (the resolved spelling) for further calls, and the same period as the rest of the analysis: shares and conversion depend on it.",
       "aufrufe": [{ "fn": "url_detail_v1" }],
       "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
       "parameter": {
-        "url": { "rpc": "p_url", "pflicht": true, "schema": { "type": "string", "minLength": 4, "maxLength": 2048 } }
+        "url": { "rpc": "p_url", "pflicht": true, "schema": { "type": "string", "minLength": 4, "maxLength": 2048 }, "beschreibung": "The exact URL, taken from a previous result or the user, never guessed. http/https, www., a trailing slash, #fragments and tracking parameters are normalised. A URL the team's answers never cited returns not found." }
       }
     },
     {
       "name": "responses",
       "bereich": "antworten",
       "klasse": "lesen",
-      "beschreibung": "AI answers (one row per model run) with mentioned brands, rank and sentiment, plus the totals row (mention rate, average rank, rank 1 share, sentiment below 50). Use response_detail to read an answer's content.",
+      "beschreibung": "Individual AI answers (one row per model run) for the filters, plus the totals row. Result: liste (rows; meta.total_count) and summe. Row: prompt_run_id (id for response_detail), run_at, model, prompt_id, prompt_text, user_rank and user_sentiment of the measured brand (the own brand, or brand_id if set: its best position in this answer, counting all brands named incl. untracked ones, lower is better), own_mentioned (the OWN brand is named, also with brand_id), companies_preview (tracked brands named, with rank), sources_preview (up to 5 cited sources) with sources_totalcount, response_preview (first 100 characters, for triage only). summe: mention_rate_pct and mentioned_count (answers naming the OWN brand, even with brand_id), avg_rank and rank1_count (measured brand; rank1_count counts answers), avg_sentiment and sentiment_below_50 (measured brand, only the last 30 days of the period; sentiment_below_50 counts answers), avg_brands_per_response and brands_seen (tracked brands only), avg_citations_per_response, responses_with_citations_pct, models_used, top_model / top_model_share, first_date, last_date, responses_last_7d. Previews are not evidence: read an answer with response_detail.",
       "aufrufe": [{ "fn": "cached_dashboard_responses_v1", "rolle": "liste" }, { "fn": "cached_dashboard_responses_summary_v1", "rolle": "summe", "fest": { "p_fields": ["mention_rate_pct", "mentioned_count", "avg_sentiment", "sentiment_below_50", "avg_rank", "rank1_count", "avg_brands_per_response", "brands_seen", "avg_citations_per_response", "responses_with_citations_pct", "models_used", "top_model", "top_model_share", "first_date", "last_date", "responses_last_7d"] }, "ohne": ["order", "limit", "offset"] }],
       "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
       "parameter": {
-        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "yes / no: only answers that name (do not name) the OWN brand. For other brands use brand_ids or brand_id." },
-        "brand_ids": { "rpc": "p_company_ids", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only answers that name at least one of these brands (company ids)." },
-        "sentiment_min": { "rpc": "p_sentiment_min", "schema": { "type": "integer", "minimum": 0, "maximum": 100 } },
-        "sentiment_max": { "rpc": "p_sentiment_max", "schema": { "type": "integer", "minimum": 0, "maximum": 100 } },
-        "rank_min": { "rpc": "p_rank_min", "schema": { "type": "integer", "minimum": 1 } },
-        "rank_max": { "rpc": "p_rank_max", "schema": { "type": "integer", "minimum": 1 } },
-        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 } },
-        "url": { "rpc": "p_url", "schema": { "type": "string", "maxLength": 2048 } },
-        "domain": { "rpc": "p_domain", "schema": { "type": "string", "maxLength": 253 } },
-        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" } },
-        "brand_id": { "rpc": "p_brand", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only answers that name this brand; rank and sentiment then refer to it. Combined with brand_ids by AND." },
-        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["run_at_desc", "run_at_asc", "rank_asc", "rank_desc", "sentiment_asc", "sentiment_desc"] }, "vorgabe": "run_at_desc" },
-        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 30 }, "vorgabe": 15 },
-        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 } }
+        "mentioned": { "rpc": "p_mentioned", "schema": { "type": "string", "enum": ["all", "yes", "no"] }, "vorgabe": "all", "beschreibung": "yes / no: only answers that name (do not name) the OWN brand, also when brand_id is set. For other brands use brand_ids or brand_id." },
+        "brand_ids": { "rpc": "p_company_ids", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 50 }, "beschreibung": "Only answers that name at least one of these tracked brands (company ids, any of them). Combined with brand_id and mentioned by AND." },
+        "sentiment_min": { "rpc": "p_sentiment_min", "schema": { "type": "integer", "minimum": 0, "maximum": 100 }, "beschreibung": "Only answers where the measured brand (own brand, or brand_id) has a sentiment of at least this (0-100). Any rank or sentiment limit drops answers that do not name the measured brand." },
+        "sentiment_max": { "rpc": "p_sentiment_max", "schema": { "type": "integer", "minimum": 0, "maximum": 100 }, "beschreibung": "Only answers where the measured brand (own brand, or brand_id) has a sentiment of at most this (0-100), e.g. 49 for negative answers. Drops answers that do not name the measured brand." },
+        "rank_min": { "rpc": "p_rank_min", "schema": { "type": "integer", "minimum": 1 }, "beschreibung": "Only answers where the measured brand (own brand, or brand_id) is named at this position or later (1 = first; all brands in the answer count). Drops answers that do not name it." },
+        "rank_max": { "rpc": "p_rank_max", "schema": { "type": "integer", "minimum": 1 }, "beschreibung": "Only answers where the measured brand (own brand, or brand_id) is named at this position or earlier, e.g. 3 = top 3. Drops answers that do not name it." },
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only answers whose PROMPT text contains this text (it does not search the answer text). % and _ act as wildcards." },
+        "url": { "rpc": "p_url", "schema": { "type": "string", "maxLength": 2048 }, "beschreibung": "Only answers that cite this exact URL (normalised like url_detail). total_count then equals url_detail cited_runs." },
+        "domain": { "rpc": "p_domain", "schema": { "type": "string", "maxLength": 253 }, "beschreibung": "Only answers that cite at least one URL of this domain (host; a URL or www. form is accepted; subdomains are separate domains)." },
+        "prompt_id": { "rpc": "p_prompt_id", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only answers to this one prompt." },
+        "brand_id": { "rpc": "p_brand", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only answers that name this brand; user_rank, user_sentiment, the rank and sentiment filters and the totals' avg_rank / avg_sentiment then refer to it (mentioned and mention_rate_pct stay the own brand). Combined with brand_ids by AND." },
+        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["run_at_desc", "run_at_asc", "rank_asc", "rank_desc", "sentiment_asc", "sentiment_desc"] }, "vorgabe": "run_at_desc", "beschreibung": "Sort order; rank_* and sentiment_* put answers without a value for the measured brand last. The set and the totals do not change with the order." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 30 }, "vorgabe": 15, "beschreibung": "Rows per page, 1-30; liste.meta.total_count = all matching answers." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Rows to skip for paging. Default 0." }
       }
     },
     {
       "name": "response_detail",
       "bereich": "antworten",
       "klasse": "lesen",
-      "beschreibung": "One AI answer in full: text, mentioned brands with rank and sentiment, cited sources, shopping products and ads.",
+      "beschreibung": "One AI answer in full: response_json.text (the answer as given), prompt_text, model, run_at / run_day, market, tags (topics), brands[] (one row per tracked brand: rank = best position in this answer counting all brands named incl. untracked ones, so it can start at 2; ranks[]; mentions; sentiment 0-100), companies[] (one row per mention, with brand_name_raw = spelling in the text), citations[] (sources cited in this answer; their mentions[] = tracked brands detected on that page by page analysis, not in this answer), shopping_products and ads. Only brands the team tracks today appear. The only source for what an answer actually says.",
       "aufrufe": [{ "fn": "response_detail_v1" }],
       "filter": [],
       "parameter": {
-        "response_id": { "rpc": "p_prompt_run_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" } }
+        "response_id": { "rpc": "p_prompt_run_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "prompt_run_id from responses or another result. Unknown or other-team id: not found." }
       }
     },
     {
       "name": "opportunities",
       "bereich": "opportunities",
       "klasse": "lesen",
-      "beschreibung": "The team's saved Opportunities (Tasks on one exact URL) with status, type, priority and reason.",
+      "beschreibung": "The team's saved Opportunities: tasks on one exact URL (lead_url) with status (Created = shown as Pending, In Progress, Ignored, Done), recommendation_type (the action), priority_score / priority_label, headline and reason, market, topics, mentioned_competitors, and KPIs stored on the card when it was created (your_conversion, avg_competitor_conversion, gap, global_share_pct, trend_pct): not recalculated for any period, use url_detail for current numbers. meta.status_counts and meta.total_count cover all cards; rows are sorted by priority and at most 50 are shown. No period, no filters. Read only.",
       "aufrufe": [{ "fn": "dashboard_opportunities_v1" }],
       "filter": [],
       "parameter": {}
@@ -289,12 +289,12 @@
       "name": "get_knowledge",
       "bereich": "wissen",
       "klasse": "lesen",
-      "beschreibung": "Background knowledge on GEO/AEO, metrics, citation and URL types, and how upstreem works, by topic slug (see the knowledge index in the instructions).",
+      "beschreibung": "Background knowledge on GEO/AEO, metric definitions, citation and URL types and how upstreem works, by slug from the knowledge index in the instructions. Never a source of the team's numbers. An unknown slug returns an error with the available slugs.",
       "aufrufe": [],
       "wissen": true,
       "filter": [],
       "parameter": {
-        "slugs": { "pflicht": true, "schema": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 4 } }
+        "slugs": { "pflicht": true, "schema": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 4 }, "beschreibung": "1-4 slugs, exactly as listed in the knowledge index of the instructions." }
       }
     }
   ]
