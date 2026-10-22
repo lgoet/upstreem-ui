@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261192;
+  var BUILD = 20261193;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -8363,12 +8363,61 @@
     };
   }
 
+  /* ---- GESAMTZEILE UND PAGINATION NUR MIT ZEILEN (22.10. abends, Lukas zu Page Audit Frage 10: "ja") ----
+     Im Leer- und im Fehlerzustand stehen weder "0 count" / "– count" noch die Pagination unter der Tabelle --
+     sie zaehlen nichts und blaettern durch nichts, der Zustand sagt selbst, was ist. Sobald wieder Zeilen da
+     sind, kommen beide zurueck. Shopping und Ads taten das schon selbst (ihr Leerzustand ersetzt die ganze
+     Tabelle); die Tabellen aus core zeigten beide weiter (gemessen: Page Audit leer/fehler/unlesbar, Brands
+     mit einer Suche ohne Treffer).
+     ENTSCHIEDEN AM KASTEN DER TABELLE, nicht an einer Zahl: eine Gesamtzahl kann veraltet sein (Fehler nach
+     einem Stand mit Daten) oder fehlen (unbekannt), die Zeilen nicht. Leer ist ein Kasten, der KEINE
+     Datenzeile und KEINE Skelettzeile traegt (Laden zeigt beide wie bisher, im Gleichlauf mit dem Skelett),
+     aber einen Leer- oder Fehlerzustand aus core (leerHtml, leseFehlerHtml, tabelleLeerHtml, .up-fehlerzeile).
+     Ohne dieses Zeichen bleibt alles stehen: eine Kartenansicht hat keine Zeilen und ist trotzdem nicht leer.
+     Ein leeres Chart im selben Kasten (.up-chart-leer) zaehlt nicht.
+     WANN: bei jedem Zeichnen der Gesamtzeile und der Pagination und zusaetzlich in jedem Lauf ueber frische
+     Aeste (laufUeberRoh) -- ein Leerzustand, der NACH dem letzten renderPager in den Koerper geschrieben
+     wird, wuerde sonst erst beim naechsten Zeichnen bemerkt. Kein eigener Beobachter. */
+  var DATEN_ZEILE_SEL = ".up-row:not(.up-thead):not(.up-sumrow):not(.up-tsk), .vt-row:not(.vt-thead), .tct-row:not(.tct-thead)";
+  var LEER_ZUSTAND_SEL = ".up-empty, .up-empty-mini, .up-tab-leer, .up-fehlerzeile";
+  function ohneDatenZeilen(kasten){
+    if (!kasten || !kasten.querySelector) return false;
+    if (kasten.querySelector(DATEN_ZEILE_SEL) || kasten.querySelector(".up-tsk")) return false;
+    var l = kasten.querySelectorAll(LEER_ZUSTAND_SEL);
+    for (var i = 0; i < l.length; i++){
+      if (!l[i].closest(".up-chart-leer, .up-sumrow, .up-foot")) return true;
+    }
+    return false;
+  }
+  /* Wer sich im Lauf ueber frische Aeste melden will: anker() ist das Element, dessen Inneres zaehlt. */
+  var FUSS_SICHT = [];
+  function fussSichtMelden(anker, fn){
+    FUSS_SICHT.push({ anker: anker, fn: fn });
+    if (FUSS_SICHT.length > 300) FUSS_SICHT = FUSS_SICHT.filter(function(e){ var a = e.anker(); return a && a.isConnected; });
+  }
+  function fussSichtLauf(el){
+    if (!FUSS_SICHT.length || !el) return;
+    var alles = el.nodeType === 9 || el === document.documentElement;
+    for (var i = 0; i < FUSS_SICHT.length; i++){
+      var e = FUSS_SICHT[i], a = e.anker();
+      if (!a || !a.isConnected) continue;
+      if (alles || a.contains(el) || (el.contains && el.contains(a))){ try { e.fn(); } catch(err){} }
+    }
+  }
   /* ---------- makePager ----------
      cfg: { root, state, onChange } — onChange(reason) fires after page/size changes so the
      component can persist, re-render and tell Bubble. */
   function makePager(cfg){
     var root = cfg.root, state = cfg.state;
     var elFoot = root.querySelector(".up-foot");
+    /* Im Leer- und Fehlerzustand weg (siehe ohneDatenZeilen). Der Kasten der Tabelle wie beim klebenden Fuss
+       (fussKastenVon), ohne Kasten die Wurzel. */
+    function fussSicht(){
+      if (!elFoot) return;
+      var leer = ohneDatenZeilen(fussKastenVon(root) || root);
+      if (elFoot.classList.contains("is-leer") !== leer) elFoot.classList.toggle("is-leer", leer);
+    }
+    if (elFoot) fussSichtMelden(function(){ return root; }, fussSicht);
     /* .up-foot is space-between by default (page size left, page nav right via margin-left:auto)
        — fine on one line, but once there's no room and it wraps to two lines that layout leaves
        each row hugging its own edge instead of reading as one centred block. Detected by
@@ -8494,6 +8543,7 @@
         pages +
         '<button class="up-page up-page-next" type="button" aria-label="Next page"' + (cur >= total ? " disabled" : "") + '>' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg></button>';
+      fussSicht();
       syncFootWrap();   // page count just changed -> the row may have gained/lost a line
     }
     /* cfg.pageSizes: optional fn returning the size list for THIS render — lets a component run
@@ -12766,6 +12816,8 @@
           /* Vor dem Sprachlauf: er findet das Wort dann schon in seiner Huelle (kopfTexte). */
           sicher("kopfTexte", function(){ kopfTexte(el); });
           sicher("spracheLauf", function(){ spracheLauf(el); });
+          /* Gesamtzeile und Pagination im Leer- und Fehlerzustand (ohneDatenZeilen). */
+          sicher("fussSicht", function(){ fussSichtLauf(el); });
         })(ziele[t3]);
       }
     }
@@ -30463,6 +30515,16 @@
     }
     /* Gezeichnet wird nur, was sich geaendert hat: die Tabelle ruft das bei jedem Zeichnen, und ein
        neues innerHTML waehrend eines offenen Menues wuerde den Knopf unter dem Zeiger tauschen. */
+    /* Im Leer- und Fehlerzustand weg (makePager, ohneDatenZeilen): gezaehlt wird im Kasten, in dem die Zeile steht --
+       auch nachdem colscrollTeilen sie in ihren Halter gehoben hat. Ohne Kasten der Elternteil. */
+    function summeSicht(){
+      var leer = ohneDatenZeilen(el.closest(".up-box") || el.parentNode);
+      if (el.classList.contains("is-leer") !== leer){
+        el.classList.toggle("is-leer", leer);
+        if (leer) pop.close(false);
+      }
+    }
+    fussSichtMelden(function(){ return el.closest(".up-box") || el.parentNode; }, summeSicht);
     function zeichnen(s){
       spec = s || {};
       var html = zellenHtml(spec);
@@ -30471,6 +30533,7 @@
         while (el.firstChild && el.firstChild !== menu) el.removeChild(el.firstChild);
         menu.insertAdjacentHTML("beforebegin", html);
       }
+      summeSicht();
       if (offenFuer){
         var z = zelleVon(offenFuer);
         if (spec.laedt || !z || !z.menu) pop.close(false);
