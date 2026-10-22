@@ -825,14 +825,19 @@
       (f ? '<img src="' + esc(f) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/>' : '') +
       '<span class="up-logo-ltr">' + esc((kurz(url).charAt(0) || "?").toUpperCase()) + '</span></span>';
   }
-  /* Das Zeichen einer Plattform: getrackt das Logo aus dem Modell-Store, sonst das Favicon ihrer Domain. */
+  /* Das Zeichen einer Plattform: getrackt das Logo aus dem Modell-Store, sonst das Favicon ihrer Domain.
+     Im Dunkeln ohne helle Platte (.is-modell in core, 23.10., Lukas: "LLM-Logos brauchen nirgendwo in der App im
+     Darkmode einen hellen Background. Seh ich vor allem in Page Audit."). Das Logo muss dafuer selbst hell sein:
+     ChatGPT kommt darum auch ungetrackt als OpenAI-Logo nach dem Thema (modelLogoUrl erkennt es am Modell-Schluessel)
+     statt als Favicon von chatgpt.com, und data-up-logo-thema laesst es beim Themenwechsel kippen. */
   function plattformLogo(p, modell) {
     var src = "";
     if (modell && modell.logo_url) src = UC.modelLogoUrl ? UC.modelLogoUrl(modell.key, modell.logo_url, undefined, modell.provider) : modell.logo_url;
     if (src && src.indexOf("//") === 0) src = "https:" + src;
     if (!src && p.domain && UC.faviconUrl) src = UC.faviconUrl(p.domain, 64);
-    return '<span class="up-logo-box upa-plogo' + (src ? " has-img" : "") + '">' +
-      (src ? '<img src="' + esc(src) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' + (modell ? ' data-up-logo-thema' : '') + '/>' : '') +
+    if (!modell && UC.modelLogoUrl) src = UC.modelLogoUrl((p.modelle && p.modelle[0]) || p.id, src);
+    return '<span class="up-logo-box upa-plogo is-modell' + (src ? " has-img" : "") + '">' +
+      (src ? '<img src="' + esc(src) + '" alt="" loading="lazy" referrerpolicy="no-referrer" data-up-logo-thema/>' : '') +
       '<span class="up-logo-ltr">' + esc(p.name.charAt(0)) + '</span></span>';
   }
   function modellVon(p) {

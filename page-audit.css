@@ -468,6 +468,9 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-run-lead { display: inline-flex; align-items: center; margin-left: 14px; }
 .upa-run-lead .up-logo-box { width: 20px; height: 20px; box-shadow: 0 0 0 2px var(--up-surface); }
 .upa-run-lead .up-logo-box img { width: 16px; height: 16px; }
+/* Im Dunkeln ohne helle Platte (core: .up-logo-box.is-modell), aber nicht durchsichtig: die Logos ueberlappen
+   sich um 5px, und durch ein durchsichtiges Logo schiene das darunter. Grund wie der Ring, also eine Flaeche. */
+.upa-root[data-theme="dark"] .upa-run-lead .up-logo-box.is-modell { background: var(--up-surface); }
 .upa-run-lead > * + * { margin-left: -5px; }
 /* Die Logos kommen mit der Zeile, nacheinander (Mira .am-run-lead; den Versatz LAUF_TAKT.logo je Logo setzt schrittAuftritt). */
 .upa-run-lead > * { opacity: 0; transform: translateX(7px) scale(.86); transition: opacity var(--up-lauf-logo) ease, transform var(--up-lauf-logo) var(--up-lauf-kurve); }

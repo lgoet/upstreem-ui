@@ -235,7 +235,7 @@ dieselben. „bis 15.10.“ ist der Stand vor Geist (Linear).
 | Chips: gewählt / gewählt+Hover / Rand Hover / Rand gewählt+Hover | `--up-chip-an` / `-an-hover` / `--up-chip-rand-hover` / `-rand-an-hover` | `#242424` / `#2e2e2e` / `#333333` / `rgba(255,255,255,.24)` | Gray 200 / 300 / Ring / Alpha 500 (`#1f1f1f` / `#292929` / `#454545`) | `#26262a` / `#2c2c30` / `#4a4a52` / `#5a5a62` |
 | Event-Pin-Rand | `--up-evm-rand` | `#333333` | wie der Menürand (`#454545`) | `#4a4a52` |
 | Gewählt (Navigation) | `--up-wahl-bg` / `--up-wahl-rand` | `rgba(255,255,255,.06)` / `rgba(255,255,255,.03)` | Gray Alpha 100 | (Seitenleiste `#28282c`) |
-| Logo-Box-BG | `--vt-logo-bg` | `#e0e0e0` | | |
+| Logo-Box-BG | `--vt-logo-bg` | `#e0e0e0` (nur Marken und Favicons; Modell- und Plattform-Logos ohne Platte, §17a) | | |
 | Akzent | `--up-accent` / `--up-accent-fg` | `#e0e0e0` / `#1b1b1b` | (unverändert) | |
 | Fokus / Fokusring | `--up-focus` / `--up-focus-ring` | `#6DB2FF` / `rgba(109,178,255,0.28)` | | |
 
@@ -3042,6 +3042,32 @@ am Stapel und der Ring im Ton der gehoverten Karte.
 - **Kein Flicker:** der Treffer liegt auf `.up-stack-item`, das sich nie bewegt; nur die innere
   `.up-stack-vis` animiert. Der Tooltip (`data-brandtip`) hängt am unbeweglichen Kasten.
 - `transition: transform .16s ease` auch am „+N“ und am Anhang (`.up-stack-tail`), damit sie mitziehen.
+
+### 17a. Modell-Logos im Dunkeln: keine helle Platte (23.10.)
+
+Lukas: „LLM-Logos brauchen nirgendwo in der App im Darkmode einen hellen Background.“ Die helle
+Platte `--vt-logo-bg` (`#e0e0e0`) ist für Marken und Favicons da, die oft dunkel auf transparent
+sind. Ein Logo eines Modells oder einer KI-Suche (ChatGPT, Google AI Overviews, Gemini,
+Perplexity, Claude, Copilot …) ist im Dunkeln selbst hell; OpenAI kommt dort als weiße Datei.
+
+```
+Modell-Chip     .up-model-chip / .urt-model-chip: Kachel durchsichtig (schon seit 02.10.)
+Logo-Kachel     .up-logo-box.is-modell (Page Audit: Plattformen, MCP Server: Apps): durchsichtig,
+                Buchstabe in --vc-muted. Überlappt sie (.upa-run-lead), Grund --up-surface
+Balken          it.modell an makeBarList/makeTypeChart -> .up-bar-logo.is-modell: Kästchen bleibt,
+                Grund --vc-bg statt hell -- es steht auch auf der Füllung, und die ist im Dunkeln
+                in den ersten Stufen hell. Legende im Ring: dasselbe (domain-detail)
+Grafik          .umc-sg-app (MCP Server): Grund --vc-bg wie die Kacheln daneben
+OpenAI          UC.modelLogoUrl(key, url, dunkel) nach dem Grund, ohne Angabe nach dem Thema;
+                data-up-logo-thema am <img> lässt core es beim Themenwechsel tauschen
+                (it.modell setzt es in core selbst). false (immer schwarz) nur noch für ein Logo,
+                das in beiden Themen auf heller Fläche steht -- in der App gibt es keins mehr
+Ungetrackt      Page Audit nimmt für ChatGPT ohne getracktes Modell das OpenAI-Logo statt des
+                Favicons von chatgpt.com (modelLogoUrl erkennt es am Schlüssel)
+```
+
+Markenlogos (`.up-stack`, `.up-logo-box` ohne `is-modell`, Balken ohne `it.modell`) behalten die
+Platte in beiden Themen.
 
 ## 18. Density / „Table Settings"
 

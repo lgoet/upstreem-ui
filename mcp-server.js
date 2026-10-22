@@ -143,7 +143,8 @@
     /* ---------------- Aufbau ---------------- */
     /* Die Grafik "Fluss" (Canvas, Brett Main): links die Daten, eine Sammelleitung in den Knoten mit dem Zeichen des
        Servers, von dort gerade weiter in eine Spalte mit den Apps. Claude ist verbunden (durchgezogen, hervorgehoben),
-       ChatGPT und Gemini kommen erst (gestrichelt, Logo leiser). Koordinaten im Feld 480 x 188, Zeilen auf 28/62/96/130/164. */
+       ChatGPT und Gemini kommen erst (gestrichelt, Logo leiser). Koordinaten im Feld 480 x 188, Zeilen auf 28/62/96/130/164.
+       Die Platten der Apps sind im Dunkeln dunkel (mcp-server.css, 23.10.), OpenAI also nach dem Thema. */
     function grafikHtml(){
       var ys = [28, 62, 96, 130, 164], h = "";
       ys.forEach(function(y, i){ h += '<span class="umc-sg-kachel umc-sg-teil" style="left: 16px; top: ' + (y - 14) + 'px' + (i ? "; animation-delay: " + (i * 18) + "ms" : "") + '"></span>'; });
@@ -152,7 +153,7 @@
       });
       function app(k, top, bald, ms){
         return '<span class="umc-sg-app umc-sg-teil' + (bald ? " is-bald" : "") + '" style="left: 424px; top: ' + top + 'px; animation-delay: ' + ms + 'ms">' +
-          '<img src="' + esc(UC.modelLogoUrl ? UC.modelLogoUrl(k, logoVon(k), false) : logoVon(k)) + '" alt=""></span>';
+          '<img src="' + esc(UC.modelLogoUrl ? UC.modelLogoUrl(k, logoVon(k), istDunkel()) : logoVon(k)) + '" alt="" data-up-logo-thema></span>';
       }
       return '<div class="umc-grafik" aria-hidden="true">' +
         '<div class="umc-sg-feld">' +
@@ -311,7 +312,9 @@
     /* ---------------- Verbundene Apps ---------------- */
     function appLogo(a){
       var k = str(a.known).toLowerCase();
-      if (logoVon(k)) return '<span class="up-logo-box has-img"><img src="' + esc(UC.modelLogoUrl ? UC.modelLogoUrl(k, logoVon(k), false) : logoVon(k)) + '" alt=""></span>';
+      /* is-modell (core): im Dunkeln ohne helle Platte (23.10., "LLM-Logos brauchen nirgendwo in der App im Darkmode
+         einen hellen Background"), darum OpenAI nach dem Thema und data-up-logo-thema fuer den Themenwechsel. */
+      if (logoVon(k)) return '<span class="up-logo-box has-img is-modell"><img src="' + esc(UC.modelLogoUrl ? UC.modelLogoUrl(k, logoVon(k), istDunkel()) : logoVon(k)) + '" alt="" data-up-logo-thema></span>';
       /* Unbekannter Client: der Anfangsbuchstabe auf der Platte, wie auf der Zustimmungsseite. */
       var n = str(a.name) || T.ersatzName;
       return '<span class="up-logo-box umc-ltr" aria-hidden="true">' + esc(n.charAt(0).toUpperCase()) + '</span>';

@@ -1016,8 +1016,9 @@
           name: String(m.model || ""),
           share: num(m.model_share_pct) || 0,
           color: (isDark ? m.color_darkmode : m.color_lightmode) || typFarbe(),
-          /* Die Balken-Platte ist in BEIDEN Themen hell -- also immer das schwarze OpenAI-Logo. */
-          logo: UC.modelLogoUrl ? UC.modelLogoUrl(m.model, m.model_logo_url, false) : String(m.model_logo_url || "")
+          /* Modell-Logo (core: is-modell, 23.10.): im Dunkeln ohne helle Platte, also OpenAI nach dem Thema. */
+          logo: UC.modelLogoUrl ? UC.modelLogoUrl(m.model, m.model_logo_url, isDark) : String(m.model_logo_url || ""),
+          modell: true
         };
       });
       var fam = ruhig(isDark, null);
