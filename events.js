@@ -2003,7 +2003,9 @@
       /* Citation Tracking: was die Charts der Ziele zeigen, "share" (Anteil an allen Zitaten, Standard) oder "abs" (Zahl der Zitate). */
       zielMetrik: gemerkt("zielMetrik", "share"),
       /* Welcher Teil im Kasten URLs/Sitemap je Ziel steht ("urls" oder "sm"), nur fuer diesen Seitenaufruf. */
-      quelle: {}
+      quelle: {},
+      /* Die Uebersicht als Karten ("grid") oder als Liste ("list", 22.10.): die Adresse entscheidet (layoutAusAdresse). */
+      layout: "grid"
     };
     function persist() {
       if (root.isConnected === false) return;
@@ -2101,6 +2103,23 @@
         else window.history.replaceState(window.history.state, "", neu);
       } catch (e) {}
     }
+    /* KARTEN ODER LISTE (22.10., Lukas: "bitte auch einen Tabellenmodus anbieten ... einen Switcher, der fuer beide Listen gilt").
+       Die Wahl steht in der Adresse wie Raster/Liste der Ad Library (ads.js adresseSetzen): impact_layout=list, die Vorgabe (Karten)
+       schreibt nichts, ein Wechsel ist ein eigener Eintrag im Verlauf (Zurueck schaltet zurueck). Ein eigener Name statt "layout":
+       den fuehrt die Ad Library in ihrem UC.ansichtsParameter -- verliesse man Impact mit layout=list, merkte sie ihn sich als ihren. */
+    function layoutAusAdresse() {
+      try { return new URLSearchParams(window.location.search).get("impact_layout") === "list" ? "list" : "grid"; } catch (e) { return "grid"; }
+    }
+    function layoutSchreiben(neuerEintrag) {
+      try {
+        var u = new URL(window.location.href);
+        if (state.layout === "list") u.searchParams.set("impact_layout", "list"); else u.searchParams.delete("impact_layout");
+        var neu = u.pathname + u.search + u.hash;
+        if (neu === window.location.pathname + window.location.search + window.location.hash) return;
+        if (neuerEintrag) window.history.pushState(window.history.state, "", neu);
+        else window.history.replaceState(window.history.state, "", neu);
+      } catch (e) {}
+    }
 
     /* ============================================================================================
        Uebersicht
@@ -2124,12 +2143,39 @@
        (Lukas 22.10. abends: "Mach das card unter der heading doch weg. nur heading + description links. chart grafik rechts"),
        angelegt wird ueber "Create" im Seitenkopf. Die Karten der Eintraege bleiben darunter. Steht in jedem Zustand der Uebersicht
        -- Laden, Fehler, leer --, er braucht keine Daten. */
+    /* Seit 22.10. abends (Lukas: "eher top aligned ... wo die Heading bei Technical Page Audit platziert ist") steht der Text oben statt
+       mittig, die Ueberschrift auf derselben Hoehe wie die von Page Audit (events.css .uev-start-text). Darunter der Umschalter Karten
+       oder Liste fuer beide Abschnitte (ansichtHtml). */
     function startGeruest() {
       return '<section class="uev-start">' +
         '<div class="uev-start-text"><h2 class="up-heading up-sec-h">' + esc(t("Measure the impact of your changes")) + '</h2>' +
-          '<p class="up-sec-sub">' + esc(t("See how launches, campaigns and new pages change your visibility and citations in AI answers.")) + '</p></div>' +
+          '<p class="up-sec-sub">' + esc(t("See how launches, campaigns and new pages change your visibility and citations in AI answers.")) + '</p>' +
+          ansichtHtml() + '</div>' +
         startGrafik() +
       '</section>';
+    }
+    /* DER UMSCHALTER KARTEN/LISTE: das Segment mit Zeichen der Ad Library (ads.js segHtml "uad-ansicht": .up-seg aus core, Zeichen
+       layoutGrid und listIcon, Name als aria-label und Tooltip), dieselben Woerter Grid und List. aria-pressed sagt die Wahl. */
+    function ansichtHtml() {
+      return '<div class="up-seg uev-ansicht" role="group" aria-label="' + esc(t("View")) + '">' +
+        [["grid", "Grid", "layoutGrid"], ["list", "List", "listIcon"]].map(function (w) {
+          var an = state.layout === w[0];
+          return '<button type="button" class="up-seg-btn' + (an ? " is-active" : "") + '" data-wert="' + w[0] + '" aria-pressed="' + an + '"' +
+            ' aria-label="' + esc(t(w[1])) + '" data-tip="' + esc(t(w[1])) + '">' + UC.icon(w[2], 2) + '</button>';
+        }).join("") + '</div>';
+    }
+    /* Die Wahl an Umschalter, Wurzel (is-liste: das Zahnrad der Abschnitte) und Liste bringen. */
+    function layoutStellen() {
+      root.classList.toggle("is-liste", state.layout === "list");
+      var s = elMain && elMain.querySelector(".uev-ansicht");
+      if (s) {
+        [].forEach.call(s.querySelectorAll("[data-wert]"), function (b) {
+          var an = b.getAttribute("data-wert") === state.layout;
+          b.classList.toggle("is-active", an); b.setAttribute("aria-pressed", String(an));
+        });
+        if (UC.segJetzt) { try { UC.segJetzt(s); } catch (e) {} }
+      }
+      if (state.ansicht === "uebersicht") renderListe();
     }
     /* DIE GRAFIK (im Canvas gewaehlt: G2): Events als Pins auf einer Zeitachse. Sechs Pins mit Zeichen von Event-Typen (Launch,
        Artikel, Kampagne, Relaunch, Presse), einer hervorgehoben mit dem Zeichen von Event Tracking -- Kachel 40, Radius nach Hoehe 8,
@@ -2170,7 +2216,10 @@
         '<button class="up-ph-addbtn up-export uev-anlegen" type="button">' + UC.icon("plus", 1.8) +
           '<span data-i18n="Create">' + esc(t("Create")) + '</span></button>';
       elMain.innerHTML = startGeruest() + ABSCHNITTE.map(function (art) {
-        return '<section class="uev-abschnitt" data-art="' + art + '">' +
+        /* Eigene data-instance je Abschnitt (22.10., Liste): core merkt sich die Zahlenspalten je Instanz und Spaltenklasse (zahlSpalten,
+           ZAHL_GEMERKT) -- unter der einen Kennung der Seite hielt der Kopf "Prompts" des Citation Tracking die Zahlenspalte des Event
+           Tracking fuer seine und stand rechts ueber "All active" (gemessen). */
+        return '<section class="uev-abschnitt" data-art="' + art + '" data-instance="' + esc(instanceId + "_" + art) + '">' +
           '<div class="up-head uev-head">' +
             '<span class="up-heading"><span class="uev-head-ic" aria-hidden="true">' + UC.icon(ABSCHNITT_ZEICHEN[art], 1.8) + '</span><span class="up-head-label">' + esc(t(ART_TITEL[art])) + '</span>' +
               '<span class="up-head-sep"></span><span class="up-head-count uev-zahl"></span></span>' +
@@ -2186,11 +2235,19 @@
                   '<button type="button" class="up-search-clear" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2.2) + '</button>' +
                 '</div>' +
               '</div>' +
+              /* Table Settings wie in jeder Tabelle (Spalten, Zeilenhoehe), als letzter Knopf der Leiste -- nur in der Liste
+                 (events.css: ohne is-liste an der Wurzel verborgen), wie in der Ad Library, wo das Raster keins hat. */
+              '<div class="up-cols uev-cols">' +
+                '<button type="button" class="up-iconbtn up-cols-btn" data-tip="' + esc(t("Table Settings")) + '" aria-label="' + esc(t("Table settings")) + '">' +
+                  UC.icon("settings", 2) + '<span class="up-badge uev-cols-badge"></span></button>' +
+                '<div class="up-menu up-cols-menu" role="menu" aria-hidden="true"></div>' +
+              '</div>' +
             '</div>' +
           '</div>' +
           '<div class="uev-liste"></div>' +
         '</section>';
       }).join("") + '<div class="uev-leer-gesamt" hidden></div>';
+      root.classList.toggle("is-liste", state.layout === "list");
       respSichtbar(false);
       ABSCHNITTE.forEach(function (art) { abschnittBauen(art); });
       renderListe();
@@ -2231,9 +2288,10 @@
           items: filterTypen,
           onChange: function (keys) { z.typen = keys; persist(); renderListe(); }
         }) : null;
-        if (a.typFilter) a.el.querySelector(".up-head-tools").appendChild(a.typFilter.el);
+        if (a.typFilter) a.el.querySelector(".up-head-tools").insertBefore(a.typFilter.el, a.el.querySelector(".uev-cols"));
       }
       sortBauen(art);
+      spaltenBauen(art);
     }
     /* ---- SORTIERUNG DER LISTE (18.10.): Felder, die die Liste schon hat, keine neue Abfrage. Standard: zuletzt
        erstellt zuerst. Der Stand lebt in state (persist), also ueber Seitenwechsel und Event-Wechsel hinweg. */
@@ -2332,6 +2390,12 @@
           if (l[i].classList.contains("has-fav")) continue;
           l[i].insertAdjacentHTML("beforeend", avatarFavImg(src));
           l[i].classList.add("has-fav");
+        }
+        /* Die Logo-Kachel der Liste (listeLogo, 22.10.): dasselbe gepruefte Bild, in der Form der Tabellen (has-img). */
+        var k = document.querySelectorAll('.uev-tlogo[data-fav-host="' + h.replace(/"/g, "") + '"]:not(.has-img)');
+        for (var j = 0; j < k.length; j++) {
+          k[j].insertAdjacentHTML("afterbegin", '<img src="' + esc(src) + '" alt="" referrerpolicy="no-referrer"/>');
+          k[j].classList.add("has-img");
         }
       });
       return "";
@@ -2484,11 +2548,16 @@
       var stand = UC.eventsStand ? UC.eventsStand() : { geladen: true, fehler: false };
       ABSCHNITTE.forEach(function (art) { var f = abschnitt(art).typFilter; if (f) f.neu(); });
       /* Nicht geladen, Fehler oder Zeitablauf: EIN Zustand fuer die ganze Seite, im ersten Abschnitt; der zweite ist nicht da. */
+      /* Der Umschalter Karten/Liste steht nur, wo es etwas umzuschalten gibt: beim Laden und mit Eintraegen, nicht im Fehler- und
+         nicht im Leerzustand (dort stuende er neben einem Satz, der in beiden Formen gleich aussieht). */
+      function schalterZeigen(an) { var s = elMain.querySelector(".uev-ansicht"); if (s) s.hidden = !an; }
+      var liste = state.layout === "list";
       function ganz(html, skelett) {
         ABSCHNITTE.forEach(function (art) { zahlSetzen(art, null, skelett && art === "event"); abschnittZeigen(art, art === "event"); });
         abschnitt("event").liste.className = "uev-liste";
         abschnitt("event").liste.innerHTML = html;
         gesamtLeer("");
+        schalterZeigen(!!skelett);
       }
       if (stand.fehler && !(UC.getEvents && UC.getEvents().length)) {
         ganz(UC.leseFehlerHtml ? UC.leseFehlerHtml("the event list") : "");
@@ -2496,13 +2565,15 @@
       }
       if (!stand.geladen) {
         if (state.listeZeitUm) { ganz(UC.leerHtml({ icon: "info", titel: "Events could not be loaded", text: "Please reload the page." })); return; }
-        ganz(karteSkelett(), true);
+        /* Das Skelett in der Form, die gleich kommt: Karten oder Zeilen der Liste (tabelleHtml ohne Eintraege). */
+        ganz(liste ? tabelleHtml("event", null) : karteSkelett(), true);
         zahlSetzen("event", null, true);
-        rasterSetzen("event", 3);
+        if (liste) tabelleFertig("event"); else rasterSetzen("event", 3);
         listeUhr();
         return;
       }
       var alle = (UC.getEvents ? UC.getEvents() : []).filter(function (ev) { return !state.geloescht[ev.id]; });
+      schalterZeigen(alle.length > 0);
       if (!alle.length) {
         ABSCHNITTE.forEach(function (art) { zahlSetzen(art, null); abschnittZeigen(art, false); });
         /* Wie die leere Liste in Page Audit: Erklaerung und Aktionen stehen schon im Startbereich darueber, hier nur, dass die
@@ -2520,6 +2591,7 @@
         zahlSetzen(art, l.length);
         a.liste.className = "uev-liste";
         if (!l.length) { a.liste.innerHTML = UC.leerHtml({ gefiltert: true, was: art === "watch" ? "entries" : "events" }); return; }
+        if (liste) { a.liste.innerHTML = tabelleHtml(art, l.map(mitZielen)); tabelleFertig(art); return; }
         /* Nicht l.map(karteHtml): map reicht den Index als zweites Argument durch, und das ist der
            Schalter vorschau -- jede Karte ab der zweiten kam als nicht klickbare Vorschau heraus
            (im Pruefstand am 03.10. gefunden: nur die erste Karte oeffnete das Detail). */
@@ -2541,6 +2613,179 @@
         '<span class="uev-sk uev-sk-meta" style="width:42%"></span><span class="uev-sk uev-sk-text" style="width:90%"></span><span class="uev-sk" style="width:64%"></span>' +
         '<div class="uev-stats">' + zelle + zelle + zelle + '</div></div></div>';
       return '<div class="uev-karten uev-karten-sk">' + eine + eine + eine + '</div>';
+    }
+
+    /* ---- DIE LISTE (22.10., Lukas: "Tabellenmodus ... fuer beide Listen") -----------------------------------------------------
+       Je Abschnitt eine Tabelle aus core: Spalten ueber UC.makeColumns (je Spalte eine art, Table Settings mit Spalten und Zeilenhoehe
+       Default 55 / Compact 34 wie Brands, Merchants und Page Audit), Zahlenspalten rechts ueber zahlSpalten (die Zelle traegt .up-num).
+       Die Spalten sind genau das, was die Karte der Art zeigt -- keine Zahl, die die Uebersicht nicht hat: Event Tracking Name mit
+       Beschreibung, Datum oder Zeitraum, Typ, Status, Topics, Prompts, was getrackt wird; Citation Tracking Name, was beobachtet wird
+       (mit den Favicons der Karte), Prompts und seit wann es das gibt ("Created" wie auf der Karte).
+       Wie die Liste der Ad Library: nie faellt eine Spalte der Breite wegen weg (scrollen), ist es zu eng, scrollt der Kasten
+       waagerecht und die erste Spalte bleibt stehen (.up-colscroll aus core) -- so auch am Telefon. Keine Gesamtzeile und keine
+       Seiten: die Zahl steht schon im Kopf des Abschnitts, und die Liste kommt ganz (hoechstens EVENTS_MAX) wie die Karten. */
+    var LISTE_HOEHEN = [{ key: "default", label: "Default" }, { key: "compact", label: "Compact" }];
+    /* Mindestbreiten am Inhalt gemessen (Zelle 14 plus Polster 12/16 und Linie, Kopf 14/500 mit Sortierzeichen): "20. Sep – 30. Sep 2026"
+       204, "Running, day 22 of 46" mit Zeichen 210, "Website relaunch" als Marke 140, "Topics" mit Zeichen 96, "3 targets" 110, ein Datum
+       mit Sortierzeichen im Kopf 132. Zusammen mit der ersten Spalte (240) 1104 -- unter den 1158 der Tabelle bei 1440 mit Seitenleiste,
+       dort scrollt nichts. "Created" nur beim Citation Tracking, denn nur seine Karte zeigt es ("Created {date}"); beim Event Tracking
+       steht das Datum des Events. art "typ" fuer die Spalten mit Text ("2 URLs", "All active"): die Art sagt core auch, ob ein Kopf
+       ohne Zeilen rechts steht (zaehl) -- Text steht links. */
+    var LISTE_SPALTEN = {
+      event: [
+        { key: "date", label: "Event date", w: "minmax(204px, 1fr)", min: 204, art: "datum" },
+        { key: "type", label: "Type", w: "minmax(140px, 0.8fr)", min: 140, art: "typ" },
+        { key: "status", label: "Status", w: "minmax(210px, 1fr)", min: 210, art: "typ" },
+        { key: "topics", label: "Topics", w: "minmax(96px, 0.5fr)", min: 96, art: "topics" },
+        { key: "prompts", label: "Prompts", w: "minmax(96px, 0.5fr)", min: 96, art: "zaehl" },
+        { key: "tracking", label: "Tracking", w: "minmax(110px, 0.7fr)", min: 110, art: "typ" }
+      ],
+      watch: [
+        { key: "tracking", label: "Tracking", w: "minmax(176px, 1fr)", min: 176, art: "typ" },
+        { key: "prompts", label: "Prompts", w: "minmax(120px, 0.7fr)", min: 120, art: "typ" },
+        { key: "created", label: "Created", w: "minmax(132px, 0.7fr)", min: 132, art: "datum" }
+      ]
+    };
+    /* Ein Zeichen im Kopf nur, wo die App fuer dieselbe Sache einen Filter mit Zeichen hat (CLAUDE.md 1d): Topics wie der Topics-Filter
+       (filter-bar.js "tags"). Der Typ-Filter des Abschnitts traegt kein Zeichen, das Datum des Events ist nicht der Zeitraum des Kalenders. */
+    var LISTE_KOPF_ZEICHEN = { topics: "tags" };
+    /* Sortierbar ist, was das Menue "Sort" kennt (SORT_FELDER) -- Kopf und Menue sind derselbe Stand (ue(art).sortFeld/sortRicht). Die
+       erste Richtung je Feld wie im Menue ueblich: Name A-Z, Daten neueste zuerst. */
+    var LISTE_SORT = { name: "asc", date: "desc", created: "desc" };
+    function spaltenBauen(art) {
+      var a = abschnitt(art), cw = a.el && a.el.querySelector(".uev-cols");
+      if (!cw || !UC.makeColumns) return;
+      var lst = { cols: {}, widths: {}, dense: false, rowHeight: "default" };
+      var DICHTE = "uev_dense__" + instanceId + "__" + art;
+      try { lst.dense = window.localStorage.getItem(DICHTE) === "1"; } catch (x) {}
+      lst.rowHeight = lst.dense ? "compact" : "default";
+      a.el.classList.toggle("is-dense", lst.dense);
+      a.kit = UC.makeColumns({
+        root: a.el, state: lst, columns: LISTE_SPALTEN[art], storePrefix: "uev", instanceId: instanceId + "__" + art,
+        firstKey: "name", firstMin: 240, firstShare: 0.24, noActions: true, scrollen: true, rowHeightSwitch: LISTE_HOEHEN,
+        badgeSel: ".uev-cols-badge", cellPrefixes: ["up"],
+        onChange: function () { if (state.layout === "list") renderListe(); }
+      });
+      a.lst = lst;
+      lst.cols = a.kit.readCols(); lst.widths = a.kit.readWidths();
+      var menu = cw.querySelector(".up-cols-menu"), knopf = cw.querySelector(".up-cols-btn");
+      var pop = UC.makePopover ? UC.makePopover({ wrap: cw, menu: menu, opener: knopf, group: "uev-" + instanceId + "-" + art }) : null;
+      knopf.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (!pop) return;
+        if (pop.isOpen()) { pop.close(false); return; }
+        a.kit.populateCols(); pop.open();
+      });
+      menu.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (e.target.closest("[data-colsall]")) { a.kit.selectAllCols(); a.kit.populateCols(); return; }
+        var rh = e.target.closest("[data-rowheight]");
+        if (rh) {
+          lst.dense = rh.getAttribute("data-rowheight") === "compact"; lst.rowHeight = lst.dense ? "compact" : "default";
+          try { window.localStorage.setItem(DICHTE, lst.dense ? "1" : "0"); } catch (x) {}
+          a.el.classList.toggle("is-dense", lst.dense);
+          a.kit.populateCols();
+          return;
+        }
+        var c = e.target.closest("[data-col]");
+        if (c) { a.kit.toggleCol(c.getAttribute("data-col")); a.kit.populateCols(); }
+      });
+      a.el.addEventListener("pointerdown", function (e) { var g = e.target.closest && e.target.closest(".up-grip"); if (g && state.layout === "list") a.kit.startResize(e, g); });
+      a.kit.syncColsBadge();
+    }
+    /* Kein Wert: in einer Zahlenspalte der Strich der Zahlen (.up-num.is-empty, rechts), in einer Textspalte links -- .up-num stellte
+       auch dort die Zelle nach rechts (core: .up-td:has(> .up-num)). */
+    function listeLeer(zahlSpalte) { return zahlSpalte ? '<span class="up-num is-empty">–</span>' : '<span class="uev-tz-leer">–</span>'; }
+    /* Das Zeichen eines Eintrags in der Logo-Kachel der Tabellen (.up-logo-box, 24): beim Citation Tracking mit genau einer Seite deren
+       Favicon wie das Profilbild der Karte (avatarHtml), sonst das Zeichen des Events in seiner Farbe. */
+    function listeLogo(ev) {
+      var wh = istWatch(ev) ? watchHosts(ev) : null, fav = wh && wh.n === 1 && wh.hosts.length === 1 ? wh.hosts[0] : "";
+      /* Das Favicon erst als GEPRUEFTES Bild wie im Profilbild (avatarFavHolen: ohne Googles Platzhalter, je Host einmal gefragt); bis
+         dahin steht das Zeichen, danach setzt avatarFavHolen das Bild in jede Kachel mit data-fav-host. */
+      var f = farbe(ev), src = fav ? avatarFavHolen(fav) : "";
+      /* Ohne .up-fav: eine .up-fav-Kachel zeigt ohne Bild den Globus (core, faviconRueckfall) -- er stand an Stelle des Zeichens jedes
+         Events, und nach einem gescheiterten Favicon stand die Kachel leer (gemessen). So nimmt core bei einem Fehler nur has-img ab, und
+         das Zeichen darunter steht da wie im Profilbild der Karte. */
+      return '<span class="up-logo-box uev-tlogo' + (src ? " has-img" : "") + '"' + (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + (fav ? ' data-fav-host="' + esc(fav) + '"' : '') + ' aria-hidden="true">' +
+        (src ? '<img src="' + esc(src) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/>' : '') +
+        '<span class="up-logo-zeichen">' + UC.icon(zeichen(ev), 2) + '</span></span>';
+    }
+    function listeZelle(key, ev) {
+      var watch = istWatch(ev);
+      if (key === "date") return '<span class="uev-tz-wert">' + esc(mitEnde(ev) ? zeitraum(ev.event_date, ev.end_date) : datum(ev.event_date)) + '</span>';
+      if (key === "type") { var tp = typ(ev); return '<span class="up-marke is-leise" data-i18n="' + esc(tp.label) + '">' + esc(t(tp.label)) + '</span>'; }
+      if (key === "status") {
+        var st = statusInfo(ev);
+        return st ? '<span class="uev-angabe uev-status is-' + st.s + '">' + UC.icon(st.ic, 2) + '<span>' + esc(st.text) + '</span></span>' : listeLeer();
+      }
+      if (key === "topics") {
+        if (ev.scope_mode === "all") return '<span class="uev-tz-wert">' + esc(t("All")) + '</span>';
+        var tc = num(ev.selected_topic_count);
+        return tc == null ? listeLeer(true) : '<span class="up-num">' + esc(zahl(tc)) + '</span>';
+      }
+      if (key === "prompts") {
+        if (watch) return '<span class="uev-tz-wert">' + esc(t("All active")) + '</span>';
+        var pc = num(ev.affected_prompt_count);
+        return pc == null ? listeLeer(true) : '<span class="up-num">' + esc(zahl(pc)) + '</span>';
+      }
+      if (key === "tracking") {
+        /* Was die dritte Zelle der Karte sagt (kennzahlenHtml), als ein Text: "1 path", "3 targets" oder "5 URLs". */
+        var zz = zieleZaehlen(ev), uc = num(ev.affected_url_count != null ? ev.affected_url_count : (isArr(ev.urls) ? ev.urls.length : null));
+        var text = zz.regeln ? (zz.teile.length === 1 ? ersetze(t(zz.teile[0].n === 1 ? zz.teile[0].eins : zz.teile[0].viele), { n: zahl(zz.teile[0].n) })
+            : ersetze(t(zz.gesamt === 1 ? "{n} target" : "{n} targets"), { n: zahl(zz.gesamt) }))
+          : uc != null ? ersetze(t(uc === 1 ? "{n} URL" : "{n} URLs"), { n: zahl(uc) }) : "";
+        if (watch) text = ziellText(ev) || text;
+        var wh = watch ? watchHosts(ev) : null;
+        var stapel = wh && wh.n >= 2 && wh.hosts.length && UC.brandStack
+          ? UC.brandStack(wh.hosts.map(function (h) { return { name: h, favicon: hostFavicon(h) }; }), wh.hosts.length, { max: 3, fav: true, still: true }) : "";
+        return text || stapel ? '<span class="uev-tz-ziele">' + (text ? '<span class="uev-tz-wert">' + esc(text) + '</span>' : '') + stapel + '</span>' : listeLeer();
+      }
+      if (key === "created") return ev.created_at ? '<span class="uev-tz-wert">' + esc(datum(ev.created_at)) + '</span>' : listeLeer();
+      return "";
+    }
+    function listeZeile(art, ev, cols) {
+      var name = String(ev.name || "");
+      var h = '<div class="up-row uev-tzeile" role="row" tabindex="0" data-event-id="' + esc(ev.id) + '" aria-label="' + esc(name) + '">' +
+        '<div class="up-td up-td-name" role="cell">' + listeLogo(ev) +
+          '<span class="uev-tz-name"><span class="up-zeilenname">' + esc(name) + '</span>' +
+            (ev.description ? '<span class="uev-tz-text">' + esc(ev.description) + '</span>' : '') + '</span>' +
+          mehrMenue(ev, "zeile") + '</div>';
+      cols.forEach(function (c) { h += '<div class="up-td up-td-' + c.key + '" role="cell">' + listeZelle(c.key, ev) + '</div>'; });
+      return h + '</div>';
+    }
+    function listeKopfZelle(art, key, label) {
+      var z = ue(art), sortbar = !!LISTE_SORT[key] && SORT_FELDER[art].some(function (f) { return f.key === key; }), an = sortbar && z.sortFeld === key;
+      return '<div class="up-th up-th-' + key + (sortbar ? " is-sortable" : "") + '" role="columnheader"' +
+        (sortbar ? ' data-sort="' + key + '" tabindex="0"' : '') + (an ? ' aria-sort="' + (z.sortRicht === "asc" ? "ascending" : "descending") + '"' : '') + '>' +
+        (sortbar && UC.thSortHtml ? UC.thSortHtml(key, an, z.sortRicht) : '') +
+        (LISTE_KOPF_ZEICHEN[key] && UC.kopfZeichenHtml ? UC.kopfZeichenHtml(LISTE_KOPF_ZEICHEN[key]) : '') +
+        '<span class="up-th-txt">' + esc(t(label)) + '</span></div>';
+    }
+    /* Die Tabelle eines Abschnitts. eintraege null: das Skelett (Laden), mit den Spalten, die gleich kommen. */
+    function tabelleHtml(art, eintraege) {
+      var a = abschnitt(art), cols = a.kit ? a.kit.effectiveCols() : LISTE_SPALTEN[art];
+      var kopf = '<div class="up-thead" role="row">' + listeKopfZelle(art, "name", "Name") +
+        cols.map(function (c) { return listeKopfZelle(art, c.key, c.label); }).join("") + '</div>';
+      var koerper = eintraege ? eintraege.map(function (ev) { return listeZeile(art, ev, cols); }).join("")
+        : (UC.skeletonRows ? UC.skeletonRows({ count: 3, cols: [{ w: 170, jitter: 40, logo: true, cls: "up-td-name" }].concat(cols.map(function (c) {
+            return { w: c.key === "topics" || c.key === "prompts" ? 24 : 84, cls: "up-td-" + c.key, zahl: c.key === "topics" || (c.key === "prompts" && art === "event") };
+          })) }) : "");
+      return '<div class="up-box uev-tabbox"><div class="up-colscroll"><div class="up-colscroll-innen" role="table" aria-label="' + esc(t(ART_TITEL[art])) + '">' +
+        kopf + '<div class="up-tbody" role="rowgroup">' + koerper + '</div></div></div></div>';
+    }
+    /* Nach jedem Zeichnen die Spuren der Spalten (makeColumns). Die Koepfe der Zahlenspalten setzt core selbst an jedem frischen Ast
+       (kopfTexte -> zahlSpalten). */
+    function tabelleFertig(art) {
+      var a = abschnitt(art);
+      if (a.kit) { try { a.kit.applyCols(); a.kit.syncColsBadge(); } catch (e) {} }
+    }
+    /* Ein Klick auf einen Sortierkopf: dasselbe Feld wechselt die Richtung, ein anderes beginnt mit seiner ersten (LISTE_SORT). */
+    function listeSortieren(art, key) {
+      var z = ue(art);
+      if (!LISTE_SORT[key]) return;
+      if (z.sortFeld === key) z.sortRicht = z.sortRicht === "asc" ? "desc" : "asc";
+      else { z.sortFeld = key; z.sortRicht = LISTE_SORT[key]; }
+      persist(); sortMenuFuellen(art); renderListe();
     }
 
     /* ============================================================================================
@@ -3629,18 +3874,45 @@
         if (urlsJetzt === war) continue;
         boxen[k].classList.toggle("is-urls", urlsJetzt);
         var zs = boxen[k].closest(".uev-zielsek");
-        zielHoeheFolgen(zs ? zielLinien[zs.getAttribute("data-ziel-id")] : null);
+        zielHoeheFolgen(zs ? zielLinien[zs.getAttribute("data-ziel-id")] : null, boxen[k].querySelector(".uev-ziel-linie"));
       }
     }
-    /* Chart.js misst seinen Kasten selbst erst 120 ms nach der letzten Groessenaenderung (resizeDelay) -- waehrend der 200 ms der Hoehe stuende es
-       still und spraenge am Ende. Darum fuer die Dauer des Uebergangs in jedem Bild resize(); danach einmal zur Sicherheit. */
-    function zielHoeheFolgen(linie) {
+    /* KASTEN UND CHART ALS EINE BEWEGUNG (22.10. abends, Lukas: "sehr unsmooth. Das Chart und der Container haben irgendwie andere
+       Resizing-Verhalten"). Gemessen Bild fuer Bild (Pruefstand, 1440): resize() in jedem Bild zog die Leinwand mit dem Kasten, aber Chart.js
+       rechnet sein Layout erst 120 ms nach der LETZTEN Groessenaenderung neu (resizeDelay, in core fuer das Ziehen am Fensterrand richtig) --
+       die x-Achse blieb waehrend der 200 ms auf der alten Hoehe stehen (beim Wachsen 64 px zu hoch, beim Schrumpfen unter den Rand
+       geschnitten) und sprang rund 120 ms nach dem Ende um 64 px. Laeuft gerade eine Bewegung der Linien (der Wechsel des Modus setzt neue
+       Daten), stellt Chart.js resize() sogar bis zum naechsten Zeichnen zurueck, die Leinwand hing dann ein Bild hinter dem Kasten.
+       Jetzt bei jeder Groesse des Kastens, nur mit der oeffentlichen Schnittstelle von Chart.js: stop() haelt eine laufende Bewegung der Linien
+       an (sonst stellt Chart.js resize() zurueck), render() zeichnet einmal und loest dabei eine schon vorgemerkte, veraltete Groesse ein
+       (Chart.js' eigener Beobachter meldet sie ein Bild spaeter -- gemessen: ohne das stand die Leinwand ein Bild hinter dem Kasten, bis 19 px),
+       dann resize() auf die Groesse dieses Bilds und update("none") fuer das Layout dazu, ohne Bewegung. Die Linien eines Moduswechsels stehen
+       damit waehrend der 200 ms gleich fertig da statt einzufahren; kommen ihre Daten spaeter (erster Wechsel auf URL Share), fahren sie wie
+       immer ein. Gerufen aus einem ResizeObserver am Kasten, nicht aus requestAnimationFrame: der liest die Hoehe des Uebergangs noch vom
+       letzten Bild, der Beobachter laeuft nach dem Layout DESSELBEN Bilds, vor dem Malen. Bis transitionend der Hoehe, hoechstens 400 ms;
+       ohne Uebergang (reduzierte Bewegung) einmal. Ruht das Chart (Skelett), genuegt resize(). */
+    function zielHoeheFolgen(linie, wrap) {
       if (!linie || !linie.resize) return;
-      var bis = Date.now() + 260;
-      (function schritt() {
-        linie.resize();
-        if (Date.now() < bis) requestAnimationFrame(schritt);
-      })();
+      function folgen() {
+        var c = linie.chart ? linie.chart() : null;
+        if (!c) { linie.resize(); return; }
+        try { c.stop(); c.render(); c.resize(); c.update("none"); } catch (e) {}
+      }
+      var dauer = 0;
+      try { dauer = wrap ? parseFloat(getComputedStyle(wrap).transitionDuration) || 0 : 0; } catch (e) {}
+      if (!wrap || !(dauer > 0) || !window.ResizeObserver) { folgen(); return; }
+      var ro = new ResizeObserver(function () { folgen(); }), uhr = null;
+      /* transitionend kommt VOR dem Layout des letzten Bilds: sofort abgemeldet, fehlte die Endhoehe (gemessen 283 statt 284 fuer ein Bild).
+         Darum bleibt der Beobachter noch 100 ms, und am Ende steht einmal die fertige Groesse. */
+      function ende(e) {
+        if (e && e.type === "transitionend" && (e.target !== wrap || e.propertyName !== "height")) return;
+        wrap.removeEventListener("transitionend", ende);
+        if (uhr) clearTimeout(uhr);
+        uhr = setTimeout(function () { ro.disconnect(); folgen(); }, 100);
+      }
+      wrap.addEventListener("transitionend", ende);
+      uhr = setTimeout(ende, 400);
+      ro.observe(wrap);
     }
     /* Die Suche aus core (UC.makeSearch, .up-search) in einer Hinweiszeile: Lupe, die sich zum Feld oeffnet, Esc leert zuerst und schliesst dann,
        eine neue Eingabe beginnt wieder bei Seite 1. st: der Stand der Tabelle (page, query), zeichnen: die Neuanfrage. Genau wie die Suche der
@@ -4189,7 +4461,9 @@
        (last_reachable_count/last_profile_count, completed oder partial) als "Reachable 5 of 7" wie die Spalte "Reachable" der Seite Page Audit;
        ohne Zahl der Status des letzten Laufs. Woerter, Zeichen und Ton kommen aus core (UC.pageAuditStatus, dieselben wie auf der Seite):
        das Zeichen in der Farbe der Bedeutung, der Text leise, laufend dreht das Zeichen. Kein Urteil ueber die Seite in Farbe (kein Score).
-       Die Zahl erklaert die Erklaerkarte aus core (pa_reachable) wie auf der Seite, kein Tooltip-Satz (CLAUDE.md, Page Audit v2). */
+       Die Zahl erklaert die Erklaerkarte aus core (pa_reachable) wie auf der Seite, kein Tooltip-Satz (CLAUDE.md, Page Audit v2).
+       Seit 22.10. abends in der leisen Marke aus core (.up-marke.is-leise, Lukas: "pack den bitte aber in einen kleinen Chip"), derselben
+       wie die Marken der Seite Page Audit (.upa-marke) und "First cited" daneben; Zeichen und Abstand in events.css nach ihrer Groesse. */
     function paAngabe(url) {
       var c = paAn() ? PA.je[paSchluessel(url)] : null, z = c && c.z;
       if (!z || z.page_id == null || z.page_id === "") return { sig: "", html: '<span class="uev-pa-angabe" data-pa-sig="" hidden></span>' };
@@ -4199,7 +4473,7 @@
       else if (s0) { text = t(s0.text); zeichen = s0.zeichen && UC.icon ? UC.icon(s0.zeichen, 2) : ""; ton = String(s0.ton || "leise"); dreht = !!s0.dreht; }
       else { text = t("View audit"); zeichen = paZeichen(); }
       var sig = String(z.page_id) + "|" + text + "|" + ton + "|" + (dreht ? 1 : 0);
-      return { sig: sig, html: '<a class="uev-pa-angabe is-' + esc(ton) + (dreht ? " is-dreht" : "") + '" href="' + esc(paHref(z.page_id)) + '" data-pa-oeffnen="' + esc(z.page_id) + '" data-pa-sig="' + esc(sig) + '"' +
+      return { sig: sig, html: '<a class="up-marke is-leise uev-pa-angabe is-' + esc(ton) + (dreht ? " is-dreht" : "") + '" href="' + esc(paHref(z.page_id)) + '" data-pa-oeffnen="' + esc(z.page_id) + '" data-pa-sig="' + esc(sig) + '"' +
         (mitZahl ? ' data-explain="pa_reachable" data-wert="' + esc(ersetze(t("{x} of {n}"), { x: zahl(n), n: zahl(m) })) + '"' : '') + '>' + (zeichen ? '<span class="uev-pa-ic" aria-hidden="true">' + zeichen + '</span>' : '') + '<span class="uev-pa-t">' + esc(text) + '</span></a>' };
     }
     function paAngabeHtml(url) { return paAngabe(url).html; }
@@ -4672,15 +4946,20 @@
       else if (!zit) { if (opt.tab !== "offen") marke = '<span class="up-marke is-leise uev-abd-marke">' + esc(t("Not cited yet")) + '</span>'; }
       else if (p.is_new === true) marke = '<span class="up-marke is-leise uev-abd-marke" data-tip="' + esc(t("New in the sitemap or updated since the event")) + '">' + esc(t("New or updated")) + '</span>';
       var offen = zit || nurBr ? ' is-zitiert" role="link" tabindex="0" data-url="' + esc(treffer && treffer.url ? treffer.url : p.url || "") : "";
-      /* Page Audit (21.10.): die Angabe zum Audit steht vor der Angabe rechts, "Run audit" tauscht beim Hover mit ihr den Platz
-         (.uev-pa-tausch, Hausregel: an derselben Stelle, nie darueber, nie eine eigene Spalte). */
+      /* Page Audit (21.10.): die Angabe zum Audit steht als Marke vor der Angabe rechts. "Run audit" steht seit 22.10. abends direkt
+         hinter dem Pfad (Lukas: "der 'Run Audit'-Button, der nur on hover kommt ... dafuer ist der Platz in der Row jeweils schon
+         reserviert ... meist einfach frei"): ohne Hover und Fokus ist er nicht da (display: none, kein Platz), beim Hover nimmt er den
+         Platz vom Pfad -- der waechst ohnehin in jede freie Breite --, Marken und Angaben rechts bleiben stehen, wo sie sind, und der
+         Link der Marke bleibt erreichbar. Vorher lag er mit der Angabe rechts in einer Rasterzelle, so breit wie der Knopf, auch ohne
+         Hover (events.css "SITEMAP: RUN AUDIT HINTER DEM PFAD"). Wie in Cited URLs am Ende der Adresse. */
       var paUrl = String(p.url || "");
       return '<div class="uev-abd-seite' + (opt.name != null ? " is-im-baum" : "") + (weg ? " is-weg" : "") + offen + '"' + (zit || nurBr ? "" : ' data-abd-seite="1" data-url="' + esc(p.url || "") + '"') + (paUrl ? ' data-pa-url="' + esc(paUrl) + '"' : '') + (opt.tiefe ? ' style="--uev-tiefe:' + opt.tiefe + '"' : '') + '>' +
         zielFavKlein(p.url || "", '<span class="uev-abd-fav0">' + UC.icon("globe", 2) + '</span>') +
         '<span class="uev-abd-pfad" title="' + esc(p.url || "") + '">' + abdLinkHtml(p.url, pfad, opt.q) + '</span>' +
+        (paUrl ? paKnopfHtml() : '') +
         marke +
         (weg ? '<span class="up-marke is-leise uev-abd-marke">' + esc(t("No longer in sitemap")) + '</span>' : '') +
-        (paUrl ? paAngabeHtml(paUrl) + '<span class="uev-pa-tausch">' + rechts + paKnopfHtml() + '</span>' : rechts) +
+        (paUrl ? paAngabeHtml(paUrl) : '') + rechts +
       '</div>';
     }
     /* DER BAUM DER SEITEN (17.10.): dieselbe Zerlegung wie im Sitemap-Waehler (smBaum, nicht nachgebaut), nur
@@ -5265,9 +5544,13 @@
       try { window.scrollTo && document.getElementById("main") && (document.getElementById("main").scrollTop = 0); } catch (e) {}
     }
     function adresseLesen(spaet) {
+      /* Karten oder Liste aus der Adresse (Zurueck/Vor, ein geteilter Link): vor dem Aufbau, damit eine neue Uebersicht gleich richtig steht. */
+      var lw = layoutAusAdresse(), lwNeu = lw !== state.layout;
+      state.layout = lw;
       var id = adresseEvent();
       if (id) { if (!(state.ansicht === "detail" && state.eventId === id)) oeffnen(id, false, spaet); }
       else if (state.ansicht !== "uebersicht" || !abschnitt("event").liste) zurUebersicht(false);
+      else if (lwNeu) layoutStellen();
     }
 
     /* ---- Klicks --------------------------------------------------------------------------- */
@@ -5293,6 +5576,17 @@
       if (pao) { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); paOeffnen(pao.getAttribute("data-pa-oeffnen")); return; }
       var pas = e.target.closest("[data-pa-start]");
       if (pas) { paStarten(pas); return; }
+      /* Karten oder Liste (22.10.): ein Wechsel ist ein eigener Eintrag im Verlauf wie Raster/Liste der Ad Library. */
+      var lw = e.target.closest(".uev-ansicht [data-wert]");
+      if (lw) {
+        var lwert = lw.getAttribute("data-wert") === "list" ? "list" : "grid";
+        if (lwert !== state.layout) { state.layout = lwert; layoutSchreiben(true); layoutStellen(); }
+        return;
+      }
+      /* Die Liste: der Ziehgriff der ersten Spalte ist kein Klick auf den Kopf; ein Sortierkopf sortiert wie das Menue "Sort". */
+      if (e.target.closest(".uev-abschnitt .up-grip")) return;
+      var lso = e.target.closest(".uev-abschnitt .up-th.is-sortable[data-sort]");
+      if (lso) { listeSortieren(lso.closest(".uev-abschnitt").getAttribute("data-art"), lso.getAttribute("data-sort")); return; }
       if (e.target.closest(".uev-anlegen, [data-uev-create]")) { e.preventDefault(); popupArt(); return; }
       if (e.target.closest(".uev-zurueck, [data-uev-zurueck]")) { zurUebersicht(true); return; }
       if (e.target.closest("[data-uev-detailneu]")) { state.detailLaden = true; renderDetail(); detailAnfordern(); return; }
@@ -5398,12 +5692,13 @@
       var mz = e.target.closest(".uev-markenzeile[data-company-id]");
       if (mz) { if (UC.drawerOeffnen) UC.drawerOeffnen("brand", mz.getAttribute("data-company-id"), "events"); return; }
       if (e.target.closest(".uev-addurl-kopf, [data-uev-addurl]")) { popupZiel(); return; }
-      var k = e.target.closest(".uev-karte[data-event-id]");
+      /* Eine Zeile der Liste oeffnet wie die Karte (22.10.). */
+      var k = e.target.closest(".uev-karte[data-event-id], .uev-tzeile[data-event-id]");
       if (k && !k.classList.contains("is-sk")) oeffnen(k.getAttribute("data-event-id"), true);
     });
     root.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;
-      var k = e.target.closest && e.target.closest(".uev-karte[data-event-id]");
+      var k = e.target.closest && e.target.closest(".uev-karte[data-event-id], .uev-tzeile[data-event-id]");
       if (k && e.target === k) { e.preventDefault(); oeffnen(k.getAttribute("data-event-id"), true); return; }
       var uz = e.target.closest && e.target.closest(".uev-urlzeile[data-url]");
       if (uz && e.target === uz) { e.preventDefault(); if (UC.drawerOeffnen) UC.drawerOeffnen("url", uz.getAttribute("data-url"), "events"); return; }
@@ -9426,6 +9721,8 @@
     if (UC.onResize) UC.onResize(root, function () {
       if (state.ansicht === "uebersicht" && abschnitt("event").liste) {
         ABSCHNITTE.forEach(function (art) {
+          /* In der Liste die Spuren der Spalten (makeColumns misst den Kasten), sonst das Raster der Karten. */
+          if (state.layout === "list") { if (abschnitt(art).liste && abschnitt(art).liste.querySelector(".uev-tabbox")) tabelleFertig(art); return; }
           var n = abschnitt(art).liste ? abschnitt(art).liste.querySelectorAll(".uev-karte:not(.is-sk)").length : 0;
           rasterSetzen(art, n || 3);
         });
@@ -9625,11 +9922,13 @@
     /* Was die Datenbank schon kann (Ziele, Kampagnen): aus der Liste abgeleitet, ein Aufruf nur,
        wenn etwas offen bleibt (verfuegbarkeitStart); die Sitemap fragt der Dialog selbst. */
     verfuegbarkeitStart();
-    if (UC.ansichtsParameter) UC.ansichtsParameter({ ansicht: "events", schluessel: ["event"], owner: root,
+    /* impact_layout (22.10.) ebenso: ausserhalb von Impact nicht in der Adresse, beim Zurueckkommen wieder da. */
+    if (UC.ansichtsParameter) UC.ansichtsParameter({ ansicht: "events", schluessel: ["event", "impact_layout"], owner: root,
       onTeamWechsel: function () { if (state.ansicht === "detail") zurUebersicht(false); } });
     /* Erster Stand: die Adresse entscheidet. spaet=true fuer einen Tiefenlink: seit 13.10. wartet
        der direkte Weg dafuer nur auf das Team (rufen); fire.spaet -- warten, bis Bubbles
        Empfaenger stehen -- gilt nur noch, wenn ein Kanal auf den Rueckweg an Bubble faellt. */
+    state.layout = layoutAusAdresse();
     if (adresseEvent()) oeffnen(adresseEvent(), false, true); else baueUebersicht();
     krumenNeu();
     if (spaet && spaet.drain) spaet.drain(instanceId, ctrl);
