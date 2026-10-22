@@ -2696,7 +2696,7 @@
     if (!k || !reihen.length || !labels.length){ flaeche.innerHTML = '<p class="am-chart-leer">' + esc(BL().chartLeer) + '</p>'; return el; }
     try {
       if (b.kind === 'line' && k.makeLine && k.buildLineDatasets){
-        flaeche.innerHTML = '<div class="am-chart-linie"><canvas></canvas></div><div class="am-chart-legende"></div>';
+        flaeche.innerHTML = '<div class="am-chart-linie"><canvas></canvas></div><div class="up-legend am-chart-legende"></div>';
         var zeilen = [], firmen = [];
         reihen.forEach(function(r, i){
           var id = blkStr(r.ref) || ('s' + i), marke = null;
@@ -5300,6 +5300,9 @@
     if (S.isLoading) return;
     var quote = explicit ? '' : getQuoteValue();
     var bezug = explicit ? '' : picksText();
+    /* Die Bezuege zusaetzlich mit Art und Kennung (P2, /api/mira references): der Agent loest sie ohne
+       Raten auf. Vor clearPicks, das sie gleich leert. */
+    var bezugListe = explicit ? [] : picksRefs();
     if (!typed && !quote && !bezug) return;
     /* Vom Startschirm aus geht der Fokus mit dem Absenden aus dem Feld. Dort wandert der Composer
        gleich darauf nach unten in die Chatansicht, und ein blinkender Cursor in einem Kasten, der
@@ -5336,6 +5339,7 @@
        Sitzung" aus. Ein leerer Text tut das. */
     var payload = { chat_id: S.activeChatId == null ? '' : String(S.activeChatId),
                     message: full, answer_detail: S.answerDetail, model: S.model };
+    if (bezugListe.length) payload.references = bezugListe;
     anBubbleSenden(payload, 0);
   }
 
@@ -6227,6 +6231,12 @@
      arbeitet: Marke und Prompt tragen ihre UID, Domain und URL sind selbst der Schluessel
      (die primaeren Schluessel dieser beiden Tabellen). Genau diese Zuordnung nimmt auch die
      Palette, wenn sie eine Zeile an Bubble meldet -- eine Quelle, kein zweites Verzeichnis. */
+  function picksRefs(){
+    var UCg = window.UpstreemCore;
+    return _picks.slice(0, 3).map(function(it){
+      return { type: String(it.type), id: String(pickKennung(it) || ''), label: (UCg && UCg.entityLabel) ? String(UCg.entityLabel(it) || '') : '' };
+    }).filter(function(r){ return r.type && r.id; });
+  }
   function picksText(){
     if (!_picks.length) return '';
     var UCg = window.UpstreemCore;
