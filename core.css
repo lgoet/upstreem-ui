@@ -7967,6 +7967,15 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
 .up-root.is-narrow .up-kpiband.is-offen.is-4 > .up-kpi:nth-child(even) { padding-right: 0; }
 /* Zwei Zeilen: die zweite haelt Abstand zur Linie zwischen ihnen. */
 .up-root.is-narrow .up-kpiband.is-offen.is-4 > .up-kpi:nth-child(n+3) { padding-top: 12px; margin-top: 8px; }
+/* DIE SENKRECHTE STOESST AN DIE WAAGERECHTE (22.10.): im 2 x 2 stand der Abstand UEBER der Linie als
+   margin-top der zweiten Zeile -- die senkrechte Linie der ersten Zeile (border-left ihrer zweiten
+   Kachel) endete damit 8px ueber der waagerechten, nur die der zweiten Zeile stiess an. Gemeldet in
+   Shopping ("nur unten angesetzt"), gemessen in Ads bei 900: oben 160-218, Linie bei 226, unten
+   226-317. Jetzt steht derselbe Abstand als Polster in der ersten Zeile (4 + 8 = 12, die Schrift
+   bleibt, wo sie war), und die zweite Zeile beginnt an der Linie. Nur im 2 x 2: untereinander
+   (.is-vnarrow) gibt es keine senkrechten Linien, dort bleibt der Rand. */
+.up-root.is-narrow:not(.is-vnarrow) .up-kpiband.is-offen.is-4 > .up-kpi:nth-child(-n+2) { padding-bottom: 12px; }
+.up-root.is-narrow:not(.is-vnarrow) .up-kpiband.is-offen.is-4 > .up-kpi:nth-child(n+3) { margin-top: 0; }
 .up-root.is-vnarrow .up-kpiband.is-offen > .up-kpi { padding-left: 0; padding-right: 0; }
 .up-root.is-vnarrow .up-kpiband.is-offen > .up-kpi + .up-kpi { padding-top: 12px; margin-top: 8px; }
 /* ---------- Beispielplatten der Variations-Erklaerkarten (UC.variationsPlatte) ----------
