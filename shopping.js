@@ -523,8 +523,29 @@
        Spaltenkoepfen ("share") bleiben ohne Zusatz. */
     var kachelKarte = {};
     function kachelnNeu() { kachelKarte = {}; }
+    /* DAS DIAGRAMM ERKLAERT SEINE GEWAEHLTE KENNZAHL (22.10. abends): "Lower is better: position 1 sits at the top of the
+       chart." stand als Zeile ueber dem Diagramm (.ush-chartnote), nur bei Avg. Position -- sie sprang beim Umschalten herein
+       und heraus. Jetzt traegt der Kopf mit dem Umschalter das Info-Zeichen (sekKopf, Schluessel "chart"), und die Karte
+       erklaert die Kennzahl, die das Diagramm gerade zeigt: Platte, Titel = Etikett des gewaehlten Knopfs, Satz und Formel aus
+       ERKLAER; bei Avg. Position dazu der Satz ueber die umgedrehte Achse. Alles beim Oeffnen gebaut, also immer die Kennzahl
+       von jetzt. Overview und Brands zeigen je Marke eine Linie, darum dort die Marken-Fassung der Saetze. */
+    var DIAGRAMM_ERKL = {
+      overview: { presence: "presenceBrand", share_of_shelf: "shareBrand", avg_position: "pos", first_position_rate: "firstBrand" },
+      brands: { presence: "presenceBrand", share_of_shelf: "shareBrand", avg_position: "pos", first_position_rate: "firstBrand" },
+      detail: { visibility: "vis", avg_position: "pos", observations: "obs" }
+    };
+    function diagrammKarte() {
+      var m = metrikJetzt(), key = (DIAGRAMM_ERKL[state.seite] || {})[m], e = key && ERKLAER[key];
+      if (!e) return "";
+      var vis = erklaerVorschau(key);
+      return (vis ? '<div class="up-explain-vis">' + vis + '</div>' : '') +
+        '<div class="up-explain-h">' + esc(t(metrikLabel()) || t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>' +
+        '<div class="up-explain-t">' + esc(t(e.f)) + '</div>' +
+        (m === "avg_position" ? '<div class="up-explain-t">' + esc(t("Lower is better: position 1 sits at the top of the chart.")) + '</div>' : '');
+    }
     if (UC.makeExplain) UC.makeExplain({ root: root, triggerSel: ".ush-erklaer, .ush-kpi .up-th-info[data-explain]", getIsDark: isDark,
       html: function (key, ausloeser) {
+        if (key === "chart") return diagrammKarte();
         var e = ERKLAER[key];
         if (!e) return "";
         var kk = ausloeser && ausloeser.closest && ausloeser.closest(".ush-kpi") ? kachelKarte[key] : null;
@@ -1462,7 +1483,6 @@
        Zuhoerer und den Stand der Suche verloren. */
     function chartHtml(segKlasse, segWerte, aktiv) {
       return '<div class="up-box ush-chartbox up-band-inhalt">' +
-        '<p class="ush-chartnote" hidden>' + esc(t("Lower is better: position 1 sits at the top of the chart.")) + '</p>' +
         '<div class="ush-linewrap"><canvas></canvas></div><div class="up-legend ush-legende"></div></div>';
     }
     /* DAS OFFENE BAND (15.10., Variante A wie der Chart der Citations-Seite, citations-combo-chart.css
@@ -1534,7 +1554,7 @@
             '<div class="up-kpiband is-4 is-offen ush-kpis" data-sek="kpis"></div>' +
             bandAuf("chart") +
               sekKopf("Shopping Performance", t("How your brand and competitors appear in AI shopping results"),
-                segHtml("ush-metrik", [["presence", "Brand Presence"], ["share_of_shelf", "Share of Shelf"], ["avg_position", "Avg. Position"], ["first_position_rate", "First Position Rate"]], state.ovMetrik)) +
+                segHtml("ush-metrik", [["presence", "Brand Presence"], ["share_of_shelf", "Share of Shelf"], ["avg_position", "Avg. Position"], ["first_position_rate", "First Position Rate"]], state.ovMetrik), "chart") +
               chartHtml() +
             '</section>' +
           '</div>' +
@@ -1555,7 +1575,7 @@
             '<div class="up-kpiband is-4 is-offen ush-kpis" data-sek="kpis"></div>' +
             bandAuf("chart") +
               sekKopf("Brand Performance", t("How the top brands develop in AI shopping results"),
-                segHtml("ush-metrik", [["share_of_shelf", "Share of Shelf"], ["presence", "Presence"], ["avg_position", "Avg. Position"], ["first_position_rate", "First Position Rate"]], state.brMetrik)) +
+                segHtml("ush-metrik", [["share_of_shelf", "Share of Shelf"], ["presence", "Presence"], ["avg_position", "Avg. Position"], ["first_position_rate", "First Position Rate"]], state.brMetrik), "chart") +
               chartHtml() +
             '</section>' +
           '</div>' +
@@ -1581,7 +1601,7 @@
           bandAuf("hero", "ush-heroband") + '</section>' +
           bandAuf("chart") +
             sekKopf("Product Performance", t("How this product appears in AI shopping results over time"),
-              segHtml("ush-metrik", [["visibility", "Visibility"], ["avg_position", "Avg. Position"], ["observations", "Observations"]], state.dMetrik)) +
+              segHtml("ush-metrik", [["visibility", "Visibility"], ["avg_position", "Avg. Position"], ["observations", "Observations"]], state.dMetrik), "chart") +
             chartHtml() +
           '</section>' +
           bandAuf("wo") + '</section>' +
@@ -2093,8 +2113,6 @@
     /* ---- Diagramme ----------------------------------------------------------------------------- */
     function zeichneChart() {
       if (!linie) return;
-      var note = elMain.querySelector(".ush-chartnote");
-      if (note) note.hidden = metrikJetzt() !== "avg_position";
       var s = state.seite;
       if (s === "detail") { zeichneDetailChart(); return; }
       var d = s === "brands" ? overviewGleicherFilter() : dieOverview();
@@ -3007,8 +3025,6 @@
     }
     function zeichneDetailChart() {
       if (!linie) return;
-      var note = elMain.querySelector(".ush-chartnote");
-      if (note) note.hidden = state.dMetrik !== "avg_position";
       var a = detailAnfrage(), d = dasDetail();
       if (!d) { if (fehlerVon(a)) linie.meldung(t("This product could not be loaded")); else linie.skeleton(); return; }
       var tr = (isArr(d.trend) ? d.trend : []).filter(function (x) { return x && /^\d{4}-\d{2}-\d{2}/.test(str(x.day)); });

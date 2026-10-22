@@ -111,7 +111,6 @@
 .ush-chartbox { padding: 16px; }
 .ush-linewrap { position: relative; height: 280px; }
 .ush-seite[data-seite="detail"] .ush-linewrap { height: 240px; }
-.ush-chartnote { margin: 0 0 8px; font-size: var(--up-fs-s); color: var(--vc-third); }
 
 /* ---- DAS OFFENE BAND (15.10., Variante A wie der Chart der Citations-Seite) -----------------------
    Diagramme, Balken, der Held des Produkts und "Where this product appears" stehen nicht im
