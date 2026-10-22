@@ -581,6 +581,187 @@
     "Check which language the text of this page is written in.": "Prüf, in welcher Sprache der Text dieser Seite geschrieben ist.",
     "Set the lang attribute of the html element to it, and change Content-Language unless the different audience is intended.": "Setz das lang-Attribut des html-Elements auf diese Sprache und ändere Content-Language, außer das andere Publikum ist gewollt."
   });
+  /* Deutsch fuer alles, was nach der Pruefung vom 22.10. (Klickwege) im Deutschen noch englisch dastand: gesammelt ueber Liste,
+     Create Audit samt Fehlern, Zeitplan, Loeschen, alle Reiter aller Pruefstand-Seiten und jeden Lauf, dazu die Texttabellen aus
+     page-audit-data.js (Checks, Messwerte, Fehlgruende, Vergleich). Ausnahmen mit Absicht: Namen von Plattformen und Crawlern,
+     Code in den Erklaerkarten (Codeproben bleiben Code). */
+  if (UC.addMessages) UC.addMessages("de", {
+    /* Liste, Kopf, Create Audit */
+    "Technical page audit": "Technisches Page Audit",
+    "Check whether AI search platforms can technically reach one public page.": "Prüfe, ob KI-Suchen eine öffentliche Seite technisch erreichen können.",
+    "Page URL": "URL der Seite",
+    "Use {url}": "{url} verwenden",
+    "{used} of {n} audits used this week.": "{used} von {n} Audits diese Woche verbraucht.",
+    "Resets on {date}.": "Wird am {date} zurückgesetzt.",
+    "Recurring audits: {used} of {n} weekly slots in use.": "Wiederkehrende Audits: {used} von {n} Plätzen pro Woche belegt.",
+    "Trial: {n} audits per week.": "Testphase: {n} Audits pro Woche.",
+    "Last run:": "Letzter Lauf:",
+    "Rules updated since the previous run, not compared.": "Regeln seit dem vorigen Lauf aktualisiert, nicht verglichen.",
+    "Audits you create appear here.": "Audits, die du erstellst, erscheinen hier.",
+    "Checking robots.txt": "robots.txt prüfen",
+    /* Zeitplan */
+    "Runs only when you start it.": "Läuft nur, wenn du es startest.",
+    "Runs every week at night.": "Läuft jede Woche nachts.",
+    "Runs once a month at night.": "Läuft einmal im Monat nachts.",
+    "Up to {n} of your {all} weekly audits can run on a schedule, so 1 always stays free for audits you start yourself.": "Bis zu {n} deiner {all} Audits pro Woche können geplant laufen, damit 1 immer frei bleibt für Audits, die du selbst startest.",
+    "Next run {date}.": "Nächster Lauf {date}.",
+    "next {date}": "nächster {date}",
+    /* Loeschen, Detail ohne Ergebnis */
+    "This deletes the audit of {url} with all its runs and results. This can't be undone.": "Das löscht das Audit von {url} mit allen Läufen und Ergebnissen. Das lässt sich nicht rückgängig machen.",
+    "Audits already used this week stay used.": "Diese Woche schon verbrauchte Audits bleiben verbraucht.",
+    "This audit no longer exists": "Dieses Audit gibt es nicht mehr",
+    "It may have been deleted by someone in your team.": "Vielleicht hat es jemand aus deinem Team gelöscht.",
+    "Back to Page Audit": "Zurück zu Page Audit",
+    "No runs yet": "Noch keine Läufe",
+    "Run the audit to see the result.": "Starte das Audit, um das Ergebnis zu sehen.",
+    "No result": "Kein Ergebnis",
+    "This audit was cancelled.": "Dieses Audit wurde abgebrochen.",
+    "This audit could not be completed. It was not charged.": "Dieses Audit ließ sich nicht abschließen. Es wurde nicht berechnet.",
+    "This scheduled audit was skipped because the weekly quota was used up.": "Dieses geplante Audit wurde übersprungen, weil das Kontingent der Woche verbraucht war.",
+    /* Lauf-Kasten: ein aelterer Lauf ist gewaehlt */
+    "Earlier audit": "Älteres Audit",
+    "You're viewing the audit from {date}.": "Du siehst das Audit vom {date}.",
+    /* Overview */
+    "The main text is not in the initial HTML. Reachable only means that no access or policy block was found and all required measurements completed.": "Der Haupttext steht nicht im ersten HTML. Erreichbar heißt nur, dass keine Zugangs- oder Regelsperre gefunden wurde und alle nötigen Messungen gelaufen sind.",
+    "Allowed in robots.txt": "In der robots.txt erlaubt",
+    "Some measurements for this platform are missing, so access is not confirmed.": "Für diese Plattform fehlen Messungen, darum ist der Zugang nicht bestätigt.",
+    "Now reachable": "Jetzt erreichbar",
+    "Was reachable": "War erreichbar",
+    "(line {n})": "(Zeile {n})",
+    "{rule} (line {n})": "{rule} (Zeile {n})",
+    "in the rules for all crawlers (User-agent: *)": "in den Regeln für alle Crawler (User-agent: *)",
+    "allowed": "erlaubt",
+    "blocked": "gesperrt",
+    "search": "Suche",
+    "training": "Training",
+    "No restrictions or potential issues found": "Keine Sperren oder möglichen Probleme gefunden",
+    "No findings in the completed measurements": "Keine Befunde in den gelaufenen Messungen",
+    "All required public measurements completed. This doesn't prove that a platform indexes or cites the page.": "Alle nötigen öffentlichen Messungen sind gelaufen. Das beweist nicht, dass eine Plattform die Seite indexiert oder zitiert.",
+    "Some measurements are missing, so this is not a clean result.": "Einige Messungen fehlen, darum ist das kein sauberes Ergebnis.",
+    "By platform": "Je Plattform",
+    "This finding comes from a newer version of the rules.": "Dieser Befund stammt aus einer neueren Fassung der Regeln.",
+    /* Checks */
+    "Previously: {state}": "Vorher: {state}",
+    "1 needs attention, {y} passed.": "1 braucht Aufmerksamkeit, {y} bestanden.",
+    "{y} passed.": "{y} bestanden.",
+    "Redirect chain": "Weiterleitungskette",
+    "Response classification": "Art der Antwort",
+    "Request variants": "Abrufvarianten",
+    "Robots policy": "Robots-Regeln",
+    "Robots availability": "Lesbarkeit der robots.txt",
+    "Index directives": "Index-Direktiven",
+    "Preview directives": "Vorschau-Direktiven",
+    "Directive changes": "Änderung der Direktiven",
+    "Initial content": "Erster Inhalt",
+    "Rendered content": "Gerenderter Inhalt",
+    "Interaction limits": "Grenzen ohne Interaktion",
+    "URL and canonical": "URL und Canonical",
+    "Metadata and structure": "Metadaten und Struktur",
+    "Format and coverage": "Format und Abdeckung",
+    /* Messwerte der Checks (page-audit-data.js checkWert, ganze Saetze mit Platzhaltern) */
+    "1 redirect": "1 Weiterleitung",
+    "{n} redirects": "{n} Weiterleitungen",
+    "1 redirect, to another domain": "1 Weiterleitung, auf eine andere Domain",
+    "{n} redirects, to another domain": "{n} Weiterleitungen, auf eine andere Domain",
+    "Same response for {x} of {n} requests": "Gleiche Antwort bei {x} von {n} Abrufen",
+    "{x} of {n} platforms allowed": "{x} von {n} Plattformen erlaubt",
+    "HTTP {status}, 1 sitemap listed": "HTTP {status}, 1 Sitemap eingetragen",
+    "HTTP {status}, {n} sitemaps listed": "HTTP {status}, {n} Sitemaps eingetragen",
+    "{n} characters": "{n} Zeichen",
+    "{n} characters in 1 article element": "{n} Zeichen in 1 article-Element",
+    "{n} characters in {m} article elements": "{n} Zeichen in {m} article-Elementen",
+    "{n} characters in the main element": "{n} Zeichen im main-Element",
+    "{x} of {n} characters in the initial HTML": "{x} von {n} Zeichen im ersten HTML",
+    "{lang}, 1 hreflang variant": "{lang}, 1 hreflang-Variante",
+    "{lang}, {n} hreflang variants": "{lang}, {n} hreflang-Varianten",
+    "title": "Titel",
+    "description": "Beschreibung",
+    "1 JSON-LD block": "1 JSON-LD-Block",
+    "{n} JSON-LD blocks": "{n} JSON-LD-Blöcke",
+    "{x} of {n} measurements": "{x} von {n} Messungen",
+    /* Evidence und Runs */
+    "Requested URL": "Angefragte URL",
+    "Final URL": "Finale URL",
+    "Redirects": "Weiterleitungen",
+    "Locale": "Sprache und Region",
+    "Started": "Gestartet",
+    "Finished": "Beendet",
+    "Duration": "Dauer",
+    "Rule set": "Regelwerk",
+    "Platform rules": "Plattformregeln",
+    "Extractor": "Extraktor",
+    "Compared": "Verglichen",
+    "Download raw data": "Rohdaten herunterladen",
+    "characters": "Zeichen",
+    "measurements": "Messungen",
+    "Every request of this run. Results are kept, raw captures for 90 days.": "Jeder Abruf dieses Laufs. Ergebnisse bleiben, Rohdaten 90 Tage lang.",
+    "Every audit of this page. Select a run to see its result.": "Jedes Audit dieser Seite. Wähle einen Lauf, um sein Ergebnis zu sehen.",
+    "Measured values of this run, next to the previous run where they are comparable.": "Messwerte dieses Laufs, neben dem vorigen Lauf, wo sie vergleichbar sind.",
+    "Measured differently or missing in one of the runs.": "In einem der Läufe anders gemessen oder nicht vorhanden.",
+    "Higher than before": "Höher als vorher",
+    "Lower than before": "Niedriger als vorher",
+    "Unchanged": "Unverändert",
+    "Show all {n} runs": "Alle {n} Läufe zeigen",
+    /* Namen der Abrufe (page-audit-data.js slotName) */
+    "Page request": "Seitenabruf",
+    "Page content": "Seiteninhalt",
+    "Browser navigation": "Browser-Navigation",
+    "Browser, initial HTML": "Browser, erstes HTML",
+    "Browser, rendered page": "Browser, gerenderte Seite",
+    "Text, initial HTML": "Text, erstes HTML",
+    "Text, browser initial HTML": "Text, erstes HTML im Browser",
+    "Text, rendered page": "Text, gerenderte Seite",
+    /* Lesefehler aus core ("{was} konnte nicht geladen werden"): Satzanfang und Einzahl. */
+    "this audit": "Dieses Audit",
+    "audits": "Die Liste der Audits",
+    "These raw data have expired.": "Diese Rohdaten sind abgelaufen.",
+    "You don't have access to these raw data.": "Du hast keinen Zugriff auf diese Rohdaten.",
+    "The raw data can't be downloaded right now. Please try again later.": "Die Rohdaten lassen sich gerade nicht herunterladen. Versuch es später noch einmal.",
+    "Response size": "Größe der Antwort",
+    "Response time": "Antwortzeit",
+    "robots.txt size": "Größe der robots.txt",
+    "Main text in the initial HTML": "Haupttext im ersten HTML",
+    "Main text after rendering": "Haupttext nach dem Rendern",
+    "Rendered text found in the initial HTML": "Im ersten HTML gefundener gerenderter Text",
+    "Rendered text in the initial HTML": "Gerenderter Text im ersten HTML",
+    "Text blocks added by JavaScript": "Durch JavaScript ergänzte Textblöcke",
+    "Text blocks removed by JavaScript": "Durch JavaScript entfernte Textblöcke",
+    "Text excluded by data-nosnippet": "Durch data-nosnippet ausgeschlossener Text",
+    "Required measurements": "Nötige Messungen",
+    "Completed measurements": "Abgeschlossene Messungen",
+    "Not requested": "Nicht abgerufen",
+    "Not supported for this format": "Für dieses Format nicht unterstützt",
+    "Timed out": "Zeit überschritten",
+    "Truncated": "Gekürzt",
+    "Could not be parsed": "Nicht lesbar",
+    "Not available": "Nicht verfügbar",
+    "Nothing to compare": "Nichts zu vergleichen",
+    "Measurement failed": "Messung fehlgeschlagen",
+    "Raw data expired": "Rohdaten abgelaufen",
+    "Observed": "Erfasst",
+    "Missing": "Fehlt",
+    /* Vergleich mit dem vorigen Lauf (Tooltips der Marken) */
+    "There is no earlier result to compare with.": "Es gibt kein früheres Ergebnis zum Vergleichen.",
+    "This was already found in the previous run.": "Das wurde schon im vorigen Lauf gefunden.",
+    "Not found in the previous run, which checked the same way.": "Im vorigen Lauf, der genauso geprüft hat, nicht gefunden.",
+    "The rules for this check changed since the previous run, so it is not compared.": "Die Regeln dieses Checks haben sich seit dem vorigen Lauf geändert, darum wird nicht verglichen.",
+    "This could not be measured in the other run, so it is not compared.": "Das ließ sich im anderen Lauf nicht messen, darum wird nicht verglichen.",
+    "Found in the previous run and measured again with the same rules, without this finding.": "Im vorigen Lauf gefunden und mit denselben Regeln erneut gemessen, ohne diesen Befund.",
+    /* Warum ein Lauf ohne Ergebnis blieb, Teillaeufe */
+    "This audit was cancelled before it started. It was not charged.": "Dieses Audit wurde vor dem Start abgebrochen. Es wurde nicht berechnet.",
+    "This audit was cancelled while it was running.": "Dieses Audit wurde während des Laufs abgebrochen.",
+    "The audit took longer than 3 minutes and was stopped. It was not charged.": "Das Audit hat länger als 3 Minuten gedauert und wurde gestoppt. Es wurde nicht berechnet.",
+    "The audit waited too long in the queue and was stopped. It was not charged.": "Das Audit hat zu lange in der Warteschlange gewartet und wurde gestoppt. Es wurde nicht berechnet.",
+    "This audit could not run because your team has no active access. It was not charged.": "Dieses Audit konnte nicht laufen, weil dein Team keinen aktiven Zugang hat. Es wurde nicht berechnet.",
+    "Something went wrong on our side. It was not charged.": "Bei uns ist etwas schiefgegangen. Es wurde nicht berechnet.",
+    "The browser check could not be completed. It was not charged.": "Die Prüfung im Browser ließ sich nicht abschließen. Es wurde nicht berechnet.",
+    "The site's robots.txt doesn't allow our audit crawler, so the page itself wasn't requested.": "Die robots.txt der Website erlaubt unseren Audit-Crawler nicht, deshalb wurde die Seite selbst nicht abgerufen.",
+    "The site's robots.txt couldn't be read reliably, so the page itself wasn't requested.": "Die robots.txt der Website ließ sich nicht zuverlässig lesen, deshalb wurde die Seite selbst nicht abgerufen.",
+    "The site's robots.txt asks crawlers to wait longer between requests than an audit can, so the page itself wasn't requested.": "Die robots.txt der Website verlangt längere Pausen zwischen Abrufen, als ein Audit warten kann, deshalb wurde die Seite selbst nicht abgerufen.",
+    "This site can only be reached over IPv6, and our audit currently connects over IPv4 only. This says nothing about the page.": "Diese Website ist nur über IPv6 erreichbar, und unser Audit verbindet sich derzeit nur über IPv4. Das sagt nichts über die Seite.",
+    "Some measurements could not be completed ({x} of {n}).": "Einige Messungen ließen sich nicht abschließen ({x} von {n}).",
+    "This run wasn't charged, and nothing missing counts as passed.": "Dieser Lauf wurde nicht berechnet, und nichts Fehlendes zählt als bestanden."
+  });
 
   /* ---- Kleine Helfer ------------------------------------------------------------------------- */
   function str(v) { return v == null || typeof v === "object" ? "" : String(v); }
@@ -1129,7 +1310,9 @@
         esc(t("Not included in your plan")) + '</span>';
       var k = kapazitaet();
       var tip = (q.resetsAt ? t("Resets on {date}.").replace("{date}", UC.fmtDate(q.resetsAt)) : "") +
-        (k ? " " + t("Recurring audits: {used} of {n} weekly slots in use.").replace("{used}", D.fmtZahl(k.used)).replace("{n}", D.fmtZahl(k.capacity)) : "") +
+        /* Belegt als Viertel wie im Zeitplan-Menue (viertel): "1.25" las sich wie ein Fehler (gemessen 22.10.: Menue "1¼",
+           Tooltip daneben "1.25"). */
+        (k ? " " + t("Recurring audits: {used} of {n} weekly slots in use.").replace("{used}", viertel(k.used)).replace("{n}", D.fmtZahl(k.capacity)) : "") +
         (q.trial ? " " + t("Trial: {n} audits per week.").replace("{n}", fmtInt(q.allowance)) : "");
       return '<span class="upa-kontingent' + (q.remaining <= 0 ? " is-voll" : "") + '" tabindex="0" data-tip="' + esc(tip.trim()) + '">' +
         esc(t("{used} of {n} audits this week").replace("{used}", fmtInt(q.used)).replace("{n}", fmtInt(q.allowance))) + '</span>';
@@ -1197,7 +1380,9 @@
       /* v2 (Lukas: "was soll das heissen"): zuerst, was die Grenze bedeutet und wozu sie da ist, dann wie gezaehlt wird,
          zuletzt der Stand. Der Rest bis zum Kontingent bleibt immer fuer Audits, die man selbst startet. */
       var rest = q && num(q.allowance) != null && num(k.capacity) != null ? Math.max(0, q.allowance - k.capacity) : null;
-      return (q ? t("Up to {n} of your {all} weekly audits can run on a schedule, so {rest} always stay free for audits you start yourself.")
+      /* Bleibt genau eines frei, steht der Satz in der Einzahl ("1 always stays free", "1 immer frei bleibt"). */
+      return (q ? t(rest === 1 ? "Up to {n} of your {all} weekly audits can run on a schedule, so 1 always stays free for audits you start yourself."
+                               : "Up to {n} of your {all} weekly audits can run on a schedule, so {rest} always stay free for audits you start yourself.")
                     .replace("{n}", D.fmtZahl(k.capacity)).replace("{all}", von_).replace("{rest}", rest == null ? "–" : D.fmtZahl(rest))
                 : t("Up to {n} audits a week can run on a schedule.").replace("{n}", D.fmtZahl(k.capacity))) + " " +
         t("Weekly counts as 1 audit a week, monthly as ¼.") + " " +
@@ -1510,7 +1695,11 @@
        Ersetzt im Overview die Laufzeile; ohne Ergebnis (Reiter verborgen) bleibt es bei Protokoll bzw. Laufzeile. */
     /* 10 s statt 5 (Lukas 22.10. abends: "Er soll 10s stehen bleiben statt 5"). */
     var LB_WEG_MS = 10000, LB_ZU_MS = 260;
-    var LB = { page: "", lauf: "", ende: "", timer: 0, zuTimer: 0 };
+    /* art: was der Kasten gerade zeigt ("lauf", "ende", "alt" oder ""). fertig: Laeufe, deren Ende der Kasten schon gesehen
+       hat -- ein Lauf geht nie von fertig zurueck (wie zielVon), auch nicht, wenn ein gemerktes aelteres Detail ihn noch
+       laufend fuehrt. Gemessen 22.10.: nach "View latest audit" zeichnete das gemerkte Detail ohne run_id (vom Start des
+       Laufs) den Kasten wieder als "Queued", und weil LB.ende schon stand, holte ihn auch die frische Antwort nicht mehr. */
+    var LB = { page: "", lauf: "", ende: "", timer: 0, zuTimer: 0, art: "", fertig: {} };
     function lbLaufend(a) {
       var k = anzeigeJetzt(a.id), wartet = k ? k === "queued" : a.status === "queued";
       /* Hat die Anzeige ihre Schritte schon abgespielt, waehrend der Server noch speichert, bleibt der letzte Schritt
@@ -1548,7 +1737,7 @@
       if (!elLb.classList.contains("is-offen")) { void elLb.offsetHeight; elLb.classList.add("is-offen"); }
     }
     function lbZu(sofort) {
-      clearTimeout(LB.timer); LB.timer = 0;
+      clearTimeout(LB.timer); LB.timer = 0; LB.art = "";
       if (!elLb) return;
       if (sofort) {
         clearTimeout(LB.zuTimer);
@@ -1567,35 +1756,69 @@
       var d = state.ansicht === "detail" ? dasDetail() : null;
       if (!d || LB.page !== state.pageId) {
         if (LB.lauf || elLb.firstChild) lbZu(true);
-        LB.lauf = ""; LB.ende = ""; LB.page = d ? state.pageId : "";
+        LB.lauf = ""; LB.ende = ""; LB.art = ""; LB.fertig = {}; LB.page = d ? state.pageId : "";
         if (!d) return;
       }
       var s = d.selected, mitErgebnis = !!s && (s.run.status === "completed" || s.run.status === "partial");
       var a = aktiverLauf(d);
+      if (a && LB.fertig[a.id]) a = null;
       if (a && mitErgebnis && s.run.id !== a.id) {
         if (LB.lauf !== a.id) { LB.lauf = a.id; LB.ende = ""; clearTimeout(LB.timer); LB.timer = 0; }
-        lbSetzen(lbLaufend(a));
+        lbSetzen(lbLaufend(a)); LB.art = "lauf";
         return;
       }
-      /* Nichts verfolgt, oder der Endzustand steht schon (er bleibt bis 10 s bzw. X, auch beim Reiterwechsel). */
-      if (!LB.lauf || LB.ende) return;
-      var r = null;
-      d.runs.forEach(function (x) { if (x.id === LB.lauf) r = x; });
-      if (!r || D.laeuft(r.status) || !mitErgebnis) { LB.lauf = ""; lbZu(true); return; }
-      LB.ende = r.status;
-      if (r.status === "completed" || r.status === "partial") {
-        /* Nach "Run again" steht die Auswahl auf "neuestes Ergebnis" (nochmal), das ist jetzt dieser Lauf. Hat man
-           inzwischen einen alten Lauf gewaehlt, sagt der Kasten das und bietet den Weg zum neuen. */
-        var sieht = s.run.id === r.id;
-        lbSetzen({ ton: "pos", titel: "Page Audit completed", satz: t(sieht ? "You're now viewing the latest audit." : "Your new audit is ready."), neuester: !sieht, zu: true });
-        if (sieht) LB.timer = setTimeout(function () { lbZu(false); }, LB_WEG_MS);
-      } else if (r.status === "cancelled") {
-        lbSetzen({ ton: "leise", titel: "Audit cancelled", satz: t("You're still viewing the previous result."), zu: true });
-        LB.timer = setTimeout(function () { lbZu(false); }, LB_WEG_MS);
-      } else {
-        var grund = D.LAUF_FEHLER[r.errorCode] || "This audit could not be completed. It was not charged.";
-        lbSetzen({ ton: "neg", titel: "Page Audit failed", satz: t(grund) + " " + t("You're still viewing the previous result."), zu: true });
+      if (LB.lauf && !LB.ende) {
+        var r = null;
+        d.runs.forEach(function (x) { if (x.id === LB.lauf) r = x; });
+        if (!r || D.laeuft(r.status) || !mitErgebnis) { LB.lauf = ""; lbZu(true); }
+        else {
+          LB.ende = r.status; LB.fertig[r.id] = true;
+          if (r.status === "completed" || r.status === "partial") {
+            /* Nach "Run again" steht die Auswahl auf "neuestes Ergebnis" (nochmal), das ist jetzt dieser Lauf. Hat man
+               inzwischen einen alten Lauf gewaehlt, sagt der Kasten das und bietet den Weg zum neuen. */
+            var sieht = s.run.id === r.id;
+            lbSetzen({ ton: "pos", titel: "Page Audit completed", satz: t(sieht ? "You're now viewing the latest audit." : "Your new audit is ready."), neuester: !sieht, zu: true });
+            if (sieht) LB.timer = setTimeout(function () { lbZu(false); }, LB_WEG_MS);
+            LB.neuester = !sieht;
+          } else if (r.status === "cancelled") {
+            lbSetzen({ ton: "leise", titel: "Audit cancelled", satz: t("You're still viewing the previous result."), zu: true });
+            LB.timer = setTimeout(function () { lbZu(false); }, LB_WEG_MS);
+          } else {
+            var grund = D.LAUF_FEHLER[r.errorCode] || "This audit could not be completed. It was not charged.";
+            lbSetzen({ ton: "neg", titel: "Page Audit failed", satz: t(grund) + " " + t("You're still viewing the previous result."), zu: true });
+          }
+          LB.art = "ende";
+          return;
+        }
       }
+      /* Der Endzustand steht (bis 10 s bzw. X, auch beim Reiterwechsel). Hat man den neuen Lauf inzwischen selbst gewaehlt
+         (Runs), sagt der Kasten jetzt das, statt weiter "View latest audit" anzubieten. */
+      if (LB.art === "ende") {
+        if (LB.neuester && s && s.run.id === LB.lauf) {
+          LB.neuester = false;
+          lbSetzen({ ton: "pos", titel: "Page Audit completed", satz: t("You're now viewing the latest audit."), zu: true });
+          LB.timer = setTimeout(function () { lbZu(false); }, LB_WEG_MS);
+        }
+        return;
+      }
+      altSync(d);
+    }
+    /* Ein aelterer Lauf ist gewaehlt (Runs oder ?run_id): sichtbar und mit einem Klick zurueckzunehmen, wie jeder Filter, den
+       eine Navigation setzt (22.10., Shopping: gesetzter Filter ohne Chip). Derselbe Kasten mit demselben Knopf wie nach
+       einem Lauf, den man neben einem alten Ergebnis abgewartet hat; ohne X, denn zu waere die Auswahl wieder unsichtbar. */
+    function neuesterMitErgebnis(d) {
+      var n = null;
+      d.runs.forEach(function (x) {
+        if ((x.status === "completed" || x.status === "partial") && (!n || Date.parse(x.acceptedAt) > Date.parse(n.acceptedAt))) n = x;
+      });
+      return n;
+    }
+    function altSync(d) {
+      var s = d.selected, n = neuesterMitErgebnis(d);
+      if (state.runId && s && n && s.run.id !== n.id) {
+        lbSetzen({ ton: "leise", titel: "Earlier audit", satz: t("You're viewing the audit from {date}.").replace("{date}", zeit(s.run.finishedAt || s.run.acceptedAt)), neuester: true });
+        LB.art = "alt";
+      } else if (LB.art === "alt") lbZu(false);
     }
     /* Ein Lauf ohne Ergebnis: der wartende/laufende bekommt das Ladebild (lange Laeufe nur ueber
        UC.makeLadebild), der gescheiterte einen Satz mit dem Grund. */
@@ -1935,8 +2158,15 @@
         }).join(", ") + '</p>' : '';
       return '<div class="upa-kette">' + r.join("") + '</div>' + andere;
     }
-    function robotsZelle(rb) {
-      if (!rb) return '<span class="up-num is-empty">–</span>';
+    /* Ohne Regel je Profil (B1 ohne profile, Laeufe aus der Zeit davor) sagt der robots-Befund der Plattform dasselbe wie die
+       aufgeklappte Zeile (ketteHtml, "sperre"): vorher stand dort "No", in der Spalte aber ein Strich (gemessen 22.10. an
+       example.com/pricing, ChatGPT Search). */
+    function robotsZelle(rb, bef) {
+      if (!rb) {
+        var sp = (bef || []).filter(function (f) { return /^robots\./.test(f.family); })[0];
+        if (sp) return zustandHtml({ text: "Blocked", zeichen: "ban", ton: "neg" }, { tip: sp.details && sp.details.rule ? str(sp.details.rule) : "" });
+        return '<span class="up-num is-empty">–</span>';
+      }
       var tip = rb.regel ? t("{rule} (line {n})").replace("{rule}", rb.regel).replace("{n}", rb.zeile != null ? String(rb.zeile) : "–") + (gruppeText(rb) ? " " + gruppeText(rb) : "") : "";
       if (rb.entscheidung === "allowed") return zustandHtml({ text: "Allowed", zeichen: "checkCircle", ton: "pos" }, { tip: tip });
       if (rb.entscheidung === "disallowed") return zustandHtml({ text: "Blocked", zeichen: "ban", ton: "neg" }, { tip: tip });
@@ -1976,7 +2206,7 @@
               (e.m ? trackedHtml() : '') + '</span>' +
             '<span class="upa-url upa-mono">' + esc(e.p.token) + '</span></span></div>' +
           '<div class="up-td upa-td-zugang" role="cell">' + zugang + wechsel + '</div>' +
-          '<div class="up-td upa-td-robots" role="cell">' + robotsZelle(rb) + '</div>' +
+          '<div class="up-td upa-td-robots" role="cell">' + robotsZelle(rb, bef) + '</div>' +
           '<div class="up-td upa-td-js" role="cell">' + jsZelle + '</div>' +
           '<div class="up-td upa-td-zahl upa-td-c" role="cell"><span class="up-num">' + esc(x ? von(x.coverageSatisfied, x.coverageRequired) : "–") + '</span></div>' +
           '<div class="up-td upa-td-chev" role="cell"><span class="upa-befund-chev" aria-hidden="true">' + UC.icon(offen ? "chevronUp" : "chevronDown", 2) + '</span></div>' +
@@ -2368,7 +2598,10 @@
       var offenN = alle.filter(function (k) { return nach[k.key].state === "unknown"; });
       var na = alle.filter(function (k) { var x = nach[k.key].state; return x === "not_applicable" || x === "unsupported"; });
       var unter = t("{n} checks.").replace("{n}", fmtInt(alle.length)) + " " +
-        (befund.length ? t("{x} need attention, {y} passed.").replace("{x}", fmtInt(befund.length)).replace("{y}", fmtInt(gut.length)) : t("All {y} passed.").replace("{y}", fmtInt(gut.length)));
+        (befund.length ? t("{x} need attention, {y} passed.").replace("{x}", fmtInt(befund.length)).replace("{y}", fmtInt(gut.length))
+          /* "All" nur, wenn wirklich jeder Check bestanden hat: neben "17 checks." stand sonst "All 16 passed." (einer nicht
+             gemessen; Pruefstand nx_pa texte, 22.10.). */
+          : (gut.length === alle.length ? t("All {y} passed.") : t("{y} passed.")).replace("{y}", fmtInt(gut.length)));
       if (befund.length === 1) unter = t("{n} checks.").replace("{n}", fmtInt(alle.length)) + " " + t("1 needs attention, {y} passed.").replace("{y}", fmtInt(gut.length));
       function zeilen(l) { return l.map(function (k) { return checkZeileNeu(k, nach[k.key], s); }).join(""); }
       /* Offen, was Aufmerksamkeit braucht; Bestandenes eingeklappt mit Zahl, damit die Gruendlichkeit sichtbar bleibt, ohne

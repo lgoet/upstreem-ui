@@ -781,37 +781,49 @@
     F2: { ok: "Title, description and structured data are present", nein: "Title, description or structured data are missing" },
     F3: { ok: "All measurements were completed", nein: "Some measurements are missing" }
   };
+  /* Der Messwert eines Checks als GANZER Satz mit Platzhaltern (22.10.): vorher aus englischen Stuecken zusammengesetzt
+     ("7 of 7" + " platforms allowed"), so fand ihn kein Katalog -- im Deutschen standen acht von 16 Werten englisch da
+     (gemessen an upstreem.ai). Erst uebersetzen, dann fuellen, wie fuellen() oben. */
+  function satzMit(muster, w) {
+    var s = tl(muster);
+    Object.keys(w || {}).forEach(function (k) { s = s.split("{" + k + "}").join(String(w[k])); });
+    return s;
+  }
   function checkWert(key, d, fmt) {
     d = obj(d) || {};
     fmt = fmt || function (v) { return String(v); };
     var n, m, l;
     switch (key) {
       case "A1": return num(d.status) != null ? "HTTP " + d.status + (num(d.ms) != null ? " in " + fmt(Math.round(d.ms)) + " ms" : "") : "";
-      case "A2": n = num(d.weiterleitungen); return n == null ? "" : n === 0 ? "No redirects" : fmt(n) + (n === 1 ? " redirect" : " redirects") + (d.andere_domain ? ", to another domain" : "");
-      case "A3": return isArr(d.treffer) ? (d.treffer.length ? str(d.treffer.map(str).join(", ")).slice(0, 120) : "Nothing detected") : "";
+      case "A2": n = num(d.weiterleitungen); if (n == null) return ""; if (n === 0) return tl("No redirects");
+        return satzMit(n === 1 ? (d.andere_domain ? "1 redirect, to another domain" : "1 redirect") : (d.andere_domain ? "{n} redirects, to another domain" : "{n} redirects"), { n: fmt(n) });
+      case "A3": return isArr(d.treffer) ? (d.treffer.length ? str(d.treffer.map(str).join(", ")).slice(0, 120) : tl("Nothing detected")) : "";
       case "A4": l = isArr(d.varianten) ? d.varianten : []; if (!l.length) return "";
         n = l.filter(function (v) { return v && v.gleicher_body === true && v.gleicher_status === true; }).length;
-        return "Same response for " + fmt(n) + " of " + fmt(l.length) + " requests";
+        return satzMit("Same response for {x} of {n} requests", { x: fmt(n), n: fmt(l.length) });
       case "B1": m = obj(d.profile) || {}; l = Object.keys(m); if (!l.length) return "";
         n = l.filter(function (k) { var e = ((m[k] || {}).ergebnisse || [])[0]; return e && e.entscheidung === "allowed"; }).length;
-        return fmt(n) + " of " + fmt(l.length) + " platforms allowed";
+        return satzMit("{x} of {n} platforms allowed", { x: fmt(n), n: fmt(l.length) });
       case "B2": l = isArr(d.dateien) ? d.dateien : []; if (!l.length) return "";
-        return "HTTP " + str(l[0].status) + (num(l[0].sitemaps) ? ", " + fmt(l[0].sitemaps) + (l[0].sitemaps === 1 ? " sitemap listed" : " sitemaps listed") : "");
-      case "C1": m = obj(d.profile) || {}; return Object.keys(m).length ? "Checked for Google and Bing" : "";
-      case "C2": return obj(d.profile) ? "No nosnippet, max-snippet or data-nosnippet" : "";
-      case "C3": return isArr(d.roh) && isArr(d.gerendert) ? (d.roh.length || d.gerendert.length ? "Different before and after rendering" : "Same before and after rendering") : "";
+        return num(l[0].sitemaps) ? satzMit(l[0].sitemaps === 1 ? "HTTP {status}, 1 sitemap listed" : "HTTP {status}, {n} sitemaps listed", { status: str(l[0].status), n: fmt(l[0].sitemaps) })
+          : "HTTP " + str(l[0].status);
+      case "C1": m = obj(d.profile) || {}; return Object.keys(m).length ? tl("Checked for Google and Bing") : "";
+      case "C2": return obj(d.profile) ? tl("No nosnippet, max-snippet or data-nosnippet") : "";
+      case "C3": return isArr(d.roh) && isArr(d.gerendert) ? tl(d.roh.length || d.gerendert.length ? "Different before and after rendering" : "Same before and after rendering") : "";
       case "D1": n = num(d.zeichen); m = obj(d.anzahl) || {};
-        return n == null ? "" : fmt(n) + " characters" + (num(m.article) ? " in " + fmt(m.article) + " article " + (m.article === 1 ? "element" : "elements") : num(m.main) ? " in the main element" : "");
-      case "D2": return num(d.numerator) != null && num(d.denominator) ? fmt(d.numerator) + " of " + fmt(d.denominator) + " characters in the initial HTML" : "";
-      case "D3": return isArr(d.ueberlagerungen) ? (d.ueberlagerungen.length || num(d.passwortfelder) ? "Overlay or password field found" : "No overlays, paywalls or password fields") : "";
+        if (n == null) return "";
+        return satzMit(num(m.article) ? (m.article === 1 ? "{n} characters in 1 article element" : "{n} characters in {m} article elements")
+          : num(m.main) ? "{n} characters in the main element" : "{n} characters", { n: fmt(n), m: fmt(m.article) });
+      case "D2": return num(d.numerator) != null && num(d.denominator) ? satzMit("{x} of {n} characters in the initial HTML", { x: fmt(d.numerator), n: fmt(d.denominator) }) : "";
+      case "D3": return isArr(d.ueberlagerungen) ? tl(d.ueberlagerungen.length || num(d.passwortfelder) ? "Overlay or password field found" : "No overlays, paywalls or password fields") : "";
       case "E1": l = (isArr(d.html) && d.html.length ? d.html : isArr(d.gerendert) ? d.gerendert : []);
-        return l.length && obj(l[0]) && str(l[0].aufgeloest) ? "Canonical " + str(l[0].aufgeloest).slice(0, 120) : (isArr(d.html) ? "No canonical tag" : "");
-      case "F1": return str(d.html_lang) ? str(d.html_lang) + (num(d.hreflang) ? ", " + fmt(d.hreflang) + " hreflang variants" : "") : "";
+        return l.length && obj(l[0]) && str(l[0].aufgeloest) ? "Canonical " + str(l[0].aufgeloest).slice(0, 120) : (isArr(d.html) ? tl("No canonical tag") : "");
+      case "F1": return str(d.html_lang) ? (num(d.hreflang) ? satzMit(d.hreflang === 1 ? "{lang}, 1 hreflang variant" : "{lang}, {n} hreflang variants", { lang: str(d.html_lang), n: fmt(d.hreflang) }) : str(d.html_lang)) : "";
       case "F2": m = obj(d.jsonld) || {}; l = [];
-        if (str(d.titel)) l.push("title"); if (d.beschreibung) l.push("description"); if (d.h1_roh) l.push("H1");
-        if (num(m.bloecke)) l.push(fmt(m.bloecke) + " JSON-LD " + (m.bloecke === 1 ? "block" : "blocks"));
+        if (str(d.titel)) l.push(tl("title")); if (d.beschreibung) l.push(tl("description")); if (d.h1_roh) l.push("H1");
+        if (num(m.bloecke)) l.push(satzMit(m.bloecke === 1 ? "1 JSON-LD block" : "{n} JSON-LD blocks", { n: fmt(m.bloecke) }));
         return l.length ? l.join(", ").replace(/^./, function (c) { return c.toUpperCase(); }) : "";
-      case "F3": return num(d.required) != null ? fmt(d.satisfied) + " of " + fmt(d.required) + " measurements" : "";
+      case "F3": return num(d.required) != null ? satzMit("{x} of {n} measurements", { x: fmt(d.satisfied), n: fmt(d.required) }) : "";
     }
     return "";
   }

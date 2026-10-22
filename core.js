@@ -20328,8 +20328,9 @@
     "Your team started 10 audits in the last hour. You can start the next one in {time}.": "Dein Team hat in der letzten Stunde 10 Audits gestartet. Das nächste kannst du in {time} starten.",
     "10 audits are already waiting or running. Try again when one has finished.": "10 Audits warten oder laufen schon. Versuch es noch einmal, wenn eines fertig ist.",
     "This website was audited many times in the last hour. Try again in {time}.": "Diese Website wurde in der letzten Stunde sehr oft geprüft. Versuch es in {time} noch einmal.",
-    "Recurring audits can use up to {n} of your weekly audits, and this would exceed it. Set another page to Once first.": "Wiederkehrende Audits dürfen höchstens {n} deiner wöchentlichen Audits belegen, und das würde die Grenze überschreiten. Stell zuerst eine andere Seite auf Einmalig.",
-    "You've reached the limit for recurring audits. Set another page to Once first.": "Du hast die Grenze für wiederkehrende Audits erreicht. Stell zuerst eine andere Seite auf Einmalig.",
+    /* "Not Scheduled" wie im Zeitplan-Menue von Page Audit (22.10.): "Once" gibt es dort seit v2 nicht mehr. */
+    "Recurring audits can use up to {n} of your weekly audits, and this would exceed it. Set another page to Not Scheduled first.": "Wiederkehrende Audits dürfen höchstens {n} deiner wöchentlichen Audits belegen, und das würde die Grenze überschreiten. Stell zuerst eine andere Seite auf „Nicht geplant“.",
+    "You've reached the limit for recurring audits. Set another page to Not Scheduled first.": "Du hast die Grenze für wiederkehrende Audits erreicht. Stell zuerst eine andere Seite auf „Nicht geplant“.",
     "This audit is running. Cancel it or wait until it has finished, then delete it.": "Dieses Audit läuft. Brich es ab oder warte, bis es fertig ist, und lösch es dann.",
     "This audit no longer exists.": "Dieses Audit gibt es nicht mehr.",
     "This is taking longer than expected. Please try again.": "Das dauert länger als erwartet. Bitte erneut versuchen.",
@@ -20380,8 +20381,8 @@
     if (m === "page_audit_schedule_capacity"){
       var c = paDetailJson(f), kap = paZahl(c.capacity);
       return { satz: kap != null
-        ? tt("Recurring audits can use up to {n} of your weekly audits, and this would exceed it. Set another page to Once first.").replace("{n}", String(Math.round(kap * 100) / 100))
-        : tt("You've reached the limit for recurring audits. Set another page to Once first.") };
+        ? tt("Recurring audits can use up to {n} of your weekly audits, and this would exceed it. Set another page to Not Scheduled first.").replace("{n}", String(Math.round(kap * 100) / 100))
+        : tt("You've reached the limit for recurring audits. Set another page to Not Scheduled first.") };
     }
     if (m === "page_audit_running") return { satz: tt("This audit is running. Cancel it or wait until it has finished, then delete it.") };
     if (m === "page_audit_not_found") return { satz: tt("This audit no longer exists.") };
