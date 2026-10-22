@@ -755,10 +755,6 @@
     "Citation Tracking created": "Citation Tracking erstellt", "Created {date}": "Erstellt am {date}", "All active": "Alle aktiven",
     /* Startbereich der Uebersicht (22.10.). */
     "Measure the impact of your changes": "Miss die Wirkung deiner Änderungen",
-    "Track marketing campaigns, product launches or paid articles and see what each one really did for your AI visibility.":
-      "Tracke Marketingkampagnen, Produktlaunches oder Paid Articles und sieh, was jede davon wirklich für deine AI-Sichtbarkeit gebracht hat.",
-    "Find out which of your pages ChatGPT, Perplexity and others cite in their answers, and how often.":
-      "Finde heraus, welche deiner Seiten ChatGPT, Perplexity und andere in ihren Antworten zitieren, und wie oft.",
     "See how launches, campaigns and new pages change your visibility and citations in AI answers.":
       "Sieh, wie Launches, Kampagnen und neue Seiten deine Sichtbarkeit und deine Zitate in KI-Antworten verändern.",
     "What you track appears here.": "Was du trackst, erscheint hier.",
@@ -2023,29 +2019,14 @@
     var ABSCHNITT_ZEICHEN = { event: "cells", watch: "globe" };
 
     /* ---- STARTBEREICH (22.10., Vorbild Page Audit v2: startGeruest in page-audit.js) -------------------------------------------
-       Oben links Ueberschrift und EIN Satz, darunter eine kleinere Karte, rechts ueber beide Zeilen die Grafik. Gewaehlt im Canvas
-       "Impact Startseite" (Lukas 22.10.): die Karte ohne eigene Ueberschrift, nur die beiden Arten mit Zeichen und Namen ihres
-       Abschnitts darunter, unten rechts EIN Hauptknopf "Create ->", der wie "Create" im Kopf erst nach der Art fragt. Die Saetze
-       sagen, was man davon hat, nicht wie es rechnet (Lukas: "user will sehen, ah, ich kann Marketing-Kampagnen, Produktlaunches
-       oder Paid Artikel tracken"). Die Karten der Eintraege bleiben darunter. Steht in jedem Zustand der Uebersicht -- Laden,
-       Fehler, leer --, er braucht keine Daten. */
-    var START_ARTEN = [
-      { k: "event", satz: "Track marketing campaigns, product launches or paid articles and see what each one really did for your AI visibility." },
-      { k: "watch", satz: "Find out which of your pages ChatGPT, Perplexity and others cite in their answers, and how often." }
-    ];
+       Links Ueberschrift und EIN Satz, rechts die Grafik; darunter ein Trenner zu den Abschnitten. Eine Karte gibt es nicht mehr
+       (Lukas 22.10. abends: "Mach das card unter der heading doch weg. nur heading + description links. chart grafik rechts"),
+       angelegt wird ueber "Create" im Seitenkopf. Die Karten der Eintraege bleiben darunter. Steht in jedem Zustand der Uebersicht
+       -- Laden, Fehler, leer --, er braucht keine Daten. */
     function startGeruest() {
       return '<section class="uev-start">' +
         '<div class="uev-start-text"><h2 class="up-heading up-sec-h">' + esc(t("Measure the impact of your changes")) + '</h2>' +
           '<p class="up-sec-sub">' + esc(t("See how launches, campaigns and new pages change your visibility and citations in AI answers.")) + '</p></div>' +
-        '<div class="up-box uev-startkarte">' +
-          '<div class="uev-start-arten">' + START_ARTEN.map(function (a) {
-            return '<div class="uev-start-art"><span class="uev-start-ic" aria-hidden="true">' + UC.icon(ABSCHNITT_ZEICHEN[a.k], 1.8) + '</span>' +
-              '<span class="uev-start-name">' + esc(t(ART_TITEL[a.k])) + '</span><p class="uev-start-satz">' + esc(t(a.satz)) + '</p></div>';
-          }).join("") + '</div>' +
-          '<div class="uev-start-fuss">' +
-            '<button type="button" class="up-btn-pri uev-start-los" data-uev-create><span>' + esc(t("Create")) + '</span>' + UC.icon("arrowRightLong", 2) + '</button>' +
-          '</div>' +
-        '</div>' +
         startGrafik() +
       '</section>';
     }
@@ -2053,8 +2034,9 @@
        Artikel, Kampagne, Relaunch, Presse), einer hervorgehoben mit dem Zeichen von Event Tracking -- Kachel 40, Radius nach Hoehe 8,
        Rahmen wie das hervorgehobene Fenster in Page Audit; die anderen 32 mit Radius 6. Je Pin ein punktierter Stiel bis zur Achse wie
        der Event-Pin im echten Chart, auf der Achse ein Punkt, darunter leise Ticks alle 24 (jeder vierte laenger). Keine Zahl und kein
-       Wort: niemand soll ein Beispiel fuer echte Daten halten. Feste Masse um die Mitte der Flaeche wie das Fensterfeld von Page
-       Audit (Feld 760 x 340), die Raender blendet die Maske aus (events.css). Erscheinen gestaffelt wie dort. */
+       Wort: niemand soll ein Beispiel fuer echte Daten halten. Feste Masse wie das Fensterfeld von Page Audit (Feld 760 x 340); die
+       Flaeche zeigt genau den gezeichneten Teil (oberer Rand des hervorgehobenen Pins bis zum Ende der langen Ticks, events.css),
+       seitlich blendet die Maske aus. Erscheinen gestaffelt wie dort. */
     var START_PINS = [{ x: 110, y: 150, ic: "rocket" }, { x: 220, y: 104, ic: "fileText" }, { x: 318, y: 178, ic: "megaphone" },
                       { x: 430, y: 70, ic: "cells", hl: true }, { x: 540, y: 126, ic: "globe" }, { x: 646, y: 164, ic: "newspaper" }];
     function startGrafik() {

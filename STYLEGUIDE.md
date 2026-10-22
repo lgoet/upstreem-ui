@@ -2029,21 +2029,26 @@ jedem Zustand der Liste (Laden, Fehler, leer, voll), er braucht keine Daten.
 Raster        zwei Spalten, 16 Abstand, 32 bis zur Liste darunter (Abstand zwischen Abschnitten)
 links oben    Titel 20/26/600/-0.4 (--up-fs-modaltitel, Geist heading-20) und EIN Satz 14/20, 4 dazwischen,
               mindestens 112 hoch, senkrecht mittig, höchstens 520 breit
-links unten   Karte .up-box: Polster 16, 8 Rhythmus; Titel in der Block-Stufe (14/600) nur, wenn er etwas sagt
-              (Impact: keiner), Sätze 13/1.5 muted, nach Nutzen statt Technik; unten rechts EINE Hauptaktion als
-              .up-btn-pri mit arrowRightLong
+links unten   (nur Page Audit) Karte .up-box: Polster 16, 8 Rhythmus; Titel in der Block-Stufe (14/600), Sätze
+              13/1.5 muted, nach Nutzen statt Technik; unten rechts EINE Hauptaktion als .up-btn-pri mit arrowRightLong
 rechts        über beide Zeilen eine stille Grafik: feste Maße um die Mitte der Fläche, Ränder per Maske
               (Deckkraft, keine Farbe), Linien in der Textfarbe, Kacheln in --vc-bg mit --vc-border und --up-e-1;
               gestaffeltes Erscheinen ab Deckkraft .3 (bleibt sichtbar, wenn die Zeitleiste nicht läuft), ohne
               Bewegung bei reduzierter Bewegung. Keine Zahl und kein Wort darin.
 is-narrow     untereinander, die Grafik fällt weg
-leere Liste   UC.leerHtml ohne Knopf – die Aktion steht schon im Startbereich
+leere Liste   UC.leerHtml ohne Knopf
 ```
+
+Ohne Karte (Impact seit 22.10. abends): Text und Grafik in EINER Zeile, die Grafikfläche genau so hoch wie ihr
+gezeichneter Teil (Impact 188, oben und unten darum keine Maske), der Text mittig daneben. Darunter ein Trenner
+(1px `--vc-border`, vom Startbereich selbst getragen: padding-bottom 32 + border-bottom, margin-bottom 32), dazu
+oben 16 Polster zu den 16 unter dem Seitenkopf: von der Kopflinie bis zum Inhalt 32, vom Inhalt bis zum Trenner 32,
+vom Trenner bis zur Liste 32. Gemessen in hell, dunkel und 375, mit beiden Abschnitten, nur einem und leer.
 
 | Seite | Karte | Grafik |
 |---|---|---|
 | Page Audit | "What an audit checks", ein Absatz, "Run Audit" | Feld aus Browserfenstern, eines mit dem Zeichen der Prüfung |
-| Impact | ohne Titel: beide Arten mit Zeichen und Namen ihres Abschnitts darunter (cells, globe), je ein Satz zum Nutzen ("Track marketing campaigns, product launches or paid articles …"); "Create" fragt nach der Art | Events als Pins auf einer Zeitachse, einer hervorgehoben (Zeichen von Event Tracking); im Canvas gegen Kurven und Kartenstapel gewählt |
+| Impact | keine (seit 22.10. abends); angelegt wird über "Create" im Seitenkopf, darunter der Trenner | Events als Pins auf einer Zeitachse, einer hervorgehoben (Zeichen von Event Tracking); im Canvas gegen Kurven und Kartenstapel gewählt |
 
 Die Maße stehen noch in beiden Dateien (`.upa-start*`, `.uev-start*`), weil core in der Runde vom
 22.10. nicht angefasst wurde; Prompt Research baut dasselbe. Ein gemeinsamer Baustein in core ist offen.
