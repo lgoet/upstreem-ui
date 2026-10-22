@@ -19,10 +19,10 @@
                 ruft sie UC.eventsChanged(), und core laedt den Teil neu.
      Kanal            RPC (UC.rpc, Antwort als normales JSON)   Antwort geht an
        uevDetail        get_impact_event_v3                     setDetail
-       uevAnalysis      cached_impact_event_analysis_v3         setAnalysis
+       uevAnalysis      cached_impact_event_analysis_v4         setAnalysis
        uevScopePreview  preview_impact_event_scope_v2           setVorschau
-       uevCreate        create_impact_event_v3                  setDetail (Popup)
-       uevUpdate        update_impact_event_v2                  setDetail (Popup)
+       uevCreate        create_impact_event_v4                  setDetail (Popup)
+       uevUpdate        update_impact_event_v3                  setDetail (Popup)
        uevAddTarget     add_impact_event_target_v1              setDetail (Popup, auch eine URL)
        uevRemoveUrl     remove_impact_event_target_v1           setDetail (Bestaetigung)
        uevRemoveTarget  remove_impact_event_target_v1           setDetail (Bestaetigung)
@@ -36,8 +36,14 @@
      die v2-Rechnung und haengen targets[] an, ohne Regel-Ziele ein leeres targets[]; url-Ziele
      kommen aus impact_event_url, also auch alte Events aus v1/v2). Scheitert v3, zeigt die
      Oberflaeche den Fehlerzustand (CLAUDE.md §2) statt still eine andere Fassung zu fragen.
-     update_impact_event_v2, delete_impact_event_v2 und preview_impact_event_scope_v2 haben keinen
-     Nachfolger und bleiben. uevAddUrl gibt es nur noch im Klick-Dummy (events-demo.js).
+     delete_impact_event_v2 und preview_impact_event_scope_v2 haben keinen Nachfolger und bleiben.
+     uevAddUrl gibt es nur noch im Klick-Dummy (events-demo.js).
+     HART AUF v4/v3/v4 (22.10., Rueckfrage des DB-Chats vor dem Sperren der alten Fassungen):
+     Analyse, Anlegen und Bearbeiten fragten die neuen Fassungen nur, wenn KAMPAGNE_DA schon stand,
+     sonst die alten. Beim Neuladen direkt auf einem Event-Detail ging die Analyse hinaus, bevor
+     team_context_v1 die Features brachte -- gemessen im API-Log vom 21.10.: zweimal v3, jeweils
+     0,1 s nach app_start_v1. v4/v3 sind echte Obermengen von v3/v2 (Signaturen gelesen 22.10.),
+     also gibt es keinen Grund mehr fuer die alte Fassung.
      Direkt, ohne Kanal: die Vorschau
      (preview_impact_event_targets_v1), "Count as your domain" (domain_classify_v1) und die Sitemap
      (Edge Function sitemap-lesen, UC.edge). Was davon fehlt, bietet die Oberflaeche nicht an
@@ -493,14 +499,13 @@
     "impact_event_target_not_found": "This target is no longer part of the event.",
     "impact_event_targets_unavailable": "Rules aren't available yet. Please use specific URLs instead.",
     /* Kampagnen (17.10., Vertrag B.3). impact_event_invalid_end_date sagt den Grund im hint
-       (ENDE_HINT); campaigns_unavailable ist wieder unserer: v4 war da und ist es nicht mehr. */
+       (ENDE_HINT). */
     "impact_event_invalid_end_date": "Please check the end date.",
     "impact_event_end_date_frozen": "This campaign has ended. Its end date can't be changed anymore.",
     /* Nach dem Start (409, Teil B): Start und Umfang sind fest, auch wenn der Dialog sie nicht
        mehr anbietet -- ein zweiter Tab oder ein Kollege kann den Stand verschoben haben. */
     "impact_event_locked_field": "This can't be changed after the event has started.",
     "impact_event_scope_frozen": "The scope can't be changed after the event has started.",
-    "impact_event_campaigns_unavailable": "Date ranges aren't available right now. Please try again later.",
     "impact_event_watch_unavailable": "Citation Tracking isn't available yet. Please try again later."
   };
   /* impact_event_invalid_param nennt das Feld in hint -- je Feld ein eigener Satz, damit am Feld
@@ -717,7 +722,6 @@
     "A campaign can run for at most 183 days.": "Eine Kampagne kann höchstens 183 Tage laufen.",
     "The end date can't be in the past.": "Das Enddatum kann nicht in der Vergangenheit liegen.",
     "This campaign has ended. Its end date can't be changed anymore.": "Diese Kampagne ist beendet. Ihr Enddatum lässt sich nicht mehr ändern.",
-    "Date ranges aren't available right now. Please try again later.": "Zeiträume sind gerade nicht verfügbar. Bitte versuch es später noch einmal.",
     "All active Prompts on the start date": "Alle aktiven Prompts am Starttag",
     "{n} prompt was deleted since this event": "{n} Prompt wurde seit diesem Event gelöscht",
     "{n} prompts were deleted since this event": "{n} Prompts wurden seit diesem Event gelöscht",
@@ -1218,13 +1222,13 @@
      Rueckweg an Bubble -- die Kanaele gibt es erst seit der App. */
   var KANAL = {
     uevDetail:       { fn: "get_impact_event_v3",             attr: "data-detail-fn",    ms: 20000 },
-    uevAnalysis:     { fn: "cached_impact_event_analysis_v3", attr: "data-analysis-fn",  ms: 24000 },
+    uevAnalysis:     { fn: "cached_impact_event_analysis_v4", attr: "data-analysis-fn",  ms: 24000 },
     uevScopePreview: { fn: "preview_impact_event_scope_v2",   attr: "data-preview-fn",   ms: 20000 },
-    uevCreate:       { fn: "create_impact_event_v3",          attr: "data-create-fn",    ms: 24000, schreibt: true },
+    uevCreate:       { fn: "create_impact_event_v4",          attr: "data-create-fn",    ms: 24000, schreibt: true },
     /* Citation Tracking anlegen (19.10.): eigene Funktion statt eines Parameters p_kind an create_impact_event_v4 -- PostgREST lehnt
        einen unbekannten Parameter ab, und die Event-Funktionen bleiben so unberuehrt. Antwort wie beim Event: das Detail. */
     uevCreateWatch:  { fn: "create_impact_watch_v1",          attr: "", ms: 24000, schreibt: true, nurDirekt: true },
-    uevUpdate:       { fn: "update_impact_event_v2",          attr: "data-update-fn",    ms: 24000, schreibt: true },
+    uevUpdate:       { fn: "update_impact_event_v3",          attr: "data-update-fn",    ms: 24000, schreibt: true },
     /* Nur noch der Klick-Dummy (zielSenden): ausserhalb geht eine URL als url-Ziel an
        add_impact_event_target_v1. fn bleibt fuer den Rueckweg-Vertrag stehen, gerufen wird sie nie. */
     uevAddUrl:       { fn: "add_impact_event_url_v2",         attr: "data-addurl-fn",    ms: 24000, schreibt: true },
@@ -1320,10 +1324,9 @@
      Aufruf) oder wenn Events da sind und keins einen status hat. Kein Pruefaufruf mehr (17.10.): die
      Analyse mit der Null-Kennung antwortete absichtlich 400 invalid_param und stand als roter Abruf im
      Netzwerk. Hat das Team noch kein Event, gilt Teil B als da (die Datenbank hat ihn seit dem
-     17.10.); fehlt er doch, faengt das der erste echte Aufruf ab (PGRST202 in rufen: Rueckfall auf v3
-     bzw. ein Satz bei einem Zeitraum). */
+     17.10.). Der Schalter entscheidet seit dem 22.10. nur noch, was die Oberflaeche anbietet
+     (Zeitraum, "Since event", Status); welche Funktion gerufen wird, steht fest in KANAL. */
   var KAMPAGNE_DA = { stand: null, laeuft: null };
-  var KAMPAGNE_FN = { uevAnalysis: "cached_impact_event_analysis_v4", uevCreate: "create_impact_event_v4", uevUpdate: "update_impact_event_v3" };
   /* Vertrag B.1: Laenge hoechstens 183 Tage (Start und Ende zaehlen mit), Start bis heute + 365. */
   var KAMPAGNE_TAGE = 183, ZUKUNFT_TAGE = 365;
   var NULL_ID = "00000000-0000-0000-0000-000000000000";
@@ -1736,27 +1739,16 @@
         return;
       }
       var tm = team();
-      /* Kampagnen (17.10.): mit Teil B gehen Analyse, Anlegen und Bearbeiten an die neuen
-         Fassungen -- v4 ist fuer ein Tages-Event gleich v3 (Vertrag B.2), also immer. */
-      var fn4 = kampagneDa() && KAMPAGNE_FN[kanal] ? KAMPAGNE_FN[kanal] : "";
+      /* Die Funktion steht fest in KANAL (22.10.: Analyse, Anlegen und Bearbeiten hart auf
+         v4/v4/v3, siehe Dateikopf) -- nicht mehr vom Stand der Features abhaengig, der beim
+         Neuladen auf einem Detail noch fehlen kann. */
       (tm ? Promise.resolve(tm) : (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(""))).then(function (tm2) {
         /* Kein Team nach 10 s: kein Aufruf ohne p_team (der Server antwortete mit forbidden) --
            die Stelle, die wartet, bekommt den allgemeinen Fehler statt ewig zu laden. */
         if (!tm2) return { ok: false, status: 0, fehler: { code: "", message: "", hint: "", details: "" } };
-        return UC.rpc(fn4 || k.fn, mitTeam(o, tm2), { timeoutMs: k.ms });
+        return UC.rpc(k.fn, mitTeam(o, tm2), { timeoutMs: k.ms });
       }).then(function (erg) {
         erg = erg || { ok: false, status: 0, fehler: {} };
-        /* v4 fehlt doch (Rueckweg der DB): fuer den Rest der Seite der heutige Stand. Ein Aufruf,
-           der nur mit v4 Sinn hat (Zeitraum, Fenster "Since event", Umfang eines geplanten
-           Events), endet mit einem Satz statt still ohne diese Teile zu speichern. */
-        if (fn4 && !erg.ok && fehltFn(erg)) {
-          KAMPAGNE_DA.stand = false;
-          var nurV4 = o && (o.p_end_date != null || o.p_window != null || (kanal === "uevUpdate" && (o.p_event_date != null || o.p_scope_mode != null)));
-          /* p_notify (Teil A) kennt nur v4: ohne ihn noch einmal, der Schalter kommt dann nicht an. */
-          if (!nurV4) { var o3 = {}; for (var q in o) if (q !== "p_notify") o3[q] = o[q]; rufen(kanal, o3, kx, spaet); return; }
-          kam(kanal, { ok: false, status: 400, fehler: { code: "", message: "impact_event_campaigns_unavailable", hint: "", details: "" } }, kx);
-          return;
-        }
         /* "And" (p_tagmode) und die Funktion kennt den Parameter noch nicht: PostgREST meldet das
            als fehlende Funktion (PGRST202), obwohl es sie gibt. Das ist KEIN Grund fuer den
            Rueckweg zu Bubble -- der wuerde den Kanal fuer die ganze Sitzung umstellen, und Bubble
@@ -7856,7 +7848,7 @@
          nicht fuehrt, haette sonst JEDES Anlegen gescheitert, auch ohne Titelbild. */
       if (e.cover) b.p_cover = e.cover;
       if (tagModusWirkt(e) === "and") b.p_tagmode = "and";
-      /* DIE ZIELE (15.10.): mit Zielen in der Datenbank als p_targets an create_impact_event_v3
+      /* DIE ZIELE (15.10.): mit Zielen in der Datenbank als p_targets an create_impact_event_v4
          (auch URLs, als kind "url" -- die Datenbank macht daraus dieselben Ziele wie aus p_urls),
          sonst wie bisher als p_urls an v2. "Brand metrics only" schickt keines von beiden, auch
          wenn vorher Ziele eingetragen waren -- es gilt, was gewaehlt ist. */
@@ -7870,11 +7862,11 @@
          Parameter gar nicht im Body, v4 setzt null (Vertrag B.3). */
       if (kampagneDa() && e.bereich && e.ende) b.p_end_date = e.ende;
       /* p_notify NUR an create_impact_event_v4 (Teil B/A): v3 kennt den Parameter nicht, und
-         PostgREST lehnt einen unbekannten mit PGRST202 ab -- das Anlegen schluege fehl. Mit v3
-         geht ein "aus" nach dem Anlegen ueber set_impact_event_notify_v1 (popupDetailKam).
-         v4 geht ueber KAMPAGNE_FN, sobald kampagneDa() (rufen) -- KANAL.uevCreate.fn bleibt v3. */
+         PostgREST lehnt einen unbekannten mit PGRST202 ab -- das Anlegen schluege fehl. Ohne ihn
+         geht ein "aus" nach dem Anlegen ueber set_impact_event_notify_v1 (popupDetailKam). Seit dem
+         22.10. steht v4 fest in KANAL.uevCreate; der Blick auf den Namen bleibt die Sicherung. */
       p.notifyGesendet = false;
-      if (meldDa() && !p.planEventId && (kampagneDa() || /_v4$/.test(String(KANAL.uevCreate.fn)))) { b.p_notify = e.notify !== false; p.notifyGesendet = true; }
+      if (meldDa() && !p.planEventId && /_v4$/.test(String(KANAL.uevCreate.fn))) { b.p_notify = e.notify !== false; p.notifyGesendet = true; }
       if (!vorabPruefen(p, b)) return;
       /* Ein GEPLANTES Event bearbeiten (17.10.): derselbe Assistent, derselbe Body, dazu die
          Kennung -- an update_impact_event_v3 (Vertrag B.3: Umfangs-Parameter wie create v4).

@@ -260,8 +260,11 @@
               "domain_asc", "domain_desc", "urls_count_desc", "urls_count_asc"],
     urls: ["share_desc", "share_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "last_used_asc", "domain_asc", "url_asc"],
     urls_domain: ["domainshare_desc", "domainshare_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "url_asc"],
-    brands: ["visibility_desc", "visibility_asc", "rank_asc", "rank_desc", "sentiment_desc", "sentiment_asc",
-             "mentions_desc", "mentions_asc", "name_asc", "name_desc"]
+    /* visibility_delta_* (22.10.): die Trend-Stufe der Visibility-Spalte in Top Brands und Brands
+       Overview; export_brands_v2 kennt sie seit dem 18.10. Ohne sie kam der Export still in der
+       Standardreihenfolge statt in der Reihenfolge der Tabelle. */
+    brands: ["visibility_desc", "visibility_asc", "visibility_delta_desc", "visibility_delta_asc", "rank_asc", "rank_desc",
+             "sentiment_desc", "sentiment_asc", "mentions_desc", "mentions_asc", "name_asc", "name_desc"]
   };
   /* Die Chips der Seitenfilter, in der Reihenfolge der Filterleiste (Topics, Models, Markets,
      Intent), davor das Produkt eines Details und die Suche, danach die Filter der Tabellen. Name und Zeichen wie in der Leiste
