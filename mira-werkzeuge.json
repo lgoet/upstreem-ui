@@ -431,7 +431,7 @@
       "filter": ["models", "markets", "intents", "branded"],
       "parameter": {
         "event_id": { "rpc": "p_event_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "id from impact_events." },
-        "target_id": { "rpc": "p_target_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "targets[].id from impact_event_analysis (a path or domain target; an exact-URL target is an error)." },
+        "target_id": { "rpc": "p_target_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "target_id of a path or domain target, from targets[].target_id in impact_event_analysis (never the event_id itself; an exact-URL target is an error)." },
         "window_days": { "rpc": "p_window_days", "schema": { "type": "integer", "minimum": 1, "maximum": 183 }, "beschreibung": "Window length in days as in impact_event_analysis (default 30)." },
         "window": { "rpc": "p_window", "schema": { "type": "string", "enum": ["days", "since"] }, "beschreibung": "since = everything since the event (single-date Event Tracking only); omit for window_days." },
         "search": { "rpc": "p_query", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only URLs or titles containing this text." },
@@ -450,7 +450,7 @@
       "filter": ["intents", "branded"],
       "parameter": {
         "event_id": { "rpc": "p_event_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "id from impact_events." },
-        "target_id": { "rpc": "p_target_id", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only this target (targets[].id from impact_event_analysis, a path or domain target). Omit for all targets." },
+        "target_id": { "rpc": "p_target_id", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only this target: target_id of a path or domain target from impact_event_analysis (never the event_id itself). Omit for all targets of the entry." },
         "pages": { "rpc": "p_filter", "schema": { "type": "string", "enum": ["all", "cited", "not_cited", "new"] }, "vorgabe": "all", "beschreibung": "Which pages to list: all, cited, not_cited (never cited yet) or new (new or changed since event_date)." },
         "search": { "rpc": "p_query", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only pages whose address contains this text." },
         "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 0, "maximum": 100 }, "vorgabe": 30, "beschreibung": "Pages per target, 0-100; 0 = only the counts." },
