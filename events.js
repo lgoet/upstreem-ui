@@ -2361,7 +2361,14 @@
         /* Eigene data-instance je Abschnitt (22.10., Liste): core merkt sich die Zahlenspalten je Instanz und Spaltenklasse (zahlSpalten,
            ZAHL_GEMERKT) -- unter der einen Kennung der Seite hielt der Kopf "Prompts" des Citation Tracking die Zahlenspalte des Event
            Tracking fuer seine und stand rechts ueber "All active" (gemessen). */
-        return '<section class="uev-abschnitt" data-art="' + art + '" data-instance="' + esc(instanceId + "_" + art) + '">' +
+        /* UEBER DIE GANZE BREITE (23.10., Lukas: "die beiden Tabellen bitte auch so wie die anderen Tabellen ueber die ganze Width, also wie
+           z.B. bei der Audit-Startseite"): jeder Abschnitt ist eine eigene .up-root mit data-flach wie die Liste von Page Audit (.upa-liste) --
+           die flache Tabelle aus core: kein Kasten, oben und unten die Linie, links und rechts 16 bis an die Kante, und makeColumns deckelt die
+           Spalten (deckeln: jede fr-Spalte hoechstens min + 32, am Ende waechst nur die erste). Vorher ein Kasten mit Rahmen in der Breite des
+           Abschnitts, die Spalten wuchsen alle anteilig. data-theme wie die Tabellenwurzel von Shopping und Ads: eine innere .up-root setzt
+           die Farben neu, ohne das Attribut stuende sie im Dunkeln hell (ein Themenwechsel baut die Seite ohnehin neu). In den Karten
+           aendert das Attribut nichts: dort gibt es keinen .up-box. */
+        return '<section class="up-root uev-abschnitt" data-flach="yes"' + (isDark() ? ' data-theme="dark"' : '') + ' data-art="' + art + '" data-instance="' + esc(instanceId + "_" + art) + '">' +
           '<div class="up-head uev-head">' +
             '<span class="up-heading"><span class="uev-head-ic" aria-hidden="true">' + UC.icon(ABSCHNITT_ZEICHEN[art], 1.8) + '</span><span class="up-head-label">' + esc(t(ART_TITEL[art])) + '</span>' +
               '<span class="up-head-sep"></span><span class="up-head-count uev-zahl"></span></span>' +
@@ -4644,10 +4651,44 @@
     var PA = { stand: null, je: {}, fragt: {}, start: {}, schluessel: {} }, PA_MAX = 500, PA_ZEICHEN = null;
     /* Wie lange ein Stand gilt: ein wartendes oder laufendes Audit aendert sich bald (ein Lauf dauert hoechstens 180 s), ein fertiges selten.
        Ein Lesefehler wird erst nach einer Minute wieder gefragt -- die Liste zeichnet sich bei jeder Minute der Sperr-Uhr neu. */
-    var PA_AKTIV_MS = 30000, PA_RUHE_MS = 300000, PA_FEHLER_MS = 60000;
+    /* NACHFRAGEN, SOLANGE ES LAEUFT (23.10., Lukas: "Wenn man aus Impact ein Audit startet, dann zurueck zu Impact geht, wenn das Audit fertig
+       ist, steht die Row da noch auf Queued"). Gefragt wurde nur beim Zeichnen einer Liste -- und beim Zurueckkommen in dieselbe Ansicht
+       zeichnet nichts neu (adresseLesen: dasselbe Event bleibt offen), also blieb "Queued" stehen, bis man das Event neu oeffnete. Jetzt:
+       - solange eine GEZEIGTE Zeile wartet oder laeuft, alle PA_TAKT_MS nur nach diesen URLs (paPlanen, paTakt), im Takt der Liste von Page
+         Audit (page-audit.js planen: 5 s, solange etwas laeuft); fertige Zeilen nie, und ohne laufende Zeile laeuft keine Uhr;
+       - verdeckt (andere Ansicht, Tab im Hintergrund) wird nicht gefragt; wird Impact wieder sichtbar (Ansichtswechsel, Tab zurueck), einmal
+         nach jeder gezeigten Zeile, deren Stand aelter als PA_SICHT_MS ist (paWieder) -- auch nach fertigen, denn ein Audit kann inzwischen
+         auf der Seite Page Audit gestartet worden sein. Einen Realtime-Kanal fuer Audits gibt es nicht (core kennt nur view_job und
+         prompt_research_job), Page Audit selbst fragt ebenso im Takt.
+       PA_AKTIV_MS gleich dem Takt: zeichnet eine Liste neu, ist ein laufender Stand nach 5 s alt, nicht erst nach 30. */
+    var PA_TAKT_MS = 5000, PA_SICHT_MS = 3000, PA_AKTIV_MS = PA_TAKT_MS, PA_RUHE_MS = 300000, PA_FEHLER_MS = 60000;
     function paAn() { return !demo && !!UC.rpc && PA.stand !== false; }
     function paSchluessel(url) { return team() + "|" + String(url); }
     function paAktiv(z) { var s = String(z && z.last_status || ""); return s === "queued" || s === "running"; }
+    /* Steht die Zeile in der gezeigten Ansicht des Kastens? Cited URLs und Sitemap liegen im selben Kasten, nur einer ist zu sehen. */
+    function paGezeigt(z) {
+      var box = z.closest(".uev-quellen"), teil = z.closest(".uev-quellen-teil");
+      return !(box && (box.hidden || (teil && teil.getAttribute("data-teil") !== box.getAttribute("data-pane"))));
+    }
+    function paSichtbar() {
+      return root.isConnected !== false && !(typeof document.hidden === "boolean" && document.hidden) && (!UC.istSichtbar || UC.istSichtbar(root));
+    }
+    /* EINE URL ALLE 10 MINUTEN (23.10., Lukas: "Man kann Audits fuer dieselbe URL direkt hintereinander starten. Das sollte pro URL nur einmal
+       alle 10 min gehen"). Die Regel steht in der DB (create_page_audit_v1: page_audit_url_cooldown, PT429, hint = Sekunden); hier nur, was sie
+       vorher zeigt: get_page_audit_urls_v1 liefert je Zeile next_allowed_at (null = Start erlaubt). Bis dahin ist "Run audit" gesperrt wie die
+       gesperrten Knoepfe von Page Audit (sperreAnwenden): aria-disabled statt disabled (ein disabled-Knopf bekommt kein mouseover, der Grund
+       erschiene nie), der Grund als breiter Tooltip (data-uev-grund, Satz aus core UC.pageAuditFehlerSatz -- derselbe wie nach dem Klick).
+       Ohne das Feld (DB vor der Regel) sperrt nichts, wie bisher. */
+    function paSperrBis(c) {
+      var ms = c && c.z && c.z.next_allowed_at ? Date.parse(String(c.z.next_allowed_at)) : NaN;
+      return isFinite(ms) && ms > Date.now() ? ms : 0;
+    }
+    function paSperrSatz(url, bis) {
+      var sek = Math.max(1, Math.ceil((bis - Date.now()) / 1000));
+      var fs = UC.pageAuditFehlerSatz ? UC.pageAuditFehlerSatz({ ok: false, status: 429, fehler: { code: "PT429", message: "page_audit_url_cooldown", hint: String(sek), details: "" } },
+        { t: t, eingabe: url, datum: paTag }) : null;
+      return fs && fs.satz ? fs.satz : t("Please try again.");
+    }
     /* Das Zeichen von Page Audit (dna01, legt die Seite Page Audit in core an). Einmal je Seite gefragt: fehlt es (vor dem Zusammenfuehren), steht
        kein leeres Zeichen da, und core meldet das fehlende Zeichen nur einmal statt bei jeder Zeile. */
     function paZeichen() { if (PA_ZEICHEN === null) PA_ZEICHEN = (UC.icon && UC.icon("dna01", 2)) || ""; return PA_ZEICHEN; }
@@ -4721,6 +4762,7 @@
        aendert (data-pa-sig) -- sonst verloere ein fokussierter Link bei jeder Antwort den Fokus. */
     function paZeilen(el) {
       if (!el) return;
+      var naechste = 0;
       [].forEach.call(el.querySelectorAll("[data-pa-url]"), function (z) {
         var url = z.getAttribute("data-pa-url"), alt = z.querySelector(".uev-pa-angabe"), neu = paAngabe(url);
         if (alt && alt.getAttribute("data-pa-sig") !== neu.sig) {
@@ -4734,15 +4776,57 @@
            stuende danach am Anfang der Seite (gemessen). Einen zweiten Start verhindert PA.start. */
         var kn = z.querySelector(".uev-pa-start");
         if (kn) {
-          var an = !!PA.start[paSchluessel(url)];
+          var k = paSchluessel(url), an = !!PA.start[k], bis = an ? 0 : paSperrBis(PA.je[k]);
           kn.classList.toggle("is-busy", an);
-          if (an) { kn.setAttribute("aria-busy", "true"); kn.setAttribute("aria-disabled", "true"); }
-          else { kn.removeAttribute("aria-busy"); kn.removeAttribute("aria-disabled"); }
+          if (an) kn.setAttribute("aria-busy", "true"); else kn.removeAttribute("aria-busy");
+          if (an || bis) { if (kn.getAttribute("aria-disabled") !== "true") kn.setAttribute("aria-disabled", "true"); }
+          else kn.removeAttribute("aria-disabled");
+          /* Der Satz steht am Knopf, solange er gesperrt ist; die Zeit darin rechnet der Tooltip beim Ueberfahren neu (paGrundJetzt). */
+          if (bis) { var satz = paSperrSatz(url, bis); if (kn.getAttribute("data-uev-grund") !== satz) kn.setAttribute("data-uev-grund", satz); naechste = naechste && naechste < bis ? naechste : bis; }
+          else kn.removeAttribute("data-uev-grund");
         }
       });
+      paSperrUhr(naechste);
     }
-    /* EIN Aufruf je gezeichneter Liste: alle URLs ihrer Zeilen, die noch keinen frischen Stand haben und nach denen nicht schon gefragt wird. */
-    function paLesen(el) {
+    /* Die Sperre geht von selbst: eine Uhr auf das frueheste Ende einer gezeigten Sperre, dann stellt paZeilen die Knoepfe neu (ohne Abruf). */
+    function paSperrUhr(bis) {
+      if (!bis || (PA.sperrBis && PA.sperrBis > Date.now() && PA.sperrBis <= bis)) return;
+      if (PA.sperrUhr) clearTimeout(PA.sperrUhr);
+      PA.sperrBis = bis;
+      PA.sperrUhr = setTimeout(function () {
+        PA.sperrUhr = null; PA.sperrBis = 0;
+        if (root.isConnected !== false) paZeilen(root);
+      }, Math.min(2147483647, Math.max(0, bis - Date.now()) + 50));
+    }
+    function paGrundJetzt(kn) {
+      var z = kn.closest("[data-pa-url]"), url = z ? z.getAttribute("data-pa-url") : "", bis = url ? paSperrBis(PA.je[paSchluessel(url)]) : 0;
+      return bis ? paSperrSatz(url, bis) : (kn.getAttribute("data-uev-grund") || "");
+    }
+    /* Der Grund als breiter, umbrechender Tooltip wie in Page Audit (page-audit.js, data-upa-grund): ein Satz ist als data-tip einzeilig zu breit. */
+    var grundEl = null, grundUhr = 0;
+    root.addEventListener("mouseover", function (e) {
+      var el = e.target.closest && e.target.closest("[data-uev-grund]");
+      if (!el || el === grundEl || !tips || !tips.showTipWide) return;
+      grundEl = el;
+      clearTimeout(grundUhr);
+      grundUhr = setTimeout(function () {
+        if (grundEl !== el || !el.isConnected || !el.hasAttribute("data-uev-grund")) return;
+        if (tips.unsuppress) tips.unsuppress();
+        tips.showTipWide(el, paGrundJetzt(el));
+      }, 60);
+    });
+    root.addEventListener("mouseout", function (e) {
+      var el = e.target.closest && e.target.closest("[data-uev-grund]");
+      if (!el || el !== grundEl) return;
+      if (e.relatedTarget && el.contains(e.relatedTarget)) return;
+      grundEl = null; clearTimeout(grundUhr);
+      if (tips && tips.hideTip) tips.hideTip();
+    });
+    /* EIN Aufruf je gezeichneter Liste: alle URLs ihrer Zeilen, die noch keinen frischen Stand haben und nach denen nicht schon gefragt wird.
+       o.nur(c): nur Zeilen, deren Stand das erfuellt (der Takt: nur laufende); o.frisch(c): diesen Stand trotz Frist neu fragen. Seit 23.10.
+       zaehlt nur eine gezeigte Zeile (paGezeigt) -- el darf die ganze Wurzel sein. Nach jeder Antwort plant paPlanen den naechsten Takt. */
+    function paLesen(el, o) {
+      o = o || {};
       if (!paAn() || !el || !el.isConnected) return;
       var box = el.closest(".uev-quellen"), teil = el.closest(".uev-quellen-teil");
       if (box && (box.hidden || (teil && teil.getAttribute("data-teil") !== box.getAttribute("data-pane")))) return;
@@ -4750,12 +4834,13 @@
       var jetzt = Date.now(), urls = [], keys = [], da = {};
       [].forEach.call(el.querySelectorAll("[data-pa-url]"), function (z) {
         var u = z.getAttribute("data-pa-url"), k = paSchluessel(u), c = PA.je[k];
-        if (!u || da[k] || PA.fragt[k] || urls.length >= PA_MAX) return;
+        if (!u || da[k] || PA.fragt[k] || urls.length >= PA_MAX || !paGezeigt(z)) return;
         da[k] = 1;
-        if (c && jetzt - c.t < (c.fehler ? PA_FEHLER_MS : c.z && paAktiv(c.z) ? PA_AKTIV_MS : PA_RUHE_MS)) return;
+        if (o.nur && !o.nur(c)) return;
+        if (c && !(o.frisch && o.frisch(c)) && jetzt - c.t < (c.fehler ? PA_FEHLER_MS : c.z && paAktiv(c.z) ? PA_AKTIV_MS : PA_RUHE_MS)) return;
         urls.push(u); keys.push(k);
       });
-      if (!urls.length) return;
+      if (!urls.length) { paPlanen(); return; }
       keys.forEach(function (k) { PA.fragt[k] = 1; });
       abdRpc("get_page_audit_urls_v1", { p_urls: urls }).then(function (erg) {
         keys.forEach(function (k) { delete PA.fragt[k]; });
@@ -4766,14 +4851,54 @@
         if (!rows) {
           /* Lesefehler: keine Angaben (eine falsche waere schlimmer als keine), der Knopf bleibt; in einer Minute fragt die Liste wieder. */
           keys.forEach(function (k) { if (!PA.je[k]) PA.je[k] = { t: t0, z: null, fehler: true }; else PA.je[k].t = t0 - PA_RUHE_MS + PA_FEHLER_MS; });
+          paPlanen();
           return;
         }
         var nach = {};
         rows.forEach(function (r) { if (r && r.input != null) nach[String(r.input)] = r; });
-        urls.forEach(function (u, i) { PA.je[keys[i]] = { t: t0, z: nach[u] || null }; });
+        urls.forEach(function (u, i) {
+          var neu = nach[u] || null, alt = PA.je[keys[i]];
+          /* Eine Sperre, die nur die Ablehnung kannte (PT429 mit Sekunden, paStarten), bleibt, wenn die Zeile das Feld gar nicht traegt. */
+          if (neu && !("next_allowed_at" in neu) && alt && alt.z && alt.z.next_allowed_at && paSperrBis(alt)) neu.next_allowed_at = alt.z.next_allowed_at;
+          PA.je[keys[i]] = { t: t0, z: neu };
+        });
         if (root.isConnected !== false) paZeilen(root);
+        paPlanen();
       });
     }
+    /* DER TAKT (23.10., siehe PA_TAKT_MS): eine Uhr, nur solange eine gezeigte Zeile wartet oder laeuft. */
+    var paUhr = null;
+    function paPlanen() {
+      if (paUhr) { clearTimeout(paUhr); paUhr = null; }
+      if (!paAn() || root.isConnected === false || state.ansicht !== "detail") return;
+      var laeuft = [].some.call(root.querySelectorAll("[data-pa-url]"), function (z) {
+        var c = PA.je[paSchluessel(z.getAttribute("data-pa-url"))];
+        return !!(c && c.z && paAktiv(c.z)) && paGezeigt(z);
+      });
+      if (laeuft) paUhr = setTimeout(paTakt, PA_TAKT_MS);
+    }
+    function paTakt() {
+      paUhr = null;
+      /* Verdeckt: nicht fragen, sondern warten, bis Impact wieder zu sehen ist (core UC.beiSicht prueft nach jedem Ansichtswechsel). */
+      if (!paSichtbar()) { paBeiSicht(); return; }
+      paLesen(root, { nur: function (c) { return !!(c && c.z && paAktiv(c.z)); }, frisch: function () { return true; } });
+    }
+    function paBeiSicht() { if (UC.beiSicht) UC.beiSicht(root, "uev-pa", paWieder, paSichtbar); }
+    /* Wieder sichtbar: jede gezeigte Zeile mit einem Stand aelter als PA_SICHT_MS einmal neu, danach plant paLesen den Takt. */
+    function paWieder() {
+      if (state.ansicht !== "detail" || !paAn() || root.isConnected === false) return;
+      paLesen(root, { frisch: function (c) { return Date.now() - c.t >= PA_SICHT_MS; } });
+    }
+    /* Ansicht "events" wieder geoeffnet: core meldet den Wechsel vor dem Einblenden (showView), darum ueber beiSicht. Tab wieder vorn: sofort.
+       Zurueck im Browser: die App blendet die Ansicht dann aus der Adresse ein, ohne showView -- core sieht keinen Wechsel und prueft wartende
+       beiSicht-Eintraege nicht. Darum dort selbst nachsehen, dreimal in den ersten 3 s; paWieder fragt nur Staende aelter als PA_SICHT_MS,
+       ein zweiter Treffer kostet also keinen Abruf. */
+    if (UC.onViewChange) UC.onViewChange(function (name) { if (name === "events" && root.isConnected && state.ansicht === "detail") paBeiSicht(); });
+    document.addEventListener("visibilitychange", function () { if (!document.hidden && root.isConnected && state.ansicht === "detail" && paSichtbar()) paWieder(); });
+    window.addEventListener("popstate", function () {
+      if (!root.isConnected) return;
+      [250, 1000, 3000].forEach(function (ms) { setTimeout(function () { if (state.ansicht === "detail" && paSichtbar()) paWieder(); }, ms); });
+    });
     /* Der Tag, an dem das Kontingent neu beginnt (resets_at), als Kalendertag des Browsers -- fuer den Satz aus core. */
     function paTag(iso) {
       var ms = Date.parse(String(iso || ""));
@@ -4796,7 +4921,8 @@
     }
     function paStarten(knopf) {
       var zeile = knopf.closest("[data-pa-url]"), url = zeile ? zeile.getAttribute("data-pa-url") : "", k = paSchluessel(url);
-      if (!url || PA.start[k] || !paAn()) return;
+      /* Gesperrt (next_allowed_at in der Zukunft): Klick und Enter tun nichts, den Grund sagt der Tooltip. */
+      if (!url || PA.start[k] || !paAn() || paSperrBis(PA.je[k])) return;
       PA.start[k] = 1;
       paZeilen(root);
       /* Der Schluessel bleibt nach Zeitablauf oder Netzfehler fuer den naechsten Klick derselben URL stehen: das Schreiben kann trotzdem
@@ -4819,9 +4945,26 @@
           var pid = run.page_id;
           if (UC.toast) UC.toast(t(d.deduplicated === true ? "Audit already running" : "Audit started"), { kind: d.deduplicated === true ? "neutral" : "success", desc: wo,
             action: { label: t("View audit"), onClick: function () { paOeffnen(pid); } } });
+          /* Gleich nachfragen: erst die Zeile der DB traegt next_allowed_at -- ohne die Frage stuende der Knopf bis zum naechsten Takt (5 s)
+             offen, und ein zweiter Klick liefe in die Ablehnung. */
+          paLesen(root, { frisch: function (c) { return c === PA.je[k]; } });
         } else {
           var fe = erg.ok ? { titel: t("The audit couldn't be started"), desc: t("Please try again.") } : paFehler(erg, url);
           if (UC.toast) UC.toast(fe.titel, fe.desc ? { kind: "error", desc: fe.desc } : { kind: "error" });
+          /* Abgelehnt, weil die URL in den letzten 10 Minuten schon lief (PT429, hint = Sekunden bis zum naechsten Start): der Satz kam als
+             Toast, der Knopf sperrt bis dahin, und der Stand der Zeile wird neu gefragt (es gibt ja einen Lauf, vielleicht von anderswo). */
+          var ff = (erg && erg.fehler) || {}, rest = num(ff.hint);
+          if (String(ff.message || "") === "page_audit_url_cooldown") {
+            if (rest != null && rest > 0) {
+              var vorher = PA.je[k] && PA.je[k].z ? PA.je[k].z : {}, gesperrt = {};
+              for (var y in vorher) if (Object.prototype.hasOwnProperty.call(vorher, y)) gesperrt[y] = vorher[y];
+              gesperrt.next_allowed_at = new Date(Date.now() + rest * 1000).toISOString();
+              PA.je[k] = { t: PA.je[k] ? PA.je[k].t : 0, z: gesperrt };
+            }
+            if (root.isConnected !== false) paZeilen(root);
+            paLesen(root, { frisch: function (c) { return c === PA.je[k]; } });
+            return;
+          }
         }
         if (root.isConnected !== false) paZeilen(root);
       });

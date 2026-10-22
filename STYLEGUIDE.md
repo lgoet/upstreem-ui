@@ -2138,6 +2138,11 @@ Menüs "Sort" (Name, Event date, Created), derselbe Stand. Ein Klick oder Enter 
 das Menü "…" der Karte steht am Ende der ersten Zelle beim Überfahren. Keine Gesamtzeile und keine Seiten: die Zahl
 steht im Kopf des Abschnitts, die Liste kommt ganz wie die Karten. Jeder Abschnitt trägt eine eigene
 `data-instance` (`<instanz>_event`, `_watch`): core merkt sich Zahlenspalten je Instanz und Spaltenklasse.
+Seit 23.10. ist jeder Abschnitt eine eigene `.up-root` mit `data-flach="yes"` (Lukas: "über die ganze Width, wie bei der
+Audit-Startseite"): die flache Tabelle aus core wie die Liste von Page Audit, kein Kasten, 16 Auslauf links und rechts,
+Spalten gedeckelt (min + 32, am Ende wächst nur die erste); `data-theme` setzt der Aufbau. Text in den Zellen 14/400 in der
+Textfarbe wie `.upa-z1` (`.uev-tabbox .up-td`), Zahl und Name 14/500, die zweite Zeile 12 -- vorher erbten Event date,
+Status, Tracking, "All active" und Created die 16 der Wurzel.
 
 Die Maße stehen noch in beiden Dateien (`.upa-start*`, `.uev-start*`), weil core in der Runde vom
 22.10. nicht angefasst wurde; Prompt Research baut dasselbe. Ein gemeinsamer Baustein in core ist offen.
@@ -2415,6 +2420,11 @@ in Zeilen     (.up-marke.is-leise, 20 hoch, 11/600) mit Zeichen 12 in der Farbe 
               beim Hover nimmt er Platz vom Pfad (flex 1); Marken und Angaben rechts bleiben,
               keine andere Zeile bewegt sich (gemessen: vorher 90 px je Zeile reserviert).
               Tastatur: mit dem Fokus in der Zeile ist er da und der nächste Tab-Halt.
+              (23.10.) Der Stand zieht nach: alle 5 s nur URLs gezeigter Zeilen, die warten oder
+              laufen, verdeckt nie, wieder sichtbar einmal. Eine URL alle 10 Minuten: solange
+              next_allowed_at in der Zukunft liegt, ist "Run audit" aria-disabled, Schrift
+              --vc-fourth, der Hover ändert nichts, der Grund (UC.pageAuditFehlerSatz) als
+              breiter Tooltip; frei wird er von selbst.
 Höhe des      URL Share 64 höher (284 statt 220), 200 ms ease. Kasten und Chart als EINE Bewegung:
 Ziel-Charts   ein ResizeObserver am Kasten (nicht requestAnimationFrame, das liest die Höhe des
               letzten Bilds) ruft je Größe stop(), render(), resize(), update("none") -- Leinwand
