@@ -119,6 +119,9 @@
     ]},
     { head: "Organisation", items: [
       { key: "teams",    label: "Teams",    icon: "folders", chips: true },
+      /* MCP Server (22.10.): verbinden von Claude & Co. mit den Daten des Nutzers, Seite mcp-server.js. Ueber
+         Settings (Lukas 23.10.: "ueber settings page in der sidebar"). */
+      { key: "mcp",      label: "MCP Server", icon: "mcpServer" },
       { key: "settings", label: "Settings", icon: "bolt" }
     ]},
     /* Die angehefteten Eintraege. Der Block hat keine festen Punkte -- er kommt aus dem

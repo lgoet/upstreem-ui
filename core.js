@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261195;
+  var BUILD = 20261198;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -692,6 +692,39 @@
     "Filter brands": "Brands filtern",
     "Filter": "Filtern",
     "Research settings": "Recherche einstellen",
+    /* Seite MCP Server (mcp-server.js, 22.10.): ganze Saetze, die Namen aus Claudes Oberflaeche als {a}/{b}/{c} (bleiben englisch). */
+    "Build custom workflows with your data": "Eigene Workflows mit deinen Daten bauen",
+    "Connect upstreem to Claude and turn your live AI visibility data into weekly briefs, competitor snapshots and content plans.": "Verbinde upstreem mit Claude und mach aus deinen aktuellen Daten zur AI Visibility Wochenberichte, Wettbewerber-Überblicke und Content-Pläne.",
+    "Connect an app": "App verbinden",
+    "Coming soon": "Bald verfügbar",
+    "Read-only access": "Nur Lesezugriff",
+    "Claude can read": "Claude kann lesen",
+    "Claude can't": "Claude kann nicht",
+    "Create, change or delete anything": "Etwas anlegen, ändern oder löschen",
+    "Covers every team you belong to. You can revoke access at any time.": "Gilt für jedes Team, in dem du Mitglied bist. Du kannst den Zugriff jederzeit entziehen.",
+    "Connected apps": "Verbundene Apps",
+    "Read only": "Nur lesen",
+    "No connected apps": "Keine verbundenen Apps",
+    "Apps you connect to upstreem show up here.": "Apps, die du mit upstreem verbindest, erscheinen hier.",
+    "We could not load your connected apps.": "Wir konnten deine verbundenen Apps nicht laden.",
+    "Revoke Access": "Zugriff entziehen",
+    "{name} will no longer be able to read your upstreem data. You can connect it again at any time.": "{name} kann deine upstreem-Daten dann nicht mehr lesen. Du kannst die App jederzeit wieder verbinden.",
+    "Access revoked": "Zugriff entzogen",
+    "We could not revoke access. Please try again.": "Wir konnten den Zugriff nicht entziehen. Versuch es noch einmal.",
+    "An app": "Eine App",
+    "In Claude, open {a} and click {b}.": "Öffne in Claude {a} und klicke auf {b}.",
+    "Name it {a} and paste the server URL.": "Nenne ihn {a} und füge die Server-URL ein.",
+    "Open {a} and paste the OAuth Client ID.": "Öffne {a} und füge die OAuth Client ID ein.",
+    "Click {a}, sign in to upstreem and choose {b}.": "Klicke auf {a}, melde dich bei upstreem an und wähle {b}.",
+    "Start a chat and try a workflow:": "Starte einen Chat und probier einen Workflow aus:",
+    "Add upstreem in your terminal.": "Füge upstreem in deinem Terminal hinzu.",
+    "Start Claude Code, run {a}, choose {b} and then {c}.": "Starte Claude Code, führe {a} aus, wähle {b} und dann {c}.",
+    "Sign in to upstreem in the browser window that opens and choose {a}.": "Melde dich im Browserfenster, das sich öffnet, bei upstreem an und wähle {a}.",
+    "Try a workflow:": "Probier einen Workflow aus:",
+    "Write our weekly AI visibility brief: what changed and why?": "Schreib unseren Wochenbericht zur AI Visibility: Was hat sich geändert und warum?",
+    "Which pages lost citations this month, and what should we update first?": "Welche Seiten haben diesen Monat Zitate verloren, und was sollten wir zuerst überarbeiten?",
+    "Turn this week's visibility data into a client report.": "Mach aus den Daten dieser Woche einen Bericht für unseren Kunden.",
+    "Build a content plan from the prompts where competitors win.": "Erstell einen Content-Plan aus den Prompts, bei denen Wettbewerber vorne liegen.",
     /* Fehlermeldungen der Prompt-Research-Seite (Audit 14.10.: standen nur englisch da). */
     "Choose a market in the research settings.": "Wähle in den Einstellungen einen Markt.",
     "Enter at least one keyword to start a research.": "Gib mindestens einen Begriff ein, um eine Recherche zu starten.",
@@ -27677,7 +27710,11 @@
              '<path d="M12.1257 11H12.0007M8.125 11H8M12.2507 11C12.2507 11.1381 12.1388 11.25 12.0007 11.25C11.8627 11.25 11.7507 11.1381 11.7507 11C11.7507 10.8619 11.8627 10.75 12.0007 10.75C12.1388 10.75 12.2507 10.8619 12.2507 11ZM8.25 11C8.25 11.1381 8.13807 11.25 8 11.25C7.86193 11.25 7.75 11.1381 7.75 11C7.75 10.8619 7.86193 10.75 8 10.75C8.13807 10.75 8.25 10.8619 8.25 11Z"/>',
     /* Dna01Icon (Hugeicons, 21.10. angefordert): das Zeichen der Seite Page Audit -- Seitenleiste,
        Krume, Ladebild und Meldung. Pfad wortgleich aus der Anfrage. */
-    dna01: '<path d="M8.6671 22C9.20107 21.466 9.73505 20.9321 9.24127 18M8.6671 15.3336C7.33381 10.0004 8.33378 9.00042 8.6671 8.6671C9.00042 8.33378 10.0004 7.33381 15.3336 8.6671M8.6671 15.3336C3.33394 14.0003 2.66664 14.6663 2 15.3329M8.6671 15.3336C14.0003 16.6668 14.9996 15.6662 15.3329 15.3329C15.6662 14.9996 16.6668 14.0003 15.3336 8.6671M22 8.6671C21.3334 9.33375 20.6667 10.0004 15.3336 8.6671M15.3329 2C14.799 2.53394 14.2654 3.06829 14.7592 6"/>'
+    dna01: '<path d="M8.6671 22C9.20107 21.466 9.73505 20.9321 9.24127 18M8.6671 15.3336C7.33381 10.0004 8.33378 9.00042 8.6671 8.6671C9.00042 8.33378 10.0004 7.33381 15.3336 8.6671M8.6671 15.3336C3.33394 14.0003 2.66664 14.6663 2 15.3329M8.6671 15.3336C14.0003 16.6668 14.9996 15.6662 15.3329 15.3329C15.6662 14.9996 16.6668 14.0003 15.3336 8.6671M22 8.6671C21.3334 9.33375 20.6667 10.0004 15.3336 8.6671M15.3329 2C14.799 2.53394 14.2654 3.06829 14.7592 6"/>',
+    /* McpServerIcon (Hugeicons, 22.10.): das Zeichen der Seite "MCP Server" -- Seitenleiste, Krume und Knoten der
+       Grafik. Pfade wortgleich aus dem Entwurf des Design-Agenten (Canvas MCP Server, Brett Sidebar). */
+    mcpServer: '<path d="M3.49994 11.7501L11.6717 3.57855C12.7762 2.47398 14.5672 2.47398 15.6717 3.57855C16.7762 4.68312 16.7762 6.47398 15.6717 7.57855M15.6717 7.57855L9.49994 13.7501M15.6717 7.57855C16.7762 6.47398 18.5672 6.47398 19.6717 7.57855C20.7762 8.68312 20.7762 10.474 19.6717 11.5785L12.7072 18.543C12.3167 18.9335 12.3167 19.5667 12.7072 19.9572L13.9999 21.2499"/>' +
+               '<path d="M17.4999 9.74921L11.3282 15.921C10.2237 17.0255 8.43272 17.0255 7.32822 15.921C6.22373 14.8164 6.22373 13.0255 7.32822 11.921L13.4999 5.74939"/>'
   };
   /* ---- Nachtrag zu TOOLBAR_SEL ------------------------------------------------------------
      Drei Knoepfe dieser Liste tragen Zeichen AUS DEM SATZ. Oben, wo die Liste steht, gibt es

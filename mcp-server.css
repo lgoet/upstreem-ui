@@ -1,0 +1,178 @@
+/* upstreem mcp-server.css -- die Seite "MCP Server" (22.10.). Praefix umc. Braucht core.css.
+
+   Entwurf: Canvas "MCP Server Seite (Entwurf)" (claude.ai/artifact/WcqA1yc8Aqt42vSoNBkiU1), Variante A,
+   Grafik "Fluss". Die Regeln unten sind die des Canvas (mcp.css dort), ohne die Huelle der Bretter.
+   Aus core und hier NICHT nachgebaut: Seitenkopf und Krume (.up-ph-*, makePageCrumbs; .umc-pagehead steht in
+   der Liste der kompakten Koepfe in core.css), Kasten (.up-box), Abschnittskopf (.up-sec-head, .up-sec-h),
+   Umschalter (.up-seg), Kopierkasten (.up-kopierbox), Tabelle (.up-table, .up-row, .up-th, .up-td),
+   Logoplatte (.up-logo-box), Marke (.up-marke.is-leise), Leerzustand (UC.leerHtml), Skelett (.up-tsk-bar),
+   Ring (UC.ringHtml), Popup (UC.makeModal), Toast.
+   Alle Farben aus --vc-*, --vt-*, --up-* (core.css). */
+
+/* ---------- Seitengeruest (wie .upa-root in page-audit.css) ---------- */
+.umc-root { display: block; padding-bottom: 48px; }
+/* Der Kopf: 8 oben, 8 unten, 16 darunter wie Page Audit und Teams. */
+.umc-root .umc-pagehead { padding: 8px 0; margin-bottom: 16px; position: relative; z-index: 7; background: var(--up-surface); }
+
+/* ---------- Startbereich (Vorbild Impact .uev-start und Page Audit .upa-start) ----------
+   Zwei Spalten, 16 Abstand; links Titel 20/26/600/-0.4 und EIN Satz 14/20, rechts die stille Grafik.
+   16 Polster oben (mit den 16 unter dem Kopf 32 von der Linie), 32 unten, dann der Trenner, 32 darunter. */
+.umc-start { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0 0 32px; padding: 16px 0 32px; border-bottom: 1px solid var(--vc-border); }
+.umc-start-text { grid-column: 1; grid-row: 1; align-self: center; display: flex; flex-direction: column; gap: 4px; max-width: 520px; padding: 0 0 0 2px; }
+.umc-start-text .up-heading, .umc-start-text .up-sec-sub { margin: 0; }
+.umc-start-text .up-heading.up-sec-h { font-size: var(--up-fs-modaltitel); line-height: 26px; letter-spacing: -0.4px; white-space: normal; }
+.umc-start-text .up-sec-sub { font-size: var(--up-fs-l); line-height: 20px; }
+
+/* Die Grafik (Wahl "Fluss", 22.10. spaet): Daten links (Brands, Prompts, Sources, AI responses,
+   Opportunities), Leitungen in EINEN Knoten mit dem Zeichen des MCP-Servers, von dort gerade weiter in
+   eine Spalte mit den KI-Apps (vorher ein Faecher: "der Strich geht von links rein und der Fan ist nach
+   oben gebeugt"). Ohne Zahl und Wort. Kacheln wie die Pins der Impact-Grafik (32 bzw. hier 28, Rahmen, e-1), der Knoten
+   wie das hervorgehobene Fenster in Page Audit (Rahmen Schrift zu 45 %). Links laeuft das Feld per Maske
+   aus (Deckkraft, keine Themenfarbe). Ohne Punktmuster dahinter (Lukas 23.10.: "das dottet pattern hinter der grafik ... weg"). */
+.umc-grafik { grid-column: 2; grid-row: 1; position: relative; height: 188px; overflow: hidden; min-width: 0;
+  --umc-linie: color-mix(in srgb, var(--vc-text) 20%, transparent);
+  --umc-linie-hl: color-mix(in srgb, var(--vc-text) 45%, transparent); }
+/* 480 breit und mittig: links 16 bis rechts 464 gezeichnet, der linke Rand laeuft ohnehin per Maske aus. */
+.umc-sg-feld { position: absolute; left: 50%; top: 0; width: 480px; height: 188px; margin-left: -240px;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 120px);
+  mask-image: linear-gradient(to right, transparent 0, #000 120px); }
+.umc-sg-linien { position: absolute; inset: 0; display: block; overflow: visible; }
+.umc-sg-linien path { fill: none; stroke: var(--umc-linie); stroke-width: 1; }
+.umc-sg-linien path.is-hl { stroke: var(--umc-linie-hl); }
+.umc-sg-linien path.is-bald { stroke-dasharray: 3 3; }
+.umc-sg-linien circle { fill: var(--umc-linie-hl); stroke: none; }
+.umc-sg-kachel { position: absolute; width: 28px; height: 28px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--vc-bg); box-shadow: var(--up-e-1); color: var(--vc-muted); }
+.umc-sg-kachel svg { width: 14px; height: 14px; display: block; }
+.umc-sg-knoten { position: absolute; left: 232px; top: 68px; width: 56px; height: 56px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--umc-linie-hl); border-radius: var(--up-r-2xl); background: var(--vc-bg); box-shadow: var(--up-e-1); color: var(--vc-text); }
+.umc-sg-knoten svg { width: 24px; height: 24px; display: block; }
+/* Die Apps auf Logoplatten wie die Karten des Faechers aus core (.up-fan-c, ohne Drehung): 40 hoch, Radius
+   nach Rolle 8 (ab 37), Logo 24 contain. Claude ist verbunden (durchgezogene, hervorgehobene Leitung),
+   ChatGPT und Gemini kommen erst (gestrichelt, Logo leiser) -- dieselbe Aussage wie "Coming soon". */
+.umc-sg-app { position: absolute; width: 40px; height: 40px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--vt-logo-bg); box-shadow: var(--up-e-chip); }
+.umc-sg-app img { width: 24px; height: 24px; display: block; object-fit: contain; border-radius: var(--up-r-xs); }
+/* Leiser wird nur das Logo, nicht die Platte: deren Deckkraft faehrt der Auftritt (umc-ein) bis 1, und
+   ein leiser Wert an der Platte spraenge am Ende der Fahrt zurueck. */
+.umc-sg-app.is-bald img { opacity: .45; filter: grayscale(1); }
+/* Auftritt wie die Fenster in Page Audit: ab Deckkraft .3, damit ein verdecktes Bild nie leer steht. */
+.umc-sg-teil { animation: umc-ein var(--up-t-3) var(--up-ease-auf) backwards; }
+@keyframes umc-ein { from { opacity: .3; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .umc-sg-teil { animation: none; } }
+
+/* ---------- Abschnitte ---------- */
+.umc-abschnitt + .umc-abschnitt { margin-top: 32px; }
+.umc-abschnitt > .up-sec-head { margin-bottom: 12px; }
+.umc-abschnitt .up-heading.up-sec-h { margin: 0; }
+
+/* Verbinden: Anleitung (2/3) und Zugriff (1/3), 16 Abstand wie die Kacheln der App. */
+.umc-verbinden { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.umc-karte { min-width: 0; }
+/* Kopf der Karte wie .uev-quellen-kopf in Impact: 48 hoch, Umschalter links, rechts das Uebrige. */
+.umc-kopf { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; min-height: 48px; padding: 0 16px; box-sizing: border-box; border-bottom: 1px solid var(--vc-border); }
+.umc-kopf .up-seg-btn { display: inline-flex; align-items: center; gap: 6px; }
+/* Nur das Logo IM Segmentknopf, nicht der Knopf: core kennt im .up-seg-btn nur Text und Zeichen (svg 14), ein Bild
+   bekommt dieselben 14. Hoehe, Rand, Flaeche und Radius des Knopfs bleiben die aus core. */
+.umc-kopf .up-seg-btn img { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
+/* Ohne eigenen Client fuer Claude Code fehlt sein Reiter (mcp-server.js codeDa): hidden allein unterliegt dem
+   display des Segmentknopfs aus core. */
+.umc-kopf .up-seg-btn[hidden] { display: none; }
+.umc-bald { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; font-size: var(--up-fs-m); line-height: 18px; color: var(--vc-third); }
+.umc-bald-app { display: inline-flex; align-items: center; gap: 6px; color: var(--vc-muted); }
+.umc-bald-app img { width: 14px; height: 14px; display: block; }
+
+/* Schritte: eine echte Reihenfolge, also nummeriert. Kreis 20 (Zeile des Satzes), 12 Abstand, die Linie
+   zwischen den Kreisen in der Rahmenfarbe. */
+.umc-schritte { list-style: none; margin: 0; padding: 16px 16px 20px; display: flex; flex-direction: column; gap: 20px; }
+.umc-schritt { position: relative; display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: 12px; }
+.umc-schritt:not(:last-child)::before { content: ""; position: absolute; left: 9.5px; top: 24px; bottom: -16px; width: 1px; background: var(--vc-border); }
+.umc-nr { position: relative; width: 20px; height: 20px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-voll); background: var(--vc-bg);
+  font-size: var(--up-fs-xs); font-weight: var(--up-fw-m); line-height: 1; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+.umc-schritt-in { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+.umc-satz { margin: 0; font-size: var(--up-fs-l); line-height: 20px; color: var(--vc-text); }
+.umc-satz b { font-weight: var(--up-fw-m); }
+.umc-pfad { display: inline-flex; align-items: center; gap: 2px; font-weight: var(--up-fw-m); white-space: nowrap; vertical-align: top; }
+.umc-pfad svg { width: 14px; height: 14px; display: block; color: var(--vc-third); }
+.umc-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: var(--up-fs-m);
+  padding: 1px 6px; border-radius: var(--up-r-xs); background: var(--up-sel-bg); color: var(--vc-text); }
+/* Beispielfragen wie die Sprechblasen der Prompt-Research-Grafik (.upr-blase): Radius 16, e-1. */
+.umc-fragen { display: flex; flex-wrap: wrap; gap: 8px; }
+.umc-frage { position: relative; display: inline-flex; align-items: center; padding: 8px 14px; box-sizing: border-box; max-width: 100%;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-3xl); background: var(--vc-bg); box-shadow: var(--up-e-1);
+  font-size: var(--up-fs-m); line-height: 18px; color: var(--vc-muted); }
+
+/* Zugriff: Block-Titel 14/600 (Ueberschriften-Stufe "Block"), Gruppen 12/500 muted, Zeilen 32. */
+.umc-zugriff { padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.umc-block-titel { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: var(--up-ueb-block-gr); font-weight: var(--up-ueb-block-gew);
+  line-height: var(--up-ueb-block-zeile); letter-spacing: var(--up-ueb-block-spur); color: var(--vc-text); }
+.umc-block-titel svg { width: 16px; height: 16px; display: block; flex: 0 0 auto; }
+.umc-gruppe { margin: 4px 0 0; font-size: var(--up-ueb-gruppe-gr); font-weight: var(--up-ueb-gruppe-gew); line-height: var(--up-ueb-gruppe-zeile); color: var(--vc-muted); }
+.umc-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.umc-liste li { display: flex; align-items: center; gap: 10px; min-height: 32px; font-size: var(--up-fs-l); line-height: 20px; color: var(--vc-text); }
+.umc-liste svg { width: 16px; height: 16px; display: block; flex: 0 0 auto; color: var(--vc-muted); }
+.umc-liste.is-nein li { color: var(--vc-muted); }
+.umc-zugriff-fuss { margin: 8px -16px 0; padding: 12px 16px 0; border-top: 1px solid var(--vc-border); font-size: var(--up-fs-m); line-height: 18px; color: var(--vc-muted); }
+
+/* Verbundene Apps: die Tabelle aus core (.up-table, Kopf 45, Zeile 55 = --up-h-row), ohne Klick auf der Zeile. */
+.umc-apps .up-table { --up-cols: minmax(220px, 2fr) minmax(140px, 1fr) minmax(140px, 1fr) 104px; }
+.umc-apps .up-row { height: var(--up-h-row); flex: 0 0 var(--up-h-row); cursor: default; }
+.umc-apps .up-row:hover { background: transparent; }
+.umc-apps .up-td.is-aktion { justify-content: flex-end; padding-right: 12px; }
+.umc-app-name { display: flex; flex-direction: column; min-width: 0; }
+.umc-datum { font-size: var(--up-fs-l); line-height: 20px; color: var(--vc-text); white-space: nowrap; }
+.umc-app-unter { display: none; font-size: var(--up-fs-m); line-height: 18px; color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.umc-apps .up-logo-box img { object-fit: contain; }
+.umc-apps .up-empty { padding: 40px 16px; }
+
+/* ---------- Telefon (is-narrow, is-vnarrow von Hand gesetzt wie widthTiers) ----------
+   Die Grafik weicht, es bleibt nur der Text (Regel "Startbereich einer Seite", wie Page Audit und Impact). */
+.umc-root.is-narrow .umc-start { grid-template-columns: minmax(0, 1fr); padding-top: 0; }
+.umc-root.is-narrow .umc-grafik { display: none; }
+.umc-root.is-narrow .umc-verbinden { grid-template-columns: minmax(0, 1fr); }
+.umc-root.is-narrow .umc-kopf { padding: 10px 16px; }
+/* Am Telefon reicht die Spalte neben den Nummern nicht fuer die Kopierkaesten (URL 293, Client ID 332 breit):
+   Kaesten und Beispielfragen ruecken unter die Nummer, die Liste polstert 12. Die Client ID kuerzt dann
+   noch um zwei Zeichen mit "..." (kopiert wird immer der ganze Wert). */
+.umc-root.is-narrow .umc-schritte { padding: 16px 12px 20px; }
+.umc-root.is-narrow .umc-schritt-in > :is(.up-kopierbox, .umc-fragen) { margin-left: -32px; max-width: calc(100% + 32px); }
+.umc-root.is-narrow .umc-apps .up-table { --up-cols: minmax(0, 1fr) 104px; }
+.umc-root.is-narrow .umc-apps .is-breit { display: none; }
+.umc-root.is-narrow .umc-app-unter { display: block; }
+
+/* ---------- In der App dazu (nicht im Canvas) ---------- */
+/* Die Client ID kennt nur die App: bis zu ihrer Antwort ein Skelett in der Groesse des Kastens (32 hoch, die ID
+   in Mono 13 misst mit Zeichen 332 breit, gemessen im Canvas). */
+.umc-sk-kasten { display: block; width: 332px; max-width: 100%; height: var(--up-h-btn); border-radius: var(--up-r-m); }
+/* Skelett der Liste: zwei Zeilen in den Massen der echten (Logo 24, Name, Marke 20, Datum, Knopf 32). */
+.umc-sk-zeile .up-td { gap: 10px; }
+.umc-sk-logo { width: 24px; height: 24px; border-radius: var(--up-r-m); flex: 0 0 auto; }
+.umc-sk-name { width: 96px; }
+.umc-sk-marke { width: 64px; height: 20px; border-radius: var(--up-r-s); }
+.umc-sk-datum { width: 88px; }
+.umc-sk-knopf { width: 72px; height: var(--up-h-btn); border-radius: var(--up-r-m); }
+/* Unbekannter Client: der Anfangsbuchstabe auf der Logoplatte (wie .uoc-brand-ltr auf der Zustimmungsseite). */
+.umc-apps .up-logo-box.umc-ltr { display: inline-flex; align-items: center; justify-content: center;
+  font-size: var(--up-fs-xs); font-weight: var(--up-fw-h); line-height: 1; color: var(--vt-logo-ink, var(--vc-muted)); }
+.umc-apps .up-td:first-child { gap: 10px; }
+/* Widerruf laeuft: die Zeile dimmt sofort (Memory "Dimmen statt Skelett"), im Knopf der Ring aus core. */
+.umc-apps .up-row.is-umc-busy .up-td:not(.is-aktion) { opacity: .5; transition: opacity var(--up-t-2) var(--up-ease); }
+.umc-widerruf { display: inline-flex; align-items: center; gap: 6px; }
+.umc-widerruf .umc-ring { display: none; }
+.umc-widerruf[aria-busy="true"] .umc-ring { display: inline-flex; }
+.umc-widerruf[aria-disabled="true"], .umc-widerruf[aria-disabled="true"]:hover { cursor: default; }
+/* Die Liste kam nicht: ein roter Satz ohne Kasten (Memory "Fehler ohne Kasten") und "Try again". */
+.umc-fehler { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px; }
+.umc-fehler-satz { margin: 0; font-size: var(--up-fs-l); line-height: 20px; color: var(--vt-down); }
+/* "Refresh" im Kopf der Liste: Knopf aus core (32 hoch), Zeichen 14 wie im Segmentknopf; laeuft die Anfrage, steht der
+   Ring aus core an Stelle des Zeichens. Die Tabelle darunter dimmt wie beim Widerruf (.is-umc-busy). */
+.umc-neu { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.umc-neu .umc-neu-ic, .umc-neu .umc-ring { display: inline-flex; }
+.umc-neu .umc-neu-ic svg { width: 14px; height: 14px; display: block; }
+.umc-neu .umc-ring { display: none; }
+.umc-neu[aria-busy="true"] .umc-neu-ic { display: none; }
+.umc-neu[aria-busy="true"] .umc-ring { display: inline-flex; }
+.umc-neu[aria-disabled="true"], .umc-neu[aria-disabled="true"]:hover { cursor: default; }
+.umc-apps [data-umc-apps] .up-table { transition: opacity var(--up-t-2) var(--up-ease); }
+.umc-apps [data-umc-apps].is-umc-dimm .up-table { opacity: .5; pointer-events: none; }
