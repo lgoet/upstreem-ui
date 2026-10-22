@@ -3522,6 +3522,22 @@
     /* Die Bausteine, aus denen core den Erklaersatz mit {scope} und {trend} zusammensetzt. */
     " for the tracked prompts": " auf die beobachteten Prompts",
     ", plus the change against the previous period": ", plus die Änderung gegenüber dem vorigen Zeitraum",
+    /* Page Audit (22.10.), EXPLAIN_TEXT pa_* */
+    ", compared with the previous run": ", verglichen mit dem vorigen Lauf",
+    "AI platforms with no access block and all required measurements done{trend}.":
+      "KI-Plattformen ohne Zugangssperre, bei denen alle nötigen Messungen gelaufen sind{trend}.",
+    "Rules or responses that block a platform from this page{trend}.":
+      "Regeln oder Antworten, die eine Plattform von dieser Seite aussperren{trend}.",
+    "Things that may limit how a platform can use the page, such as text that only appears after JavaScript{trend}.":
+      "Was einschränken kann, wie eine Plattform die Seite nutzt, etwa Text, der erst nach JavaScript erscheint{trend}.",
+    "How many of the required measurements were completed. Only complete runs are compared with each other.":
+      "Wie viele der nötigen Messungen abgeschlossen sind. Verglichen werden nur vollständige Läufe.",
+    "Characters of page text that your server sends, before any script runs.":
+      "Zeichen Seitentext, die dein Server schickt, bevor ein Skript läuft.",
+    "Characters of page text in our browser after scripts ran for up to 10 seconds.":
+      "Zeichen Seitentext in unserem Browser, nachdem Skripte bis zu 10 Sekunden liefen.",
+    "Text blocks of the rendered page that are not in the initial HTML.":
+      "Textblöcke der gerenderten Seite, die nicht im ersten HTML stehen.",
 
     /* ---- Prompt Recherche ---- */
     "Prompt Research": "Prompt Recherche",
@@ -4879,7 +4895,16 @@
        weil die Auswahl aus core kommt (colorScaleOptionsHtml) und der Erklaerkasten derselbe ist,
        den die Spaltenkoepfe benutzen -- eine Quelle fuer beide. */
     brandcolors: { h: "Brand Colors",
-                   t: "Every brand is drawn in its own color instead of a fixed palette. You set that color per brand in Settings under Your Brand, in the Brand Color section. Brands without one fall back to a neutral color." }
+                   t: "Every brand is drawn in its own color instead of a fixed palette. You set that color per brand in Settings under Your Brand, in the Brand Color section. Brands without one fall back to a neutral color." },
+    /* Page Audit (22.10.): die vier Kennzahlen im Kopf eines Audits und die drei Werte unter Evidence. {trend} nur bei den
+       Kacheln, die einen Trend zeigen; verglichen wird dort mit dem vorigen Lauf, nicht mit einem Zeitraum. */
+    pa_reachable:     { h: "Reachable", t: "AI platforms with no access block and all required measurements done{trend}." },
+    pa_restrictions:  { h: "Restrictions", t: "Rules or responses that block a platform from this page{trend}." },
+    pa_issues:        { h: "Potential issues", t: "Things that may limit how a platform can use the page, such as text that only appears after JavaScript{trend}." },
+    pa_coverage:      { h: "Coverage", t: "How many of the required measurements were completed. Only complete runs are compared with each other." },
+    pa_text_raw:      { h: "Text in the initial HTML", t: "Characters of page text that your server sends, before any script runs." },
+    pa_text_rendered: { h: "Text after JavaScript", t: "Characters of page text in our browser after scripts ran for up to 10 seconds." },
+    pa_blocks_added:  { h: "Blocks added by JavaScript", t: "Text blocks of the rendered page that are not in the initial HTML." }
   };
   function explainCopy(key, vars){
     var e = EXPLAIN_TEXT[key];
@@ -5915,7 +5940,9 @@
   function kpiKarte(o){
     o = o || {};
     var lbl = String(o.label || "");
-    return '<div class="up-kpi' + (o.klasse ? " " + o.klasse : "") + '">' +
+    /* o.explain (22.10., Page Audit): Schluessel aus EXPLAIN_TEXT; die Kachel ist dann der Ausloeser einer Erklaerkarte
+       (UC.makeExplain mit triggerSel auf [data-explain]), statt einer Fusszeile unter dem Wert. */
+    return '<div class="up-kpi' + (o.klasse ? " " + o.klasse : "") + '"' + (o.explain ? ' data-explain="' + esc(o.explain) + '" tabindex="0"' : '') + '>' +
       '<span class="up-kpi-label" data-i18n="' + esc(lbl) + '">' + esc(t(lbl)) + '</span>' +
       '<span class="up-kpi-row">' +
         (o.vorherHtml ? '<span class="up-kpi-vorher">' + o.vorherHtml + '</span><span class="up-kpi-pfeil" aria-hidden="true">' + icon("arrowRight", 2) + '</span>' : '') +

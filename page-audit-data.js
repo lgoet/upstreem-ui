@@ -31,7 +31,9 @@
     anlegen: "create_page_audit_v1",
     plan: "set_page_audit_schedule_v1",
     abbrechen: "cancel_page_audit_v1",
-    loeschen: "delete_page_audit_v1"
+    loeschen: "delete_page_audit_v1",
+    /* Datei 5 (21.10.): Status und Schritt laufender Audits, 1 bis 50 Laeufe je Aufruf. */
+    fortschritt: "get_page_audit_progress_v1"
   };
   /* Die Sortierschluessel des Vertrags (list_page_audits_v1 prueft genau diese). */
   var SORTIERUNG = ["last_run", "url", "reachable", "issues", "status", "schedule", "next_run"];
@@ -228,7 +230,7 @@
      core laedt vor jeder Ansicht; fehlt es doch, zeigen die Zellen "–" statt eines geratenen Worts. */
   var UCK = window.UpstreemCore || {};
   var STATUS = UCK.pageAuditStatus || {};
-  var PLAN = { once: "Once", weekly: "Weekly", monthly: "Monthly" };
+  var PLAN = { once: "Not Scheduled", weekly: "Weekly", monthly: "Monthly" };
   /* Warum ein Lauf ohne Ergebnis blieb (error_code). Nur bekannte Codes bekommen einen Satz; ein
      unbekannter faellt auf den allgemeinen, nie auf einen erfundenen Grund. */
   var LAUF_FEHLER = {
@@ -330,7 +332,9 @@
     "response.suspected_soft_404": { titel: "Possible soft 404", satz: "The page answers with HTTP 200 but looks like an error page.", schritt: "Return a real 404 for missing pages, or restore the content.", umfang: "heuristic" },
     "variants.ua_access_difference": { titel: "Different response for {token}", satz: "With the user agent of {token}, the page answered differently than for a normal request.", titelOhne: "Different response for a crawler user agent", satzOhne: "With a crawler's user agent, the page answered differently than for a normal request.", schritt: "Check CDN and bot rules for this user agent, and look for real crawler visits in your server logs.", umfang: "synthetic" },
     "variants.language_access_failure": { titel: "A language version failed", satz: "With a language preference, the request failed or was denied while the normal request worked.", schritt: "Check the language redirects of this page.", umfang: "request" },
-    "robots.search_path_disallowed": { titel: "Published robots policy excludes {token}", satz: "The captured robots file excludes the requested {path} path for {token}. This is a public policy observation.", titelOhne: "robots.txt excludes a search crawler", satzOhne: "The captured robots file excludes the requested path for a search crawler. This is a public policy observation.", schritt: "Review the exact rule if this URL is intended for {platform} visibility. Keep training policy separate.", schrittOhne: "Review the exact rule if this URL should be visible in AI search. Keep training policy separate.", umfang: "policy" },
+    "robots.search_path_disallowed": { kurz: "The platform's search crawler is asked not to fetch this page.", warum: "The search crawler of a platform reads robots.txt before it fetches a page. A rule that excludes it keeps this page out of that platform's search, while training crawlers are a separate decision.",
+      schritte: ["Find the rule shown above in your robots.txt.", "Allow {token} on this path if this page should appear in {platform}. Training crawlers can stay blocked.", "Run the audit again."],
+      schritteOhne: ["Find the rule shown above in your robots.txt.", "Allow the search crawler on this path if this page should appear in AI search. Training crawlers can stay blocked.", "Run the audit again."], titel: "Published robots policy excludes {token}", satz: "The captured robots file excludes the requested {path} path for {token}. This is a public policy observation.", titelOhne: "robots.txt excludes a search crawler", satzOhne: "The captured robots file excludes the requested path for a search crawler. This is a public policy observation.", schritt: "Review the exact rule if this URL is intended for {platform} visibility. Keep training policy separate.", schrittOhne: "Review the exact rule if this URL should be visible in AI search. Keep training policy separate.", umfang: "policy" },
     "robots.grounding_policy_disallowed": { titel: "robots.txt excludes Google-Extended", satz: "The robots file excludes this path for Google-Extended, which controls use in Gemini answers. It does not affect Google Search.", schritt: "Review the rule if this page should be used in Gemini answers.", umfang: "policy" },
     "directives.noindex": { titel: "The page is marked noindex", satz: "A noindex directive was found in the {source}.", satzOhne: "A noindex directive was found.", schritt: "Remove noindex if this page should appear in AI search.", umfang: "policy" },
     "directives.expired": { titel: "The page has expired", satz: "An unavailable_after date in the past was found.", schritt: "Remove or update the date if the page should stay visible.", umfang: "policy" },
@@ -344,8 +348,12 @@
        nur was unser Browser gemessen hat, Zaehler und Nenner statt Prozent, keine Aussage ueber das, was
        eine Plattform "sieht", und keine ueber Zitierungen. Der Satz mit Zahlen entsteht in jsSatz. */
     "content.raw_main_empty": { titel: "No main text in the initial HTML", satz: "The main content area of the initial HTML is empty. Systems that read only the initial HTML do not receive main text from this page.", schritt: "Make the main text available in the initial HTML (server-side rendering, static generation or pre-rendering), then run the audit again.", umfang: "content" },
-    "content.raw_empty_rendered_present": { titel: "The main text only appears after JavaScript", satz: "The main content area is empty in the initial HTML. Our browser filled it after running JavaScript (Chromium, up to 10 seconds, no interaction). Systems that read only the initial HTML do not receive this text.", schritt: "Make the main text available in the initial HTML (server-side rendering, static generation or pre-rendering), then run the audit again.", umfang: "content" },
-    "content.rendered_text_difference": { titel: "Part of the text is added by JavaScript", satz: "Part of the text is missing from the initial HTML. Our browser added it after running JavaScript (Chromium, up to 10 seconds, no interaction). Systems that read only the initial HTML do not receive this text.", schritt: "Make the main text available in the initial HTML (server-side rendering, static generation or pre-rendering), then run the audit again.", umfang: "content" },
+    "content.raw_empty_rendered_present": { titel: "The main text only appears after JavaScript", kurz: "Systems that read only this HTML get a page without its main text.",
+      warum: "Several AI platforms have been seen fetching pages without running JavaScript when they answer a question. For them, this page has no main text. The list below shows which platforms and how sure that is.",
+      schritte: ["Send the main text in the HTML from your server, with server-side rendering, static generation or pre-rendering.", "Check it with View Source in your browser: the text should be there before any script runs.", "Run the audit again."], satz: "The main content area is empty in the initial HTML. Our browser filled it after running JavaScript (Chromium, up to 10 seconds, no interaction). Systems that read only the initial HTML do not receive this text.", schritt: "Make the main text available in the initial HTML (server-side rendering, static generation or pre-rendering), then run the audit again.", umfang: "content" },
+    "content.rendered_text_difference": { titel: "Some of the page text is added by JavaScript", kurz: "Systems that read only this HTML get less text than your visitors.",
+      warum: "Several AI platforms have been seen fetching pages without running JavaScript when they answer a question. For them, this page is shorter than what your visitors read. The list below shows which platforms and how sure that is.",
+      schritte: ["Send the main text in the HTML from your server, with server-side rendering, static generation or pre-rendering.", "Check it with View Source in your browser: the text should be there before any script runs.", "Run the audit again."], satz: "Part of the text is missing from the initial HTML. Our browser added it after running JavaScript (Chromium, up to 10 seconds, no interaction). Systems that read only the initial HTML do not receive this text.", schritt: "Make the main text available in the initial HTML (server-side rendering, static generation or pre-rendering), then run the audit again.", umfang: "content" },
     "interaction.suspected_gate": { titel: "Possible overlay or paywall", satz: "An overlay or paywall may hide the main content when the page is opened without interaction.", schritt: "Open the page without cookies and check what is visible without clicking.", umfang: "heuristic" },
     "canonical.conflicting": { titel: "Conflicting canonical tags", satz: "The page declares more than one canonical address.", schritt: "Declare one canonical address.", umfang: "request" },
     "canonical.invalid": { titel: "Invalid canonical tag", satz: "The declared canonical address can't be resolved.", schritt: "Fix the canonical URL.", umfang: "request" },
@@ -375,8 +383,9 @@
          dem Schluessel des Checks -- nie geraten, was sie bedeutet. */
       return { titel: "Finding", satz: "This finding comes from a newer version of the rules.", schritt: "", umfang: "" };
     }
-    return { titel: fuellen(b.titel, b.titelOhne, w), satz: fuellen(b.satz, b.satzOhne, w),
-             schritt: fuellen(b.schritt, b.schrittOhne, w), umfang: UMFANG[b.umfang] || "" };
+    var schritte = (b.schritte || []).map(function (x, i) { return fuellen(x, (b.schritteOhne || [])[i], w); });
+    return { titel: fuellen(b.titel, b.titelOhne, w), satz: fuellen(b.satz, b.satzOhne, w), warum: b.warum || "", kurz: b.kurz || "",
+             schritt: fuellen(b.schritt, b.schrittOhne, w), schritte: schritte, umfang: UMFANG[b.umfang] || "" };
   }
   /* Was in details als Beleg lesbar ist: wenige bekannte Schluessel, als Paar Etikett + Wert. Alles
      andere bleibt in der Datenbank (Keine Entwicklertexte im UI). */
@@ -422,8 +431,8 @@
      WIRKUNG ist, nicht wie schwer. Nie "documented" fuer JS (dort nur conditional/unverified). */
   var WIRKUNG = {
     documented: { text: "Documented", tip: "The platform documents this behavior." },
-    conditional: { text: "Conditional", tip: "Applies when the platform gets the page in a certain way. The note says when." },
-    unverified: { text: "Unverified", tip: "No published test has measured this for this platform." }
+    conditional: { text: "Conditional", tip: "Conditional: applies when the platform fetches the page itself." },
+    unverified: { text: "Unverified", tip: "Unverified: no published test has measured it for this platform yet." }
   };
   /* Die Wirkung eines Befunds fuer ein Profil: { basis, effect } oder null. effect ist ein datierter
      Satz aus der Registry des Workers -- fremder Text, nur escaped zeigen. */
@@ -434,6 +443,21 @@
       if (x && str(x.profile_id) === profilId) return { basis: WIRKUNG[str(x.impact_basis)] ? str(x.impact_basis) : "", effect: str(x.effect).slice(0, 500) };
     }
     return null;
+  }
+  /* Der kurze Satz je Plattform und Wirkung (v2, Lukas: "Erklaerungen besser, nicht in jeder Quellen"). Zusammengefasst
+     aus den datierten effect-Saetzen der Registry (UMSETZUNGSPLAN 14); der datierte Satz selbst steht im Tooltip des
+     Etiketts. Grenzen wie dort: beobachtetes Verhalten, kein "cannot see", keine Zitierfolge. */
+  var WIRKUNG_KURZ = {
+    chatgpt_search: "When ChatGPT opens this page to answer a question, it has been seen reading only the initial HTML.",
+    claude_search: "When Claude opens this page, it has been seen reading only the initial HTML.",
+    perplexity_search: "When Perplexity opens this page to answer a question, it has been seen reading only the initial HTML.",
+    gemini_apps_grounding: "Gemini answers from Google's index. Pages that aren't indexed yet have been seen read as initial HTML only.",
+    google_ai_overviews: "AI Overviews use Google's index, which is built after rendering. Text can be missing until Google has rendered the page.",
+    google_ai_mode: "AI Mode uses Google's index. In one test, text added by JavaScript showed up only after the page was indexed.",
+    bing_copilot_grounding: "Copilot answers from the Bing index. Tests show mixed results for text added by JavaScript."
+  };
+  function wirkungKurz(pid, basis) {
+    return WIRKUNG_KURZ[pid] || (WIRKUNG[basis] ? WIRKUNG[basis].tip : "");
   }
   /* Sperrt der Haupttext die Aussage "Reachable"? Nach dem Bericht (Abschnitt "Reachable bleibt eine
      Aussage ueber Zugang") darf "Reachable for x of 7" dann nicht allein stehen. */
@@ -485,7 +509,7 @@
     if ((m = /^variant\.ua\.(.+)$/.exec(s))) return { name: "User agent", zusatz: m[1] };
     if ((m = /^variant\.language\.(.+)$/.exec(s))) return { name: "Language", zusatz: m[1] };
     var fest = {
-      baseline: "Page request", browser: "Browser", "extraction.raw": "Text, initial HTML", "extraction.rendered": "Text, rendered page",
+      baseline: "Page request", browser: "Browser", screenshot: "Screenshot", "extraction.raw": "Text, initial HTML", "extraction.rendered": "Text, rendered page",
       "baseline.transport": "Page request", "baseline.body": "Page content", "browser.navigation": "Browser navigation",
       "browser.initial_body": "Browser, initial HTML", "browser.rendered_dom": "Browser, rendered page",
       "extraction.baseline": "Text, initial HTML", "extraction.browser_initial": "Text, browser initial HTML",
@@ -495,6 +519,108 @@
   }
   var ERGEBNIS_BEOBACHTUNG = { observed: "Observed", measurement_error: "Measurement failed", unsupported: "Not supported",
                                not_applicable: "Not applicable", missing: "Missing" };
+
+  /* ---- Rolle je Crawler (v2): Suche, Abruf auf Anfrage, Training -------------------------------
+     Nach den Seiten der Anbieter (OpenAI, Anthropic, Perplexity, Google, Microsoft). Gehoert in die
+     Plattform-Registry des Workers; bis die sie mitliefert, steht sie hier. Ohne Eintrag: keine Rolle. */
+  var CRAWLER_ROLLE = {
+    "OAI-SearchBot": "search", "GPTBot": "training", "ChatGPT-User": "user requests",
+    "Claude-SearchBot": "search", "ClaudeBot": "training", "Claude-User": "user requests",
+    "PerplexityBot": "search", "Perplexity-User": "user requests",
+    "Googlebot": "search", "Google-Extended": "Gemini answers and training", "bingbot": "search"
+  };
+
+  /* ---- Checks als Zielzustand (v2): Name im Gutfall, Name im Befund, Bereich und ein Messwert aus
+     details. details ist heute Worker-intern (Vertragswunsch: Form festschreiben); fehlt ein Feld,
+     steht kein Wert -- nie ein geratener. */
+  var CHECK_BEREICH = [
+    { id: "zugang", name: "Access", keys: ["A1", "A2", "A3", "A4"] },
+    { id: "robots", name: "robots.txt", keys: ["B1", "B2"] },
+    { id: "direktiven", name: "Directives", keys: ["C1", "C2", "C3"] },
+    { id: "inhalt", name: "Text and rendering", keys: ["D1", "D2", "D3"] },
+    { id: "meta", name: "Address, language and metadata", keys: ["E1", "E2", "F1", "F2", "F3"] }
+  ];
+  var CHECK_ZIEL = {
+    A1: { ok: "The page loads for a normal request", nein: "The page didn't load for a normal request" },
+    A2: { ok: "Redirects end at this page", nein: "The redirects don't end at a usable page" },
+    A3: { ok: "The page shows content, not a challenge or login", nein: "The page may be a challenge, login or error page" },
+    A4: { ok: "Crawlers and languages get the same page", nein: "A crawler or language gets a different response" },
+    B1: { ok: "robots.txt allows every search crawler", nein: "robots.txt excludes a search crawler" },
+    B2: { ok: "robots.txt could be read", nein: "robots.txt couldn't be read" },
+    C1: { ok: "No noindex", nein: "The page is marked noindex" },
+    C2: { ok: "Text previews are allowed", nein: "Text previews are limited" },
+    C3: { ok: "JavaScript doesn't change the directives", nein: "JavaScript changes the directives" },
+    D1: { ok: "The initial HTML has readable main text", nein: "The initial HTML has no readable main text" },
+    D2: { ok: "No text depends on JavaScript", nein: "Some of the page text needs JavaScript" },
+    D3: { ok: "Nothing covers the content without clicks", nein: "Something may cover the content" },
+    E1: { ok: "The canonical address is this page", nein: "The canonical address is unclear" },
+    E2: { ok: "The page is in your sitemap", nein: "The page is missing from your sitemap" },
+    F1: { ok: "The language is declared", nein: "The language signals disagree" },
+    F2: { ok: "Title, description and structured data are present", nein: "Title, description or structured data are missing" },
+    F3: { ok: "All measurements were completed", nein: "Some measurements are missing" }
+  };
+  function checkWert(key, d, fmt) {
+    d = obj(d) || {};
+    fmt = fmt || function (v) { return String(v); };
+    var n, m, l;
+    switch (key) {
+      case "A1": return num(d.status) != null ? "HTTP " + d.status + (num(d.ms) != null ? " in " + fmt(Math.round(d.ms)) + " ms" : "") : "";
+      case "A2": n = num(d.weiterleitungen); return n == null ? "" : n === 0 ? "No redirects" : fmt(n) + (n === 1 ? " redirect" : " redirects") + (d.andere_domain ? ", to another domain" : "");
+      case "A3": return isArr(d.treffer) ? (d.treffer.length ? str(d.treffer.map(str).join(", ")).slice(0, 120) : "Nothing detected") : "";
+      case "A4": l = isArr(d.varianten) ? d.varianten : []; if (!l.length) return "";
+        n = l.filter(function (v) { return v && v.gleicher_body === true && v.gleicher_status === true; }).length;
+        return "Same response for " + fmt(n) + " of " + fmt(l.length) + " requests";
+      case "B1": m = obj(d.profile) || {}; l = Object.keys(m); if (!l.length) return "";
+        n = l.filter(function (k) { var e = ((m[k] || {}).ergebnisse || [])[0]; return e && e.entscheidung === "allowed"; }).length;
+        return fmt(n) + " of " + fmt(l.length) + " platforms allowed";
+      case "B2": l = isArr(d.dateien) ? d.dateien : []; if (!l.length) return "";
+        return "HTTP " + str(l[0].status) + (num(l[0].sitemaps) ? ", " + fmt(l[0].sitemaps) + (l[0].sitemaps === 1 ? " sitemap listed" : " sitemaps listed") : "");
+      case "C1": m = obj(d.profile) || {}; return Object.keys(m).length ? "Checked for Google and Bing" : "";
+      case "C2": return obj(d.profile) ? "No nosnippet, max-snippet or data-nosnippet" : "";
+      case "C3": return isArr(d.roh) && isArr(d.gerendert) ? (d.roh.length || d.gerendert.length ? "Different before and after rendering" : "Same before and after rendering") : "";
+      case "D1": n = num(d.zeichen); m = obj(d.anzahl) || {};
+        return n == null ? "" : fmt(n) + " characters" + (num(m.article) ? " in " + fmt(m.article) + " article " + (m.article === 1 ? "element" : "elements") : num(m.main) ? " in the main element" : "");
+      case "D2": return num(d.numerator) != null && num(d.denominator) ? fmt(d.numerator) + " of " + fmt(d.denominator) + " characters in the initial HTML" : "";
+      case "D3": return isArr(d.ueberlagerungen) ? (d.ueberlagerungen.length || num(d.passwortfelder) ? "Overlay or password field found" : "No overlays, paywalls or password fields") : "";
+      case "E1": l = (isArr(d.html) && d.html.length ? d.html : isArr(d.gerendert) ? d.gerendert : []);
+        return l.length && obj(l[0]) && str(l[0].aufgeloest) ? "Canonical " + str(l[0].aufgeloest).slice(0, 120) : (isArr(d.html) ? "No canonical tag" : "");
+      case "F1": return str(d.html_lang) ? str(d.html_lang) + (num(d.hreflang) ? ", " + fmt(d.hreflang) + " hreflang variants" : "") : "";
+      case "F2": m = obj(d.jsonld) || {}; l = [];
+        if (str(d.titel)) l.push("title"); if (d.beschreibung) l.push("description"); if (d.h1_roh) l.push("H1");
+        if (num(m.bloecke)) l.push(fmt(m.bloecke) + " JSON-LD " + (m.bloecke === 1 ? "block" : "blocks"));
+        return l.length ? l.join(", ").replace(/^./, function (c) { return c.toUpperCase(); }) : "";
+      case "F3": return num(d.required) != null ? fmt(d.satisfied) + " of " + fmt(d.required) + " measurements" : "";
+    }
+    return "";
+  }
+
+  /* ---- Fortschritt (get_page_audit_progress_v1, Datei 5) ------------------------------------------
+     phase nur bei running und nur fuer den laufenden Versuch. Unbekannte Werte werden nicht geraten:
+     ein Schritt, den diese Fassung nicht kennt, zaehlt wie "kein Schritt bekannt". */
+  var PHASEN_REIHE = ["start", "robots", "fetch", "render", "evaluate", "save"];
+  function zuFortschritt(x) {
+    x = obj(x);
+    if (!x || !isArr(x.runs)) return null;
+    var aus = { serverZeit: Date.parse(str(x.server_time)) || null, laeufe: {} };
+    x.runs.forEach(function (r) {
+      r = obj(r);
+      if (!r || !uuidOk(r.run_id)) return;
+      var ph = str(r.phase);
+      aus.laeufe[str(r.run_id)] = { status: str(r.status), phase: PHASEN_REIHE.indexOf(ph) >= 0 ? ph : "", phaseAt: str(r.phase_at),
+        acceptedAt: str(r.accepted_at), startedAt: str(r.started_at), errorCode: str(r.error_code), cancel: bool(r.cancel_requested) };
+    });
+    return aus;
+  }
+  /* Die Beobachtung mit dem Bildschirmfoto (slot "screenshot", kind "browser") und ob unser Browser die Seite
+     ueberhaupt geoeffnet hat (slot "browser" beobachtet). */
+  function bildVon(obs) {
+    var l = isArr(obs) ? obs : [];
+    var bild = l.filter(function (b) { return b && b.slot === "screenshot"; })[0] || null;
+    /* Geoeffnet = irgendeine Browser-Beobachtung ausser dem Foto selbst (der Worker schreibt slot "browser", aeltere
+       Fassungen browser.navigation usw.). */
+    var browser = l.some(function (b) { return b && b.kind === "browser" && b.slot !== "screenshot" && b.outcome === "observed"; });
+    return { bild: bild, browser: browser };
+  }
 
   /* ---- Fehler der RPCs -> ein Satz fuer den Nutzer: aus core (siehe STATUS oben) ---------------- */
   function fehlerSatz(erg, o) {
@@ -515,11 +641,11 @@
     zuListe: zuListe, zuDetail: zuDetail, zuQuittung: zuQuittung, zuQuota: zuQuota, zuKapazitaet: zuKapazitaet, laeuft: laeuft,
     PROFILE: PROFILE, profil: profil, modellPasst: modellPasst,
     ERGEBNIS: ERGEBNIS, STATUS: STATUS, PLAN: PLAN, LAUF_FEHLER: LAUF_FEHLER, TEIL_GRUND: TEIL_GRUND, teilSatz: teilSatz,
-    SCHWERE: SCHWERE, SCHWERE_RANG: SCHWERE_RANG, WIRKUNG: WIRKUNG, wirkung: wirkung, jsSatz: jsSatz, haupttextFehlt: haupttextFehlt,
-    CHECKS: CHECKS, CHECK: CHECK, CHECK_ZUSTAND: CHECK_ZUSTAND,
+    SCHWERE: SCHWERE, SCHWERE_RANG: SCHWERE_RANG, WIRKUNG: WIRKUNG, wirkung: wirkung, wirkungKurz: wirkungKurz, jsSatz: jsSatz, haupttextFehlt: haupttextFehlt,
+    CHECKS: CHECKS, CHECK: CHECK, CHECK_ZUSTAND: CHECK_ZUSTAND, CHECK_BEREICH: CHECK_BEREICH, CHECK_ZIEL: CHECK_ZIEL, checkWert: checkWert, CRAWLER_ROLLE: CRAWLER_ROLLE,
     BEFUNDE: BEFUNDE, befundText: befundText, befundFelder: befundFelder, belege: belege, AENDERUNG: AENDERUNG,
     METRIKEN: METRIKEN, METRIK_REIHE: METRIK_REIHE, FEHLT: FEHLT,
-    slotName: slotName, ERGEBNIS_BEOBACHTUNG: ERGEBNIS_BEOBACHTUNG,
+    slotName: slotName, ERGEBNIS_BEOBACHTUNG: ERGEBNIS_BEOBACHTUNG, PHASEN_REIHE: PHASEN_REIHE, zuFortschritt: zuFortschritt, bildVon: bildVon,
     fehlerSatz: fehlerSatz, dauerText: dauerText, fmtZahl: fmtZahl, uuidOk: uuidOk
   };
 })();

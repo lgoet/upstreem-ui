@@ -8255,6 +8255,7 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
 .up-root.ubr-root .up-ph-navitem,
 .up-root.uss-root .up-ph-navitem,
 .up-root.ush-root .up-ph-navitem,
+.up-root.upa-root .up-ph-navitem,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem {
   height: calc(var(--up-h-btn) + 16px); padding: 0 8px; position: relative; }
 .up-root.ucs-root .up-ph-navitem::before,
@@ -8263,6 +8264,7 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
 .up-root.ubr-root .up-ph-navitem::before,
 .up-root.uss-root .up-ph-navitem::before,
 .up-root.ush-root .up-ph-navitem::before,
+.up-root.upa-root .up-ph-navitem::before,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before {
   content: ""; position: absolute; top: 0; bottom: 0; left: -6px; right: -6px; }
 /* Der ERSTE Reiter reicht nach links hoechstens bis an die Kante der Gruppe -- bei einem Einzug
@@ -8273,6 +8275,7 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
 .up-root.ubr-root .up-ph-navitem:first-child::before,
 .up-root.uss-root .up-ph-navitem:first-child::before,
 .up-root.ush-root .up-ph-navitem:first-child::before,
+.up-root.upa-root .up-ph-navitem:first-child::before,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem:first-child::before { left: calc(-1 * min(6px, var(--up-ph-rand-l, 0px))); }
 /* ZWEITE RUNDE (13.10.: "Padding ganz minimal kleiner, Akzentstrich auf ganzer Laenge, nicht ueber
    die linke Grenze"): der Behaelter ist 28 hoch (--up-h-seg, die naechste Stufe unter 32) und
@@ -8280,7 +8283,7 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
    Behaelter ragte um 10 nach links in den Rand). Der Abstand zwischen den Reitern sinkt um diese
    2 x 8 von 25 auf 12 -- von Schrift zu Schrift bleiben es 28 wie vorher.
    Folge: das erste Reiterzeichen steht 8 weiter rechts als das Krumenzeichen darueber. */
-.up-root:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root, .uvb-root) .up-ph-navpille,
+.up-root:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root, .uvb-root, .upa-root) .up-ph-navpille,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navpille {
   top: 10px; bottom: 10px; }
 /* Im SCHMALEN Kopf (is-narrow, unter 768) teilen sich die Reiter die Breite (flex 1 1 0, Inhalt
@@ -8296,6 +8299,7 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
 .up-root.ubr-root.is-narrow .up-ph-nav,
 .up-root.uss-root.is-narrow .up-ph-nav,
 .up-root.ush-root.is-narrow .up-ph-nav,
+.up-root.upa-root.is-narrow .up-ph-nav,
 .up-root.uvb-root.is-narrow .up-ph-nav,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { gap: 4px; }
 .up-root.ucs-root.is-narrow .up-ph-navitem,
@@ -8304,6 +8308,7 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
 .up-root.ubr-root.is-narrow .up-ph-navitem,
 .up-root.uss-root.is-narrow .up-ph-navitem,
 .up-root.ush-root.is-narrow .up-ph-navitem,
+.up-root.upa-root.is-narrow .up-ph-navitem,
 .up-root.uvb-root.is-narrow .up-ph-navitem,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem { padding: 0 15px 0 12px; }
 /* Schmal: die Pille folgt dem gestreckten Reiter von selbst (gemessen wird sein Rechteck). */
@@ -8313,6 +8318,7 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
 .up-root.ubr-root.is-narrow .up-ph-navitem::before,
 .up-root.uss-root.is-narrow .up-ph-navitem::before,
 .up-root.ush-root.is-narrow .up-ph-navitem::before,
+.up-root.upa-root.is-narrow .up-ph-navitem::before,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before { content: none; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav::after {
   left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px)); }
@@ -8321,7 +8327,7 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
    Grundlinie muss also um genau diesen Zug weiter laufen -- gemessen am 13.10. in der
    Next.js-Huelle: Kopflinie bis 1024, Reiterlinie bis 1016, also 8 vor dem Rand. In Bubble
    dieselbe Rechnung. */
-.up-root:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root, .uvb-root) .up-ph-nav::after {
+.up-root:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root, .uvb-root, .upa-root) .up-ph-nav::after {
   left: calc(-1 * (var(--up-ph-rand-l, 0px) + var(--up-ph-kopfzug-l, 0px)));
   right: calc(-1 * (var(--up-ph-rand-r, 0px) + var(--up-ph-kopfzug-r, 0px))); }
 .up-ph-crumb { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--vc-third); }
