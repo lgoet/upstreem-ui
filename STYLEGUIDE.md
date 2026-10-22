@@ -1988,6 +1988,35 @@ Product Movement (Shopping) zeigt „Not enough history yet" seitdem über `UC.t
 Steht nur eine Einheit leer neben einer gefüllten, sitzt ihr Zustand ebenfalls mittig im ganzen
 Kasten (vorher: Balkenliste kompakt oben).
 
+### Startbereich einer Seite (Page Audit, Impact; seit 22.10.)
+
+Eine Seite, deren Liste man erst füllen muss, beginnt mit einem Startbereich statt mit einer leeren
+Tabelle. Vorbild ist Page Audit (Canvas v8, Lukas: "genau so"), die zweite Seite Impact. Er steht in
+jedem Zustand der Liste (Laden, Fehler, leer, voll), er braucht keine Daten.
+
+```
+Raster        zwei Spalten, 16 Abstand, 32 bis zur Liste darunter (Abstand zwischen Abschnitten)
+links oben    Titel 20/26/600/-0.4 (--up-fs-modaltitel, Geist heading-20) und EIN Satz 14/20, 4 dazwischen,
+              mindestens 112 hoch, senkrecht mittig, höchstens 520 breit
+links unten   Karte .up-box: Polster 16, 8 Rhythmus; Titel in der Block-Stufe (14/600), Sätze 13/1.5 muted;
+              Aktionen unten rechts, die Hauptaktion als .up-btn-pri mit arrowRightLong, eine zweite davor als
+              .up-btn-sec, 8 auseinander
+rechts        über beide Zeilen eine stille Grafik: feste Maße um die Mitte der Fläche, Ränder per Maske
+              (Deckkraft, keine Farbe), Linien in der Textfarbe, Kacheln in --vc-bg mit --vc-border und --up-e-1;
+              gestaffeltes Erscheinen ab Deckkraft .3 (bleibt sichtbar, wenn die Zeitleiste nicht läuft), ohne
+              Bewegung bei reduzierter Bewegung. Keine Zahl und kein Wort darin.
+is-narrow     untereinander, die Grafik fällt weg
+leere Liste   UC.leerHtml ohne Knopf – die Aktion steht schon im Startbereich
+```
+
+| Seite | Karte | Grafik |
+|---|---|---|
+| Page Audit | "What an audit checks", ein Absatz, "Run Audit" | Feld aus Browserfenstern, eines mit dem Zeichen der Prüfung |
+| Impact | "Two ways to track": beide Arten mit Zeichen und Namen ihres Abschnitts darunter (cells, globe); "Track Citations", "Track an Event" öffnen den Dialog direkt bei der Art | zwei Kurven wie in "How Impact works", gleichauf bis zum Event-Pin, danach auseinander; über der steigenden drei zitierte Seiten als Logoplatten |
+
+Die Maße stehen noch in beiden Dateien (`.upa-start*`, `.uev-start*`), weil core in der Runde vom
+22.10. nicht angefasst wurde; Prompt Research baut dasselbe. Ein gemeinsamer Baustein in core ist offen.
+
 ---
 
 ## 9b. Das Ladebild langer Läufe (`UC.makeLadebild`, Variante A seit 16.10.)

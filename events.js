@@ -753,8 +753,11 @@
     "e.g. Help center pages": "z. B. Seiten des Hilfecenters", "What do you want to keep an eye on?": "Was möchtest du im Blick behalten?",
     "The type can't be changed later": "Die Art lässt sich später nicht ändern",
     "Citation Tracking created": "Citation Tracking erstellt", "Created {date}": "Erstellt am {date}", "All active": "Alle aktiven",
-    "Measure what a change did with Event Tracking, or watch which of your pages AI answers cite with Citation Tracking.":
-      "Miss mit Event Tracking, was eine Änderung bewirkt hat, oder beobachte mit Citation Tracking, welche deiner Seiten KI-Antworten zitieren.",
+    /* Startbereich der Uebersicht (22.10.); die Saetze der Karte stehen oben, die Knoepfe unten bei "Track an Event". */
+    "Measure the impact of your changes": "Miss die Wirkung deiner Änderungen",
+    "See how launches, campaigns and new pages change your visibility and citations in AI answers.":
+      "Sieh, wie Launches, Kampagnen und neue Seiten deine Sichtbarkeit und deine Zitate in KI-Antworten verändern.",
+    "What you track appears here.": "Was du trackst, erscheint hier.",
     "Pages and domains you watch. Global share is measured across all your active prompts.": "Seiten und Domains, die du beobachtest. Der Global Share wird über alle deine aktiven Prompts gemessen.",
     "Previous {n} days": "Vorherige {n} Tage", "Last {n} days": "Letzte {n} Tage",
     "No matching entries": "Keine passenden Einträge",
@@ -2014,13 +2017,89 @@
     var ART_TITEL = { event: "Event Tracking", watch: "Citation Tracking" };
     /* Dieselben Zeichen wie auf den Karten im Dialog "Create" (KIND_WAHL): cells fuer Event Tracking, globe fuer Citation Tracking. */
     var ABSCHNITT_ZEICHEN = { event: "cells", watch: "globe" };
+
+    /* ---- STARTBEREICH (22.10., Vorbild Page Audit v2: startGeruest in page-audit.js) -------------------------------------------
+       Oben links Ueberschrift und EIN Satz, darunter eine kleinere Karte mit der genaueren Erklaerung und den Aktionen unten rechts,
+       rechts ueber beide Zeilen die Grafik. Die Karte nennt beide Arten (Lukas 22.10.: "Beide Arten in einer Karte"), je mit dem
+       Zeichen und Namen ihres Abschnitts darunter; unten rechts "Track Citations" (zweitrangig) und "Track an Event" (Hauptaktion),
+       beide oeffnen den Dialog direkt bei ihrer Art, ohne die Wahl davor. Die Karten der Eintraege bleiben darunter (Lukas: "Karten
+       bleiben"). Steht in jedem Zustand der Uebersicht -- Laden, Fehler, leer --, er braucht keine Daten. */
+    var START_ARTEN = [
+      { k: "event", satz: "Measure what a change did. Compares your AI results before and after a date, against a control group of prompts you didn't change." },
+      { k: "watch", satz: "Keep an eye on pages and domains. See which of them AI answers cite, across all your prompts, including new ones. No before-and-after test." }
+    ];
+    function startGeruest() {
+      return '<section class="uev-start">' +
+        '<div class="uev-start-text"><h2 class="up-heading up-sec-h">' + esc(t("Measure the impact of your changes")) + '</h2>' +
+          '<p class="up-sec-sub">' + esc(t("See how launches, campaigns and new pages change your visibility and citations in AI answers.")) + '</p></div>' +
+        '<div class="up-box uev-startkarte">' +
+          '<span class="uev-sk-titel">' + esc(t("Two ways to track")) + '</span>' +
+          '<div class="uev-sk-arten">' + START_ARTEN.map(function (a) {
+            return '<div class="uev-sk-art"><span class="uev-sk-ic" aria-hidden="true">' + UC.icon(ABSCHNITT_ZEICHEN[a.k], 1.8) + '</span>' +
+              '<span class="uev-sk-name">' + esc(t(ART_TITEL[a.k])) + '</span><p class="uev-sk-satz">' + esc(t(a.satz)) + '</p></div>';
+          }).join("") + '</div>' +
+          '<div class="uev-sk-fuss">' +
+            '<button type="button" class="up-btn-sec" data-uev-neu="watch">' + esc(t("Track Citations")) + '</button>' +
+            '<button type="button" class="up-btn-pri uev-sk-los" data-uev-neu="event"><span>' + esc(t("Track an Event")) + '</span>' + UC.icon("arrowRightLong", 2) + '</button>' +
+          '</div>' +
+        '</div>' +
+        startGrafik() +
+      '</section>';
+    }
+    /* DIE GRAFIK: das Bild der Seite im Grossen, in der Sprache der Zeichnung in "How Impact works" (seiteZeichnung): zwei Kurven,
+       die bis zum Event gleichauf laufen und danach auseinandergehen, die betroffene durchgezogen, die Vergleichsgruppe gestrichelt;
+       der Pin des Events als Kachel (40, Radius nach Hoehe 8, Zeichen von Event Tracking) mit punktierter Linie wie im echten Chart,
+       die Zeit danach ganz leise hinterlegt, oben und unten selbst auslaufend (eine gleichmaessige Flaeche las sich im Dunkeln als
+       Kasten: 16 gegen 10 der Seite, nur 44 px Maske dazwischen, gemessen im Bild 22.10.). Ueber der steigenden Kurve erscheinen drei zitierte Seiten als Logoplatten (28,
+       Radius 6, wie .up-stack) -- das ist Citation Tracking. Keine Zahl und kein Wort: niemand soll ein Beispiel fuer echte Daten
+       halten. Feste Masse um die Mitte der Flaeche wie das Fensterfeld von Page Audit (Feld 760 x 340), um 60 nach links versetzt,
+       damit das Danach mit den Platten in der Mitte steht und nicht im Verlauf der Maske (events.css). Erscheinen gestaffelt wie
+       dort. Die Kurven sind vorgerechnet (Catmull-Rom als Bezier, wie VIS_BET), die Platten sitzen auf Stuetzpunkten der Kurve. */
+    var START_BET = "M0,232 C12.7,231.3 50.7,227.7 76,228 C101.3,228.3 126.7,233.8 152,234 C177.3,234.2 202.7,229.2 228,229 C253.3,228.8 278.7,232.8 304,233 C329.3,233.2 357.3,233.5 380,230 C402.7,226.5 420,219.3 440,212 C460,204.7 480,194.7 500,186 C520,177.3 540,168 560,160 C580,152 598.3,145 620,138 C641.7,131 666.7,123.7 690,118 C713.3,112.3 748.3,106.3 760,104";
+    var START_VGL = "M0,246 C12.7,245.5 50.7,242.7 76,243 C101.3,243.3 126.7,247.8 152,248 C177.3,248.2 202.7,244.2 228,244 C253.3,243.8 278.7,246.8 304,247 C329.3,247.2 357.3,245.2 380,245 C402.7,244.8 420,246.3 440,246 C460,245.7 480,243.2 500,243 C520,242.8 540,245.2 560,245 C580,244.8 598.3,242.2 620,242 C641.7,241.8 666.7,243.8 690,244 C713.3,244.2 748.3,243.2 760,243";
+    /* Die zitierten Seiten: Stuetzpunkt der Kurve (x, y im Feld), die Platte mit ihrer Mitte 48 darueber. */
+    var START_SEITEN = [{ x: 440, y: 212, ic: "fileText" }, { x: 500, y: 186, ic: "globe" }, { x: 560, y: 160, ic: "link" }];
+    function startGrafik() {
+      var hilfe = [50, 110, 170, 230].map(function (y) {
+        return '<line x1="0" y1="' + y + '" x2="760" y2="' + y + '" stroke="currentColor" stroke-opacity=".07" stroke-dasharray="2 4"/>';
+      }).join("");
+      var seiten = START_SEITEN.map(function (s, i) {
+        return '<g class="uev-sg-teil" style="animation-delay:' + (240 + i * 60) + 'ms">' +
+          '<line x1="' + s.x + '" y1="' + (s.y - 34) + '" x2="' + s.x + '" y2="' + (s.y - 5) + '" stroke="currentColor" stroke-opacity=".4" stroke-width="1.5" stroke-dasharray="0.5 4" stroke-linecap="round"/>' +
+          '<circle cx="' + s.x + '" cy="' + s.y + '" r="3.5" fill="var(--vc-bg)" stroke="currentColor" stroke-width="1.5"/></g>';
+      }).join("");
+      var platten = START_SEITEN.map(function (s, i) {
+        return '<span class="uev-sg-platte uev-sg-teil" style="left:' + (s.x - 14) + 'px;top:' + (s.y - 62) + 'px;animation-delay:' + (240 + i * 60) + 'ms">' + UC.icon(s.ic, 1.8) + '</span>';
+      }).join("");
+      return '<div class="uev-startgrafik" aria-hidden="true"><div class="uev-sg-feld">' +
+        '<svg class="uev-sg-svg" viewBox="0 0 760 340" width="760" height="340">' +
+          '<defs><linearGradient id="uevStartFlaeche" x1="0" y1="0" x2="0" y2="1">' +
+            '<stop offset="0" stop-color="currentColor" stop-opacity=".1"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/>' +
+          '</linearGradient><linearGradient id="uevStartDanach" x1="0" y1="0" x2="0" y2="1">' +
+            '<stop offset="0" stop-color="currentColor" stop-opacity="0"/><stop offset=".35" stop-color="currentColor" stop-opacity=".03"/>' +
+            '<stop offset=".85" stop-color="currentColor" stop-opacity=".03"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/>' +
+          '</linearGradient></defs>' +
+          '<g class="uev-sg-teil"><rect x="380" y="0" width="380" height="340" fill="url(#uevStartDanach)"/>' + hilfe +
+            '<line x1="0" y1="290.5" x2="760" y2="290.5" stroke="currentColor" stroke-opacity=".16"/></g>' +
+          '<g class="uev-sg-teil" style="animation-delay:60ms">' +
+            '<path d="' + START_BET + ' L760,290 L0,290 Z" fill="url(#uevStartFlaeche)"/>' +
+            '<path d="' + START_VGL + '" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"/>' +
+            '<path d="' + START_BET + '" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/></g>' +
+          '<g class="uev-sg-teil" style="animation-delay:120ms"><line x1="380" y1="116" x2="380" y2="290" stroke="currentColor" stroke-opacity=".4" stroke-width="1.5" stroke-dasharray="0.5 4" stroke-linecap="round"/></g>' +
+          seiten +
+        '</svg>' +
+        '<span class="uev-sg-pin uev-sg-teil" style="animation-delay:120ms">' + UC.icon(ABSCHNITT_ZEICHEN.event, 1.8) + '</span>' +
+        platten +
+      '</div></div>';
+    }
+
     function baueUebersicht() {
       ab = {};
       root.classList.remove("is-watch-ansicht");
       elAktion.innerHTML = anleitungKnopf() + seitenInfoKnopf() +
         '<button class="up-ph-addbtn up-export uev-anlegen" type="button">' + UC.icon("plus", 1.8) +
           '<span data-i18n="Create">' + esc(t("Create")) + '</span></button>';
-      elMain.innerHTML = ABSCHNITTE.map(function (art) {
+      elMain.innerHTML = startGeruest() + ABSCHNITTE.map(function (art) {
         return '<section class="uev-abschnitt" data-art="' + art + '">' +
           '<div class="up-head uev-head">' +
             '<span class="up-heading"><span class="uev-head-ic" aria-hidden="true">' + UC.icon(ABSCHNITT_ZEICHEN[art], 1.8) + '</span><span class="up-head-label">' + esc(t(ART_TITEL[art])) + '</span>' +
@@ -2350,9 +2429,9 @@
       var alle = (UC.getEvents ? UC.getEvents() : []).filter(function (ev) { return !state.geloescht[ev.id]; });
       if (!alle.length) {
         ABSCHNITTE.forEach(function (art) { zahlSetzen(art, null); abschnittZeigen(art, false); });
-        gesamtLeer(UC.leerHtml({ icon: "cells", titel: "Nothing here yet",
-          text: "Measure what a change did with Event Tracking, or watch which of your pages AI answers cite with Citation Tracking.",
-          knopf: "Create", knopfAttr: "data-uev-create" }));
+        /* Wie die leere Liste in Page Audit: Erklaerung und Aktionen stehen schon im Startbereich darueber, hier nur, dass die
+           Eintraege an dieser Stelle erscheinen werden -- ohne Knopf und ohne die Saetze der Karte ein zweites Mal. */
+        gesamtLeer(UC.leerHtml({ icon: "cells", titel: "Nothing here yet", text: "What you track appears here." }));
         return;
       }
       gesamtLeer("");
@@ -5119,6 +5198,9 @@
       var pas = e.target.closest("[data-pa-start]");
       if (pas) { paStarten(pas); return; }
       if (e.target.closest(".uev-anlegen, [data-uev-create]")) { e.preventDefault(); popupArt(); return; }
+      /* Die Knoepfe der Startkarte: die Art steht schon fest, also gleich der Dialog der Art (wie "weiter" in popupArt). */
+      var neu = e.target.closest("[data-uev-neu]");
+      if (neu) { e.preventDefault(); popupAnlegen(null, neu.getAttribute("data-uev-neu") === "watch" ? "watch" : "event"); return; }
       if (e.target.closest(".uev-zurueck")) { zurUebersicht(true); return; }
       var zm = e.target.closest("[data-zm]");
       if (zm) { var zw = zm.getAttribute("data-zm"); state.zielMetrik = zw === "abs" || zw === "urls" ? zw : "share"; persist(); zielMetrikSetzen(); renderZiele(); return; }
