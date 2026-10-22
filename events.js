@@ -2127,7 +2127,20 @@
     }
     /* Einen Schalter stellen: sichtbar nur mit GRAN_DA; aktiv die gezeigte Stufe (laedt eine neue, die gewaehlte); gesperrt nach der
        Spanne der Reihe (core sperrt nie die aktive). reihe: die Punkte, die das Chart zeigt (oder zuletzt zeigte). */
-    function granSchalterStellen(el, reihe, g) {
+    /* DAS FENSTER DES CHARTS fuer die Freigabe (22.10., core granFensterTage): die Wochen- und Monatsbuckets beginnen am Montag bzw.
+       Monatsersten VOR dem Zeitraum, ihre Punkte allein ergaeben eine laengere Spanne als die Tagesreihe ("last 90 days" als Monate
+       122 Tage, Day gesperrt). Mit dem Fenster rechnet core in jeder Stufe dieselbe Spanne. Event Tracking: vorher bis zum letzten Tag
+       des Verlaufs (wie v_bf .. v_tl der Analyse); Citation Tracking: das letzte Fenster (wie die Buckets und die URL-Reihe). */
+    function reiheFenster(a, nurLetztes) {
+      var w = a && a.windows;
+      if (!w) return null;
+      if (nurLetztes) return w.requested_after_from && w.effective_after_to ? { von: w.requested_after_from, bis: w.effective_after_to } : null;
+      var bis = w.effective_post_to || w.effective_after_to, ev = String(w.event_date || a.event_date || "").slice(0, 10);
+      if (!w.before_from || !bis) return null;
+      if (ev && ev > String(bis).slice(0, 10)) bis = ev;
+      return { von: w.before_from, bis: bis };
+    }
+    function granSchalterStellen(el, reihe, g, fenster) {
       if (!el) return;
       var da = granDa();
       el.hidden = !da;
@@ -2136,7 +2149,7 @@
         var an = b.getAttribute("data-gran") === g;
         b.classList.toggle("is-active", an); b.setAttribute("aria-pressed", String(an));
       });
-      if (UC.granAvailability) UC.granAvailability(el, isArr(reihe) ? reihe : [], g);
+      if (UC.granAvailability) UC.granAvailability(el, isArr(reihe) ? reihe : [], g, undefined, fenster || undefined);
       if (UC.segJetzt) { try { UC.segJetzt(el); } catch (e) {} }
     }
     /* Ein Klick: gesperrt bleibt gesperrt (auch per Tastatur), dieselbe Stufe tut nichts. Liegt die Analyse der Stufe schon vor (vorher
@@ -3533,7 +3546,7 @@
       var a = dieReihe(), k = dieAnalyse();
       segSetzen();
       granSchalterStellen(elMain.querySelector(".uev-chartwerkzeuge .uev-gran"),
-        a ? a.trend : (k && k.trend), a ? reiheGran(a, a.trend) : state.gran);
+        a ? a.trend : (k && k.trend), a ? reiheGran(a, a.trend) : state.gran, reiheFenster(a || k, false));
       if (!a) { if (state.analyseFehler && !state.analyseLaden) linie.meldung(t("This event could not be loaded.")); else linie.skeleton(); return; }
       var tr = isArr(a.trend) ? a.trend : [];
       if (!tr.length) { linie.empty(); return; }
@@ -4228,7 +4241,7 @@
            mit einer Zeile im Fuss wie unten. */
         var fehler = state.analyseFehler && !state.analyseLaden;
         kpis.innerHTML = fehler ? "" : kacheln.map(function () { return UC.kpiKarteSkelett("uev-kpi", { fuss: 1 }); }).join("");
-        granSchalterStellen(grEl, [], state.gran);
+        granSchalterStellen(grEl, [], state.gran, null);
         zielWerkzeugeStellen(sek);
         if (linie2) { if (fehler) linie2.meldung(t("This event could not be loaded.")); else linie2.skeleton(); }
         platz.innerHTML = fehler ? "" : '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
@@ -4295,7 +4308,7 @@
       }
       sek.__gran = rg;
       /* Im Modus URL Share stellt urlReiheZeigen den Schalter danach noch einmal nach der Reihe der URLs (sie traegt ihre eigene Stufe). */
-      granSchalterStellen(grEl, tage || (isArr(z.daily) ? z.daily : []), rg);
+      granSchalterStellen(grEl, tage || (isArr(z.daily) ? z.daily : []), rg, reiheFenster(ar || a, wz));
       zielWerkzeugeStellen(sek);
       if (linie2 && !tage) {
         if (state.analyseFehler && !state.analyseLaden) linie2.meldung(t("This event could not be loaded.")); else linie2.skeleton();
@@ -4424,13 +4437,14 @@
       var grEl = zs ? zs.querySelector(".uev-zielwerkzeuge .uev-gran") : null;
       /* Der Schalter nach dem, was zu sehen ist; waehrend die Reihe der gewaehlten Stufe laedt, die gewaehlte. */
       if (!d || dg !== soll) {
-        granSchalterStellen(grEl, tage, soll);
+        granSchalterStellen(grEl, tage, soll, reiheFenster(dieReihe() || dieAnalyse(), true));
         if (rec.fehler) linie.meldung(t("The URL lines couldn't be loaded.")); else linie.skeleton();
         return;
       }
       var reihe = mitSummen ? d.totals : tage;
       if (zs) zs.__gran = dg;
-      granSchalterStellen(grEl, reihe, dg);
+      /* Das Fenster der Lieferung (date_from, date_to: das letzte Fenster, dieselben Tage wie die Buckets). */
+      granSchalterStellen(grEl, reihe, dg, d.date_from && d.date_to ? d : reiheFenster(dieReihe() || dieAnalyse(), true));
       if (!d.urls.length) { linie.empty({ text: t("No URL was cited in this period.") }); return; }
       var je = {};
       d.points.forEach(function (p) { if (!p) return; var u = String(p.url || ""); (je[u] || (je[u] = {}))[String(p.day || "").slice(0, 10)] = num(p.citations) || 0; });

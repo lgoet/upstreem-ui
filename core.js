@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261194;
+  var BUILD = 20261195;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -27874,7 +27874,28 @@
     var g = p ? normGran(p.granularity != null ? p.granularity : p.gran) : null;
     return g || granAusDaten(series);
   }
-  function granRangeDays(series){
+  /* DAS FENSTER STATT DER PUNKTE (22.10., Impact). Regel 1 oben setzt voraus, dass Tages- und Wochenreihe
+     desselben Zeitraums dieselbe Spanne ergeben. Das gilt nur, solange ein Punkt am Anfang des Zeitraums
+     steht. Liefert die Datenbank Buckets mit dem Datum ihres Beginns (Woche ab Montag, Monat ab dem 1.,
+     wie performance_company_chart_v1 und seit dem 22.10. Impact), beginnt der erste Bucket bis zu 6 bzw.
+     30 Tage VOR dem Zeitraum: "last 90 days" kam als Wochenreihe auf 98, als Monatsreihe auf 122 Tage,
+     Day war gesperrt, waehrend die Tagesreihe (90) es freigab -- ein Klick kippte die Freigabe wieder,
+     und Day war aus Woche oder Monat nicht mehr zu erreichen.
+     Darum nimmt die Freigabe auf Wunsch das FENSTER: fenster = { von, bis } oder die Lieferung selbst
+     ({ date_from, date_to }). Dann ist die Spanne die Zahl der Kalendertage im Fenster, beide Enden
+     mitgezaehlt (Kalendertage wie bei der Startstufe, granKalendertag, eine Zeitumstellung verschiebt
+     nichts) -- also genau die Spanne der Tagesreihe desselben Zeitraums, in jeder Stufe gleich. Ohne
+     fenster (alle uebrigen Schalter) bleibt alles wie bisher: erster bis letzter Punkt plus ein Schritt. */
+  function granFensterTage(fenster){
+    if (!fenster || typeof fenster !== "object") return null;
+    var a = granKalendertag(fenster.von != null ? fenster.von : fenster.date_from);
+    var b = granKalendertag(fenster.bis != null ? fenster.bis : fenster.date_to);
+    if (isNaN(a) || isNaN(b)) return null;
+    return Math.round(Math.abs(b - a) / 86400000) + 1;
+  }
+  function granRangeDays(series, fenster){
+    var ft = granFensterTage(fenster);
+    if (ft != null) return ft;
     var tage = granTage(series);
     if (!tage.length) return 0;
     var a = Date.parse(tage[0]), b = Date.parse(tage[tage.length - 1]);
@@ -27921,8 +27942,9 @@
 
   /* sel: die Knoepfe des Schalters. Ohne Angabe .vc-gran-btn (Visibility Chart, Brand Detail,
      Domain Detail, Brands Overview); der Combo Chart traegt .cc-gran-btn. */
-  function granAvailability(root, series, aktuell, sel){
-    var spanne = granRangeDays(series);
+  /* fenster (optional, 22.10.): siehe granFensterTage -- nur wer es mitgibt, bekommt die Spanne des Fensters. */
+  function granAvailability(root, series, aktuell, sel, fenster){
+    var spanne = granRangeDays(series, fenster);
     var btns = root ? [].slice.call(root.querySelectorAll(sel || ".vc-gran-btn")) : [];
     aktuell = normGran(aktuell) || "day";
     btns.forEach(function(bn){
