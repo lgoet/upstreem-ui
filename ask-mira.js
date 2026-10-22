@@ -323,7 +323,7 @@
     realtime_resubscribe: 1, more_chats: 1, rename_chat: 1, delete_chat: 1, pin_chat: 1,
     unpin_chat: 1, move_chat: 1, create_project: 1, create_project_with_chat: 1,
     rename_project: 1, delete_project: 1, settings_change: 1, export_pdf: 1,
-    voice: 1, voice_start: 1, voice_cancel: 1, voice_error: 1 };
+    voice: 1, voice_start: 1, voice_cancel: 1, voice_error: 1, action: 1 };
   function amBfn(name){
     if (amLokal && AM_LOKAL[name]){
       return function(wert){
@@ -1461,6 +1461,8 @@
        ein Klick quittiert nur, wie beim Kopieren (siehe quittieren). */
     var up = '<button class="am-act-btn" type="button" data-act="up" aria-label="Good response" data-tip="Good response">'+ICON.thumbsUp+'</button>';
     var down = '<button class="am-act-btn" type="button" data-act="down" aria-label="Bad response" data-tip="Bad response">'+ICON.thumbsDown+'</button>';
+    /* Antworten des neuen Wegs ohne Daumen (Plan Abschnitt 4: "Bewusst nicht uebernommen: Daumen hoch/runter"). */
+    if (hatBloecke(m)) return '<div class="am-msg-actions">'+exportBtn+copyBtn+'</div>';
     return '<div class="am-msg-actions">'+exportBtn+copyBtn+up+down+'</div>';
   }
 
@@ -2374,10 +2376,492 @@
       }
     })(root);
   }
+  /* ================= ANTWORTEN ALS BLOECKE (P2, 22.10.) =====================================
+     Plan bubble/mira_agent_22_10/UMSETZUNGSPLAN.md, Q16. Antworten des neuen Wegs (upstreem-app
+     /api/mira) kommen nicht als fertiges HTML (content_html aus n8n), sondern als Bloecke in
+     mira_chat_message.blocks (Form: upstreem-app lib/mira/bloecke.ts):
+       text         Markdown mit Bezuegen [Label](ref:b2)
+       table        { head, rows }, Zellen Markdown
+       card         Erklaerkarte { title, text }: kleiner Titel oben links, Kopieren rechts (Q5)
+       chart        { kind line|bar|doughnut, labels, series, unit, decimals }; Zahlen nur aus
+                    Werkzeugdaten (Q28, upstreem-app lib/mira/chart.ts)
+       action       Aktionskarte (upstreem-app mira/AKTIONSKARTE.md)
+       opportunity  { opportunity_id }: die Karte aus opportunities[] der Nachricht
+       refs         die Bezuege { id, type, entity_id, ... }
+       followups    Folgefragen (gezeichnet wie bisher aus actions[])
+     Gezeichnet wird in DIESELBEN Formen wie das HTML der alten Antworten: ein Bezug wird ein
+     span[data-mira-entity-type] (decorateEntitySpans macht daraus den Chip, der Klick oeffnet den
+     Drawer bzw. das URL-Popover), eine Tabelle steht im .am-table-scroll, eine ganz fette Zeile wird
+     Ueberschrift (promoteStrongHeadings). Alte und neue Antworten sehen so gleich aus, und es gibt
+     keinen zweiten Klickweg. Aus dem Modelltext wird NIE HTML uebernommen: alles geht durch esc(),
+     Links nur mit http(s). */
+  var BLK_STR = {
+    en: {
+      copy: 'Copy', chartLeer: 'This chart has no data.',
+      zustand: { running: 'Running', done: 'Done', failed: 'Failed', undone: 'Undone', blocked: 'Not available', expired: 'Expired' },
+      start: { page_audit: 'Run Audit', prompt_research: 'Start Research', track_brand: 'Track brand' },
+      oeffnen: { page_audit: 'Open audit', prompt_research: 'Open research' },
+      ergebnis: 'View result', marke: 'Open brand', undo: 'Undo',
+      einheit: { page_audit: ['Page Audit', 'Page Audits'], prompt_research: ['research', 'researches'], brand_slot: ['brand slot', 'brand slots'] },
+      zeitraum: { week: 'this week', day: 'today', month: 'this month', plan: 'on your plan' },
+      kosten: 'Uses {n} of your {r} remaining {einheit} {zeitraum}'
+    },
+    de: {
+      copy: 'Kopieren', chartLeer: 'Für diesen Chart gibt es keine Daten.',
+      zustand: { running: 'Läuft', done: 'Erledigt', failed: 'Fehlgeschlagen', undone: 'Rückgängig gemacht', blocked: 'Nicht verfügbar', expired: 'Abgelaufen' },
+      start: { page_audit: 'Audit starten', prompt_research: 'Research starten', track_brand: 'Marke tracken' },
+      oeffnen: { page_audit: 'Audit öffnen', prompt_research: 'Research öffnen' },
+      ergebnis: 'Ergebnis ansehen', marke: 'Marke öffnen', undo: 'Rückgängig',
+      einheit: { page_audit: ['Page Audit', 'Page Audits'], prompt_research: ['Research', 'Researches'], brand_slot: ['Markenplatz', 'Markenplätzen'] },
+      zeitraum: { week: 'diese Woche', day: 'heute', month: 'diesen Monat', plan: 'in deinem Tarif' },
+      kosten: 'Verbraucht {n} von {r} verbleibenden {einheit} {zeitraum}'
+    }
+  };
+  function BL(){ return BLK_STR[lang] || BLK_STR.en; }
+  function blkArr(v){ return Array.isArray(v) ? v : []; }
+  function blkObj(v){ return v && typeof v === 'object' && !Array.isArray(v) ? v : null; }
+  function blkStr(v){ return v == null || typeof v === 'object' ? '' : String(v); }
+
+  /* Die Bezuege einer Antwort, je Kuerzel: aus dem refs-Block, waehrend des Laufs aus dem Stream. */
+  function blkRefs(blocks){
+    var map = {};
+    blkArr(blocks).forEach(function(b){
+      if (!blkObj(b) || b.type !== 'refs') return;
+      blkArr(b.items).forEach(function(r){ if (blkObj(r) && blkStr(r.id)) map[blkStr(r.id)] = r; });
+    });
+    return map;
+  }
+  /* Marke aus dem Store der App (setUpstreemBrands): Logo, Domain und Farbe wie ueberall. */
+  function blkMarke(id){
+    var k = window.UpstreemCore;
+    if (!id || !k || !k.getBrands) return null;
+    var l = []; try { l = k.getBrands() || []; } catch(e){}
+    for (var i = 0; i < l.length; i++){ if (l[i] && String(l[i].company_id) === String(id)) return l[i]; }
+    return null;
+  }
+  /* Bezuege des neuen Wegs tragen kein Bild (die DB speichert keins): das Zeichen kommt hier dazu,
+     wie die App es sonst zeigt -- Marken mit ihrem Logo aus dem Store, Seiten und Domains mit dem
+     Favicon. */
+  function blkLogo(r){
+    var k = window.UpstreemCore, t = blkStr(r.type);
+    if (t === 'brand' || t === 'competitor'){
+      var m = blkMarke(r.company_id || r.entity_id);
+      if (m && m.logo_url) return String(m.logo_url);
+      var d = r.domain || (m && m.domain);
+      return d && k && k.faviconUrl ? k.faviconUrl(d, 64) : '';
+    }
+    if (t === 'url' || t === 'domain') return k && k.faviconUrl ? k.faviconUrl(r.domain || r.entity_url || r.entity_id, 64) : '';
+    return '';
+  }
+  /* Antworten tragen im Titel "Modell Tag" (upstreem-app lib/mira/bezuege.ts); das Logo kommt aus
+     askMiraSetModels, gesucht nach Schluessel und angezeigtem Namen. */
+  function blkModellSchluessel(titel){
+    var t = String(titel || '').replace(/\s+\d{4}-\d{2}-\d{2}.*$/, '').trim().toLowerCase();
+    if (!t || !S.models) return '';
+    if (S.models[t]) return t;
+    for (var k in S.models){
+      if (!Object.prototype.hasOwnProperty.call(S.models, k)) continue;
+      var m = S.models[k] || {};
+      var n = String(m.display_name || m.name || m.label || '').trim().toLowerCase();
+      if (n && n === t) return k;
+    }
+    return '';
+  }
+  /* Bezuege -> Eintraege in der Form von evidence_items, wie decorateEntitySpans sie liest. */
+  function blkItems(refs, evidence){
+    var aus = [];
+    Object.keys(refs).forEach(function(id){
+      var r = refs[id], t = blkStr(r.type);
+      var logo = blkLogo(r);
+      var it = { type: t, entity_id: blkStr(r.entity_id), title: blkStr(r.title), subtitle: '',
+        company_id: blkStr(r.company_id), prompt_id: blkStr(r.prompt_id), prompt_run_id: blkStr(r.prompt_run_id),
+        domain: blkStr(r.domain), icon_url: logo, favicon_url: logo };
+      if (t === 'url'){ it.entity_url = blkStr(r.entity_url || r.entity_id); it.entity_key = it.entity_url; it.url = it.entity_url; }
+      if (t === 'domain'){ it.entity_key = blkStr(r.entity_id); it.domain = it.domain || it.entity_key; }
+      if (t === 'response') it.model = blkModellSchluessel(r.title);
+      aus.push(it);
+    });
+    /* Die gespeicherten Zeilen (evidence_items) liefern die Kennung des Bezugs (data-ev-id). */
+    blkArr(evidence).forEach(function(e){
+      if (!e || typeof e !== 'object') return;
+      for (var i = 0; i < aus.length; i++){
+        var a = aus[i];
+        if (a.type === String(e.type || '') && ((e.entity_id && a.entity_id === String(e.entity_id)) ||
+            (e.entity_url && a.entity_url === String(e.entity_url)) || (e.entity_key && (a.entity_key || a.entity_id) === String(e.entity_key)))){
+          if (e.id && !a.id) a.id = String(e.id);
+          break;
+        }
+      }
+    });
+    return aus;
+  }
+
+  /* ---- Markdown, eng: nur was der Agent schreibt (upstreem-app lib/mira/prompt.ts) ---- */
+  function blkSpan(label, r){
+    var t = blkStr(r.type);
+    var a = ' data-mira-entity-type="' + escAttr(t) + '"';
+    if (t === 'url') a += ' data-mira-entity-url="' + escAttr(r.entity_url || r.entity_id) + '"';
+    else if (t === 'domain') a += ' data-mira-entity-key="' + escAttr(r.entity_id) + '"';
+    else a += ' data-mira-entity-id="' + escAttr(r.entity_id) + '"';
+    if (r.domain) a += ' data-mira-domain="' + escAttr(r.domain) + '"';
+    return '<span' + a + '>' + esc(label) + '</span>';
+  }
+  /* Hervorhebungen (Paritaetsliste "Sentiment- und Quellen-Hervorhebung"): {+...+} positiv, {-...-}
+     negativ, {~...~} wahrscheinliche Quelle, {?...?} unklare Quelle -- dieselben Spans wie im alten
+     HTML, also dieselben Farben. Die alten Marker ([[POSITIVE_SPAN_START]] ...) gelten auch. */
+  var BLK_HL = { '+': ['data-mira-sentiment', 'positive'], '-': ['data-mira-sentiment', 'negative'],
+                 '~': ['data-mira-source-signal', 'likely'], '?': ['data-mira-source-signal', 'unclear'] };
+  var BLK_ALT = /\[\[(POSITIVE_SPAN|NEGATIVE_SPAN|SOURCE_SIGNAL|UNCLEAR_SOURCE)_START\]\]([\s\S]*?)\[\[\1_END\]\]/g;
+  var BLK_ALT_ZEICHEN = { POSITIVE_SPAN: '+', NEGATIVE_SPAN: '-', SOURCE_SIGNAL: '~', UNCLEAR_SOURCE: '?' };
+  function blkInline(s, refs){
+    s = String(s == null ? '' : s).replace(BLK_ALT, function(_m, art, innen){ var z = BLK_ALT_ZEICHEN[art]; return '{' + z + innen + z + '}'; });
+    var re = /\[([^\]\n]{1,300})\]\(ref:([a-z]\d{1,5})\)|\[([^\]\n]{1,300})\]\((https?:\/\/[^\s)]{1,2000})\)|\*\*([^*\n]+?)\*\*|__([^_\n]+?)__|\*([^*\s][^*\n]*?)\*|`([^`\n]+)`|\{([+\-~?])([^{}\n]{1,600}?)\9\}/g;
+    var aus = '', i = 0, m;
+    while ((m = re.exec(s))){
+      aus += esc(s.slice(i, m.index));
+      if (m[1] !== undefined){ var r = refs[m[2]]; aus += r ? blkSpan(m[1], r) : esc(m[1]); }
+      else if (m[3] !== undefined) aus += '<a href="' + escAttr(m[4]) + '" target="_blank" rel="noopener noreferrer">' + esc(m[3]) + '</a>';
+      else if (m[5] !== undefined || m[6] !== undefined) aus += '<strong>' + blkInline(m[5] !== undefined ? m[5] : m[6], refs) + '</strong>';
+      else if (m[7] !== undefined) aus += '<em>' + blkInline(m[7], refs) + '</em>';
+      else if (m[8] !== undefined) aus += '<code>' + esc(m[8]) + '</code>';
+      else { var h = BLK_HL[m[9]]; aus += '<span ' + h[0] + '="' + h[1] + '">' + blkInline(m[10], refs) + '</span>'; }
+      i = m.index + m[0].length;
+    }
+    return aus + esc(s.slice(i));
+  }
+  var BLK_LISTE = /^(\s*)([-*+]|\d{1,3}[.)])\s+(.*)$/;
+  function blkMd(md, refs){
+    var zeilen = String(md || '').replace(/\r\n?/g, '\n').split('\n');
+    var html = '', i = 0;
+    function absatz(teile){ if (teile.length) html += '<p>' + teile.map(function(z){ return blkInline(z, refs); }).join('<br>') + '</p>'; }
+    while (i < zeilen.length){
+      var z = zeilen[i];
+      if (!z.trim()){ i++; continue; }
+      var hd = /^\s{0,3}#{1,6}\s+(.*?)\s*#*\s*$/.exec(z);
+      if (hd){ html += '<p><strong>' + blkInline(hd[1].replace(/^\*\*|\*\*$/g, ''), refs) + '</strong></p>'; i++; continue; }
+      if (/^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(z)){ html += '<hr>'; i++; continue; }
+      /* Die Stelle eines Charts als Codeblock (```chart:c1 + ```): der Chart steht als eigener Block,
+         der leere Zaun faellt weg (gespeicherte Antworten vor dem Fix in bloeckeBauen tragen ihn noch). */
+      if (/^\s*```\s*chart[\s:]*c\d{1,3}\s*$/.test(z)){
+        i++;
+        while (i < zeilen.length && !zeilen[i].trim()) i++;
+        if (i < zeilen.length && /^\s*```\s*$/.test(zeilen[i])) i++;
+        continue;
+      }
+      if (/^\s*```/.test(z)){
+        var code = []; i++;
+        while (i < zeilen.length && !/^\s*```\s*$/.test(zeilen[i])) code.push(zeilen[i++]);
+        i++;
+        html += '<pre><code>' + esc(code.join('\n')) + '</code></pre>';
+        continue;
+      }
+      if (/^\s*>/.test(z)){
+        var zit = [];
+        while (i < zeilen.length && /^\s*>/.test(zeilen[i])) zit.push(zeilen[i++].replace(/^\s*>\s?/, ''));
+        html += '<blockquote>' + blkMd(zit.join('\n'), refs) + '</blockquote>';
+        continue;
+      }
+      if (BLK_LISTE.test(z)){
+        /* Listen mit Einrueckung als Unterliste; die Art (ul/ol) je Ebene nach dem ersten Punkt. */
+        var stapel = [];
+        while (i < zeilen.length && (BLK_LISTE.test(zeilen[i]) || (/^\s{2,}\S/.test(zeilen[i]) && stapel.length))){
+          var lm = BLK_LISTE.exec(zeilen[i]);
+          if (!lm){ html += '<br>' + blkInline(zeilen[i].trim(), refs); i++; continue; }
+          var tiefe = Math.min(4, Math.floor(lm[1].replace(/\t/g, '    ').length / 2));
+          var art = /\d/.test(lm[2]) ? 'ol' : 'ul';
+          while (stapel.length && stapel[stapel.length - 1].tiefe > tiefe){ html += '</li></' + stapel.pop().art + '>'; }
+          var oben = stapel[stapel.length - 1];
+          if (!oben || oben.tiefe < tiefe){ html += '<' + art + '>'; stapel.push({ tiefe: tiefe, art: art }); }
+          else html += '</li>';
+          html += '<li>' + blkInline(lm[3], refs);
+          i++;
+        }
+        while (stapel.length) html += '</li></' + stapel.pop().art + '>';
+        continue;
+      }
+      var teile = [];
+      while (i < zeilen.length && zeilen[i].trim() && !/^\s{0,3}#{1,6}\s|^\s*```|^\s*>|^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(zeilen[i]) && !BLK_LISTE.test(zeilen[i])) teile.push(zeilen[i++]);
+      if (!teile.length) teile.push(zeilen[i++]);
+      absatz(teile);
+    }
+    return html;
+  }
+
+  /* Rohtext -> Bloecke, fuer den Text WAEHREND des Laufs: dieselbe Zerlegung wie bloeckeBauen in
+     upstreem-app lib/mira/bloecke.ts (Erklaerkarten, Tabellen, Chart-Zeilen). Eine noch offene Karte
+     oder Tabelle am Ende wird schon gezeigt, so weit sie steht. */
+  function blkAusText(text, charts){
+    var aus = [], zeilen = String(text || '').split('\n'), puffer = [], i = 0;
+    function flush(){ var md = puffer.join('\n').trim(); if (md) aus.push({ type: 'text', md: md }); puffer = []; }
+    function zellen(z){ return z.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(function(c){ return c.trim(); }); }
+    while (i < zeilen.length){
+      var z = zeilen[i];
+      var ch = /^\s*\[\[chart:(c\d{1,3})\]\]\s*$/.exec(z);
+      if (ch){ flush(); if (charts && charts[ch[1]]) aus.push(charts[ch[1]]); i++; continue; }
+      /* Die Stelle als Codeblock (```chart:c1 + ```), wie bloeckeBauen in upstreem-app. */
+      var cz = /^\s*```\s*chart[\s:]*(c\d{1,3})\s*$/.exec(z);
+      if (cz){
+        flush(); if (charts && charts[cz[1]]) aus.push(charts[cz[1]]); i++;
+        while (i < zeilen.length && !zeilen[i].trim()) i++;
+        if (i < zeilen.length && /^\s*```\s*$/.test(zeilen[i])) i++;
+        continue;
+      }
+      var k = /^```\s*card\b\s*(.*)$/.exec(z);
+      if (k){
+        flush(); var inhalt = []; i++;
+        while (i < zeilen.length && !/^```\s*$/.test(zeilen[i])) inhalt.push(zeilen[i++]);
+        i++;
+        aus.push({ type: 'card', title: k[1].trim(), text: inhalt.join('\n').trim() });
+        continue;
+      }
+      if (/^\s*\|/.test(z) && i + 1 < zeilen.length && /^\s*\|?\s*:?-{2,}/.test(zeilen[i + 1])){
+        flush(); var head = zellen(z), rows = []; i += 2;
+        while (i < zeilen.length && /^\s*\|/.test(zeilen[i])) rows.push(zellen(zeilen[i++]));
+        aus.push({ type: 'table', head: head, rows: rows });
+        continue;
+      }
+      /* Die letzte, noch unvollstaendige Zeile einer Tabelle (ohne Trennzeile) nicht als Text zeigen. */
+      if (/^\s*\|/.test(z) && i === zeilen.length - 1){ i++; continue; }
+      puffer.push(z); i++;
+    }
+    flush();
+    return aus;
+  }
+
+  /* Zahlenspalten rechtsbuendig (Regel der App: Zahlen rechts, Kopf rechts), erkannt am Inhalt: drei
+     von vier gefuellten Zellen sind Zahlen (mit %, Vorzeichen, Tausenderpunkt, Pfeil). */
+  var BLK_ZAHL = /^[\s(]*[+\-−–~≈#]?\s?\d[\d.,\s]*(%|pp)?\s*(\([+\-−–]?\s?\d[\d.,]*%?\))?[)\s]*$/;
+  function blkTabelle(b, refs){
+    var head = blkArr(b.head).map(blkStr), rows = blkArr(b.rows).map(function(r){ return blkArr(r).map(blkStr); });
+    var n = head.length || (rows[0] ? rows[0].length : 0);
+    if (!n) return '';
+    var zahl = [];
+    for (var c = 0; c < n; c++){
+      var voll = 0, ja = 0;
+      rows.forEach(function(r){
+        var v = String(r[c] == null ? '' : r[c]).replace(/\[([^\]]*)\]\(ref:[a-z]\d+\)/g, '$1').replace(/\*\*/g, '').trim();
+        if (!v || v === '–' || v === '-') return;
+        voll++; if (BLK_ZAHL.test(v)) ja++;
+      });
+      zahl.push(c > 0 && voll > 0 && ja / voll >= 0.75);
+    }
+    function zelle(tag, v, c){ return '<' + tag + (zahl[c] ? ' class="am-zahl"' : '') + '>' + blkInline(v, refs) + '</' + tag + '>'; }
+    var html = '<div class="am-table-scroll"><table><thead><tr>';
+    for (var h = 0; h < n; h++) html += zelle('th', head[h] || '', h);
+    html += '</tr></thead><tbody>';
+    rows.forEach(function(r){
+      html += '<tr>';
+      for (var c2 = 0; c2 < n; c2++) html += zelle('td', r[c2] == null ? '' : r[c2], c2);
+      html += '</tr>';
+    });
+    return html + '</tbody></table></div>';
+  }
+  function blkKarte(b, refs){
+    var titel = blkStr(b.title), text = blkStr(b.text);
+    var kopie = text.replace(/\[([^\]\n]{1,300})\]\(ref:[a-z]\d{1,5}\)/g, '$1');
+    return '<div class="am-karte">' +
+             '<div class="am-karte-kopf"><span class="am-karte-titel">' + esc(titel) + '</span>' +
+               '<button class="am-act-btn am-karte-kopie" type="button" data-act="karte-kopieren" data-kopie="' + escAttr(kopie) + '" aria-label="' + escAttr(BL().copy) + '" data-tip="' + escAttr(BL().copy) + '">' + ICON.copy + '</button>' +
+             '</div>' +
+             '<div class="am-karte-text">' + blkMd(text, refs) + '</div>' +
+           '</div>';
+  }
+
+  /* ---- Charts (Q23): Platzhalter im HTML, nach dem Zeichnen mit den Bausteinen aus core gefuellt.
+     Ein gezeichneter Chart behaelt seinen Knoten ueber jedes Neuzeichnen der Liste (renderMessages
+     baut alles neu): er wird nur umgehaengt, sonst fuehre die Einblendung bei jedem Nachfassen neu. */
+  var _blkCharts = {};   /* Schluessel -> { el, daten } */
+  function blkChartSchluessel(amid, b){ return String(amid || 'live') + ':' + blkStr(b.id); }
+  function blkChartPlatz(b, amid, refs){
+    var key = blkChartSchluessel(amid, b);
+    _blkCharts[key] = _blkCharts[key] || { el: null, daten: b };
+    _blkCharts[key].daten = b;
+    _blkCharts[key].refs = refs || {};
+    return '<div class="am-chart-platz" data-chart-key="' + escAttr(key) + '"></div>';
+  }
+  function blkZahl(v, b){
+    if (v == null || !isFinite(v)) return '–';
+    var d = Number(b.decimals) >= 0 ? Number(b.decimals) : 0;
+    return Number(v).toFixed(d) + (b.unit === '%' ? '%' : '');
+  }
+  function blkChartBauen(key){
+    var e = _blkCharts[key], b = e && e.daten, k = window.UpstreemCore;
+    var el = document.createElement('div');
+    el.className = 'am-chart is-' + blkStr(b && b.kind);
+    el.setAttribute('data-chart-key', key);
+    el.innerHTML = '<div class="am-chart-kopf"><span class="am-chart-titel">' + esc(blkStr(b && b.title)) + '</span></div><div class="am-chart-flaeche"></div>';
+    var flaeche = el.querySelector('.am-chart-flaeche');
+    var reihen = blkArr(b && b.series), labels = blkArr(b && b.labels).map(blkStr);
+    var dunkel = function(){ return root.getAttribute('data-theme') === 'dark'; };
+    if (!k || !reihen.length || !labels.length){ flaeche.innerHTML = '<p class="am-chart-leer">' + esc(BL().chartLeer) + '</p>'; return el; }
+    try {
+      if (b.kind === 'line' && k.makeLine && k.buildLineDatasets){
+        flaeche.innerHTML = '<div class="am-chart-linie"><canvas></canvas></div><div class="am-chart-legende"></div>';
+        var zeilen = [], firmen = [];
+        reihen.forEach(function(r, i){
+          var id = blkStr(r.ref) || ('s' + i), marke = null;
+          var ref = r.ref && e.refs && e.refs[r.ref];
+          if (ref && (ref.type === 'brand' || ref.type === 'competitor')) marke = blkMarke(ref.company_id || ref.entity_id);
+          firmen.push({ company_id: id, name: blkStr(r.name), color: marke && marke.color ? marke.color : null, favicon_url: ref ? blkLogo(ref) : '' });
+          labels.forEach(function(l, j){ zeilen.push({ company_id: id, day: l, visibility_pct: blkArr(r.values)[j] }); });
+        });
+        var gebaut = k.buildLineDatasets(zeilen, firmen);
+        var linie = k.makeLine({
+          wrap: flaeche.querySelector('.am-chart-linie'), canvas: flaeche.querySelector('canvas'),
+          legend: reihen.length > 1 ? flaeche.querySelector('.am-chart-legende') : null,
+          isDark: dunkel, gran: function(){ return 'day'; }, markers: false,
+          unit: function(){ return b.unit === '%' ? '%' : ''; }, decimals: function(){ return Number(b.decimals) || 0; },
+          tipLabel: function(){ return reihen.length === 1 ? blkStr(reihen[0].name) + ':' : ''; }
+        });
+        e.chart = linie;
+        /* Erst zeichnen, wenn der Kasten im Dokument steht und Breite hat (makeLine misst selbst). */
+        e.zeichnen = function(){ try { linie.render(gebaut); } catch(err){} };
+      } else if (b.kind === 'doughnut' && k.makeTypeChart){
+        var r0 = reihen[0], werte = blkArr(r0.values);
+        var stuecke = labels.map(function(l, j){
+          return { key: l, name: l, share: Number(werte[j]) || 0, color: k.balkenGrau ? k.balkenGrau(j, dunkel()) : '' };
+        }).filter(function(x){ return x.share > 0; });
+        var ring = k.makeTypeChart({ body: flaeche, isDark: dunkel, decimals: Number(b.decimals) || 0,
+          total: function(){ return stuecke.length; }, centerLabel: '' });
+        e.chart = ring;
+        e.zeichnen = function(){ try { ring.renderDonut(stuecke); } catch(err){} };
+      } else if (k.makeBarList){
+        /* Balken: je Reihe eine Liste (eine Reihe ist der Normalfall); die Breite relativ zum
+           groessten Wert, angeschrieben der Wert selbst. */
+        var max = 0;
+        reihen.forEach(function(r){ blkArr(r.values).forEach(function(v){ if (v != null && Math.abs(v) > max) max = Math.abs(v); }); });
+        flaeche.innerHTML = reihen.map(function(r, i){
+          return (reihen.length > 1 ? '<div class="am-chart-reihe">' + esc(blkStr(r.name)) + '</div>' : '') + '<div class="am-chart-balken" data-i="' + i + '"></div>';
+        }).join('');
+        var listen = reihen.map(function(r, i){
+          return { liste: k.makeBarList({ mount: flaeche.querySelector('.am-chart-balken[data-i="' + i + '"]'), isDark: dunkel }), r: r };
+        });
+        e.zeichnen = function(){
+          listen.forEach(function(x){
+            var werte2 = blkArr(x.r.values);
+            var eintraege = labels.map(function(l, j){
+              var v = werte2[j];
+              if (v == null || !isFinite(v)) return null;
+              return { key: l, name: l, share: max ? Math.abs(v) / max * 100 : 0, wert: blkZahl(v, b), color: k.balkenGrau ? k.balkenGrau(j, dunkel()) : '' };
+            }).filter(Boolean);
+            try { x.liste.render(eintraege); } catch(err){}
+          });
+        };
+      }
+    } catch(err){ flaeche.innerHTML = '<p class="am-chart-leer">' + esc(BL().chartLeer) + '</p>'; }
+    return el;
+  }
+  /* Nach jedem Zeichnen: Platzhalter durch den (behaltenen) Chart ersetzen. */
+  function blkChartsEinhaengen(scope){
+    var plaetze = (scope || elMessages).querySelectorAll('.am-chart-platz[data-chart-key]');
+    for (var i = 0; i < plaetze.length; i++){
+      var p = plaetze[i], key = p.getAttribute('data-chart-key'), e = _blkCharts[key];
+      if (!e) continue;
+      var neu = !e.el;
+      if (neu) e.el = blkChartBauen(key);
+      if (p.parentNode) p.parentNode.replaceChild(e.el, p);
+      if (neu && e.zeichnen) e.zeichnen();
+    }
+  }
+  /* Ein Chart, der waehrend des Laufs gezeichnet wurde, wird zum Chart der fertigen Antwort: derselbe
+     Knoten, keine zweite Einblendung. */
+  function blkChartsUebernehmen(amid){
+    Object.keys(_blkCharts).forEach(function(key){
+      if (key.indexOf('live:') !== 0) return;
+      var neu = String(amid) + ':' + key.slice(5);
+      if (!_blkCharts[neu] && _blkCharts[key].el){ _blkCharts[neu] = _blkCharts[key]; _blkCharts[neu].el.setAttribute('data-chart-key', neu); }
+      delete _blkCharts[key];
+    });
+  }
+
+  /* ---- Aktionskarte (upstreem-app mira/AKTIONSKARTE.md, Abschnitt 4) ---- */
+  var BLK_ART_ZEICHEN = { page_audit: 'fileText', prompt_research: 'search', track_brand: 'squareStack', create_opportunity: 'listTodo', opportunity_status: 'listTodo' };
+  function blkKosten(b){
+    var c = blkObj(b.cost), q = blkObj(b.quota), L2 = BL();
+    if (!c || !q || !(Number(c.amount) > 0)) return '';
+    var e = L2.einheit[c.unit] || [c.unit, c.unit];
+    var r = Math.max(0, Number(q.remaining) || 0);
+    return L2.kosten.replace('{n}', String(c.amount)).replace('{r}', String(r))
+      .replace('{einheit}', r === 1 ? e[0] : e[1]).replace('{zeitraum}', L2.zeitraum[q.period] || '');
+  }
+  function blkUndoMoeglich(b){
+    var u = blkObj(b.undo);
+    if (!u || !u.until) return false;
+    var t = Date.parse(u.until);
+    return isFinite(t) && t > Date.now();
+  }
+  function blkAktion(b, m){
+    var L2 = BL(), k = window.UpstreemCore;
+    var art = blkStr(b.kind), st = blkStr(b.status) || 'proposed', ziel = blkObj(b.target) || {};
+    var zeichen = k && k.icon ? k.icon(BLK_ART_ZEICHEN[art] || 'zap', 1.7) : '';
+    var marke = st === 'proposed' ? '' : '<span class="am-akt-marke is-' + escAttr(st) + '">' + esc(L2.zustand[st] || st) + '</span>';
+    var fav = (k && k.faviconUrl && (ziel.domain || ziel.url)) ? k.faviconUrl(ziel.domain || ziel.url, 64) : '';
+    var zielHtml = ziel.label ? '<div class="am-akt-ziel">' + (fav ? '<img class="am-akt-fav" src="' + escAttr(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : '') +
+      '<span class="am-akt-zieltext">' + esc(ziel.label) + '</span></div>' : '';
+    var fuss = '', job = blkObj(b.job), href = job && /^\/(?!\/)/.test(blkStr(job.href)) ? blkStr(job.href) : '';
+    var daten = ' data-akt-id="' + escAttr(b.id) + '" data-akt-msg="' + escAttr(m && m.id) + '"';
+    if (st === 'proposed' && b.klasse === 3){
+      var kosten = blkKosten(b);
+      fuss = (kosten ? '<span class="am-akt-kosten">' + esc(kosten) + '</span>' : '<span></span>') +
+        '<button class="am-akt-knopf up-btn-pri" type="button" data-act="aktion-start"' + daten + '>' + esc(L2.start[art] || 'Start') + '</button>';
+    } else if (st === 'running'){
+      fuss = '<span class="am-akt-lauf">' + (k && k.ringHtml ? k.ringHtml(14) : '') + '</span>' +
+        (href ? '<a class="am-akt-knopf up-btn-sec" href="' + escAttr(href) + '" data-act="aktion-link">' + esc(L2.oeffnen[art] || L2.ergebnis) + '</a>' : '');
+    } else if (st === 'done'){
+      var links = href ? '<a class="am-akt-knopf up-btn-sec" href="' + escAttr(href) + '" data-act="aktion-link">' + esc(L2.ergebnis) + '</a>' : '';
+      if (art === 'track_brand' && b.result && b.result.company_id) links = '<button class="am-akt-knopf up-btn-sec" type="button" data-act="aktion-marke" data-company="' + escAttr(b.result.company_id) + '">' + esc(L2.marke) + '</button>';
+      var undo = b.klasse === 2 && blkUndoMoeglich(b) ? '<button class="am-akt-knopf up-btn-sec" type="button" data-act="aktion-undo"' + daten + '>' + esc(L2.undo) + '</button>' : '';
+      fuss = (links || undo) ? '<span></span><span class="am-akt-knoepfe">' + links + undo + '</span>' : '';
+    }
+    var satz = (st === 'blocked' || st === 'failed' || st === 'expired') && b.status_text
+      ? '<p class="am-akt-satz' + (st === 'failed' ? ' is-fehler' : '') + '">' + esc(b.status_text) + '</p>' : '';
+    var opp = blkObj(b.opportunity) && b.opportunity.opportunity_id ? '<div><span data-mira-opportunity="' + escAttr(b.opportunity.opportunity_id) + '"></span></div>' : '';
+    return '<div class="am-akt is-' + escAttr(st) + '" data-akt-id="' + escAttr(b.id) + '">' +
+             '<div class="am-akt-kopf"><span class="am-akt-ic" aria-hidden="true">' + zeichen + '</span>' +
+               '<span class="am-akt-titel">' + esc(blkStr(b.title)) + '</span>' + marke + '</div>' +
+             zielHtml +
+             (b.reason ? '<p class="am-akt-grund">' + blkInline(b.reason, {}) + '</p>' : '') +
+             satz +
+             (fuss ? '<div class="am-akt-fuss">' + fuss + '</div>' : '') +
+           '</div>' + opp;
+  }
+
+  /* Bloecke -> HTML. refs: die Bezuege (aus dem refs-Block bzw. waehrend des Laufs aus dem Stream). */
+  function blkHtml(blocks, m, refs){
+    var amid = m && m.id;
+    return blkArr(blocks).map(function(b){
+      if (!blkObj(b)) return '';
+      switch (b.type){
+        case 'text': return blkMd(b.md, refs);
+        case 'table': return blkTabelle(b, refs);
+        case 'card': return blkKarte(b, refs);
+        case 'chart': return blkChartPlatz(b, amid, refs);
+        case 'action': return blkAktion(b, m);
+        case 'opportunity': return b.opportunity_id ? '<div><span data-mira-opportunity="' + escAttr(b.opportunity_id) + '"></span></div>' : '';
+        default: return '';
+      }
+    }).join('');
+  }
+  /* Die Antwort fertig gezeichnet: Chips, Ueberschriften, Listen, Opportunity-Karten wie bisher. */
+  function blkKoerper(m){
+    var refs = blkRefs(m.blocks);
+    var tmp = document.createElement('div');
+    tmp.innerHTML = blkHtml(m.blocks, m, refs);
+    tmp.querySelectorAll('table').forEach(function(t){ try { tabelleAusrichten(t); } catch(e){} });
+    decorateEntitySpans(tmp, blkItems(refs, m.evidence_items));
+    mountInlineCards(tmp, m);
+    promoteStrongHeadings(tmp);
+    mergeAdjacentLists(tmp);
+    return tmp.innerHTML;
+  }
+  function hatBloecke(m){ return !!(m && m.role === 'assistant' && Array.isArray(m.blocks) && m.blocks.length); }
+
   function messageHtml(m, poolTerms, isLastAsst, istLetzte, still){
     var role = (m.role === 'user') ? 'user' : 'assistant';
     var body, poolTypes = [];
-    if (role === 'assistant' && m.content_html){
+    if (hatBloecke(m)){
+      body = blkKoerper(m);
+    } else if (role === 'assistant' && m.content_html){
       var tmp = document.createElement('div');
       tmp.innerHTML = sanitizeHtml(m.content_html);
       var terms = termsForMessage(m, poolTerms);
@@ -2457,6 +2941,7 @@
   }
   var _forceTimer = null;
   var _typingActive = false;
+  var _scrollHalten = false;   /* siehe askMiraStreamFertig */
   function _msgKey(m){
     if (!m) return '';
     if (m.id) return 'id:' + m.id;
@@ -2465,7 +2950,7 @@
   function _prepTyping(bub){
     var units = [];
     function isChip(el){ return el.matches('.am-logo-wrap, [data-mira-entity-type], [data-mira-sentiment], [data-mira-source-signal], .am-ev-pill, .am-inline-logo'); }
-    function isBlock(el){ return el.matches('table, .am-table-scroll, .am-evidence, .am-srclist, .am-srcrow, .am-source, .am-draft, .am-opps, .am-oppc-btn, .am-msg-buttons, li, blockquote, pre, hr'); }
+    function isBlock(el){ return el.matches('.am-karte, .am-chart, .am-chart-platz, .am-akt, table, .am-table-scroll, .am-evidence, .am-srclist, .am-srcrow, .am-source, .am-draft, .am-opps, .am-oppc-btn, .am-msg-buttons, li, blockquote, pre, hr'); }
     function isOppcPara(el){ if (!el.querySelector || !el.querySelector('.am-oppc-btn')) return false; var kk = Array.prototype.slice.call(el.childNodes).filter(function(n){ if (n.nodeType===3) return /\S/.test(n.nodeValue); if (n.nodeType===1 && n.classList && n.classList.contains('am-oppc-br')) return false; return true; }); return kk.length===1 && kk[0].classList && kk[0].classList.contains('am-oppc-btn'); }
     function walk(node){
       var kids = Array.prototype.slice.call(node.childNodes);
@@ -2665,6 +3150,7 @@
     var _warDa = _gezeigt;
     _ladeStill = !!elMessages.querySelector('.am-msg-loading');
     elMessages.innerHTML = S.messages.map(function(m, idx){ return messageHtml(m, poolTerms, idx === lastAsstIdx, idx === letzteIdx, _schonGezeigt(_warDa, m)); }).join('');
+    blkChartsEinhaengen(elMessages);   /* Charts der Bloecke: behaltene Knoten zurueck an ihren Platz */
     _gezeigt = _gezeigtMerken(S.messages);
     elMessages.querySelectorAll('.am-inline-logo').forEach(function(img){
       img.addEventListener('error', function(){
@@ -2742,8 +3228,12 @@
     _prevMsgKeys = _curKeys;
     _prevLoading = S.isLoading;
 
+    /* Eine gestreamte Antwort ist fertig (askMiraStreamFertig): sie stand schon da, die Ansicht bleibt,
+       wo sie ist -- auch der reservierte Platz darunter, sonst rutschte eine kurze Antwort nach unten. */
+    var _halten = _scrollHalten; _scrollHalten = false;
     if (!S.messages.length){ elMessages.style.minHeight = ''; if (!S.isLoading){ elChat.scrollTop = 0; } }
     else if (_typeUnits) { elMessages.style.minHeight = ''; }
+    else if (_halten && !S.isLoading) { /* stehen lassen */ }
     /* SOLANGE EINE ANTWORT LAEUFT, GEHOERT DIE POSITION DEM LADEZUSTAND (24.09. gemessen).
        Der Zweig 'bottom' stand davor -- und askMiraSetMessages setzt _scrollMode bei JEDEM
        Aufruf auf 'bottom'. Holte das Nachfassen waehrend des Wartens die Nachrichten, sprang die
@@ -3507,6 +3997,7 @@
     response_detail:         ['response',    ['Reading the full answer text', 'Looking at what the answers actually say']],
     opportunities:           ['listTodo',    ['Spotting sources worth pursuing', 'Checking your Opportunities']],
     get_knowledge:           ['bookOpen',    ['Grounding the answer in the basics', 'Pulling up the relevant concepts']],
+    show_chart:              ['chartSpline', ['Drawing the chart', 'Putting the numbers into a chart']],
     /* n8n (bis zum Umstieg P6) */
     company_lookup:          ['squareStack', ['Identifying your brand and competitors', 'Mapping out the companies in play', 'Pinning down the brands to track']],
     brand_overview:          ['squareStack', ["Reading your brand's visibility data", 'Checking how often you show up', 'Sizing up your overall presence']],
@@ -3869,6 +4360,7 @@
         '<div class="am-run is-live"></div></div></div>');
     }
     runMount();
+    liveEinhaengen();   /* der laufende Text (P2) ueberlebt jedes Neuzeichnen der Liste */
   }
 
 
@@ -7813,12 +8305,176 @@
     if (typeof teil === 'string'){ var p = looseJsonParse(teil); teil = p; }
     if (!teil || typeof teil !== 'object' || !S.isLoading) return;
     var t = String(teil.type || ''), id = String(teil.toolCallId || '');
+    /* Wiederanhaengen (askMiraStreamAnhaengen) spielt den Stream von vorn: ein Schritt, der schon
+       steht, kommt nicht ein zweites Mal. */
+    if (id && (t === 'tool-input-available' && runFinde(id))) return;
     if (t === 'start-step') runEreignis({ typ: 'runde' });
     else if (t === 'tool-input-available' && id) runEreignis({ typ: 'start', id: id, name: String(teil.toolName || '').toLowerCase() });
     else if (t === 'tool-output-available' && id) runEreignis({ typ: 'ende', id: id });
     else if ((t === 'tool-output-error' || t === 'tool-input-error') && id) runEreignis({ typ: 'fehler', id: id });
     else if (t === 'text-start') runEreignis({ typ: 'text' });
     else if (t === 'text-end') runEreignis({ typ: 'pruefen' });
+  };
+
+  /* ===== DER LAUFENDE TEXT (P2, 22.10.) =======================================================
+     Lukas 22.10.: "die Nachrichten kommen jetzt immer direkt im ganzen. das ist scheisse". Der neue Weg
+     streamt: die Seite (mira-page.js) liest den Stream von /api/mira und reicht hier Text, Bezuege und
+     Charts weiter, solange die Antwort laeuft. Der Text steht in einer eigenen Blase unter dem
+     Arbeitsprotokoll in der Ladezeile (.am-msg-loading) und wird mit demselben Renderer gezeichnet wie
+     die fertige Antwort (blkAusText, blkHtml) -- beim Abschluss tauscht sich darum nur der Rahmen, der
+     Text springt nicht. Gezeichnet wird hoechstens alle 120 ms (ein Teil kommt alle paar ms).
+     Die fertige Antwort (askMiraStreamFertig) geht ueber askMiraSetMessages wie jede andere -- mit
+     ihrer Kennung als schon getippt markiert, sie wurde ja schon gelesen. */
+  var LIVE = { chat: '', amid: '', text: '', refs: {}, charts: {}, el: null, uhr: 0, gezeichnet: '' };
+  var LIVE_TAKT = 120;
+  function liveReset(){
+    if (LIVE.uhr) clearTimeout(LIVE.uhr);
+    if (LIVE.el && LIVE.el.parentNode) LIVE.el.parentNode.removeChild(LIVE.el);
+    LIVE = { chat: '', amid: '', text: '', refs: {}, charts: {}, el: null, uhr: 0, gezeichnet: '' };
+  }
+  function liveHier(chatId){
+    var c = String(chatId == null ? '' : chatId);
+    return !!c && c === String(S.activeChatId || '');
+  }
+  function liveEinhaengen(){
+    var host = elMessages.querySelector('.am-msg-loading .am-msg-main');
+    if (!host || !LIVE.el) return;
+    if (LIVE.el.parentNode !== host) host.appendChild(LIVE.el);
+  }
+  function liveZeichnen(){
+    LIVE.uhr = 0;
+    if (!S.isLoading || !LIVE.text.trim()) return;
+    if (!LIVE.el){ LIVE.el = document.createElement('div'); LIVE.el.className = 'am-bubble am-live'; }
+    liveEinhaengen();
+    var sig = LIVE.text.length + '|' + Object.keys(LIVE.refs).length + '|' + Object.keys(LIVE.charts).join(',');
+    if (sig === LIVE.gezeichnet) return;
+    LIVE.gezeichnet = sig;
+    var bl = blkAusText(LIVE.text, LIVE.charts);
+    LIVE.el.innerHTML = blkHtml(bl, { id: 'live' }, LIVE.refs);
+    LIVE.el.querySelectorAll('table').forEach(function(t){ try { tabelleAusrichten(t); } catch(e){} });
+    decorateEntitySpans(LIVE.el, blkItems(LIVE.refs, []));
+    promoteStrongHeadings(LIVE.el);
+    mergeAdjacentLists(LIVE.el);
+    blkChartsEinhaengen(LIVE.el);
+    /* Die Antwort waechst unter der Frage: am Ende der Liste wird mitgezogen (dieselbe Mechanik wie das
+       Tippen, mit derselben Bremse, sobald der Nutzer nach oben scrollt). */
+    /* Mitgezogen wird, wenn der Nutzer auf die Antwort schaut (ihr Anfang ist im Bild): bis die Frage oben
+       steht (_followCapTop), danach liest er selbst weiter. */
+    if (!LIVE.folgt){
+      LIVE.folgt = true;
+      var lr = LIVE.el.getBoundingClientRect(), cr = elChat.getBoundingClientRect();
+      if (lr.top < cr.bottom && lr.bottom > cr.top){ _anchorForTyping(LIVE.el); setTimeout(function(){ if (S.isLoading && LIVE.el) _startStick(); }, 430); }
+    }
+  }
+  function livePlanen(){ if (!LIVE.uhr) LIVE.uhr = setTimeout(liveZeichnen, LIVE_TAKT); }
+  function liveArg(v){ if (typeof v === 'string'){ var p = looseJsonParse(v); return p == null ? v : p; } return v; }
+
+  /* Die Antwort hat begonnen: amid ist ihre Kennung, userId die der eigenen Frage (die lokale Blase
+     bekommt sie, damit der Stand der Seite spaeter dieselbe Nachricht wiedererkennt). */
+  window.askMiraStreamStart = function(chatId, amid, userId){
+    if (!liveHier(chatId)) return;
+    if (LIVE.amid && LIVE.amid !== String(amid || '')) liveReset();
+    LIVE.chat = String(chatId); LIVE.amid = String(amid || '');
+    if (LIVE.amid) _typedKeys['id:' + LIVE.amid] = true;
+    if (userId){
+      for (var i = S.messages.length - 1; i >= 0; i--){
+        var m = S.messages[i];
+        if (m && m.role === 'user' && /^local_/.test(String(m.id || ''))){ m.id = String(userId); break; }
+      }
+    }
+    stummUhrStellen();
+  };
+  window.askMiraStreamText = function(chatId, amid, text){
+    if (!S.isLoading || !liveHier(chatId)) return;
+    LIVE.chat = String(chatId); if (amid) LIVE.amid = String(amid);
+    LIVE.text = String(text == null ? '' : text);
+    stummUhrStellen();
+    livePlanen();
+  };
+  window.askMiraStreamRefs = function(chatId, amid, items){
+    items = liveArg(items);
+    if (!liveHier(chatId) || !Array.isArray(items)) return;
+    items.forEach(function(r){ if (r && typeof r === 'object' && r.id) LIVE.refs[String(r.id)] = r; });
+    if (LIVE.text) livePlanen();
+  };
+  window.askMiraStreamChart = function(chatId, amid, chart){
+    chart = liveArg(chart);
+    if (!liveHier(chatId) || !chart || typeof chart !== 'object' || chart.type !== 'chart' || !chart.id) return;
+    LIVE.charts[String(chart.id)] = chart;
+    if (LIVE.text) livePlanen();
+  };
+  /* Der Stream wird von vorn gespielt (Neuladen, zweiter Tab, abgerissene Verbindung). */
+  window.askMiraStreamAnhaengen = function(chatId, amid){
+    if (!liveHier(chatId)) return;
+    liveReset();
+    LIVE.chat = String(chatId); LIVE.amid = String(amid || '');
+    if (LIVE.amid) _typedKeys['id:' + LIVE.amid] = true;
+    if (!S.isLoading) setLoading(true);
+  };
+  /* Das gepruefte Ergebnis (data-mira): Bloecke, Text, Bezuege, Folgefragen, Dauer. */
+  window.askMiraStreamFertig = function(chatId, amid, erg){
+    erg = liveArg(erg);
+    if (!erg || typeof erg !== 'object' || !amid){ return; }
+    if (!liveHier(chatId)){ if (LIVE.amid === String(amid)) liveReset(); return; }
+    var bloecke = Array.isArray(erg.bloecke) && erg.bloecke.length ? erg.bloecke : blkAusText(String(erg.text || ''), LIVE.charts);
+    var text = String(erg.text || '').replace(/\[([^\]\n]{1,300})\]\(ref:[a-z]\d{1,5}\)/g, '$1').replace(/^\s*\[\[chart:c\d+\]\]\s*$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
+    var fq = Array.isArray(erg.folgefragen) ? erg.folgefragen : [];
+    var m = {
+      id: String(amid), role: 'assistant', status: 'success', session_id: String(chatId),
+      blocks: bloecke, content: text, content_html: null,
+      evidence_items: (Array.isArray(erg.bezuege) ? erg.bezuege : []).map(function(r){ return { type: r && r.type, entity_id: r && r.entity_id }; }),
+      actions: fq.map(function(f, i){ return { type: 'followup_question', action_key: 'f' + (i + 1), label: String(f), payload: { question: String(f) }, sort_order: i }; }),
+      opportunities: [], latency_ms: Number(erg.dauer_ms) || null, created_at: new Date().toISOString()
+    };
+    blkChartsUebernehmen(amid);
+    _typedKeys['id:' + String(amid)] = true;
+    var liste = S.messages.filter(function(x){ return x && String(x.id) !== String(amid) && !isPendingAssistant(x); });
+    liste.push(m);
+    liveReset();
+    _stopStick();
+    _scrollHalten = true;
+    window.askMiraSetMessages(liste, chatId);
+  };
+  /* Der Lauf ist gescheitert (Fehlerteil im Stream). Die DB meldet dasselbe gleich ueber Realtime
+     (mira_message_error) -- die Kennung gilt darum schon als gesehen, sonst stuende der Satz zweimal. */
+  window.askMiraStreamFehler = function(chatId, amid){
+    if (amid) rtGesehenMerken(String(amid));
+    if (!liveHier(chatId)){ if (LIVE.amid === String(amid || '')) liveReset(); return; }
+    liveReset();
+    _erwartet = null; _pendingAnswer = false;
+    try { setLoading(false, 'aus'); } catch(e){}
+    rtFehlerZeigen(amid);
+  };
+  /* Neuer Stand einer Aktionskarte (Antwort von /api/mira/aktion, AKTIONSKARTE.md 5): die Karte in den
+     Bloecken der Nachricht tauschen, eine angelegte Opportunity dazu; der neuere Stand gewinnt. */
+  window.askMiraActionCard = function(amid, card, opportunity){
+    card = liveArg(card); opportunity = liveArg(opportunity);
+    if (!card || typeof card !== 'object' || card.type !== 'action' || !card.id) return false;
+    var m = null;
+    for (var i = 0; i < S.messages.length; i++){ if (S.messages[i] && String(S.messages[i].id) === String(amid)){ m = S.messages[i]; break; } }
+    if (!m || !Array.isArray(m.blocks)) return false;
+    var getauscht = false;
+    m.blocks = m.blocks.map(function(b){
+      if (!b || b.type !== 'action' || String(b.id) !== String(card.id)) return b;
+      var alt = Date.parse(b.updated_at || ''), neu = Date.parse(card.updated_at || '');
+      if (isFinite(alt) && isFinite(neu) && neu < alt) return b;
+      getauscht = true;
+      return card;
+    });
+    if (opportunity && typeof opportunity === 'object' && opportunity.id != null){
+      var opps = asArrayLoose(m.opportunities).filter(function(o){ return !o || String(o.id) !== String(opportunity.id); });
+      opps.push(opportunity);
+      m.opportunities = opps;
+      getauscht = true;
+    }
+    if (getauscht) renderMessages();
+    return getauscht;
+  };
+  window.askMiraActionFailed = function(amid, actionId, satz){
+    var sel = '[data-act^="aktion-"][data-akt-id="' + cssEsc(actionId) + '"][data-akt-msg="' + cssEsc(amid) + '"]';
+    Array.prototype.forEach.call(elMessages.querySelectorAll(sel), function(b){ b.removeAttribute('aria-disabled'); b.classList.remove('is-warten'); });
+    var k = window.UpstreemCore;
+    if (satz && k && k.toast) k.toast(String(satz), { kind: 'error' });
   };
   window.askMiraSetFaviconsFromEl   = function(sel){ var r = _amReadEl(sel); if (r != null) window.askMiraSetFavicons(r); };
   window.askMiraSetBrandLogosFromEl = function(sel){ var r = _amReadEl(sel); if (r != null) window.askMiraSetBrandLogos(r); };
@@ -8167,6 +8823,46 @@
       var blk = fqBtn.closest('.am-fq') || fqBtn.parentNode;
       Array.prototype.forEach.call(blk.querySelectorAll('.am-fq-item'), function(b){ b.disabled = true; });
       sendMessage(frage);
+      return;
+    }
+    /* Erklaerkarte: Kopieren rechts im Kopf, kopiert wird der Text der Karte (Bezuege als Label). */
+    var kk = e.target.closest('.am-karte-kopie');
+    if (kk){
+      copyText(kk.getAttribute('data-kopie') || '').then(function(){
+        if (kk.__uhr) clearTimeout(kk.__uhr);
+        kk.innerHTML = ICON.check; kk.classList.add('is-copied');
+        kk.__uhr = setTimeout(function(){ kk.innerHTML = ICON.copy; kk.classList.remove('is-copied'); kk.__uhr = null; }, 1300);
+      }).catch(function(){});
+      return;
+    }
+    /* Aktionskarte (upstreem-app mira/AKTIONSKARTE.md, 5): Start und Rueckgaengig gehen an die Seite;
+       der Knopf ist bis zur Antwort gesperrt (ein Doppelklick startet nie zweimal). */
+    var ak = e.target.closest('[data-act^="aktion-"]');
+    if (ak){
+      var aart = ak.getAttribute('data-act');
+      if (aart === 'aktion-link'){
+        /* Ein Weg in der App (/?view=audits&run_id=...): Adresse setzen und die Ansicht wechseln wie die
+           Seitenleiste (UC.ansichtWechseln), ohne die Seite neu zu laden. */
+        var ziel = ak.getAttribute('href') || '', kern = window.UpstreemCore, vm = /[?&]view=([a-z0-9_-]+)/i.exec(ziel);
+        if (ziel && vm && kern && kern.ansichtWechseln){
+          e.preventDefault();
+          try { window.history.pushState(window.history.state, '', ziel); kern.ansichtWechseln(vm[1]); } catch(err){ window.location.href = ziel; }
+        }
+        return;
+      }
+      if (aart === 'aktion-marke'){
+        var C2 = window.UpstreemCore;
+        if (C2 && C2.drawerOeffnen) C2.drawerOeffnen('brand', ak.getAttribute('data-company') || '', 'mira');
+        return;
+      }
+      if (ak.getAttribute('aria-disabled') === 'true') return;
+      ak.setAttribute('aria-disabled', 'true');
+      ak.classList.add('is-warten');
+      var wertA = { op: aart === 'aktion-undo' ? 'undo' : 'start', assistant_message_id: ak.getAttribute('data-akt-msg') || '',
+                    session_id: S.activeChatId || '', action_id: ak.getAttribute('data-akt-id') || '' };
+      var fnA = amBfn('action');
+      if (fnA) fnA(JSON.stringify(wertA));
+      else window.dispatchEvent(new CustomEvent('askmira:action', { detail: wertA }));
       return;
     }
     var btn = e.target.closest('.am-act-btn'); if (!btn) return;

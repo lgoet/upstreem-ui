@@ -59,7 +59,22 @@
     "Mira couldn't be reached. Check your connection and try again.":
       "Mira ist gerade nicht erreichbar. Prüf deine Verbindung und versuch es noch einmal.",
     "Mira is taking too long to respond. Try again in a moment.":
-      "Mira braucht gerade zu lange. Versuch es gleich noch einmal."
+      "Mira braucht gerade zu lange. Versuch es gleich noch einmal.",
+    /* Neuer Weg (P2, /api/mira) */
+    "Your team has used this month's Mira allowance.": "Dein Team hat das Mira-Kontingent für diesen Monat aufgebraucht.",
+    "It resets on {datum}.": "Es wird am {datum} zurückgesetzt.",
+    "You've reached today's limit for Mira. Try again tomorrow.": "Du hast das heutige Limit für Mira erreicht. Versuch es morgen noch einmal.",
+    "Mira is already answering two of your questions. Wait for one of them, then send again.":
+      "Mira beantwortet schon zwei deiner Fragen. Warte auf eine davon und sende dann erneut.",
+    "This message is already being answered.": "Diese Nachricht wird schon beantwortet.",
+    "Your session has expired. Reload the page and sign in again.": "Deine Sitzung ist abgelaufen. Lade die Seite neu und melde dich wieder an.",
+    "This answer couldn't be saved": "Diese Antwort konnte nicht gespeichert werden",
+    "Couldn't start this action": "Diese Aktion konnte nicht gestartet werden",
+    "This action isn't available yet.": "Diese Aktion ist noch nicht verfügbar.",
+    "This can no longer be undone.": "Das lässt sich nicht mehr rückgängig machen.",
+    "This action has already been started.": "Diese Aktion wurde schon gestartet.",
+    "You already have a research running.": "Bei dir läuft schon eine Recherche.",
+    "Your plan has no free brand slots.": "Dein Tarif hat keinen freien Markenplatz mehr."
   });
   /* Je Instanz ueber einen Neuaufbau hinweg (Themenwechsel): Lader, Kanal, die Nachrichten je
      Chat, laufende Antworten. Nichts davon gehoert der Wurzel. */
@@ -211,7 +226,9 @@
       var tm = team();
       if (!tm || !chat) return Promise.resolve(null);
       /* Ein Kanal je Chat: das Oeffnen von A darf nicht das Nachladen von B abbrechen. */
-      return lader.laden("nachrichten_" + chat, D.nachrichten(tm, chat), { frisch: true }).then(function (erg) {
+      /* mira_messages_v2 (P2): wie v1, dazu blocks der Antworten des neuen Wegs -- ohne sie stuende eine
+         neue Antwort nach dem Oeffnen nur als reiner Text da. Alte Antworten kommen gleich (content_html). */
+      return lader.laden("nachrichten_" + chat, D.nachrichtenNeu(tm, chat), { frisch: true }).then(function (erg) {
         if (erg.ueberholt || tm !== team()) return null;
         var n = erg.ok ? D.zuNachrichten(erg.daten) : null;
         if (!n) {
@@ -224,6 +241,10 @@
         }
         cacheSetzen(chat, n.rows);
         if (zeigen || offenerChat() === chat) am("askMiraSetMessages", n.rows.slice(), chat);
+        /* Laeuft die letzte Antwort noch (Neuladen, zweiter Tab), haengt sich das Fenster an ihren
+           Stream (Q13); geht das nicht, kommt sie wie bisher ueber Realtime. */
+        var letzte = n.rows[n.rows.length - 1];
+        if (letzte && letzte.role === "assistant" && /^(running|queued)$/.test(str(letzte.status))) anhaengen(chat, str(letzte.id));
         return n;
       });
     }
@@ -278,9 +299,27 @@
         gem.laufend[chat] = { amid: str(p.assistant_message_id), seit: Date.now() };
         if (p.user_message) cacheEin(chat, p.user_message);
         notfristStellen(chat);
+        /* Gestartet von einem anderen Tab oder Geraet: live mitlesen, wenn dieser Chat offen ist. Die
+           eigene Sendung liest ihren Stream schon selbst (gem.sendung). */
+        if (chat === offenerChat() && !(gem.sendung && Date.now() - gem.sendung < 60000)) {
+          var amidS = str(p.assistant_message_id);
+          setTimeout(function () { anhaengen(chat, amidS); }, 800);
+        }
       } else if (art === "mira_message_success" || art === "mira_message_error") {
         delete gem.laufend[chat];
         notfristWeg(chat);
+        /* Eine Antwort des neuen Wegs (content_html leer): das Ereignis traegt keine Bloecke (DB-Vertrag
+           P0, _mira_message_json_v1). Kamen sie schon ueber den Stream, gehen sie hier an die Nachricht;
+           sonst wie bei content_omitted einmal mira_messages_v2 holen. */
+        var pm = p.message;
+        if (art === "mira_message_success" && pm && typeof pm === "object" && pm.role === "assistant" && !pm.content_html && !pm.blocks) {
+          var bekannt = gem.bloecke[str(pm.id)];
+          if (bekannt) pm.blocks = bekannt;
+          else if (gem.cache[chat] || chat === offenerChat()) {
+            nachrichtenLaden(chat, false).then(function () { am("askMiraRealtime", p); });
+            return;
+          }
+        }
         if (p.content_omitted === true) {
           /* Zu gross fuer das Ereignis: einmal die Nachrichten holen, DANN weiterreichen -- das
              Nachfassen der Komponente liest dann schon den neuen Stand. */
@@ -338,8 +377,21 @@
          dem leeren Chat, ist das jetzt dieser. */
       if (g.neu && !offenerChat()) am("askMiraSetActiveChat", g.chatId, false, "");
     }
-    function sendeFehlerSatz(erg) {
-      var art = D.fehlerArt(erg);
+    /* hint der Kontingentsperre: Sekunden bis zum Monatswechsel (Berlin) -> Datum in der Sprache der App. */
+    function resetDatum(erg) {
+      var s = Number(erg && erg.fehler && erg.fehler.hint);
+      if (!isFinite(s) || s <= 0 || s > 40 * 86400) return "";
+      try { return new Date(Date.now() + s * 1000).toLocaleDateString(UC.getPref && String(UC.getPref("locale") || "").toLowerCase() === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "long", timeZone: "Europe/Berlin" }); }
+      catch (e) { return ""; }
+    }
+    function sendeFehlerSatz(erg, neu) {
+      var art = neu ? D.fehlerArtNeu(erg) : D.fehlerArt(erg);
+      /* Nur der neue Weg kennt diese (upstreem-app lib/mira/db.ts, rpc_lexikon 22_mira "Mira-Agent"). */
+      if (art === "kontingent") { var am2 = resetDatum(erg); return t("Your team has used this month's Mira allowance.") + (am2 ? " " + t("It resets on {datum}.").replace("{datum}", am2) : ""); }
+      if (art === "tag") return t("You've reached today's limit for Mira. Try again tomorrow.");
+      if (art === "beschaeftigt") return t("Mira is already answering two of your questions. Wait for one of them, then send again.");
+      if (art === "doppelt") return t("This message is already being answered.");
+      if (art === "anmeldung") return t("Your session has expired. Reload the page and sign in again.");
       if (art === "laeuft") return t("Mira is still answering in this chat. Wait for the answer, then send again.");
       /* Mit hint (Sekunden bis zum naechsten Minutenfenster) die genaue Wartezeit (16.10.). */
       if (art === "rate") return UC.warteSekunden && UC.warteSekunden(erg)
@@ -354,9 +406,84 @@
       if (art === "zeit") return t("Mira is taking too long to respond. Try again in a moment.");
       return null;
     }
+    /* ---- Der neue Weg (P2): /api/mira, Antwort als Stream ------------------------------------ */
+    gem.bloecke = gem.bloecke || {};   /* amid -> Bloecke aus dem Stream, bis die DB-Fassung da ist */
+    gem.leser = gem.leser || {};       /* amid -> laufender Leser (ein Stream je Antwort) */
+    var STILL_MS = 180000;             /* so lange ohne jedes Teil = haengende Verbindung (Ultra denkt bis 60 s ohne Teil) */
+    function folgen(antwort, st) {
+      if (st.amid) gem.leser[st.amid] = true;
+      return D.streamLesen(antwort, function (teil) {
+        var typ = str(teil.type), dd = teil.data && typeof teil.data === "object" ? teil.data : {};
+        if (typ === "data-mira-start") {
+          st.amid = str(dd.assistant_message_id); st.chat = str(dd.session_id) || st.chat;
+          if (st.amid) gem.leser[st.amid] = true;
+          if (st.neu) gesendet({ chatId: st.chat, userId: str(dd.user_message_id), amid: st.amid, neu: dd.is_new_session === true }, st.frage);
+          am("askMiraStreamStart", st.chat, st.amid, str(dd.user_message_id));
+          return;
+        }
+        /* Der Text zaehlt je Runde: was das Modell vor einem weiteren Werkzeugaufruf schreibt, ist
+           Vorrede (dasselbe Ende wie im Arbeitsprotokoll, ask-mira.js runAnwenden). */
+        if (typ === "start-step") { st.text = ""; am("askMiraRunEvent", teil); return; }
+        if (typ === "text-delta") { st.text += str(teil.delta); am("askMiraStreamText", st.chat, st.amid, st.text); return; }
+        if (typ === "data-mira-refs") { am("askMiraStreamRefs", st.chat, st.amid, dd.items || []); return; }
+        if (typ === "data-mira-chart") { am("askMiraStreamChart", st.chat, st.amid, dd); return; }
+        if (typ === "data-mira") {
+          st.fertig = true;
+          if (st.amid && Array.isArray(dd.bloecke)) gem.bloecke[st.amid] = dd.bloecke;
+          am("askMiraStreamFertig", st.chat, st.amid, dd);
+          return;
+        }
+        if (typ === "data-mira-saved") {
+          if (dd.ok === false) satz("This answer couldn't be saved", "error", "Try again.");
+          return;
+        }
+        if (typ === "error") { st.fertig = true; am("askMiraStreamFehler", st.chat, st.amid, str(teil.errorText)); return; }
+        am("askMiraRunEvent", teil);
+      }, { still: STILL_MS }).then(function (r) {
+        if (st.amid) delete gem.leser[st.amid];
+        if (st.fertig) return;
+        if (!st.amid) { am("askMiraSendFailed", t("Mira couldn't be reached. Check your connection and try again.")); return; }
+        /* Verbindung weg oder still, die Antwort laeuft auf dem Server weiter: einmal neu anhaengen,
+           sonst bringt Realtime sie (mira_message_success), notfalls die 11-Minuten-Frist. */
+        if (!st.wieder) anhaengen(st.chat, st.amid);
+      });
+    }
+    function anhaengen(chat, amid) {
+      if (!chat || !amid || gem.leser[amid] || !UC.sitzungsToken) return;
+      gem.leser[amid] = true;
+      D.weg().then(function (w) {
+        if (w !== "neu") { delete gem.leser[amid]; return null; }
+        return UC.sitzungsToken().then(function (token) { return token ? D.wiederanhaengen(token, amid) : null; });
+      }).then(function (antwort) {
+        if (!antwort) { delete gem.leser[amid]; return; }
+        am("askMiraStreamAnhaengen", chat, amid);
+        folgen(antwort, { chat: chat, amid: amid, text: "", wieder: true });
+      }, function () { delete gem.leser[amid]; });
+    }
+    function sendenNeu(tm, d) {
+      var body = D.sendeBodyNeu(tm, d, zustand());
+      var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      var zeitAus = false;
+      /* Bis die Antwort beginnt (Kopfzeilen), wie bisher bei mira-send 30 s. */
+      var uhr = setTimeout(function () { zeitAus = true; if (ctrl) ctrl.abort(); }, 30000);
+      gem.sendung = Date.now();
+      kanalBereit().then(function () { return UC.sitzungsToken ? UC.sitzungsToken() : ""; }).then(function (token) {
+        if (!token) return { ok: false, status: 401, fehler: { code: "", message: "edge_unauthorized", hint: "" } };
+        return D.sendenNeu(token, body, { signal: ctrl && ctrl.signal, zeitAus: function () { return zeitAus; } });
+      }).then(function (erg) {
+        clearTimeout(uhr);
+        if (!erg.ok) { am("askMiraSendFailed", sendeFehlerSatz(erg, true)); return; }
+        folgen(erg.antwort, { neu: true, frage: body.message, chat: str(body.session_id), amid: "", text: "" });
+      });
+    }
+
     function senden(d) {
       var tm = team();
-      if (!tm || !UC.edge) { am("askMiraSendFailed"); return; }
+      if (!tm) { am("askMiraSendFailed"); return; }
+      D.weg().then(function (w) { if (w === "neu") sendenNeu(tm, d); else sendenAlt(tm, d); });
+    }
+    function sendenAlt(tm, d) {
+      if (!UC.edge) { am("askMiraSendFailed"); return; }
       var body = D.sendeBody(tm, d, zustand());
       kanalBereit().then(function () {
         return UC.edge(D.FN.senden, body, { timeoutMs: 30000 });
@@ -434,6 +561,35 @@
       });
     }
 
+    /* Aktionskarte (P2/P3, upstreem-app mira/AKTIONSKARTE.md 5): Start bzw. Rueckgaengig an die Route
+       der App, der neue Stand der Karte zurueck ans Fenster. */
+    function aktionSatz(erg) {
+      var m = str(erg.fehler && erg.fehler.message);
+      if (erg.status === 404 && (m === "not_found" || m === "http_404")) return t("This action isn't available yet.");
+      if (m === "action_undo_expired") return t("This can no longer be undone.");
+      if (m === "action_not_startable") return t("This action has already been started.");
+      if (m === "page_audit_quota_exhausted" && UC.pageAuditFehlerSatz) return UC.pageAuditFehlerSatz(erg);
+      if (m === "prompt_research_user_busy") return t("You already have a research running.");
+      if (m === "brands_limit_reached") return t("Your plan has no free brand slots.");
+      if (/_rate_limited$/.test(m) || erg.status === 429) return UC.warteSatz ? UC.warteSatz(erg, t("Wait a minute and try again.")) : t("Wait a minute and try again.");
+      if (/^team_access_/.test(m) || erg.status === 402) return t("Your team doesn't have access right now.");
+      if (erg.status === 403) return t("You don't have access to this team.");
+      if (erg.status === 0) return t("Mira couldn't be reached. Check your connection and try again.");
+      return t("Try again.");
+    }
+    function aktion(d) {
+      var tm = team(), amid = str(d.assistant_message_id), aid = str(d.action_id);
+      if (!tm || !amid || !aid || !UC.sitzungsToken) return;
+      var body = { team_id: tm, session_id: str(d.session_id) || offenerChat(), assistant_message_id: amid,
+                   action_id: aid, op: d.op === "undo" ? "undo" : "start", client_key: D.kennung() };
+      UC.sitzungsToken().then(function (token) { return D.aktion(token, body); }).then(function (erg) {
+        var j = erg.daten || {};
+        if (j.card) am("askMiraActionCard", amid, j.card, j.opportunity || null);
+        if (erg.ok) return;
+        am("askMiraActionFailed", amid, aid, t("Couldn't start this action") + ". " + aktionSatz(erg));
+      });
+    }
+
     function handle(name, wert) {
       var tm = team();
       var d = lesen(wert);
@@ -485,6 +641,7 @@
           return;
         }
         case "export_pdf": pdf(d); return;
+        case "action": aktion(d); return;
         /* Die Komponente fragt die Liste neu an, wenn der Tab 20s und laenger weg war, nach "online",
            nach pageshow und nach einem Wiederverbinden. Der Kanal haelt die Liste nur, solange er
            verbunden ist -- was in der Pause kam (neuer Chat auf einem anderen Geraet, ein Titel),
