@@ -585,7 +585,8 @@
         if (!erg.ok || !erg.daten || !erg.daten.blob) {
           var artP = D.fehlerArt(erg);
           satz("Couldn't create the PDF", "error", artP === "weg" ? "This answer no longer exists."
-            : artP === "zugang" ? "Your team doesn't have access right now." : "Try again.");
+            : artP === "zugang" ? "Your team doesn't have access right now."
+            : artP === "rate" && UC.warteSatz ? UC.warteSatz(erg, t("Wait a minute and try again.")) : "Try again.");
           return;
         }
         try {

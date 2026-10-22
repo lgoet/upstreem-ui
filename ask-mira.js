@@ -2537,9 +2537,11 @@
     while (i < zeilen.length){
       var z = zeilen[i];
       if (!z.trim()){ i++; continue; }
-      var hd = /^\s{0,3}#{1,6}\s+(.*?)\s*#*\s*$/.exec(z);
-      if (hd){ html += '<p><strong>' + blkInline(hd[1].replace(/^\*\*|\*\*$/g, ''), refs) + '</strong></p>'; i++; continue; }
-      if (/^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(z)){ html += '<hr>'; i++; continue; }
+      /* Nur lineare Muster (Sicherheitspruefung 23.10., H2): eine Zeile mit tausenden Leerzeichen hing in
+         /(.*?)\s*#*\s*$/ Sekunden lang. */
+      var hd = /^ {0,3}#{1,6}[ \t]+(.*)$/.exec(z);
+      if (hd){ html += '<p><strong>' + blkInline(hd[1].replace(/[ \t#]+$/, '').replace(/^\*\*|\*\*$/g, ''), refs) + '</strong></p>'; i++; continue; }
+      if (/^ {0,3}([-*_])[ \t]*(?:\1[ \t]*){2,}$/.test(z)){ html += '<hr>'; i++; continue; }
       /* Die Stelle eines Charts als Codeblock (```chart:c1 + ```): der Chart steht als eigener Block,
          der leere Zaun faellt weg (gespeicherte Antworten vor dem Fix in bloeckeBauen tragen ihn noch). */
       if (/^\s*```\s*chart[\s:]*c\d{1,3}\s*$/.test(z)){
@@ -2580,7 +2582,7 @@
         continue;
       }
       var teile = [];
-      while (i < zeilen.length && zeilen[i].trim() && !/^\s{0,3}#{1,6}\s|^\s*```|^\s*>|^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(zeilen[i]) && !BLK_LISTE.test(zeilen[i])) teile.push(zeilen[i++]);
+      while (i < zeilen.length && zeilen[i].trim() && !/^ {0,3}#{1,6}[ \t]|^\s*```|^\s*>|^ {0,3}([-*_])[ \t]*(?:\1[ \t]*){2,}$/.test(zeilen[i]) && !BLK_LISTE.test(zeilen[i])) teile.push(zeilen[i++]);
       if (!teile.length) teile.push(zeilen[i++]);
       absatz(teile);
     }
@@ -2632,16 +2634,18 @@
      von vier gefuellten Zellen sind Zahlen (mit %, Vorzeichen, Tausenderpunkt, Pfeil). */
   var BLK_ZAHL = /^[\s(]*[+\-−–~≈#]?\s?\d[\d.,\s]*(%|pp)?\s*(\([+\-−–]?\s?\d[\d.,]*%?\))?[)\s]*$/;
   function blkTabelle(b, refs){
-    var head = blkArr(b.head).map(blkStr), rows = blkArr(b.rows).map(function(r){ return blkArr(r).map(blkStr); });
-    var n = head.length || (rows[0] ? rows[0].length : 0);
+    /* Grenzen wie im PDF (upstreem-app lib/mira/pdf.ts): Bloecke kann ein Nutzer selbst schreiben. */
+    var zelle0 = function(v){ return blkStr(v).slice(0, 2000); };
+    var head = blkArr(b.head).slice(0, 30).map(zelle0), rows = blkArr(b.rows).slice(0, 500).map(function(r){ return blkArr(r).slice(0, 30).map(zelle0); });
+    var n = Math.min(30, head.length || (rows[0] ? rows[0].length : 0));
     if (!n) return '';
     var zahl = [];
     for (var c = 0; c < n; c++){
       var voll = 0, ja = 0;
       rows.forEach(function(r){
-        var v = String(r[c] == null ? '' : r[c]).replace(/\[([^\]]*)\]\(ref:[a-z]\d+\)/g, '$1').replace(/\*\*/g, '').trim();
+        var v = String(r[c] == null ? '' : r[c]).replace(/\[([^\]]*)\]\(ref:[a-z]\d+\)/g, '$1').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim();
         if (!v || v === '–' || v === '-') return;
-        voll++; if (BLK_ZAHL.test(v)) ja++;
+        voll++; if (v.length <= 40 && BLK_ZAHL.test(v)) ja++;
       });
       zahl.push(c > 0 && voll > 0 && ja / voll >= 0.75);
     }
@@ -2774,6 +2778,14 @@
     });
   }
 
+  /* Ein Weg in der App ("/?view=..."), nie eine fremde Adresse: "/\\evil.example" waere fuer den Browser
+     https://evil.example (Sicherheitspruefung 23.10., N2). */
+  function blkWeg(h){
+    h = blkStr(h);
+    if (!/^\/(?![\/\\])/.test(h)) return '';
+    try { return new URL(h, window.location.origin).origin === window.location.origin ? h : ''; } catch(e){ return ''; }
+  }
+
   /* ---- Aktionskarte (upstreem-app mira/AKTIONSKARTE.md, Abschnitt 4) ---- */
   var BLK_ART_ZEICHEN = { page_audit: 'fileText', prompt_research: 'search', track_brand: 'squareStack', create_opportunity: 'listTodo', opportunity_status: 'listTodo' };
   function blkKosten(b){
@@ -2798,7 +2810,7 @@
     var fav = (k && k.faviconUrl && (ziel.domain || ziel.url)) ? k.faviconUrl(ziel.domain || ziel.url, 64) : '';
     var zielHtml = ziel.label ? '<div class="am-akt-ziel">' + (fav ? '<img class="am-akt-fav" src="' + escAttr(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : '') +
       '<span class="am-akt-zieltext">' + esc(ziel.label) + '</span></div>' : '';
-    var fuss = '', job = blkObj(b.job), href = job && /^\/(?!\/)/.test(blkStr(job.href)) ? blkStr(job.href) : '';
+    var fuss = '', job = blkObj(b.job), href = job ? blkWeg(job.href) : '';
     var daten = ' data-akt-id="' + escAttr(b.id) + '" data-akt-msg="' + escAttr(m && m.id) + '"';
     if (st === 'proposed' && b.klasse === 3){
       var kosten = blkKosten(b);
@@ -2830,7 +2842,7 @@
      Weg in die App. Nur Wege der App (/?view=...), nie eine fremde Adresse. */
   function blkJob(b){
     var L2 = BL(), k = window.UpstreemCore, art = blkStr(b.kind);
-    var href = /^\/(?!\/)/.test(blkStr(b.href)) ? blkStr(b.href) : '';
+    var href = blkWeg(b.href);
     var zeichen = k && k.icon ? k.icon(BLK_ART_ZEICHEN[art] || 'fileText', 1.7) : '';
     return '<div class="am-akt am-job">' +
              '<div class="am-akt-kopf"><span class="am-akt-ic" aria-hidden="true">' + zeichen + '</span>' +
@@ -8878,8 +8890,9 @@
       if (aart === 'aktion-link'){
         /* Ein Weg in der App (/?view=audits&run_id=...): Adresse setzen und die Ansicht wechseln wie die
            Seitenleiste (UC.ansichtWechseln), ohne die Seite neu zu laden. */
-        var ziel = ak.getAttribute('href') || '', kern = window.UpstreemCore, vm = /[?&]view=([a-z0-9_-]+)/i.exec(ziel);
-        if (ziel && vm && kern && kern.ansichtWechseln){
+        var ziel = blkWeg(ak.getAttribute('href') || ''), kern = window.UpstreemCore, vm = /[?&]view=([a-z0-9_-]+)/i.exec(ziel);
+        if (!ziel){ e.preventDefault(); return; }
+        if (vm && kern && kern.ansichtWechseln){
           e.preventDefault();
           try { window.history.pushState(window.history.state, '', ziel); kern.ansichtWechseln(vm[1]); } catch(err){ window.location.href = ziel; }
         }
