@@ -219,6 +219,10 @@
 .uev-sec-head .up-sec-h { gap: 6px; }
 .uev-chartbox { padding: 16px; }
 .uev-linewrap { height: 300px; }
+/* Tag, Woche, Monat (22.10.): der Schalter aus core (.vc-gran) steht rechts neben der Kennzahl im Kopf des Charts. core setzt
+   display: inline-flex und schlaegt damit das hidden des Browsers -- verborgen ist er, solange die Datenbank die Stufen nicht kann. */
+.uev-gran[hidden] { display: none; }
+.uev-chartwerkzeuge { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; min-width: 0; }
 
 /* Die Tabellen sind .up-vartable aus core. Hier stehen nur die Spaltenbreiten -- die laesst core
    bewusst bei der Komponente (core.css an .up-varsec). Erste Spalte waechst (.up-var-name), die
@@ -1079,10 +1083,15 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-zielkpis.is-3 { --up-kpiband-n: 3; }
 .up-root.is-narrow .uev-zielkpis.is-3 { --up-kpiband-n: 1; }
 .uev-zielchart { position: relative; }
-.uev-zielmetrik { position: absolute; top: 12px; right: 12px; z-index: 2; }
+/* Die Werkzeuge eines Ziel-Charts (22.10.: Modus und Stufe in einer Zeile, die Stufe ganz rechts). Event Tracking: eine Zeile ueber dem
+   Chart, 12 darunter -- oben im Chart stehen dort die Pins der Events. Citation Tracking (ohne Pins) wie seit dem 19.10. der Modus oben
+   rechts im Chart. */
+.uev-zielwerkzeuge { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; width: fit-content; max-width: 100%; margin: 0 0 12px auto; }
+.uev-zielwerkzeuge[hidden] { display: none; }
+.uev-detail.is-watch .uev-zielwerkzeuge { position: absolute; top: 12px; right: 12px; z-index: 2; margin: 0; }
 /* Schmal (21.10.): drei Modi (Overall Share, Overall Citations, URL Share) sind breiter als der Platz neben der Achse -- oben rechts lag der
    Umschalter ueber dem Chart. Dann steht er in der Zeile ueber dem Chart, 12 darunter. */
-.up-root.is-narrow .uev-zielmetrik { position: static; display: flex; width: fit-content; margin: 0 0 12px auto; }
+.up-root.is-narrow .uev-detail.is-watch .uev-zielwerkzeuge { position: static; margin: 0 0 12px auto; }
 .uev-detail.is-watch.is-band-aus :is(.uev-zielkpis, .uev-zielchart) { display: none; }
 /* Profilbild eines Citation Tracking mit Favicon (19.10.): das Bild sitzt an der Stelle des Zeichens (22), das Zeichen bleibt als Rueckfall darunter. */
 /* Das Zeichen weicht nur, solange das Bild wirklich da ist (:has): faellt es aus, steht das Zeichen wieder -- nie ein leerer Kreis. */
