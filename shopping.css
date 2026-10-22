@@ -61,6 +61,10 @@
 .up-root.ush-rh { --up-tab-leer-zeile: var(--up-h-row); }
 .up-root.ush-rh.is-dense { --up-tab-leer-zeile: 34px; }
 .ush-seite[data-seite="overview"] > .ush-gruppe:has(> .up-band:last-child):has(+ .ush-sek) { margin-bottom: 0; }
+/* Dasselbe im Produkt-Detail (22.10., Lukas: "das gap ueber der Merchants heading bis zum Container darueber ist kleiner als das von Recent
+   Appearances"): auf "Where this product appears" (ein Band) folgt der Abschnitt Merchants mit eigener Ueberschrift, und die core-Regel rueckte
+   ihn auf 16 heran (gemessen: Band bis Abschnitt 16, Merchants bis Recent Appearances 32). Jetzt 32 wie zwischen allen Abschnitten. */
+.ush-root .ush-seite[data-seite="detail"] > .up-band.ush-sek:has(+ .ush-sek) { margin-bottom: 0; }
 .ush-seite { display: flex; flex-direction: column; --up-stapel-luft: 32px; gap: var(--up-stapel-luft); min-width: 0; }
 .ush-gruppe { display: flex; flex-direction: column; gap: var(--up-stapel-luft, 32px); min-width: 0; }
 .ush-sek { display: flex; flex-direction: column; min-width: 0; }
@@ -125,10 +129,16 @@
 .ush-heroband .ush-hero-oben { padding: 24px var(--up-flach-aus); }
 /* Where this product appears: drei Spalten unter der Ueberschriftzeile, die Linien zwischen ihnen
    von der Ueberschriftzeile bis zur Unterkante des Bandes (der Kasten hat kein Polster, die Spalten
-   polstern selbst). Gestapelt (is-narrow) liegt die Linie oben und laeuft bis an die Kanten. */
+   polstern selbst). Gestapelt (is-narrow) liegt die Linie oben und laeuft bis an die Kanten.
+   EIN RASTER WIE DIE TABELLEN (22.10., Lukas: Haarlinie unter der Ueberschrift, die drei Spalten werden echte Zellen): vorher
+   endeten die senkrechten Linien oben im Leeren, weil die Zeile der Ueberschrift (core .up-band-head) ohne Linie zum Inhalt
+   steht -- unten trafen sie die Linie des Bandes, oben nichts. Jetzt traegt der Kasten oben die Linie wie der Kopf einer
+   flachen Tabelle, die Spalten stossen oben und unten an eine Linie, und jede Zelle polstert ringsum 16 (vorher oben 8:
+   die 48er Zeile brachte die Luft zur Ueberschrift mit, die jetzt die Linie trennt). Spezifitaet (0,6,0): schlaegt
+   border-width 0 an ".up-band > .up-box" aus core (0,5,0) ohne die Ladereihenfolge. */
 .ush-root .up-root.ush-band[data-flach="yes"] > .ush-wo { padding: 0; }
-.ush-band > .ush-wo .ush-wo-spalte { padding: 8px var(--up-flach-aus) 16px; }
-.ush-root.is-narrow .ush-band > .ush-wo .ush-wo-spalte + .ush-wo-spalte { padding-top: 16px; }
+.ush-root .up-root.ush-band[data-flach="yes"] > .up-box.ush-wo { border-top: 1px solid var(--vc-border); }
+.ush-band > .ush-wo .ush-wo-spalte { padding: 16px var(--up-flach-aus); }
 
 /* ---- Tabellen --------------------------------------------------------------------------------------
    Das Raster aus core (.up-thead/.up-row); die Spuren setzt UC.makeColumns als --up-cols an die
