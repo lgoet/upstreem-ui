@@ -959,56 +959,49 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 /* 32 wie zwischen allen Abschnitten (CLAUDE.md 1d, Gaps 20.10.) und wie vom Startbereich zum ersten Abschnitt; bis 22.10. 40. */
 .uev-abschnitt:not([hidden]) ~ .uev-abschnitt:not([hidden]) { margin-top: 32px; }
 
-/* ---- STARTBEREICH DER UEBERSICHT (22.10.) ----
-   Masse 1:1 aus page-audit.css (.upa-start, .upa-start-text, .upa-startkarte, .upa-sk-*; CLAUDE.md 1b "dieselben Zahlen"): Raster
-   zwei Spalten, 16 Abstand, 32 bis zum ersten Abschnitt; links oben Titel 20/26/600/-0.4 und Satz 14/20 (das Paar aus Titel und
-   Untertitel eines Popups), mindestens 112 hoch, senkrecht mittig; darunter die Karte aus core (.up-box), Polster 16, Titel in der
-   Block-Stufe, Saetze 13/1.5. Rechts ueber beide Zeilen die Grafik. Hier noch als Kopie, weil core in dieser Runde nicht angefasst
-   wird (Prompt Research baut parallel dasselbe); der gemeinsame Baustein ist in der Uebergabe benannt. */
+/* ---- STARTBEREICH DER UEBERSICHT (22.10., im Canvas "Impact Startseite" gewaehlt) ----
+   Masse 1:1 aus page-audit.css (.upa-start, .upa-start-text, .upa-startkarte; CLAUDE.md 1b "dieselben Zahlen"): Raster zwei Spalten,
+   16 Abstand, 32 bis zum ersten Abschnitt; links oben Titel 20/26/600/-0.4 und Satz 14/20 (das Paar aus Titel und Untertitel eines
+   Popups), mindestens 112 hoch, senkrecht mittig; darunter die Karte aus core (.up-box), Polster 16, Saetze 13/1.5. Rechts ueber beide
+   Zeilen die Grafik. Hier noch als Kopie, weil core in dieser Runde nicht angefasst wird (Prompt Research baut parallel dasselbe); der
+   gemeinsame Baustein ist in der Uebergabe benannt. Praefix uev-start-, nicht uev-sk- (das ist das Skelett der Karten). */
 .uev-start { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto; gap: 16px; margin: 0 0 32px; }
 .uev-start-text { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; min-height: 112px; max-width: 520px; padding: 0 0 0 2px; }
 .uev-start-text .up-heading, .uev-start-text .up-sec-sub { margin: 0; }
 .uev-start-text .up-heading.up-sec-h { font-size: var(--up-fs-modaltitel); line-height: 26px; letter-spacing: -0.4px; white-space: normal; }
 .uev-start-text .up-sec-sub { font-size: var(--up-fs-l); line-height: 20px; }
 .uev-start > .uev-startkarte { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; gap: 8px; padding: 16px; min-width: 0; }
-.uev-sk-titel { font-size: var(--up-ueb-block-gr); font-weight: var(--up-ueb-block-gew); line-height: var(--up-ueb-block-zeile); letter-spacing: var(--up-ueb-block-spur); color: var(--vc-text); }
-.uev-sk-satz { margin: 0; font-size: var(--up-fs-m); line-height: 1.5; color: var(--vc-muted); }
-/* NEU gegen das Vorbild: zwei Arten statt eines Absatzes. Je Zeichen und Name wie im Kopf ihres Abschnitts darunter (Zeichen 16,
-   8 Abstand wie .uev-head-ic), der Name in der Schrift des Satzes, nur 500 und in der Textfarbe; 12 zwischen den Arten (Rhythmus
-   der Karte). */
-.uev-sk-arten { display: flex; flex-direction: column; gap: 12px; }
-.uev-sk-art { display: grid; grid-template-columns: 16px minmax(0, 1fr); column-gap: 8px; row-gap: 2px; align-items: center; }
-.uev-sk-ic { display: inline-flex; color: var(--vc-text); }
-.uev-sk-ic svg { width: 16px; height: 16px; }
-.uev-sk-name { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 1.5; color: var(--vc-text); }
-.uev-sk-art .uev-sk-satz { grid-column: 2; }
-/* Zwei Knoepfe statt einem: 8 auseinander wie die Knoepfe im Seitenkopf (.uev-kopfaktion). */
-.uev-sk-fuss { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-.uev-sk-fuss > button { flex: 0 0 auto; }
-.uev-sk-los { display: inline-flex; align-items: center; gap: 6px; }
-.uev-sk-los svg { width: 14px; height: 14px; }
-/* NEU (nicht in core): die Grafik. Huelle, Maske und Erscheinen wie das Fensterfeld von Page Audit (.upa-fenster): fester Inhalt um
-   die Mitte, Raender per Maske ausgeblendet (Deckkraft, keine Themenfarbe), seitlich wie dort 22 %, oben und unten 12 %, weil die
-   Zeichnung flacher ist als das Feld und sonst die Platten oben im Verlauf staenden. Linien in der Textfarbe, Platten und Pin in
-   Rahmen und Flaeche der Fenster dort (--vc-border, --vc-bg, --up-e-1). */
+.uev-start-satz { margin: 0; font-size: var(--up-fs-m); line-height: 1.5; color: var(--vc-muted); }
+/* NEU gegen das Vorbild: statt eines Absatzes die zwei Arten, ohne eigene Ueberschrift der Karte (Lukas 22.10.). Je Zeichen und Name
+   wie im Kopf ihres Abschnitts darunter (Zeichen 16, 8 Abstand wie .uev-head-ic), der Name in der Schrift des Satzes, nur 500 und in
+   der Textfarbe; 12 zwischen den Arten (Rhythmus der Karte). */
+.uev-start-arten { display: flex; flex-direction: column; gap: 12px; }
+.uev-start-art { display: grid; grid-template-columns: 16px minmax(0, 1fr); column-gap: 8px; row-gap: 2px; align-items: center; }
+.uev-start-ic { display: inline-flex; color: var(--vc-text); }
+.uev-start-ic svg { width: 16px; height: 16px; }
+.uev-start-name { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 1.5; color: var(--vc-text); }
+.uev-start-art .uev-start-satz { grid-column: 2; }
+.uev-start-fuss { display: flex; align-items: center; justify-content: flex-end; margin-top: 4px; }
+.uev-start-los { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.uev-start-los svg { width: 14px; height: 14px; }
+/* NEU (nicht in core): die Grafik, Pins auf einer Zeitachse. Huelle, Maske und Erscheinen wie das Fensterfeld von Page Audit
+   (.upa-fenster): fester Inhalt um die Mitte, Raender per Maske ausgeblendet (Deckkraft, keine Themenfarbe), seitlich wie dort 22 %,
+   oben und unten 12 %, weil die Zeichnung flacher ist als das Feld. Linien in der Textfarbe, Pins in Rahmen und Flaeche der Fenster
+   dort (--vc-border, --vc-bg, --up-e-1). */
 .uev-startgrafik { grid-column: 2; grid-row: 1 / span 2; position: relative; min-height: 0; overflow: hidden; color: var(--vc-text);
   -webkit-mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent), linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
   -webkit-mask-composite: source-in;
   mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent), linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
   mask-composite: intersect; }
-/* 60 nach links: das Event steht bei 39 % der Flaeche, die Platten danach in ihrer Mitte statt im Verlauf rechts (gemessen bei 571
-   breit: dritte Platte vorher bei 86 %, im Verlauf ab 78 %). */
-.uev-sg-feld { position: absolute; left: 50%; top: 50%; width: 760px; height: 340px; transform: translate(-440px, -170px); }
+.uev-sg-feld { position: absolute; left: 50%; top: 50%; width: 760px; height: 340px; transform: translate(-380px, -170px); }
 .uev-sg-svg { position: absolute; inset: 0; display: block; overflow: visible; }
-/* Pin wie der Event-Pin im Chart, nur gross: Kachel 40, Radius nach Hoehe (ab 37: 8), Rahmen hervorgehoben wie das Fenster mit dem
-   Zeichen in Page Audit (.upa-fenster-win.is-hl, Textfarbe 45 %). */
-.uev-sg-pin { position: absolute; left: 360px; top: 76px; width: 40px; height: 40px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--vc-text) 45%, transparent); border-radius: var(--up-r-l); background: var(--vc-bg); box-shadow: var(--up-e-1); color: var(--vc-text); }
-.uev-sg-pin svg { width: 20px; height: 20px; }
-/* Die zitierten Seiten als Logoplatten wie im Logo-Stapel (28 hoch, Radius 6). */
-.uev-sg-platte { position: absolute; width: 28px; height: 28px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+/* Pins wie der Event-Pin im Chart, nur gross: Kachel 32 mit Radius 6 (nach Hoehe), Zeichen in der zweiten Textfarbe; der
+   hervorgehobene 40 mit Radius 8, Rahmen und Zeichen wie das Fenster mit dem Zeichen in Page Audit (.upa-fenster-win.is-hl). */
+.uev-sg-pin { position: absolute; width: 32px; height: 32px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
   border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--vc-bg); box-shadow: var(--up-e-1); color: var(--vc-muted); }
-.uev-sg-platte svg { width: 14px; height: 14px; }
+.uev-sg-pin svg { width: 16px; height: 16px; }
+.uev-sg-pin.is-hl { width: 40px; height: 40px; border-color: color-mix(in srgb, var(--vc-text) 45%, transparent); border-radius: var(--up-r-l); color: var(--vc-text); }
+.uev-sg-pin.is-hl svg { width: 20px; height: 20px; }
 /* Start bei 30 % wie in Page Audit: laeuft die Zeitleiste nicht (verdeckte Ansicht, Vorschaubild), bleibt die Grafik sichtbar. */
 .uev-sg-teil { animation: uev-sg-ein var(--up-t-3) var(--up-ease-auf) backwards; }
 @keyframes uev-sg-ein { from { opacity: .3; transform: translateY(6px); } to { opacity: 1; transform: none; } }
