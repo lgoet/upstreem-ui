@@ -218,6 +218,15 @@
         "cd /private/tmp/claude-501/-Users-lukasgotzkes-Documents-GitHub-upstreem-ui/9ce7d7a7-637f-416d-b211-b6db6edc2ed5/scratchpad/app-mira && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 MIRA_PROBE_DATEN=/private/tmp/claude-501/-Users-lukasgotzkes-Documents-GitHub-upstreem-ui/9ce7d7a7-637f-416d-b211-b6db6edc2ed5/scratchpad/mira_probe/leeup.json HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3047"
       ],
       "port": 3047
+    },
+    {
+      "name": "MCP-3100",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/claude-501/-Users-lukasgotzkes-Documents-GitHub-upstreem-ui/8b2d6c3f-761e-4c23-ab92-3ab1712e6fec/scratchpad/app-mcp && PATH=$HOME/.local/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 exec node node_modules/next/dist/bin/next dev -p 3100"
+      ],
+      "port": 3100
     }
   ]
 }
