@@ -563,22 +563,27 @@
   /* Platzhalter aus details: nur einfache Texte bis 200 Zeichen, nie Objekte -- und nie ein
      Platzhalter, der stehen bleibt. Fehlt ein Wert, nimmt der Text seine Fassung ohne. */
   var QUELLE = { header: "X-Robots-Tag header", meta: "robots meta tag", html: "robots meta tag", rendered: "rendered page" };
+  /* Erst uebersetzen, dann fuellen: t() findet nur den ganzen Satz, und der steht im Katalog mit
+     Platzhalter. Gefuellt fand die Seite ihn nie, "Different response for PerplexityBot" blieb im
+     Deutschen englisch. t() der Seite laesst den fertigen deutschen Satz danach unveraendert. */
+  function tl(x) { var U = window.UC; return x && U && U.t ? U.t(x) : x; }
   function fuellen(muster, ohne, w) {
     if (!muster) return "";
+    muster = tl(muster);
     var fehlt = false;
     var aus = muster.replace(/\{([a-z]+)\}/g, function (_, k) {
       var v = str(w[k]).trim();
       if (!v || v.length > 200) { fehlt = true; return ""; }
       return v;
     });
-    return fehlt ? (ohne || muster.replace(/\s*\{[a-z]+\}\s*/g, " ").replace(/\s+/g, " ").trim()) : aus;
+    return fehlt ? (tl(ohne) || muster.replace(/\s*\{[a-z]+\}\s*/g, " ").replace(/\s+/g, " ").trim()) : aus;
   }
   function befundText(f) {
     var b = BEFUNDE[f.family], d = f.details || {};
     var platform = "";
     if (f.profiles && f.profiles.length === 1) platform = profil(f.profiles[0]).name;
-    var w = { token: str(d.token || d.user_agent_token), path: str(d.path), status: str(d.http_status || d.status),
-              source: QUELLE[str(d.source)] || "", platform: platform };
+    var w = { token: str(d.token || d.user_agent_token), path: str(d.path) || pfadAus(d.url), status: str(d.http_status || d.status),
+              source: tl(QUELLE[str(d.source)] || ""), platform: platform };
     if (!b) {
       /* Eine Befundart, die diese Fassung nicht kennt (neueres Regelwerk): ehrlich als solche, mit
          dem Schluessel des Checks -- nie geraten, was sie bedeutet. */
@@ -594,8 +599,21 @@
     ["rule", "Rule"], ["path", "Path"], ["token", "Crawler"], ["robots_url", "robots.txt"], ["http_status", "HTTP status"],
     ["directive", "Directive"], ["location", "Redirect target"], ["canonical", "Canonical"], ["header", "Header"]
   ];
+  /* Der Worker schreibt die robots-Regel als Objekt regel { art, muster, zeile } und statt des Pfads die
+     URL (bewertung.ts, B1). Gelesen wurde nur rule und path als Text: im echten Lauf fehlte die Regel,
+     auf die der erste Schritt verweist ("the rule shown above"). Beide Formen werden gelesen. */
+  function pfadAus(u) { var m = /^https?:\/\/[^\/?#]+([^#]*)/i.exec(str(u)); return m ? (m[1] || "/") : ""; }
+  function regelText(r) {
+    if (!obj(r)) return "";
+    var art = str(r.art).toLowerCase(), muster = str(r.muster);
+    if ((art !== "allow" && art !== "disallow") || !muster) return "";
+    return (art === "allow" ? "Allow" : "Disallow") + ": " + muster;
+  }
   function befundFelder(f) {
-    var d = f.details || {}, aus = [];
+    var d0 = f.details || {}, d = {}, aus = [];
+    for (var k in d0) if (Object.prototype.hasOwnProperty.call(d0, k)) d[k] = d0[k];
+    if (d.rule == null) d.rule = regelText(d0.regel) || null;
+    if (d.path == null && d0.regel != null) d.path = pfadAus(d0.url) || null;
     DETAIL_FELDER.forEach(function (x) {
       var v = d[x[0]];
       if (v == null || typeof v === "object") return;
@@ -623,8 +641,10 @@
     var d = f.details || {}, x = num(d.numerator), n = num(d.denominator);
     if (x == null || n == null || n <= 0) return "";
     fmt = fmt || function (v) { return String(v); };
-    var was = str(d.gerendert_strategie) === "body" ? "of the page text" : "of the main text";
-    return fmt(x) + " of " + fmt(n) + " characters " + was + " are in the initial HTML.";
+    /* Als ganzer Satz mit Platzhaltern, damit t() ihn findet (Katalog in page-audit.js). */
+    var muster = str(d.gerendert_strategie) === "body" ? "{x} of {n} characters of the page text are in the initial HTML."
+      : "{x} of {n} characters of the main text are in the initial HTML.";
+    return tl(muster).replace("{x}", fmt(x)).replace("{n}", fmt(n));
   }
   var SCHWERE = { critical: "Critical", high: "High", medium: "Medium", low: "Low" };
   var SCHWERE_RANG = { critical: 0, high: 1, medium: 2, low: 3 };
