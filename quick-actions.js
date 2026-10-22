@@ -433,11 +433,12 @@
       id: "share",
       label: "Share",
       hint: "%",
-      body: "Share is the percentage of all citations in the selected period that point to one URL, " +
-            "domain or brand. Shares across all rows sum to 100%. A rising share means gaining ground " +
-            "relative to everything else, not simply being cited more often. Domain Share applies the " +
-            "same calculation inside a single domain: the percentage of that domain's own citations " +
-            "carried by one URL."
+      body: "Share is the percentage of AI answers with citations in the selected period that cite " +
+            "a given URL or domain. One answer often cites several sources, so the shares of all rows " +
+            "can add up to more than 100%. A rising share means gaining ground relative to everything " +
+            "else, not simply being cited more often. Domain Share applies the same calculation inside " +
+            "a single domain: of the answers that cite that domain, the percentage that cite one " +
+            "particular URL."
     },
     {
       id: "trend",

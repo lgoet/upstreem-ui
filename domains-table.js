@@ -1379,7 +1379,7 @@
     function explainInfo(kind){
       if (EXPLAIN_LOCAL[kind]) return EXPLAIN_LOCAL[kind];
       if (kind === "share" && UC.explainCopy) return UC.explainCopy("share", { subject: "domain" });
-      if (kind === "share") return { h: "Share", t: "How much of all citations in the period went to this domain, plus the change against the previous period." };
+      if (kind === "share") return { h: "Share", t: "Of all AI answers with citations, the share that cites this domain, plus the change against the previous period." };
       return null;
     }
     function showExplain(el){

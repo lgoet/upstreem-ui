@@ -1129,8 +1129,8 @@ Das Label nennt die aktive Auswahl: `All X` → bei einer Auswahl deren Name →
 Leerzuständen noch in Buttons. Stattdessen Komma, Doppelpunkt oder ein eigener Satz:
 
 ```
-FALSCH   "How much of all citations went to this domain — plus the change."
-RICHTIG  "How much of all citations went to this domain, plus the change."
+FALSCH   "The share of answers that cite this domain — plus the change."
+RICHTIG  "The share of answers that cite this domain, plus the change."
 
 FALSCH   "What kind of source this is — editorial, a competitor, your own site."
 RICHTIG  "What kind of source this is: editorial, a competitor, your own site."

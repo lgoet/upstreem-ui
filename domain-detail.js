@@ -61,10 +61,9 @@
     /* Der Knopf heisst "URL Share", nicht mehr "Domain Share": er waehlt dieselbe Sicht, die die
        Ueberschrift benennt, und zwei Namen fuer eine Sache sind einer zu viel. */
     { key: "domain",   label: "URL Share",      heading: "URL Share over Time",
-      info: "How this domain's citations are split across its own URLs. Each line is one URL, " +
-            "and its value is that URL's share of all citations this domain received in the " +
-            "period -- so the lines add up to 100%. It answers which pages of the domain the " +
-            "models actually cite, not how the domain compares to other domains." }
+      info: "Each line is one URL of this domain: of the AI answers citing the domain, the " +
+            "share that cites this URL. One answer can cite several URLs, so the lines can add " +
+            "up to more than 100%." }
   ];
   /* D, W und M statt der ganzen Woerter -- der ganze Name steht im Tooltip. Dieselbe Form,
      die core allen Umschaltern dieser Art gibt (stampGran); hier steht sie direkt im Markup,
@@ -433,16 +432,21 @@
                '<span class="up-explain-down">' + TREND_RUNTER + '</span>' +
                '<span class="up-explain-down">1.1%</span></span>',
         h: "Citations Share over Time",
-        t: "How much of all citations in the period went to this domain, day by day. It compares " +
-           "this domain against every other domain, so the value falls when others are cited more."
+        t: "Of all AI answers with citations, the share that cites this domain, day by day. The " +
+           "value falls when more answers cite other sources instead."
       },
       domain: {
+        /* Beispielwerte mit Summe ueber 100: eine Antwort zitiert oft mehrere Seiten der Domain
+           (domain_share_pct = Antworten mit der URL / Antworten mit der Domain). 62 + 38 zeigte die
+           Verteilung, die es so nicht gibt. */
         vis: '<span class="up-explain-row">/pricing<span style="margin-left:auto">62.0%</span></span>' +
-             '<span class="up-explain-row">/blog/guide<span style="margin-left:auto">38.0%</span></span>',
+             '<span class="up-explain-row">/blog/guide<span style="margin-left:auto">45.0%</span></span>',
         h: "URL Share over Time",
-        t: "How this domain's citations are split across its own URLs. Each line is one URL, and " +
-           "its value is that URL's share of all citations this domain received -- so the lines " +
-           "add up to 100%. It says which pages get cited, not how the domain compares to others."
+        /* Hoechstens 200 Zeichen: laengere Texte tauscht der Sprachbeobachter in core nicht, die
+           Karte blieb im Deutschen bis zum 22.10. englisch (254 Zeichen). */
+        t: "Each line is one URL of this domain: of the AI answers citing the domain, the share " +
+           "that cites this URL. One answer can cite several URLs, so the lines can add up to " +
+           "more than 100%."
       }
     };
     /* html(key) statt eines festen Textes: der Schluessel ist immer "chart", die Antwort haengt am

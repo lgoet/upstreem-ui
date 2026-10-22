@@ -138,12 +138,14 @@
             "means the page still counts in totals but is no longer being picked up." },
     { key: "domain_share", label: "Domain Share",
       title: "Domain Share",
-      body: "This URL's share of all citations its own domain received. High here means the page " +
-            "carries its domain: the models reach for this one rather than the rest of the site." },
+      body: "Of the AI answers that cite this page's domain, the share that cites this URL. High " +
+            "here means the page carries its domain: the models reach for this one rather than the " +
+            "rest of the site." },
     { key: "global_share", label: "Global Share",
       title: "Global Share",
-      body: "This URL's share of every citation in the period, across all domains. It answers how " +
-            "much of the whole citation landscape this single page holds." },
+      body: "Of all AI answers with citations in the period, no matter which domain they cite, the " +
+            "share that cites this URL. It shows how much of the whole citation landscape this " +
+            "single page reaches." },
     { key: "global_rank", label: "URL Rank",
       title: "URL Rank",
       body: "Where this page sits among all cited URLs, by citation count. #1 is the most cited " +

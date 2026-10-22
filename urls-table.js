@@ -1142,16 +1142,19 @@
          UC.explainCopy("share"): dort ist der Trend Teil des Satzes, und in dieser Ansicht gibt es
          keinen. */
       if (kind === "share" && domainModus()){
+        /* Nenner sind die Antworten mit dieser Domain (domainshare_pct); eine Antwort mit zwei
+           Seiten der Domain zaehlt bei beiden, darum ergeben die Zeilen zusammen oft ueber 100 %. */
         return { h: "Domain Share",
-                 t: "How much of all citations this domain received in the period went to this " +
-                    "URL. The URLs of one domain add up to 100%." };
+                 t: "Of the AI answers that cite this domain, the share that cites this URL. One " +
+                    "answer can cite several pages of the domain, so the URLs together can add up " +
+                    "to more than 100%." };
       }
       if (UC.explainCopy){
         if (kind === "share") return UC.explainCopy("share", { subject: "URL" });
         if (kind === "brands") return UC.explainCopy("brands", { scope: " on this page" });
       }
       var FALLBACK = {
-        share: { h: "Share", t: "How much of all citations in the period went to this URL, plus the change against the previous period." },
+        share: { h: "Share", t: "Of all AI answers with citations, the share that cites this URL, plus the change against the previous period." },
         brands: { h: "Brand Mentions", t: "Which of your tracked brands are mentioned on this page. Hover a logo to see its name." }
       };
       return FALLBACK[kind] || null;

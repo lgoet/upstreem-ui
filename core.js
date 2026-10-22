@@ -869,8 +869,8 @@
       "Wie oft die Brand{scope} in KI-Antworten vorkommt{trend}.",
     "Which of your tracked brands are mentioned{scope}. Hover a logo to see its name.":
       "Welche deiner beobachteten Brands{scope} erwähnt werden. Fahre über ein Logo, um den Namen zu sehen.",
-    "How much of all citations in the period went to this {subject}, plus the change against the previous period.":
-      "Wie viel aller Citations im Zeitraum auf diese {subject} entfielen, dazu die Veränderung zum Zeitraum davor.",
+    "Of all AI answers with citations, the share that cites this {subject}, plus the change against the previous period.":
+      "Von allen KI-Antworten mit Citations der Anteil, der diese {subject} zitiert, dazu die Veränderung zum Zeitraum davor.",
     /* Die Stuecke, die die Komponenten einsetzen -- eigene Eintraege, weil sie eigene Texte sind.
        Das fuehrende Leerzeichen gehoert dazu: der Satz klebt sie direkt an. */
     " for this prompt": " für diesen Prompt",
@@ -882,6 +882,8 @@
     " for this URL": " für diese URL",
     "domain": "Domain",
     "URL": "URL",
+    /* Opportunities setzen "source" ein; ohne Eintrag stand im deutschen Satz "diese source". */
+    "source": "Quelle",
 
     /* ── Beschreibungen der Seitenkoepfe (stehen im Bubble-Markup) ───────────────────────────── */
     "Manage the teams you are a member of, and switch between them":
@@ -1294,8 +1296,8 @@
       "Anteil der Responses, in denen diese Brand vorkommt.",
     "How positively the brand is described, 0 to 100.":
       "Wie positiv über die Brand gesprochen wird, 0 bis 100.",
-    "How many times the brand was named. Higher means the other numbers rest on more data.":
-      "Wie oft die Brand genannt wurde. Mehr heißt: die anderen Zahlen stehen auf breiterer Grundlage.",
+    "How many AI answers mention the brand, each answer counted once. Higher means the other numbers rest on more data.":
+      "In wie vielen KI-Antworten die Brand vorkommt, jede Antwort einmal gezählt. Mehr heißt: die anderen Zahlen stehen auf breiterer Grundlage.",
     "How many tracked competitors are mentioned alongside this source.":
       "Wie viele beobachtete Wettbewerber neben dieser Quelle erwähnt werden.",
     "How often a citation of this source turns into a mention of your brand.":
@@ -2871,8 +2873,8 @@
     /* Muster: die Zahl kommt formatiert aus fmtTotal, der Satz aus dem Katalog. */
     "1 page": "1 Seite",
     "{n} pages": "{n} Seiten",
-    "How much of all citations this domain received in the period went to this URL. The URLs of one domain add up to 100%.":
-      "Wie viel von allen Citations, die diese Domain im Zeitraum bekommen hat, auf diese URL entfiel. Die URLs einer Domain ergeben zusammen 100%.",
+    "Of the AI answers that cite this domain, the share that cites this URL. One answer can cite several pages of the domain, so the URLs together can add up to more than 100%.":
+      "Von den KI-Antworten, die diese Domain zitieren, der Anteil, der diese URL zitiert. Eine Antwort kann mehrere Seiten der Domain zitieren, darum können die URLs zusammen über 100% ergeben.",
 
     /* ---- Responses-Tabelle ---- */
     "Your brand is mentioned": "Deine Brand wird erwähnt",
@@ -2987,8 +2989,8 @@
       "Citation Type ordnet die QUELLE einer zitierten URL ein. Jede URL, die eine KI-Antwort zitiert, bekommt genau einen Typ. Damit siehst du, auf welchen Arten von Quellen die Antworten über dich aufbauen.",
     "URL Type classifies the cited PAGE itself, independently of who published it. A competitor's pricing page and a magazine's ranking list are both citations, but they are different kinds of page and different opportunities. Citation Type describes the source, URL Type describes the page.":
       "URL Type ordnet die zitierte SEITE selbst ein, unabhängig davon, wer sie veröffentlicht hat. Die Preisseite eines Wettbewerbers und die Rangliste eines Magazins sind beide Citations, aber verschiedene Arten von Seite und verschiedene Gelegenheiten. Citation Type beschreibt die Quelle, URL Type die Seite.",
-    "Share is the percentage of all citations in the selected period that point to one URL, domain or brand. Shares across all rows sum to 100%. A rising share means gaining ground relative to everything else, not simply being cited more often. Domain Share applies the same calculation inside a single domain: the percentage of that domain's own citations carried by one URL.":
-      "Share ist der Anteil aller Citations im gewählten Zeitraum, die auf eine URL, eine Domain oder eine Brand zeigen. Die Shares aller Zeilen ergeben zusammen 100%. Ein steigender Share heißt, gegenüber allem anderen Boden zu gewinnen, nicht einfach häufiger zitiert zu werden. Domain Share rechnet genauso innerhalb einer einzelnen Domain: der Anteil der Citations dieser Domain, der auf eine URL entfällt.",
+    "Share is the percentage of AI answers with citations in the selected period that cite a given URL or domain. One answer often cites several sources, so the shares of all rows can add up to more than 100%. A rising share means gaining ground relative to everything else, not simply being cited more often. Domain Share applies the same calculation inside a single domain: of the answers that cite that domain, the percentage that cite one particular URL.":
+      "Share ist der Anteil der KI-Antworten mit Citations im gewählten Zeitraum, die eine bestimmte URL oder Domain zitieren. Eine Antwort zitiert oft mehrere Quellen, darum können die Shares aller Zeilen zusammen über 100% ergeben. Ein steigender Share heißt, gegenüber allem anderen Boden zu gewinnen, nicht einfach häufiger zitiert zu werden. Domain Share rechnet genauso innerhalb einer einzelnen Domain: von den Antworten, die diese Domain zitieren, der Anteil, der eine bestimmte URL zitiert.",
     "Trend compares the selected period against the preceding period of equal length. A 30 day range is compared against the 30 days before it. Values are percentage points, not percent of the previous value: a move from 6% to 8% is shown as +2, never as +33%. No chip is shown when the change rounds to zero.":
       "Trend vergleicht den gewählten Zeitraum mit dem gleich langen Zeitraum davor. Ein Bereich von 30 Tagen wird mit den 30 Tagen vor ihm verglichen. Die Werte sind Prozentpunkte, nicht Prozent des vorigen Werts: aus 6% auf 8% wird +2, niemals +33%. Rundet die Änderung auf null, wird kein Chip gezeigt.",
     "Rank is the average of your brand's best position in each answer that mentions it. If the brand is named more than once in an answer, its best position counts. Position 1 is the first brand named. Lower is better, so the trend chip is inverted: a falling rank number is displayed as a positive move. Values are shown to one decimal because typical changes are smaller than a full position.":
@@ -3049,10 +3051,10 @@
       "Was für eine Seite das ist: das Format, das die Modelle unter dieser Adresse gefunden haben.",
     "The most recent run in which a model cited this exact URL. A date far in the past means the page still counts in totals but is no longer being picked up.":
       "Der letzte Durchlauf, in dem ein Modell genau diese URL zitiert hat. Ein weit zurückliegendes Datum heißt: die Seite zählt weiter in den Summen, wird aber nicht mehr aufgegriffen.",
-    "This URL's share of all citations its own domain received. High here means the page carries its domain: the models reach for this one rather than the rest of the site.":
-      "Der Anteil dieser URL an allen Citations, die ihre eigene Domain bekommen hat. Ein hoher Wert heißt, die Seite trägt ihre Domain: die Modelle greifen zu dieser und nicht zum Rest der Website.",
-    "This URL's share of every citation in the period, across all domains. It answers how much of the whole citation landscape this single page holds.":
-      "Der Anteil dieser URL an allen Citations im Zeitraum, über alle Domains hinweg. Er sagt, wie viel der gesamten Citation-Landschaft diese eine Seite hält.",
+    "Of the AI answers that cite this page's domain, the share that cites this URL. High here means the page carries its domain: the models reach for this one rather than the rest of the site.":
+      "Von den KI-Antworten, die die Domain dieser Seite zitieren, der Anteil, der diese URL zitiert. Ein hoher Wert heißt, die Seite trägt ihre Domain: die Modelle greifen zu dieser und nicht zum Rest der Website.",
+    "Of all AI answers with citations in the period, no matter which domain they cite, the share that cites this URL. It shows how much of the whole citation landscape this single page reaches.":
+      "Von allen KI-Antworten mit Citations im Zeitraum, egal welche Domain sie zitieren, der Anteil, der diese URL zitiert. Er zeigt, wie viel der gesamten Citation-Landschaft diese eine Seite erreicht.",
     "Where this page sits among all cited URLs, by citation count. #1 is the most cited page in the period.":
       "Wo diese Seite unter allen zitierten URLs steht, nach Anzahl der Citations. #1 ist die am häufigsten zitierte Seite im Zeitraum.",
 
@@ -3067,12 +3069,10 @@
     "Share:": "Share:",
     "Rank:": "Rang:",
     "Sentiment:": "Sentiment:",
-    "How much of all citations in the period went to this domain, day by day. It compares this domain against every other domain, so the value falls when others are cited more.":
-      "Wie viel von allen Citations im Zeitraum auf diese Domain entfiel, Tag für Tag. Verglichen wird diese Domain mit jeder anderen, der Wert fällt also, wenn andere häufiger zitiert werden.",
-    "How this domain's citations are split across its own URLs. Each line is one URL, and its value is that URL's share of all citations this domain received in the period -- so the lines add up to 100%. It answers which pages of the domain the models actually cite, not how the domain compares to other domains.":
-      "Wie sich die Citations dieser Domain auf ihre eigenen URLs verteilen. Jede Linie ist eine URL, ihr Wert ist der Anteil dieser URL an allen Citations, die die Domain im Zeitraum bekommen hat -- die Linien ergeben zusammen 100%. Die Antwort sagt, welche Seiten der Domain die Modelle wirklich zitieren, nicht wie die Domain gegen andere Domains steht.",
-    "How this domain's citations are split across its own URLs. Each line is one URL, and its value is that URL's share of all citations this domain received -- so the lines add up to 100%. It says which pages get cited, not how the domain compares to others.":
-      "Wie sich die Citations dieser Domain auf ihre eigenen URLs verteilen. Jede Linie ist eine URL, ihr Wert ist der Anteil dieser URL an allen Citations der Domain -- die Linien ergeben zusammen 100%. Der Wert sagt, welche Seiten zitiert werden, nicht wie die Domain gegen andere steht.",
+    "Of all AI answers with citations, the share that cites this domain, day by day. The value falls when more answers cite other sources instead.":
+      "Von allen KI-Antworten mit Citations der Anteil, der diese Domain zitiert, Tag für Tag. Der Wert fällt, wenn mehr Antworten stattdessen andere Quellen zitieren.",
+    "Each line is one URL of this domain: of the AI answers citing the domain, the share that cites this URL. One answer can cite several URLs, so the lines can add up to more than 100%.":
+      "Jede Linie ist eine URL dieser Domain: von den KI-Antworten, die die Domain zitieren, der Anteil, der diese URL zitiert. Eine Antwort kann mehrere URLs zitieren, darum können die Linien zusammen über 100% ergeben.",
 
     /* ---- Brand-Detail ---- */
     "Visibility over Time": "Visibility im Zeitverlauf",
@@ -4893,10 +4893,11 @@
     rank:       { h: "Rank", t: "The average of the brand's best position per answer{scope}{trend}. Position 1 is the first brand named. A lower number is better." },
     visibility: { h: "Visibility", t: "How often the brand appears in AI answers{scope}{trend}." },
     brands:     { h: "Brand Mentions", t: "Which of your tracked brands are mentioned{scope}. Hover a logo to see its name." },
-    /* Die Zahl der Nennungen (Kennzahl im Performance-Detail, 09.10.). Ohne Platzhalter: der Satz
-       ist wortgleich der Katalogeintrag, den die Kachel vorher selbst trug -- so bleibt die
-       Uebersetzung, und es gibt ihn nur noch hier. */
-    mentions:   { h: "Mentions", t: "How many times the brand was named. Higher means the other numbers rest on more data." },
+    /* Mentions (Kennzahl im Performance-Detail, 09.10.). Ohne Platzhalter. Gezaehlt werden ANTWORTEN,
+       nicht Nennungen im Text: die DB nimmt mention_runs bzw. count(distinct prompt_run_id)
+       (_dash_overview_calc_v1, _perf_radar_base_v1). Bis zum 22.10. stand hier "how many times the
+       brand was named" -- das hiess fuer jeden Leser: dreimal genannt zaehlt dreifach. */
+    mentions:   { h: "Mentions", t: "How many AI answers mention the brand, each answer counted once. Higher means the other numbers rest on more data." },
     /* Intent (14.10.): die Customer Journey ist der Aufhaenger -- so ausdruecklich bestellt. Der
        Satz sagt, WO eine Frage auf dem Weg zum Kauf steht; die Platte darueber zeigt den Weg. */
     intent:     { h: "Intent", t: "Where the question sits in the customer journey: getting to know a topic, comparing options, or ready to buy. AI sets it, and you can change it." },
@@ -4910,7 +4911,10 @@
     /* Branded (14.10., eigene Spalte): sagt, was es heisst UND warum es zaehlt -- branded Prompts
        fallen aus den Kennzahlen. */
     branded:    { h: "Branded", t: "The prompt names your brand or a tracked competitor. Branded prompts are left out of the metrics, because they say little about how visible you are on open questions. Detected automatically, and you can change it." },
-    share:      { h: "Share", t: "How much of all citations in the period went to this {subject}, plus the change against the previous period." },
+    /* Share (22.10. nach der Rechnung der DB): Antworten, die die Quelle zitieren, geteilt durch Antworten mit
+       irgendeiner Citation (share_pct, global_share_pct in _citations_g_*_calc_v1). Kein Anteil an allen
+       Citations -- so stand es bis dahin hier, und daraus folgte der Irrtum, die Zeilen ergaeben 100 %. */
+    share:      { h: "Share", t: "Of all AI answers with citations, the share that cites this {subject}, plus the change against the previous period." },
     /* Die Zeile "Brand Colors" in der Farbauswahl. Sie steht hier und nicht im Einstellungsfenster,
        weil die Auswahl aus core kommt (colorScaleOptionsHtml) und der Erklaerkasten derselbe ist,
        den die Spaltenkoepfe benutzen -- eine Quelle fuer beide. */
