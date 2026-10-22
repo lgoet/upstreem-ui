@@ -138,8 +138,19 @@
         pr("setPreviousResearches", gem.jobsRows);
         return Promise.resolve({ rows: gem.jobsRows, laufend: null });
       }
-      return lader.laden("jobs", D.jobs(tm), { frisch: !!frisch }).then(function (erg) {
-        if (erg.ueberholt || tm !== team()) return null;
+      /* 25 Zeilen seit prompt_research_22_10_v1.sql; kennt die DB noch p_limit 1-20 (Datei nicht eingespielt),
+         antwortet sie 22023 mit hint "p_limit: 1-20" -- dann einmal mit 20 und fuer diese Seite dabei bleiben,
+         statt die Liste als unlesbar zu zeigen. */
+      var grenze = gem.listeGrenze || D.LISTE;
+      return lader.laden("jobs", D.jobs(tm, grenze), { frisch: !!frisch }).then(function (erg) {
+        var hint = erg && erg.fehler ? str(erg.fehler.hint) : "";
+        if (!erg.ok && !erg.ueberholt && grenze > D.LISTE_ALT && D.fehlerArt(erg) === "eingabe" && /^p_limit/.test(hint)) {
+          gem.listeGrenze = D.LISTE_ALT;
+          return lader.laden("jobs", D.jobs(tm, D.LISTE_ALT), { frisch: true });
+        }
+        return erg;
+      }).then(function (erg) {
+        if (!erg || erg.ueberholt || tm !== team()) return null;
         var j = erg.ok ? D.zuJobs(erg.daten) : null;
         if (!j) { pr("setHistoryError"); return null; }
         gem.jobsRows = j.rows; gem.jobsFuer = tm;

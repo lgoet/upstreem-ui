@@ -423,12 +423,14 @@
       '<button type="button" class="up-btn-pri upr-lauf-knopf" hidden><span>' + esc(tt('View Research')) + '</span>' + UC.icon('arrowRightLong', 2) + '</button>' +
     '</div>';
   }
-  /* Die eine Leiste wie auf Page Audit: rechts Suche und Table Settings, der Kopf klebt (makeSticky).
-     Links steht nichts -- es gibt keinen Filter, der die Liste aendert. KEINE SEITEN UND KEINE
-     GESAMTZEILE (Lukas 22.10., Canvas Reihe 5, L1): die DB liefert hoechstens die fuenf juengsten
-     fertigen Recherchen mit offenen Vorschlaegen (n8n raeumt den Rest weg) plus die laufende. */
+  /* Die eine Leiste wie auf Page Audit: rechts Suche und Table Settings, der Kopf klebt (makeSticky),
+     Gesamtzeile und Pagination kleben unten (data-kleb-fuss). Links steht nichts -- es gibt keinen
+     Filter, der die Liste aendert. Seit dem Abend des 22.10. wieder MIT Gesamtzeile und Seiten (Lukas: 25
+     Recherchen behalten statt 5, prompt_research_22_10_v1.sql): bis 25 fertige plus laufende sind mehr als
+     eine Seite, und jede Tabelle mit der einen Leiste traegt dann beides (Zeilen je Seite aus core, 15).
+     Vorher, bei hoechstens fuenf, waren beide weggelassen (Canvas Reihe 5, L1). */
   function listeHtml(){
-    return '<section class="up-root upr-liste" data-flach="yes" data-leiste="yes" data-sticky-top="16" data-instance="' + esc(instanceId + '_liste') + '">' +
+    return '<section class="up-root upr-liste" data-flach="yes" data-leiste="yes" data-kleb-fuss="yes" data-sticky-top="16" data-instance="' + esc(instanceId + '_liste') + '">' +
       '<div class="up-head upr-liste-head">' +
         '<div class="up-leiste-scope"></div>' +
         '<div class="up-head-tools">' +
@@ -447,6 +449,11 @@
         '</div>' +
       '</div>' +
       '<div class="up-box upr-liste-box"><div class="up-table" role="table" data-table></div></div>' +
+      '<div class="up-foot">' +
+        '<div class="up-pagesize"><span class="up-pagesize-lbl">' + esc(tt('Rows per page')) + '</span>' +
+          '<div class="up-pagesize-seg" role="group" aria-label="' + esc(tt('Rows per page')) + '"></div></div>' +
+        '<div class="up-pager"></div>' +
+      '</div>' +
     '</section>';
   }
   var startAnsicht = document.createElement('div');
@@ -484,16 +491,19 @@
   var ZYKLEN = { research: ['research:asc', 'research:desc'], prompts: ['prompts:desc', 'prompts:asc'], market: ['market:asc', 'market:desc'],
                  intent: ['intent:asc', 'intent:desc'], audience: ['audience:asc', 'audience:desc'],
                  branded: ['branded:desc', 'branded:asc'], created: ['created:desc', 'created:asc'] };
-  /* Der Stand der Liste ueber einen Neuaufbau hinweg (Themenwechsel): Suche und Sortierung. */
-  var L = (vorrat && vorrat.liste) ? vorrat.liste : { query: '', sort: 'created', dir: 'desc' };
+  /* Der Stand der Liste ueber einen Neuaufbau hinweg (Themenwechsel): Suche, Sortierung, Seite. */
+  var L = (vorrat && vorrat.liste) ? vorrat.liste : { query: '', sort: 'created', dir: 'desc', page: 1, pageSize: UC.DEFAULT_PAGE_SIZE || 15 };
+  if (!L.page) L.page = 1;
+  if (!L.pageSize) L.pageSize = UC.DEFAULT_PAGE_SIZE || 15;
   /* geliefert: die Seite hat die Liste geschickt (sonst Skelett); fehler: sie war nicht lesbar. */
   var listeGeliefert = false;
-  var lst = { query: L.query, sortField: L.sort, sortDir: L.dir, loading: false, cols: {}, widths: {} };
+  var lst = { query: L.query, page: L.page, pageSize: L.pageSize, sortField: L.sort, sortDir: L.dir, loading: false, cols: {}, widths: {} };
   var colsKit = UC.makeColumns({
     root: elListe, state: lst, columns: SPALTEN, storePrefix: 'upr', instanceId: instanceId,
     /* Wie Page Audit (firstShare 0.24): die erste Spalte traegt kurze Begriffe, keine Ueberschrift. */
     firstKey: 'research', firstMin: 240, firstShare: 0.24, noActions: true,
-    badgeSel: '.upr-cols-badge', cellPrefixes: ['up', 'upr'],
+    badgeSel: '.upr-cols-badge', cellPrefixes: ['up', 'upr', 'up-sum'],
+    nachspann: function(){ return zaehl ? zaehl.schalter() : null; },
     onChange: function(){ tabelleZeichnen(); }
   });
   lst.cols = colsKit.readCols(); lst.widths = colsKit.readWidths();
@@ -519,7 +529,7 @@
     onFire: function(p){
       var q = String(p.query || '').trim();
       if (q === L.query) return;
-      L.query = q;
+      L.query = q; L.page = 1; lst.page = 1;
       tabelleZeichnen(); merke();
     },
     persist: function(){}
@@ -535,13 +545,19 @@
   });
   function sucheLeeren(){
     elSucheIn.value = ''; lst.query = ''; elSuche.classList.remove('has-text'); suche.cancel();
-    if (L.query){ L.query = ''; tabelleZeichnen(); merke(); }
+    if (L.query){ L.query = ''; L.page = 1; lst.page = 1; tabelleZeichnen(); merke(); }
   }
   if (L.query){ elSucheIn.value = L.query; elSuche.classList.add('is-open', 'has-text'); suche.syncTakeover(); }
+  var pager = UC.makePager({
+    root: elListe, state: lst,
+    total: function(){ return gefiltert().length; },
+    onChange: function(){ L.page = lst.page; L.pageSize = lst.pageSize; tabelleZeichnen(); merke(); },
+    onClamp: function(){ L.page = lst.page; tabelleZeichnen(); }
+  });
   var kopfSort = UC.makeHeadSort({
     root: elListe, state: lst, cycles: ZYKLEN, defaultSort: { field: 'created', dir: 'desc' },
     onSort: function(feld, dir){
-      lst.sortField = feld; lst.sortDir = dir; L.sort = feld; L.dir = dir;
+      lst.sortField = feld; lst.sortDir = dir; L.sort = feld; L.dir = dir; L.page = 1; lst.page = 1;
       kopfSort.syncHeadSorters(); tabelleZeichnen(); merke();
     }
   });
@@ -549,6 +565,14 @@
   function kleben(){ if (kleber && !root.classList.contains('is-results')) kleber.applySticky(); }
   if (UC.aufResize) UC.aufResize(kleben); else window.addEventListener('resize', kleben);
   if (UC.onResize) UC.onResize(elListe, function(){ colsKit.applyCols(); });
+  /* Die Gesamtzeile wie auf Page Audit: links die Anzahl, keine Berechnungen (Minus je Spalte). */
+  var zaehl = UC.makeZaehlZeile ? UC.makeZaehlZeile({
+    root: elListe, nach: elTable, instanceId: instanceId, praefix: 'upr',
+    cols: function(){ return colsKit; }, rechnen: {},
+    spalten: function(){ return SPALTEN.map(function(c){ return c.key; }); },
+    anzahl: function(){ return listeFehler ? null : (listeGeliefert ? gefiltert().length : null); },
+    laedt: function(){ return !listeGeliefert && !listeFehler; }
+  }) : null;
 
   function laeuftNoch(it){ return it.status === 'queued' || it.status === 'running'; }
   function begriffeText(it){ return (it.keywords && it.keywords.length) ? it.keywords.join(', ') : tt('Untitled research'); }
@@ -560,7 +584,7 @@
   function modellText(it){ return it.business_model ? (MODELL[String(it.business_model).toLowerCase()] || String(it.business_model)) : ''; }
   function personaZeile(it){ return it.persona ? tt(personaLabelVon(it.persona)) : ''; }
   function zielgruppe(it){ return [modellText(it), personaZeile(it)].filter(Boolean).join(', '); }
-  /* Gefiltert und sortiert -- alle Zeilen auf einmal (keine Seiten, siehe listeHtml). */
+  /* Gefiltert und sortiert -- die Grundlage fuer Seite, Gesamtzeile und Pagination. */
   function gefiltert(){
     var q = String(L.query || '').toLowerCase();
     var rows = !q ? previousResearches.slice() : previousResearches.filter(function(it){
@@ -659,6 +683,11 @@
        untereinander (Kopf, Karte, Leerzustand) -- wie auf Page Audit. */
     return UC.leerHtml({ icon: 'telescope', titel: 'No completed researches yet', text: 'Finished researches show up here so you can reopen them.' });
   }
+  function seite(rows){
+    var n = Math.max(1, Math.ceil(rows.length / L.pageSize));
+    if (L.page > n){ L.page = n; lst.page = n; }
+    return rows.slice((L.page - 1) * L.pageSize, L.page * L.pageSize);
+  }
   var sichtbar = [];
   function tabelleZeichnen(){
     var kopf = kopfHtml();
@@ -667,10 +696,14 @@
       elTable.innerHTML = kopf + '<div class="up-tbody">' + skelett(4) + '</div>';
     } else {
       var rows = listeFehler ? [] : gefiltert();
-      sichtbar = rows;
+      sichtbar = seite(rows);
       elTable.innerHTML = kopf + (sichtbar.length ? '<div class="up-tbody" role="rowgroup">' + sichtbar.map(zeileHtml).join('') + '</div>' : leerListeHtml());
     }
     colsKit.applyCols(); colsKit.syncColsBadge(); kopfSort.syncHeadSorters();
+    elListe.classList.toggle('is-onepage', !listeGeliefert);
+    lst.page = L.page; lst.pageSize = L.pageSize;
+    pager.renderPageSize(); pager.renderPager();
+    if (zaehl) zaehl.zeichnen();
     if (elListe.classList.contains('up-sticky') && kleber && kleber.syncTheadOffset) kleber.syncTheadOffset();
     kleben();
   }
@@ -678,6 +711,12 @@
     if (e.target.closest('.up-grip')) return;
     var so = e.target.closest('.up-th.is-sortable[data-sort]');
     if (so){ kopfSort.headSortClick(so.getAttribute('data-sort')); return; }
+    var ps = e.target.closest('[data-pagesize]');
+    if (ps){ pager.setPageSize(Number(ps.getAttribute('data-pagesize'))); return; }
+    if (e.target.closest('.up-page-prev')){ pager.goToPage(lst.page - 1); return; }
+    if (e.target.closest('.up-page-next')){ pager.goToPage(lst.page + 1); return; }
+    var pg = e.target.closest('.up-page[data-page]');
+    if (pg){ pager.goToPage(Number(pg.getAttribute('data-page'))); return; }
     if (e.target.closest('[data-upr-suche-weg]')){ sucheLeeren(); return; }
     var weg = e.target.closest('[data-upr-weg]');
     if (weg){

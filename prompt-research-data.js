@@ -21,13 +21,14 @@
     loeschen: "prompt_research_delete_v1",
     start: "start-job"
   };
-  /* Die Liste rechts: 20 ist der Hoechstwert (Vorgabe der DB waeren 5). Sie traegt laufende,
-     fertige mit offenen Vorschlaegen und gescheiterte der letzten 24 h -- fuenf waeren nach
-     zwei Recherchen am Tag schon voll. */
-  var LISTE = 20;
+  /* Die Liste: 25 ist der Hoechstwert und so viele fertige Recherchen behaelt das Team seit dem 22.10.
+     (Lukas: 25 statt 5; prompt_research_22_10_v1.sql, prune und p_limit 1-25). Sie traegt laufende,
+     fertige mit offenen Vorschlaegen und gescheiterte der letzten 24 h. Kennt die DB noch 1-20 (Datei
+     nicht eingespielt), faellt die Seite einmal auf LISTE_ALT zurueck (jobsLaden). */
+  var LISTE = 25, LISTE_ALT = 20;
 
   function anfrage(fn, p) { return { fn: fn, params: p, sig: fn + "|" + JSON.stringify(p) }; }
-  function jobs(team) { return anfrage(FN.jobs, { p_team: str(team), p_limit: LISTE }); }
+  function jobs(team, grenze) { return anfrage(FN.jobs, { p_team: str(team), p_limit: grenze || LISTE }); }
   function ergebnis(team, jobId) { return anfrage(FN.ergebnis, { p_team: str(team), p_job_id: str(jobId) }); }
   function entscheiden(team, aktion, ids, mitTags) {
     var p = { p_team: str(team), p_action: aktion === "accept" ? "accept" : "ignore", p_ids: (isArr(ids) ? ids : []).map(str).filter(Boolean) };
@@ -139,7 +140,7 @@
   }
 
   window.UpstreemPromptResearchDaten = {
-    FN: FN, LISTE: LISTE,
+    FN: FN, LISTE: LISTE, LISTE_ALT: LISTE_ALT,
     jobs: jobs, ergebnis: ergebnis, entscheiden: entscheiden, loeschen: loeschen,
     begriffe: begriffe, startBody: startBody, istLauf: istLauf,
     zuJobs: zuJobs, zuErgebnis: zuErgebnis, zuKontingent: zuKontingent,
