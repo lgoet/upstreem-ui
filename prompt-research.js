@@ -240,6 +240,15 @@
   var tableMenu           = root.querySelector('#upr-table-menu');
   var tableMenuPopover    = root.querySelector('#upr-table-menu-popover');
   var acceptWithTagsBtn   = root.querySelector('#upr-accept-with-tags');
+  /* DIE ERGEBNISTABELLE IST VOM ERSTEN BILD AN EINGERICHTET (Lukas 22.10.: "beim Navigieren 1-2 s leer, kein
+     Skelett, obwohl die RPC sofort antwortet"). core schneidet auf einer Seite jeden .up-box weg, dessen Kopf noch
+     kein data-up-colsig traegt ("Keine rohe Tabelle", core.css), und gibt ihn erst nach 1,5 s frei -- das Merkmal
+     setzt makeColumns. Diese Tabelle hat aber kein makeColumns: ihre Spalten stehen fest in der CSS (--up-cols an
+     .upr-box), sie ist also fertig, sobald das Markup steht. Ohne das Merkmal stand Skelett UND Ergebnis 1,5 s
+     unsichtbar da (gemessen: clip-path inset(100%) bis 1500 ms nach dem Oeffnen). "statisch" statt einer
+     Spaltensignatur: makeColumns vergleicht den Wert nur in seinen eigenen Tabellen. */
+  var resultsKopf = root.querySelector('.upr-box .up-thead');
+  if (resultsKopf && !resultsKopf.hasAttribute('data-up-colsig')) resultsKopf.setAttribute('data-up-colsig', 'statisch');
   var tableMenuTrigger    = root.querySelector('#upr-table-menu-trigger');
   /* "Accept all Prompts <span data-count-label>(0)</span>": Text und Zahl liegen im SELBEN
      Element, der Text als eigener Knoten neben dem Zaehler. Der Sprachlauf laesst so etwas
@@ -368,28 +377,18 @@
      Sprechblasen, abwechselnd links und rechts, eine hervorgehoben mit dem Zeichen der Seite. Die
      Fragen sind bewusst allgemein und nicht die des Teams ("sehr allgemein gehalten, nicht auf das
      Team bezogen"). Eine Blase bricht nie um (white-space: nowrap), darum ist jede Frage kurz.
-     Alle 5 s wechselt eine: sie verschwimmt, tauscht den Text und kommt an derselben Stelle wieder
-     (blasenTakt unten). Dahinter das Punktmuster der Karten der Landingpage (.ulh-vis-muster). */
+     Seit dem Abend des 22.10. steht sie still (Lukas: der Wechsel alle 5 s mit Unschaerfe "weg, statisch"),
+     darum genau fuenf Fragen. Dahinter das Punktmuster der Karten der Landingpage (.ulh-vis-muster). */
   var BLASEN = [
     'Best project management tool for small teams',
     'Which running shoes are best for flat feet?',
     'Is a heat pump worth it for an old house?',
     'Best CRM for a growing sales team',
-    'How do I pick a good coffee grinder?',
-    'Most reliable used cars under $15,000',
-    'Which e-bike has the longest range?',
-    'Best laptop for video editing on a budget',
-    'How to choose a mattress for back pain',
-    'Which VPN is fastest for streaming?',
-    'Best accounting software for freelancers',
-    'Are robot vacuums worth it with pets?',
-    'Best noise-cancelling headphones for travel',
-    'How much does solar for a home cost?',
-    'Which airline has the most legroom?'
+    'How do I pick a good coffee grinder?'
   ];
   function grafikHtml(){
     return '<div class="upr-grafik" aria-hidden="true"><div class="upr-blasen-muster"></div>' +
-      BLASEN.slice(0, 5).map(function(text, i){
+      BLASEN.map(function(text, i){
         return '<span class="upr-blase' + (i === 2 ? ' is-hl' : '') + '">' + (i === 2 ? UC.icon('telescope', 1.8) : '') +
           '<span class="upr-blase-t">' + esc(text) + '</span></span>';
       }).join('') + '</div>';
@@ -412,6 +411,9 @@
   function laufHtml(){
     return '<div class="up-box upr-lauf" role="status" aria-live="polite" hidden>' +
       '<span class="upr-lauf-form" aria-hidden="true"></span>' +
+      /* Zwischen Punkt und Text der Ring aus core, solange die Recherche laeuft (Lukas 22.10.: wie der Lauf-Kasten
+         von Page Audit, .upa-lb-ring). */
+      '<span class="upr-lauf-ring" aria-hidden="true">' + (UC.ringHtml ? UC.ringHtml(14) : '') + '</span>' +
       '<span class="upr-lauf-text"><span class="upr-lauf-h"></span><span class="upr-lauf-s"></span></span>' +
       '<button type="button" class="up-btn-pri upr-lauf-knopf" hidden><span>' + esc(tt('View Research')) + '</span>' + UC.icon('arrowRightLong', 2) + '</button>' +
     '</div>';
@@ -450,29 +452,8 @@
     if (schale) schale.insertBefore(startAnsicht, resultsStage && resultsStage.parentNode === schale ? resultsStage : schale.firstChild);
   })();
 
-  /* Der Wechsel der Fragen: alle 5 s eine, nie dieselbe Blase zweimal hintereinander und nie eine Frage,
-     die schon steht. Die Blende (Unschaerfe und Deckkraft) laeuft in der CSS ueber --up-t-3; der Text
-     wechselt, wenn sie zu ist. Nur, solange die Startansicht zu sehen ist, und ohne Bewegung (reduzierte
-     Bewegung) gar nicht. Die Uhr endet mit der Wurzel. */
-  var BLENDE_MS = 260;   /* = --up-t-3, die Dauer der Blende in prompt-research.css */
-  var blasenLetzte = -1;
-  function blasenTakt(){
-    if (!root.isConnected){ clearInterval(blasenUhr); return; }
-    if (document.hidden || root.classList.contains('is-results') || (UC.istSichtbar && !UC.istSichtbar(startAnsicht))) return;
-    var l = startAnsicht.querySelectorAll('.upr-blase');
-    if (l.length < 2) return;
-    var i;
-    do { i = Math.floor(Math.random() * l.length); } while (i === blasenLetzte);
-    blasenLetzte = i;
-    var gezeigt = [].map.call(l, function(b){ return b.textContent; });
-    var frei = BLASEN.filter(function(x){ return gezeigt.indexOf(x) < 0; });
-    if (!frei.length) return;
-    var b = l[i], t = b.querySelector('.upr-blase-t'), neu = frei[Math.floor(Math.random() * frei.length)];
-    b.classList.add('is-weg');
-    setTimeout(function(){ if (t) t.textContent = neu; b.classList.remove('is-weg'); }, BLENDE_MS);
-  }
+  /* Ohne Bewegung (reduzierte Bewegung) wechselt der Satz im Laufstreifen nicht. */
   var ruhig = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  var blasenUhr = ruhig ? null : setInterval(blasenTakt, 5000);
   var elListe = startAnsicht.querySelector('.upr-liste'), elTable = elListe.querySelector('[data-table]');
   var elSuche = elListe.querySelector('.upr-liste-suche'), elSucheIn = elListe.querySelector('.up-search-input');
   if (UC.widthTiers) UC.widthTiers(elListe);
@@ -1010,6 +991,7 @@
     fernrohrSetzen();          /* nach einem Neuaufbau der Gruppe steht sonst wieder das alte Zeichen da */
     root.classList.toggle('is-running', isRunning);
     root.classList.toggle('is-results', isResults);
+    klebenNurImErgebnis();
     root.classList.toggle('is-error', isError);
     /* Zurueck in der Startansicht: die Leiste der Liste neu messen (sie war verborgen). */
     if (!isResults) setTimeout(kleben, 0);
@@ -1076,10 +1058,14 @@
       return '<span class="upr-cell-empty">–</span>';
     return UC.intentHtml(z, {});
   }
-  function brandedZelle(it){
+  /* BRANDED IM PROMPT-TEXT statt in einer eigenen Spalte (Lukas 22.10. abends: "wie in der Prompt-Tabelle"):
+     derselbe Chip aus core (UC.brandedHtml) rechts in der Zelle, nur bei einem branded Vorschlag -- sonst
+     steht nichts da und die Zelle haelt keinen Platz frei (prompts-table.js promptMarkeHtml). Nicht klickbar:
+     ein Vorschlag hat kein Branded-Menue, er wird erst getrackt ein Prompt. */
+  function promptMarkeHtml(it){
     var z = it && it.zeile;
-    if (!z || z.branded !== true || !UC.brandedHtml) return '<span class="upr-cell-empty">–</span>';
-    return UC.brandedHtml(z, {});
+    if (!z || z.branded !== true || !UC.brandedHtml) return '';
+    return '<span class="upr-prompt-marke">' + UC.brandedHtml(z, {}) + '</span>';
   }
   /* core's .up-topicchip, the same chip the prompts table and the topics manager draw, instead of
      the standalone's parallel .upr-tag-pill implementation. */
@@ -1184,8 +1170,10 @@
     if (!resultsBody) return;
     /* core's skeleton takes pixel widths and jitters them per row, so the block does not read as a
        rigid grid -- that is what the standalone's hand-written width table was doing by hand. */
+    /* Die Form der Tabelle: je Spalte ein Balken (Prompt, Tags, Intent, Volumen, Aktionen leer) -- vorher
+       nur vier fuer sechs Spalten, Intent und Volumen standen ohne Balken da. */
     resultsBody.innerHTML = UC.skeletonRows
-      ? UC.skeletonRows({ count: 8, cols: [{ w: 240, jitter: 40 }, { w: 150, jitter: 30 }, { w: 58 }, { w: 0 }] })
+      ? UC.skeletonRows({ count: 8, cols: [{ w: 240, jitter: 40 }, { w: 150, jitter: 30 }, { w: 96 }, { w: 58 }, { w: 0 }] })
       : '';
   }
 
@@ -1243,10 +1231,9 @@
     if (resultsBody){
       resultsBody.innerHTML = currentSuggestedPrompts.map(function(item, index){
         return '<div class="up-row" data-prompt-id="' + esc(item.id || '') + '" data-row-index="' + index + '">' +
-          '<div class="up-td"><span class="upr-prompt-text">' + esc(item.prompt_text) + '</span></div>' +
+          '<div class="up-td upr-td-prompt"><span class="upr-prompt-text">' + esc(item.prompt_text) + '</span>' + promptMarkeHtml(item) + '</div>' +
           '<div class="up-td">' + renderTags(item.tags) + '</div>' +
           '<div class="up-td upr-td-intent">' + intentZelle(item) + '</div>' +
-          '<div class="up-td upr-td-branded">' + brandedZelle(item) + '</div>' +
           '<div class="up-td">' + renderVolume(item.estimated_volume) + '</div>' +
           '<div class="up-td upr-td-actions"><div class="upr-row-actions">' +
             /* Schon uebersetzt, Schluessel in data-i18n: sonst mass die Aktionsspur die englische
@@ -1801,9 +1788,19 @@
      it wrong. Core's default of 171px is meant for a full app page with its own topbar, so the
      value has to be set — leaving the attribute off would pin 155px too low. */
   root.setAttribute("data-sticky-top", "16");
-  root.removeAttribute("data-sticky");
+  klebenNurImErgebnis();
   var stickyKit = UC.makeSticky ? UC.makeSticky(root, root.querySelector(".upr-results-stage .up-head")) : null;
   function applyStickyNow(){ if (stickyKit) stickyKit.applySticky(); }
+  /* Dieser Kleber gehoert dem ERGEBNIS, haengt aber an der Wurzel -- und core nimmt jedem .up-box unter
+     .up-sticky den Rand (.up-sticky .up-box, der klebende Kopf zeichnet ihn dort selbst). In der Startansicht
+     verlor so die Karte "How a research works" und der Laufstreifen den Rand der core-Karte (Lukas 22.10.:
+     "hat keine border"). Darum klebt die Wurzel nur im Ergebnis: data-sticky="no" ist der Schalter von core,
+     den applySticky bei jedem Aufruf liest, auch bei seinen eigenen spaeteren Versuchen. Die Liste der
+     Startansicht ist eine eigene .up-root mit eigenem Kleber und davon unberuehrt. */
+  function klebenNurImErgebnis(){
+    if (root.classList.contains('is-results')) root.removeAttribute('data-sticky');
+    else { root.setAttribute('data-sticky', 'no'); root.classList.remove('up-sticky'); }
+  }
   applyStickyNow();
   /* applySticky decides on/off from a one-off viewport measurement, and the toolbar's height
      changes when the results view appears at all — both need a re-run. */
