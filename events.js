@@ -753,8 +753,15 @@
     "e.g. Help center pages": "z. B. Seiten des Hilfecenters", "What do you want to keep an eye on?": "Was möchtest du im Blick behalten?",
     "The type can't be changed later": "Die Art lässt sich später nicht ändern",
     "Citation Tracking created": "Citation Tracking erstellt", "Created {date}": "Erstellt am {date}", "All active": "Alle aktiven",
-    "Measure what a change did with Event Tracking, or watch which of your pages AI answers cite with Citation Tracking.":
-      "Miss mit Event Tracking, was eine Änderung bewirkt hat, oder beobachte mit Citation Tracking, welche deiner Seiten KI-Antworten zitieren.",
+    /* Startbereich der Uebersicht (22.10.). */
+    "Measure the impact of your changes": "Miss die Wirkung deiner Änderungen",
+    "Track marketing campaigns, product launches or paid articles and see what each one really did for your AI visibility.":
+      "Tracke Marketingkampagnen, Produktlaunches oder Paid Articles und sieh, was jede davon wirklich für deine AI-Sichtbarkeit gebracht hat.",
+    "Find out which of your pages ChatGPT, Perplexity and others cite in their answers, and how often.":
+      "Finde heraus, welche deiner Seiten ChatGPT, Perplexity und andere in ihren Antworten zitieren, und wie oft.",
+    "See how launches, campaigns and new pages change your visibility and citations in AI answers.":
+      "Sieh, wie Launches, Kampagnen und neue Seiten deine Sichtbarkeit und deine Zitate in KI-Antworten verändern.",
+    "What you track appears here.": "Was du trackst, erscheint hier.",
     "Pages and domains you watch. Global share is measured across all your active prompts.": "Seiten und Domains, die du beobachtest. Der Global Share wird über alle deine aktiven Prompts gemessen.",
     "Previous {n} days": "Vorherige {n} Tage", "Last {n} days": "Letzte {n} Tage",
     "No matching entries": "Keine passenden Einträge",
@@ -2014,13 +2021,72 @@
     var ART_TITEL = { event: "Event Tracking", watch: "Citation Tracking" };
     /* Dieselben Zeichen wie auf den Karten im Dialog "Create" (KIND_WAHL): cells fuer Event Tracking, globe fuer Citation Tracking. */
     var ABSCHNITT_ZEICHEN = { event: "cells", watch: "globe" };
+
+    /* ---- STARTBEREICH (22.10., Vorbild Page Audit v2: startGeruest in page-audit.js) -------------------------------------------
+       Oben links Ueberschrift und EIN Satz, darunter eine kleinere Karte, rechts ueber beide Zeilen die Grafik. Gewaehlt im Canvas
+       "Impact Startseite" (Lukas 22.10.): die Karte ohne eigene Ueberschrift, nur die beiden Arten mit Zeichen und Namen ihres
+       Abschnitts darunter, unten rechts EIN Hauptknopf "Create ->", der wie "Create" im Kopf erst nach der Art fragt. Die Saetze
+       sagen, was man davon hat, nicht wie es rechnet (Lukas: "user will sehen, ah, ich kann Marketing-Kampagnen, Produktlaunches
+       oder Paid Artikel tracken"). Die Karten der Eintraege bleiben darunter. Steht in jedem Zustand der Uebersicht -- Laden,
+       Fehler, leer --, er braucht keine Daten. */
+    var START_ARTEN = [
+      { k: "event", satz: "Track marketing campaigns, product launches or paid articles and see what each one really did for your AI visibility." },
+      { k: "watch", satz: "Find out which of your pages ChatGPT, Perplexity and others cite in their answers, and how often." }
+    ];
+    function startGeruest() {
+      return '<section class="uev-start">' +
+        '<div class="uev-start-text"><h2 class="up-heading up-sec-h">' + esc(t("Measure the impact of your changes")) + '</h2>' +
+          '<p class="up-sec-sub">' + esc(t("See how launches, campaigns and new pages change your visibility and citations in AI answers.")) + '</p></div>' +
+        '<div class="up-box uev-startkarte">' +
+          '<div class="uev-start-arten">' + START_ARTEN.map(function (a) {
+            return '<div class="uev-start-art"><span class="uev-start-ic" aria-hidden="true">' + UC.icon(ABSCHNITT_ZEICHEN[a.k], 1.8) + '</span>' +
+              '<span class="uev-start-name">' + esc(t(ART_TITEL[a.k])) + '</span><p class="uev-start-satz">' + esc(t(a.satz)) + '</p></div>';
+          }).join("") + '</div>' +
+          '<div class="uev-start-fuss">' +
+            '<button type="button" class="up-btn-pri uev-start-los" data-uev-create><span>' + esc(t("Create")) + '</span>' + UC.icon("arrowRightLong", 2) + '</button>' +
+          '</div>' +
+        '</div>' +
+        startGrafik() +
+      '</section>';
+    }
+    /* DIE GRAFIK (im Canvas gewaehlt: G2): Events als Pins auf einer Zeitachse. Sechs Pins mit Zeichen von Event-Typen (Launch,
+       Artikel, Kampagne, Relaunch, Presse), einer hervorgehoben mit dem Zeichen von Event Tracking -- Kachel 40, Radius nach Hoehe 8,
+       Rahmen wie das hervorgehobene Fenster in Page Audit; die anderen 32 mit Radius 6. Je Pin ein punktierter Stiel bis zur Achse wie
+       der Event-Pin im echten Chart, auf der Achse ein Punkt, darunter leise Ticks alle 24 (jeder vierte laenger). Keine Zahl und kein
+       Wort: niemand soll ein Beispiel fuer echte Daten halten. Feste Masse um die Mitte der Flaeche wie das Fensterfeld von Page
+       Audit (Feld 760 x 340), die Raender blendet die Maske aus (events.css). Erscheinen gestaffelt wie dort. */
+    var START_PINS = [{ x: 110, y: 150, ic: "rocket" }, { x: 220, y: 104, ic: "fileText" }, { x: 318, y: 178, ic: "megaphone" },
+                      { x: 430, y: 70, ic: "cells", hl: true }, { x: 540, y: 126, ic: "globe" }, { x: 646, y: 164, ic: "newspaper" }];
+    function startGrafik() {
+      var hilfe = [70, 130, 190].map(function (y) {
+        return '<line x1="0" y1="' + y + '" x2="760" y2="' + y + '" stroke="currentColor" stroke-opacity=".07" stroke-dasharray="2 4"/>';
+      }).join("");
+      var ticks = "";
+      for (var x = 4; x < 760; x += 24) ticks += '<line x1="' + x + '" y1="250.5" x2="' + x + '" y2="' + (x % 96 === 4 ? 258 : 254) + '" stroke="currentColor" stroke-opacity=".16"/>';
+      var stiele = START_PINS.map(function (p, i) {
+        var mitte = p.x + (p.hl ? 20 : 16), unten = p.y + (p.hl ? 40 : 32);
+        return '<g class="uev-sg-teil" style="animation-delay:' + (60 + i * 60) + 'ms">' +
+          '<line x1="' + mitte + '" y1="' + unten + '" x2="' + mitte + '" y2="246" stroke="currentColor" stroke-opacity=".4" stroke-width="1.5" stroke-dasharray="0.5 4" stroke-linecap="round"/>' +
+          '<circle cx="' + mitte + '" cy="250.5" r="3.5" fill="var(--vc-bg)" stroke="currentColor" stroke-width="1.5"/></g>';
+      }).join("");
+      var pins = START_PINS.map(function (p, i) {
+        return '<span class="uev-sg-pin uev-sg-teil' + (p.hl ? " is-hl" : "") + '" style="left:' + p.x + 'px;top:' + p.y + 'px;animation-delay:' + (60 + i * 60) + 'ms">' + UC.icon(p.ic, 1.8) + '</span>';
+      }).join("");
+      return '<div class="uev-startgrafik" aria-hidden="true"><div class="uev-sg-feld">' +
+        '<svg class="uev-sg-svg" viewBox="0 0 760 340" width="760" height="340">' +
+          '<g class="uev-sg-teil">' + hilfe + '<line x1="0" y1="250.5" x2="760" y2="250.5" stroke="currentColor" stroke-opacity=".22"/>' + ticks + '</g>' +
+          stiele +
+        '</svg>' + pins +
+      '</div></div>';
+    }
+
     function baueUebersicht() {
       ab = {};
       root.classList.remove("is-watch-ansicht");
       elAktion.innerHTML = anleitungKnopf() + seitenInfoKnopf() +
         '<button class="up-ph-addbtn up-export uev-anlegen" type="button">' + UC.icon("plus", 1.8) +
           '<span data-i18n="Create">' + esc(t("Create")) + '</span></button>';
-      elMain.innerHTML = ABSCHNITTE.map(function (art) {
+      elMain.innerHTML = startGeruest() + ABSCHNITTE.map(function (art) {
         return '<section class="uev-abschnitt" data-art="' + art + '">' +
           '<div class="up-head uev-head">' +
             '<span class="up-heading"><span class="uev-head-ic" aria-hidden="true">' + UC.icon(ABSCHNITT_ZEICHEN[art], 1.8) + '</span><span class="up-head-label">' + esc(t(ART_TITEL[art])) + '</span>' +
@@ -2350,9 +2416,9 @@
       var alle = (UC.getEvents ? UC.getEvents() : []).filter(function (ev) { return !state.geloescht[ev.id]; });
       if (!alle.length) {
         ABSCHNITTE.forEach(function (art) { zahlSetzen(art, null); abschnittZeigen(art, false); });
-        gesamtLeer(UC.leerHtml({ icon: "cells", titel: "Nothing here yet",
-          text: "Measure what a change did with Event Tracking, or watch which of your pages AI answers cite with Citation Tracking.",
-          knopf: "Create", knopfAttr: "data-uev-create" }));
+        /* Wie die leere Liste in Page Audit: Erklaerung und Aktionen stehen schon im Startbereich darueber, hier nur, dass die
+           Eintraege an dieser Stelle erscheinen werden -- ohne Knopf und ohne die Saetze der Karte ein zweites Mal. */
+        gesamtLeer(UC.leerHtml({ icon: "cells", titel: "Nothing here yet", text: "What you track appears here." }));
         return;
       }
       gesamtLeer("");
