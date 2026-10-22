@@ -4059,6 +4059,7 @@
 #ask-mira .am-akt-ziel { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--up-fs-m); color: var(--am-muted); }
 #ask-mira .am-akt-fav { flex: 0 0 auto; width: 16px; height: 16px; border-radius: var(--up-r-xs); }
 #ask-mira .am-akt-zieltext { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#ask-mira .am-akt-zieladr { min-width: 0; flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--am-muted-2); }
 #ask-mira .am-bubble .am-akt-grund, #ask-mira .am-bubble .am-akt-satz { margin: 0; font-size: var(--up-fs-m); color: var(--am-muted); }
 #ask-mira .am-bubble .am-akt-satz.is-fehler { color: var(--vt-down); }
 #ask-mira .am-akt-fuss { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; flex-wrap: wrap; }

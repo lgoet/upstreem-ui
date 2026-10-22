@@ -2808,8 +2808,13 @@
     var zeichen = k && k.icon ? k.icon(BLK_ART_ZEICHEN[art] || 'zap', 1.7) : '';
     var marke = st === 'proposed' ? '' : '<span class="am-akt-marke is-' + escAttr(st) + '">' + esc(L2.zustand[st] || st) + '</span>';
     var fav = (k && k.faviconUrl && (ziel.domain || ziel.url)) ? k.faviconUrl(ziel.domain || ziel.url, 64) : '';
-    var zielHtml = ziel.label ? '<div class="am-akt-ziel">' + (fav ? '<img class="am-akt-fav" src="' + escAttr(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : '') +
-      '<span class="am-akt-zieltext">' + esc(ziel.label) + '</span></div>' : '';
+    /* Die Adresse steht als Text daneben, nicht nur als Favicon (P3: woran die Aktion wirkt, muss man lesen koennen),
+       ausser sie steht schon im Label ("Sixt (sixt.de)", Page Audit traegt die Adresse als Label). */
+    var adresse = blkStr(ziel.url || ziel.domain), label = blkStr(ziel.label);
+    var zusatz = adresse && label.indexOf(adresse.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, '')) < 0 ? adresse : '';
+    var zielHtml = (label || adresse) ? '<div class="am-akt-ziel">' + (fav ? '<img class="am-akt-fav" src="' + escAttr(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : '') +
+      '<span class="am-akt-zieltext">' + esc(label || adresse) + '</span>' +
+      (zusatz && label ? '<span class="am-akt-zieladr">' + esc(zusatz) + '</span>' : '') + '</div>' : '';
     var fuss = '', job = blkObj(b.job), href = job ? blkWeg(job.href) : '';
     var daten = ' data-akt-id="' + escAttr(b.id) + '" data-akt-msg="' + escAttr(m && m.id) + '"';
     if (st === 'proposed' && b.klasse === 3){
