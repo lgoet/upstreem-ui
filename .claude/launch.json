@@ -209,6 +209,15 @@
         "cd /private/tmp/uprt/nx/app_pa && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3183"
       ],
       "port": 3183
+    },
+    {
+      "name": "PRUEFSTAND-mira-fix-3047",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/claude-501/-Users-lukasgotzkes-Documents-GitHub-upstreem-ui/9ce7d7a7-637f-416d-b211-b6db6edc2ed5/scratchpad/app-mira && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 MIRA_PROBE_DATEN=/private/tmp/claude-501/-Users-lukasgotzkes-Documents-GitHub-upstreem-ui/9ce7d7a7-637f-416d-b211-b6db6edc2ed5/scratchpad/mira_probe/leeup.json HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3047"
+      ],
+      "port": 3047
     }
   ]
 }
