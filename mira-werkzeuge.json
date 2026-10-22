@@ -351,6 +351,288 @@
       }
     },
     {
+      "name": "dashboard_kpis",
+      "bereich": "dashboard",
+      "klasse": "lesen",
+      "beschreibung": "The Dashboard tiles in one call: a short status of the own Brand plus the citation totals, for 'how are we doing' or a quick performance summary. Reports, competitor comparisons and Brand tables take their numbers from brands_overview (every Brand, same values), not from this. brands.own = the own Brand's visibility_pct (share of answers naming it, %), avg_rank (lower is better), sentiment (0-100, only the last 30 days of the period) and mentions (answers naming it), each with *_delta against the period directly before date_from (half as long: Visibility in percentage points, Rank positive = worse), and position (its place among all tracked Brands by Visibility); brands.field = brand_count, best_rank (best Rank of any Brand) and avg_sentiment (unweighted mean over the Brands); brands.rows = the top 5 Brands by Visibility with the same fields (the own Brand may be outside them, then it is only in own); brands.meta.runs_total = answers in the period. citations.kpis = runs_with_any (answers with at least one citation), citations_total (answer x URL pairs), domains_total, urls_total; citations.types = share_of_citations_pct per Citation Type (adds up to 100). For trends use brands_visibility_trend, for single sources sources_domains or sources_urls.",
+      "aufrufe": [{ "fn": "cached_dashboard_overview_v1", "rolle": "brands", "fest": { "p_order": "visibility_desc", "p_limit": 5, "p_offset": 0 } }, { "fn": "cached_citations_overview_v1", "rolle": "citations", "fest": { "p_mode": "domain", "p_granularity": "day", "p_series_limit": 0 } }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {}
+    },
+    {
+      "name": "performance_radar",
+      "bereich": "performance",
+      "klasse": "lesen",
+      "beschreibung": "Topic x Brand matrix (Performance radar): how visible each tracked Brand is inside each Topic, for questions like where competitors are strong and the own Brand is missing, or which Brands lead in which Topics. topics[] = one entry per Topic (rows of the matrix, by share of answers) with topic_share_pct (share of all answers in the filter that belong to the Topic; Topics share Prompts, so these add up to more than 100) and brands[] = one cell per Brand: visibility_pct (share of THIS Topic's answers that name the Brand, inside the Brand's tracking window; null = no answers there, which is not 0), visibility_delta_pct (percentage points against the period directly before date_from, half as long), avg_rank (lower is better; null = never named in this Topic), avg_rank_delta (positive = worse), sentiment and sentiment_delta (0-100, last 30 days), mentions (answers naming it in the Topic). Per Topic also leader_by_visibility (the shown Brand with the highest Visibility in it) and own_brand_place_among_shown. brands_overall[] = the same Brands with their values over ALL Topics in the filter (the same numbers as brands_overview) and position. brands_not_shown / topics_not_shown = tracked Brands and Topics that exist but are outside the limit: they are tracked, just not in this matrix. meta.selection: how many Brands and Topics exist in total and how many are shown; without brand_ids the top Brands by Visibility are shown, the own Brand always among them. A Brand or Topic missing from the matrix is only not shown, not absent. For one Brand's line over time in a Topic use brand_metric_trend with topic_ids.",
+      "aufrufe": [{ "fn": "performance_radar_v1" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "brand_ids": { "rpc": "p_companies", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 12 }, "beschreibung": "Exactly these Brands as columns (company ids of active tracked Brands, max 12; the own Brand only if included). brand_limit is then ignored. Unknown or other-team ids are an error." },
+        "row_topic_ids": { "rpc": "p_topics", "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "maxItems": 12 }, "beschreibung": "Exactly these Topics as rows (tag_id from prompts_meta, max 12); topic_limit is then ignored. Unlike topic_ids it does not narrow the Prompts, it only picks the rows." },
+        "brand_limit": { "rpc": "p_company_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 12 }, "vorgabe": 8, "beschreibung": "Without brand_ids: number of Brands shown, the top Brands by Visibility with the own Brand always included." },
+        "topic_limit": { "rpc": "p_topic_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 12 }, "vorgabe": 10, "beschreibung": "Without row_topic_ids: number of Topics shown, those with the largest share of answers first." }
+      }
+    },
+    {
+      "name": "brand_metric_trend",
+      "bereich": "performance",
+      "klasse": "lesen",
+      "beschreibung": "One tracked Brand's Visibility, Rank or Sentiment over time (the line in the Brand drawer and behind a Performance radar cell): points[] with bucket_start (the day, or the Monday of the week, or the first of the month; the first and last bucket are cut by the period, so a bucket_start before date_from is normal) and the value of the chosen metric: visibility_pct (share of the bucket's answers naming the Brand), avg_rank (lower is better) or sentiment (0-100). null = no answers (or no Rank, no Sentiment) in that bucket or outside the Brand's tracking window: a gap, not 0. With topic_ids it is the line inside those Topics, without it over all Prompts. The average of the points is not the value of the period (busy days weigh more); take period values from brands_overview or performance_radar. Use it for Sentiment over time and for one Brand's line in a Topic; for several Brands' Visibility lines at once use brands_visibility_trend.",
+      "aufrufe": [{ "fn": "performance_company_chart_v1" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "brand_id": { "rpc": "p_company", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "company_id of a tracked Brand of the team, own or competitor, taken from a tool result (brands_tracked, search_entities, brands_overview or dashboard_kpis; for the own Brand the row with role own or is_own true). Never write an id from memory: an id that is not in the team returns not found." },
+        "metric": { "rpc": "p_mode", "schema": { "type": "string", "enum": ["visibility", "rank", "sentiment"] }, "vorgabe": "visibility", "beschreibung": "Which line: visibility, rank or sentiment." },
+        "granularity": { "rpc": "p_granularity", "schema": { "type": "string", "enum": ["day", "week", "month"] }, "vorgabe": "day", "beschreibung": "Bucket size: day, week (from Monday) or month. Use week from about 30 days and month from about 180 days." }
+      }
+    },
+    {
+      "name": "discover_brands",
+      "bereich": "marken",
+      "klasse": "lesen",
+      "beschreibung": "Brands that AI answers name but the team does NOT track (Discover Brands): candidates for new competitors. rows = names as the answers write them, grouped by spelling (not companies): name, visibility_pct (share of all answers in the filter naming it; the denominator leaves out today until it is recalculated and has no tracking window, so it is close to but not exactly comparable with tracked Brands' Visibility), mentioned_runs (answers naming it), mentioned_count (mentions), status (untracked, or inactive = a deactivated Brand of the team, then with company_id), recognized_domains (domains cited in the same answers whose name matches the Brand, with matched_runs), domain (the one of them with the most matched_runs). With matched yes (default) only names with a recognised domain; with matched no also products and variants as separate rows (Tesla, Tesla Model Y), whose values overlap and must never be added. meta: total_count (all candidates; at most limit rows are shown, so a name missing from the list is not proof it is never named: use search), total_responses (the denominator), today_included, missing_days (> 0 = numbers incomplete, say so). Use it when the user asks about brands or competitors they do not track yet; it has no comparison period, so it does not show what changed. Never use it for numbers of tracked Brands (brands_overview).",
+      "aufrufe": [{ "fn": "cached_discover_brands_v1" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "matched": { "rpc": "p_matched", "schema": { "type": "string", "enum": ["yes", "no"] }, "vorgabe": "yes", "beschreibung": "yes = only names with a recognised domain (the reliable list, as in the app by default); no = every name, including products and variants." },
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 100 }, "beschreibung": "Only names or domains containing this text, searched over all candidates, not only the shown ones." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 30, "beschreibung": "Rows, 1-50, by Visibility; there is no paging, meta.total_count = all candidates." }
+      }
+    },
+    {
+      "name": "impact_events",
+      "bereich": "impact",
+      "klasse": "lesen",
+      "beschreibung": "The team's Impact entries, both kinds, newest first, without numbers. kind event = Event Tracking (did a change such as a relaunch, campaign, launch or article work: before/after around event_date, with a comparison group of other Prompts); kind watch = Citation Tracking (where and how often chosen pages or domains are cited; its event_date is only the creation day). Per entry: id (event_id for the other Impact tools), kind, name, description, event_type, event_date, end_date (set = a campaign from event_date to end_date), status (planned, running, completed = campaign ended), day_number (day since start, while running), affected_prompt_count (Prompts the event is measured on; for watch all active Prompts), comparison_prompt_count, target_count and target_kinds (url = one exact page, path = everything under a path, host = a domain, host_all = a domain with its subdomains), target_hosts, new_page_count / new_page_cited_count (sitemap pages new since event_date / of those already cited). For results call impact_event_analysis.",
+      "aufrufe": [{ "fn": "list_impact_events_v3" }],
+      "filter": [],
+      "parameter": {}
+    },
+    {
+      "name": "impact_event_analysis",
+      "bereich": "impact",
+      "klasse": "lesen",
+      "beschreibung": "Results of one Impact entry. event = its setup: name, kind, event_type, event_date, end_date, status, topics, the tracked pages (urls) and targets (id = target_id for impact_target_urls and impact_sitemap_coverage, kind, value). windows = the compared periods: before_from..before_to and after_from..after_to; the event day is in neither; after_complete false = the after window is still running, results are preliminary; limited_baseline = little data before. For a campaign the middle window is during (during_from..during_to) and after_campaign (after_campaign_from..after_campaign_to) is the follow-up, and every value block says before, during and after_campaign. cohort: affected_prompt_count, comparable_prompt_count (only Prompts and models with data both before and after count in the numbers) and comparison_prompt_count. Event Tracking only: own_brand_in_affected_prompts and own_brand_in_comparison_prompts with visibility (% of answers naming the own Brand), rank (lower is better, negative delta = better), sentiment (0-100), each {before, after or during, delta, after_campaign}, mention_runs and total_runs (sample sizes: the two windows can differ in length, so never compare raw counts); effect_vs_comparison = the own Brand's change minus the comparison group's change (the best estimate of the event's effect; delta alone also contains changes that happened everywhere), with effect_direction in words (for Rank lower is better, so a positive Rank effect is worse) and enough_data_to_judge per metric (false = too few answers or Prompts on a side to judge it); competitors_in_affected_prompts; sample_size per metric (answers and Prompts before and after); trend_per_bucket (own Brand and comparison group per bucket; granularity says whether a bucket is a day, a week or a month, bucket_start its first day). Both kinds: urls = exact-URL targets with global_share (% of answers with a citation that cite the URL; never add up across URLs), runs_with_url and first_cited (when it was first cited after the event); targets with citations (citations of the target's pages), share_of_citations (its citations / all citations, %; a different denominator than global_share), new_urls (pages first cited in the window), matched_url_count and per_bucket (citations per bucket, not per day unless granularity is day). overlaps = other entries in the same period that share Prompts and may blur the effect. Observational, not proof: say so, and name small samples (under about 50 answers per side) as too little data. Citation Tracking (kind watch) compares the last window_days with the window_days before and has no brand numbers here. The cited pages of a target: impact_target_urls.",
+      "aufrufe": [{ "fn": "get_impact_event_v3", "rolle": "event", "ohne": ["window_days", "window", "granularity", "models", "markets", "intents", "branded"] }, { "fn": "cached_impact_event_analysis_v4", "rolle": "analysis" }],
+      "filter": ["models", "markets", "intents", "branded"],
+      "parameter": {
+        "event_id": { "rpc": "p_event_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "id from impact_events. Another team's or a deleted entry: not found." },
+        "window_days": { "rpc": "p_window_days", "schema": { "type": "integer", "minimum": 1, "maximum": 183 }, "beschreibung": "Length of the before and after windows in days: 7, 30, 90 or 180 as in the app (default 30). Ignored for a campaign (its windows come from start and end). Omit it together with window since." },
+        "window": { "rpc": "p_window", "schema": { "type": "string", "enum": ["days", "since"] }, "beschreibung": "since = everything since the event (single-date Event Tracking without end date only; window_days is then ignored); omit for window_days." },
+        "granularity": { "rpc": "p_granularity", "schema": { "type": "string", "enum": ["day", "week", "month"] }, "vorgabe": "week", "beschreibung": "Bucket size of trend and daily: day, week (from Monday) or month. Use day only for windows of 7 days." }
+      }
+    },
+    {
+      "name": "impact_target_urls",
+      "bereich": "impact",
+      "klasse": "lesen",
+      "beschreibung": "The cited pages of one target of an Impact entry (path, domain or domain with subdomains; not for exact-URL targets, those are in impact_event_analysis urls): one row per URL with title, first_cited_day (first citation by the affected Prompts, any model and market, all history), days_after_event (Event Tracking only: first_cited_day minus event_date; negative = cited before the event), citations_after (citations in the after window; for a campaign during it; for Citation Tracking the last window_days), prompts_after, models_after, global_share_after (% of answers with a citation in that window that cite the URL), cited_only_by_branded_prompts (cited in the window only by branded Prompts, which are excluded by default; numbers 0, so it is cited, just outside the scope). total = rows matching the search, total_all = all, urls_cited_only_by_branded_prompts. event = name, kind and dates of the entry. Same filters and window as impact_event_analysis.",
+      "aufrufe": [{ "fn": "get_impact_event_v3", "rolle": "event", "ohne": ["target_id", "window_days", "window", "search", "order", "direction", "limit", "offset", "models", "markets", "intents", "branded"] }, { "fn": "get_impact_event_urls_v1", "rolle": "urls" }],
+      "filter": ["models", "markets", "intents", "branded"],
+      "parameter": {
+        "event_id": { "rpc": "p_event_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "id from impact_events." },
+        "target_id": { "rpc": "p_target_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "target_id of a path or domain target, from targets[].target_id in impact_event_analysis (never the event_id itself; an exact-URL target is an error)." },
+        "window_days": { "rpc": "p_window_days", "schema": { "type": "integer", "minimum": 1, "maximum": 183 }, "beschreibung": "Window length in days as in impact_event_analysis (default 30)." },
+        "window": { "rpc": "p_window", "schema": { "type": "string", "enum": ["days", "since"] }, "beschreibung": "since = everything since the event (single-date Event Tracking only); omit for window_days." },
+        "search": { "rpc": "p_query", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only URLs or titles containing this text." },
+        "order": { "rpc": "p_sort", "schema": { "type": "string", "enum": ["citations", "first", "prompts", "models", "url"] }, "vorgabe": "citations", "beschreibung": "Sort by citations_after, first citation, Prompts, models or URL." },
+        "direction": { "rpc": "p_dir", "schema": { "type": "string", "enum": ["desc", "asc"] }, "vorgabe": "desc", "beschreibung": "desc = most or newest first." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 20, "beschreibung": "Rows per page, 1-50." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Rows to skip for paging. Default 0." }
+      }
+    },
+    {
+      "name": "impact_sitemap_coverage",
+      "bereich": "impact",
+      "klasse": "lesen",
+      "beschreibung": "Sitemap coverage of the path and domain targets of an Impact entry: which pages from the site's sitemap AI answers cite and which not yet. Per target: status of the sitemap read (ok, pending = never read, or an error), page_count (pages stored), cited_count (pages ever cited by the tracked Prompts, all history), new_count (pages new or changed since event_date), missing_count (gone from the sitemap), cited_outside_sitemap (cited pages of the target that are not in the sitemap), pages_cited_only_by_branded_prompts, pages_total (pages in the chosen filter) and pages: page_url, cited, first_cited_day, citations_since_event (Event Tracking: citations from the day after event_date) or citations_since_created (Citation Tracking: since the entry was created, so not the same window as impact_target_urls), is_new, missing_since, lastmod, cited_only_by_branded_prompts (cited, but only by branded Prompts outside the default scope). 'Cited' means ever cited, not cited in a window. event = name, kind and dates of the entry.",
+      "aufrufe": [{ "fn": "get_impact_event_v3", "rolle": "event", "ohne": ["target_id", "pages", "search", "limit", "offset", "intents", "branded"] }, { "fn": "get_impact_event_coverage_v1", "rolle": "coverage" }],
+      "filter": ["intents", "branded"],
+      "parameter": {
+        "event_id": { "rpc": "p_event_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "id from impact_events." },
+        "target_id": { "rpc": "p_target_id", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only this target: target_id of a path or domain target from impact_event_analysis (never the event_id itself). Omit for all targets of the entry." },
+        "pages": { "rpc": "p_filter", "schema": { "type": "string", "enum": ["all", "cited", "not_cited", "new"] }, "vorgabe": "all", "beschreibung": "Which pages to list: all, cited, not_cited (never cited yet) or new (new or changed since event_date)." },
+        "search": { "rpc": "p_query", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only pages whose address contains this text." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 0, "maximum": 100 }, "vorgabe": 30, "beschreibung": "Pages per target, 0-100; 0 = only the counts." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Pages to skip per target. Default 0." }
+      }
+    },
+    {
+      "name": "shopping_overview",
+      "bereich": "shopping",
+      "klasse": "lesen",
+      "beschreibung": "Product cards in AI answers (Shopping; observed only in ChatGPT, since 3 October 2026; an observation = one product shown in one answer), overview and Brand table for the period. meta.period (from is never before 3 October) and comparison_available (false = no previous values; the comparison period has the same length and can be cut at the data start); meta.totals: runs_with_known_state (answers checked for product cards), runs_with_shopping, observations, products. kpis of the OWN Brand, each {value, previous, delta} (delta in percentage points): shopping_rate (share of answers with any product cards, Brand-independent), brand_presence_share_of_answers_with_cards_pct (Presence: share of answers with product cards that show at least one own product), share_of_shelf_of_all_observations_pct (Share of Shelf: own observations / ALL observations, including products without a tracked Brand), first_position_share_of_answers_with_list_pct (First Position Rate: answers where an own product is first in the list / all answers with a product list), avg_position (lower is better). chart = Share of Shelf per day for the own Brand and the three largest tracked Brands (null = no answers with product cards that day). brands = tracked Brands with the same values per Brand plus rank, observations, products and top_product; not_tracked_brands_combined = all products without a tracked Brand together (never a Brand called Other); all Share of Shelf values, also those of not_tracked_brands_combined, add up to 100. brands_summary, top_products (10 products with the highest shopping_visibility_pct), movement (rising and declining products, only with a comparison; status new = not seen before), merchant_distribution (top merchants by share_of_merchant_mentions_pct). Merchants are raw names (amazon.de, Amazon.de and Amazon.de - Amazon.de-Seller are three rows). Product IDs and merchant names changed format around 9 to 12 October, so comparisons across those days show apparent new or gone items. Prices are as shown in the answer, not shop prices.",
+      "aufrufe": [{ "fn": "cached_shopping_overview_v2" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "brand_search": { "rpc": "p_brand_search", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only tracked Brands whose name contains this text (brands table only)." },
+        "brand_order": { "rpc": "p_brand_order", "schema": { "type": "string", "enum": ["share_of_shelf_desc", "share_of_shelf_asc", "share_of_shelf_delta_desc", "presence_desc", "avg_position_asc", "first_position_rate_desc", "observations_desc", "products_desc", "name_asc"] }, "vorgabe": "share_of_shelf_desc", "beschreibung": "Sort order of the brands table; rank does not change with it." },
+        "brand_limit": { "rpc": "p_brand_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25, "beschreibung": "Brands per page, 1-50." },
+        "brand_offset": { "rpc": "p_brand_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Brands to skip for paging. Default 0." }
+      }
+    },
+    {
+      "name": "shopping_products",
+      "bereich": "shopping",
+      "klasse": "lesen",
+      "beschreibung": "Products shown as product cards in AI answers in the period (ChatGPT only, since 3 October 2026), one row per product: product_id (for shopping_product_detail), title, brand (name, type own, competitor or other = no tracked Brand), shopping_visibility_pct (share of answers with product cards that showed this product, {value, previous, delta}), observations (answers that showed it), avg_position (lower is better; null = only shown as a single card), first_position_share_of_its_answers_pct (answers where it was first / answers that showed it; a different denominator than the Brand's first_position_share_of_answers_with_list_pct in shopping_overview), price_ranges per currency (as shown in the answers, across pack sizes), rating, merchants, merchant_count, first_seen, last_seen. total_count = products in the segment; segment_counts = all, you (own Brand), competition (tracked competitors), other (no tracked Brand). previous 0 = not seen in the comparison period.",
+      "aufrufe": [{ "fn": "cached_shopping_products_v2" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "segment": { "rpc": "p_segment", "schema": { "type": "string", "enum": ["all", "you", "competition", "other"] }, "vorgabe": "all", "beschreibung": "you = own Brand's products, competition = tracked competitors', other = products without a tracked Brand." },
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only products whose title or tracked Brand name contains this text." },
+        "merchant": { "rpc": "p_merchant", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only products offered by this exact merchant name (as returned by shopping_merchants)." },
+        "brand_id": { "rpc": "p_company_id", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "Only products of this tracked Brand (company_id). Other-team ids are an error." },
+        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["visibility_desc", "visibility_asc", "observations_desc", "avg_position_asc", "avg_position_desc", "first_position_rate_desc", "last_seen_desc", "price_asc", "price_desc", "title_asc", "rating_desc"] }, "vorgabe": "visibility_desc", "beschreibung": "Sort order; visibility = shopping_visibility_pct." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 15, "beschreibung": "Rows per page, 1-50; total_count = all matching products." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Rows to skip for paging. Default 0." }
+      }
+    },
+    {
+      "name": "shopping_product_detail",
+      "bereich": "shopping",
+      "klasse": "lesen",
+      "beschreibung": "One product in AI answers (Shopping). product = header from its latest observation ever (title, brand, latest_price, rating, last_seen; independent of filters and period) plus price_ranges, merchant_count and first_seen for the period. kpis {value, previous, delta}: shopping_visibility_pct (share of answers with product cards that showed it), observations, avg_position (lower is better), first_position_share_of_its_answers_pct. trend per day: shopping_visibility_pct, observations, avg_position and its Brand's presence and position as reference (null = no answer with product cards that day). topics, models, markets with share_of_its_answers_pct (share of the answers showing this product; can add up to more than 100). merchants with share_of_its_merchant_mentions_pct and prices. appearances = the answers that showed it, newest first: prompt_text, run_at, model, market, position (null = single card), is_first, price, merchant_name, prompt_run_id (the answer, for response_detail).",
+      "aufrufe": [{ "fn": "cached_shopping_product_detail_v2" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "product_id": { "rpc": "p_source_product_id", "pflicht": true, "schema": { "type": "string", "minLength": 1, "maxLength": 100 }, "beschreibung": "product_id from shopping_products or shopping_overview, exactly as returned (text, never a number). A product never observed in this team: not found." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 10, "beschreibung": "Appearances per page, 1-50." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Appearances to skip. Default 0." }
+      }
+    },
+    {
+      "name": "shopping_merchants",
+      "bereich": "shopping",
+      "klasse": "lesen",
+      "beschreibung": "Merchants named on product cards in AI answers (ChatGPT only, since 3 October 2026), one row per raw merchant name: rank (by observations, independent of order and search), observations ({value, previous, delta}: product cards naming the merchant), share_of_merchant_mentions_pct ({value, previous, delta}: its observations / all observations that name a merchant), products, tracked_brands (tracked Brands among its products, own included), has_unassigned_products, avg_position, first_seen, last_seen. summary for the whole period: merchants, products, observations (with a merchant), top_merchant. Raw names: the same shop can appear under several names (amazon.de, Amazon.de, Amazon.de - Amazon.de-Seller); say so when you combine them. Merchant names changed format around 9 to 12 October.",
+      "aufrufe": [{ "fn": "cached_shopping_merchants_v2" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "topic_mode", "intents", "branded"],
+      "parameter": {
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only merchants whose name contains this text." },
+        "order": { "rpc": "p_order", "schema": { "type": "string", "enum": ["observations_desc", "observations_asc", "observations_delta_desc", "products_desc", "tracked_brands_desc", "avg_position_asc", "first_seen_asc", "last_seen_desc", "name_asc"] }, "vorgabe": "observations_desc", "beschreibung": "Sort order." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25, "beschreibung": "Rows per page, 1-50; total_count = all matching merchants." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Rows to skip for paging. Default 0." }
+      }
+    },
+    {
+      "name": "page_audits",
+      "bereich": "page_audit",
+      "klasse": "lesen",
+      "beschreibung": "The team's Page Audits (a technical check whether AI search platforms can reach a page and read its text; no citations, no score). One row per audited page: page_id (for page_audit_detail), url, host, title, schedule (once, weekly, monthly), next_run_berlin, audit_run_count (audit runs, not AI answers). latest_audit_run = the newest audit run (status queued, running, completed, partial, failed, cancelled); result = the newest finished result, which can be older than latest: assessment (restriction_detected = at least one platform is blocked, potential_issue = reachable but something may limit use, no_tested_obstacle = nothing found in the tested points, which is no proof of indexing or citation, inconclusive), reachable_count of profile_count (platforms that can reach the page: 'Reachable for 7 of 7'), restriction_count, issue_count, coverage_satisfied / coverage_required (measurements done / needed; partial runs are incomplete), http_status, previous_reachable_count (the result before), rules_changed (the ruleset changed since then, so the two are not comparable). meta.quota = the weekly audit allowance: allowance, used, remaining, resets_berlin (Monday 00:00 Berlin time). Times ending in _berlin are Berlin local time. Reading costs nothing; this tool cannot start an audit.",
+      "aufrufe": [{ "fn": "list_page_audits_v1" }],
+      "filter": [],
+      "parameter": {
+        "search": { "rpc": "p_query", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only audited pages whose address or title contains this text (case-insensitive)." },
+        "order": { "rpc": "p_sort", "schema": { "type": "string", "enum": ["last_run", "url", "reachable", "issues", "status", "schedule", "next_run"] }, "vorgabe": "last_run", "beschreibung": "Sort key: last_run (newest run), url, reachable (reachable platforms), issues (restrictions first, then potential issues), status, schedule, next_run." },
+        "direction": { "rpc": "p_dir", "schema": { "type": "string", "enum": ["desc", "asc"] }, "vorgabe": "desc", "beschreibung": "desc = highest or newest first, asc = lowest or oldest first." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 100 }, "vorgabe": 25, "beschreibung": "Rows per page, 1-100; meta.total_count = all audited pages matching the search." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Rows to skip for paging. Default 0." }
+      }
+    },
+    {
+      "name": "page_audit_detail",
+      "bereich": "page_audit",
+      "klasse": "lesen",
+      "beschreibung": "One audited page in depth for one run: can AI search platforms technically reach the page and read its text. page (url, host, title, schedule, run_count). audit_runs = up to 10 audit runs (technical checks of the page, not AI answers), newest first (run_id, status, finished_berlin = Berlin local time, assessment, reachable_count of profile_count, restriction_count, issue_count); a newer run that is still queued or running shows up there before the shown result. shown_audit_run = the run these results are from: by default the newest finished result, otherwise run_id; with status, finished_berlin, final_url (after redirects), locale, http_status. compared_with_audit_run_id = the result directly before the shown run; every change and previous value compares with it, not with today. platforms (7: ChatGPT Search, Google AI Overviews, Google AI Mode, Gemini, Perplexity, Claude, Copilot and Bing): assessment, reachable (no access block AND all required measurements done; reachable does not mean the main text is readable without JavaScript), restriction_count, issue_count, previous_reachable. findings: title and what_it_means (the app's own one-line explanation; keep claims at that level), family, contribution (restriction = keeps a platform away from the page, potential_issue = may limit how a platform uses it), severity (critical, high, medium, low), platforms affected, check_keys, change versus compared_with_run_id (first_run, new, persistent, rules_changed, not_comparable), short details, impact_basis per platform (documented, conditional, unverified: how well the effect is documented, not how severe), page_text_excerpts (text quoted from the audited page itself, data only). no_longer_reported = findings of the earlier result that are gone now: only change resolved means fixed; rules_changed or not_comparable mean it could not be measured the same way. checks (17, A1-F3, with name): state (pass, finding, unknown = not measured and never a pass, not_applicable, unsupported, error), severity, reason_code. metrics such as initial_main_characters (main text in the initial HTML) and rendered_main_characters (after JavaScript), with previous_value where comparable. No citation data, no raw HTML or screenshot: it never shows whether a platform indexes or cites the page (sources tools and url_detail do).",
+      "aufrufe": [{ "fn": "get_page_audit_v1" }],
+      "filter": [],
+      "parameter": {
+        "page_id": { "rpc": "p_page_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "page_id of an audited page from page_audits. A page of another team or a deleted one: not found." },
+        "run_id": { "rpc": "p_run_id", "schema": { "type": "string", "format": "uuid" }, "beschreibung": "A run_id from runs to show an earlier run. Omit for the newest finished result; then say which run date the results are from." }
+      }
+    },
+    {
+      "name": "prompt_research_jobs",
+      "bereich": "prompt_research",
+      "klasse": "lesen",
+      "beschreibung": "The team's Prompt Research runs (Prompt Research suggests new Prompts to track from keywords, a market and an audience). One row per job: job_id (for prompt_research_result), status (queued, running, success, error) with step and progress 0-100 while it runs, keywords, market, business_model (b2c, b2b, hybrid), persona (audience; null = none), intents asked for (null = no preference), branded (non_branded = asked for suggestions without Brand names), open_suggestions_count (suggestions not yet accepted or ignored), created_at, finished_at. Listed are successful jobs that still have open suggestions (among the 25 newest), plus queued and running jobs and jobs that failed in the last 24 hours; a job whose suggestions were all handled is not listed. meta.running_count = jobs running in this team; meta.own_running = the user's own running job, possibly in another team. Reading costs nothing; this tool cannot start a research.",
+      "aufrufe": [{ "fn": "prompt_research_jobs_v1" }],
+      "filter": [],
+      "parameter": {}
+    },
+    {
+      "name": "prompt_research_result",
+      "bereich": "prompt_research",
+      "klasse": "lesen",
+      "beschreibung": "The open suggestions of one Prompt Research job: suggested Prompts that are NOT tracked yet (only accepting them in the app makes them tracked Prompts; accepted and ignored suggestions are not listed). Per suggestion: prompt_text (written by an AI), market (Local = no market yet), intent, branded (the text names a tracked Brand) with branded_brands, estimated_volume_score (a relative AI estimate from 0 to 100, shown as four bars in the app; never a number of searches or users), suggested_topics (existing Topics of the team that fit). meta: the job (keywords, market, business_model, persona, status, open_suggestions_count) and the team's Prompt quota: prompts_limit, prompts_active, prompts_remaining (how many suggestions can still be accepted). Suggestions have no Visibility, Rank or answers yet.",
+      "aufrufe": [{ "fn": "prompt_research_result_v1" }],
+      "filter": [],
+      "parameter": {
+        "job_id": { "rpc": "p_job_id", "pflicht": true, "schema": { "type": "string", "format": "uuid" }, "beschreibung": "job_id from prompt_research_jobs. A job of another team or a deleted one: not found." }
+      }
+    },
+    {
+      "name": "ads_overview",
+      "bereich": "ads",
+      "klasse": "lesen",
+      "beschreibung": "Ads in AI answers (paid ad cards inside AI answers; observed only in ChatGPT, since 2 October 2026), overview for the period. kpis: share_of_answers_with_ads_pct (Ad Coverage) = share of ALL tracked answers in the filter, of every model, that showed at least one ad (the denominator counts answers of all models and markets in the filter, so without models [chatgpt] the value is diluted by models that never show ads); advertisers = distinct advertiser names; ad_appearances = ads observed (the same ad in two answers counts twice: presence in answers, not budget, spend or impressions); prompts_with_ads and tracked_prompts = active Prompts with at least one ad / with answers. trend: one row per day with total_runs, runs_with_ads, share_of_answers_with_ads_pct (same denominator: answers of every model in the filter that day), ad_appearances. advertiser_share: the top 10 advertisers by ad_appearances with ad_share_pct (their appearances / all ad appearances in the filter). topics: per Topic share_of_answers_with_ads_pct (answers to that Topic's Prompts with an ad), advertiser_count, ad_appearances; Topics share Prompts, so never add them up. recent_ads: the 6 newest ads (advertiser, title, description, ad_format, price, landing_domain, Prompt, model, market, observed_at). There is no comparison period: for a change call it twice with two periods. An advertiser is the name on the ad, not a tracked Brand: one company can advertise under several names (BMW and BMW USA are two advertisers). Several topic_ids always combine with or here. At most two Ads tools at once.",
+      "aufrufe": [{ "fn": "get_ads_overview_v2" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "intents", "branded"],
+      "parameter": {
+        "advertisers": { "rpc": "p_advertisers", "schema": { "type": "array", "items": { "type": "string", "maxLength": 200 }, "maxItems": 50 }, "beschreibung": "Only ads of these advertisers, by exact advertiser_name as returned by ads_advertisers (case and spaces matter; an unknown name is an error)." },
+        "ad_formats": { "rpc": "p_ad_formats", "schema": { "type": "array", "items": { "type": "string", "enum": ["image_card_v2", "product_card_v2"] } }, "beschreibung": "Only these ad formats: image_card_v2 = Image Ad, product_card_v2 = Product Ad (with a price). Ads without a format drop out once this is set." }
+      }
+    },
+    {
+      "name": "ads_advertisers",
+      "bereich": "ads",
+      "klasse": "lesen",
+      "beschreibung": "Advertisers whose ads appeared in AI answers in the period (ChatGPT only, since 2 October 2026), one row per advertiser_name (the exact name on the ad, the key for ads_advertiser_detail and the advertisers filter): company_id and relationship (you = the own Brand, competitor = a tracked competitor, null = not tracked by the team; the link comes from the ads, one company can advertise under several names), domain, ad_share_pct (its appearances / all ad appearances in the filter), ad_appearances (ads observed; presence, not spend), prompt_count (active Prompts where its ads appeared), topic_count, markets, ad_formats, first_seen / last_seen in the period. meta: total_count. No comparison period. Use search to resolve an advertiser name before filtering. At most two Ads tools at once.",
+      "aufrufe": [{ "fn": "list_ads_advertisers_v2" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "intents", "branded"],
+      "parameter": {
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only advertisers whose name contains this text (case-insensitive substring)." },
+        "order": { "rpc": "p_sort", "schema": { "type": "string", "enum": ["ad_appearances_desc", "ad_appearances_asc", "prompt_count_desc", "topic_count_desc", "last_seen_desc", "first_seen_asc", "advertiser_name_asc"] }, "vorgabe": "ad_appearances_desc", "beschreibung": "Sort order; ties by appearances, then name." },
+        "advertisers": { "rpc": "p_advertisers", "schema": { "type": "array", "items": { "type": "string", "maxLength": 200 }, "maxItems": 50 }, "beschreibung": "Only these advertisers, by exact advertiser_name (case and spaces matter; an unknown name is an error)." },
+        "ad_formats": { "rpc": "p_ad_formats", "schema": { "type": "array", "items": { "type": "string", "enum": ["image_card_v2", "product_card_v2"] } }, "beschreibung": "Only ads of these formats: image_card_v2 = Image Ad, product_card_v2 = Product Ad (with a price)." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25, "beschreibung": "Rows per page, 1-50; total_count = all matching advertisers." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Rows to skip for paging. Default 0." }
+      }
+    },
+    {
+      "name": "ads_advertiser_detail",
+      "bereich": "ads",
+      "klasse": "lesen",
+      "beschreibung": "One advertiser in AI answers for the period: advertiser (name, company_id and relationship you / competitor / null, domain, landing_domains = where its ads lead, possibly tracking hosts, ad_formats, first_seen / last_seen), summary (ad_appearances, prompt_count, topic_count, ad_share_pct = its appearances / all ad appearances in the filter), trend (one row per day: ad_appearances and ad_share_pct of that day's ads), topics, prompts (active Prompts where its ads appeared, most appearances first: prompt_text, ad_appearances, last_seen, and organic_visibility_pct = share of that Prompt's answers in the period whose regular answer text names the advertiser's company, organic_mentioned; both null when the company is not tracked by the team, which means not measurable, not no), ads (the 20 newest: title, description, ad_format, price, landing_domain, Prompt, model, market, observed_at). An unknown advertiser_name returns empty data, not an error: then say it was not found. No comparison period.",
+      "aufrufe": [{ "fn": "get_ads_advertiser_detail_v2" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "intents", "branded"],
+      "parameter": {
+        "advertiser_name": { "rpc": "p_advertiser_name", "pflicht": true, "schema": { "type": "string", "minLength": 1, "maxLength": 200 }, "beschreibung": "The exact advertiser_name from ads_advertisers or ads_overview (case and spaces matter)." }
+      }
+    },
+    {
+      "name": "ads_library",
+      "bereich": "ads",
+      "klasse": "lesen",
+      "beschreibung": "The ads themselves (Ad Library), newest first: one row per ad observed in an answer (the same creative seen twice is two rows): advertiser_name, company_id, title and description (the advertiser's own text, any language), ad_format (image_card_v2 = Image Ad, product_card_v2 = Product Ad), price / price_str / currency (Product Ads only), landing_domain, prompt_id and prompt_text (the Prompt whose answer showed it), topics, model, market, observed_at, prompt_run_id (the answer, for response_detail). total_count = all matching ads. Use it to read what ads say (offers, prices, claims) or which ads appear for a Prompt (search with words of the Prompt; it also matches other Prompts containing them). ChatGPT only, since 2 October 2026. At most two Ads tools at once.",
+      "aufrufe": [{ "fn": "list_ads_library_v2" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "intents", "branded"],
+      "parameter": {
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only ads whose title, description, advertiser, landing domain or Prompt text contains this text (case-insensitive substring)." },
+        "advertisers": { "rpc": "p_advertisers", "schema": { "type": "array", "items": { "type": "string", "maxLength": 200 }, "maxItems": 50 }, "beschreibung": "Only ads of these advertisers, by exact advertiser_name (case and spaces matter; an unknown name is an error)." },
+        "ad_formats": { "rpc": "p_ad_formats", "schema": { "type": "array", "items": { "type": "string", "enum": ["image_card_v2", "product_card_v2"] } }, "beschreibung": "Only these formats: image_card_v2 = Image Ad, product_card_v2 = Product Ad (with a price)." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 15, "beschreibung": "Ads per page, 1-50; total_count = all matching ads." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Ads to skip for paging. Default 0." }
+      }
+    },
+    {
+      "name": "ads_prompts",
+      "bereich": "ads",
+      "klasse": "lesen",
+      "beschreibung": "Active Prompts and how often their AI answers showed ads in the period (ChatGPT only, since 2 October 2026): prompt_id, prompt_text, topics, total_runs (answers), runs_with_ads, share_of_answers_with_ads_pct (runs_with_ads / total_runs, Ad Coverage), advertiser_count, ad_appearances, last_ad_seen. Without advertisers or ad_formats every active Prompt with answers is listed, also those without any ad; with one of them only Prompts with a matching ad, and the numbers count only those ads. total_count = matching Prompts. At most two Ads tools at once.",
+      "aufrufe": [{ "fn": "list_ads_prompts_v2" }],
+      "filter": ["date_from", "date_to", "models", "markets", "topic_ids", "intents", "branded"],
+      "parameter": {
+        "search": { "rpc": "p_search", "schema": { "type": "string", "maxLength": 200 }, "beschreibung": "Only Prompts whose text contains this text (case-insensitive substring)." },
+        "order": { "rpc": "p_sort", "schema": { "type": "string", "enum": ["ad_coverage_desc", "ad_coverage_asc", "ad_appearances_desc", "advertiser_count_desc", "last_ad_seen_desc", "total_runs_desc", "prompt_text_asc"] }, "vorgabe": "ad_coverage_desc", "beschreibung": "Sort order; ties by appearances." },
+        "advertisers": { "rpc": "p_advertisers", "schema": { "type": "array", "items": { "type": "string", "maxLength": 200 }, "maxItems": 50 }, "beschreibung": "Only Prompts with ads of these advertisers, by exact advertiser_name (an unknown name is an error)." },
+        "ad_formats": { "rpc": "p_ad_formats", "schema": { "type": "array", "items": { "type": "string", "enum": ["image_card_v2", "product_card_v2"] } }, "beschreibung": "Only Prompts with ads of these formats: image_card_v2 = Image Ad, product_card_v2 = Product Ad." },
+        "limit": { "rpc": "p_limit", "schema": { "type": "integer", "minimum": 1, "maximum": 50 }, "vorgabe": 25, "beschreibung": "Rows per page, 1-50; total_count = all matching Prompts." },
+        "offset": { "rpc": "p_offset", "schema": { "type": "integer", "minimum": 0 }, "beschreibung": "Rows to skip for paging. Default 0." }
+      }
+    },
+    {
       "name": "get_knowledge",
       "bereich": "wissen",
       "klasse": "lesen",
