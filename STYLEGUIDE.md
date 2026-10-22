@@ -2099,7 +2099,10 @@ Page Audit 16 Abstand plus die Mitte der 112 hohen Zeile ((112 − 26 − 4 − 
 16 Polster und 15 Polster des Texts. Oben angeschlagen statt mittig, weil der Satz von Impact schon bei 1440 zwei
 Zeilen hat: der Text wächst nach unten, die Überschrift bleibt stehen. Gemessen bei 1440 und 1024 (Überschrift
 47/2, Satz 77/2 auf beiden Seiten; vorher Impact 91). Unter `is-narrow` ohne die 15 (32 unter der Kopflinie
-wie vorher). Darunter, 16 nach dem Satz, der **Umschalter Karten/Liste** der Seite (unten, "Liste der Übersicht").
+wie vorher). Unten in der Spalte, die Unterkante auf der der Grafik (220 = 220 bei 1440 und 1024), die Zeile **"Display data as"**
+(`.up-label`) mit dem **Umschalter Karten/Liste**, beide zueinander mittig, 8 Abstand (wie "Rows per page" vor seinem
+Segment); die Spalte reicht über die ganze Zeile, die Zeile steht mit `margin-top: auto` am Fuß. Unter `is-narrow` ohne
+Grafik 16 nach dem Satz (Lücke 4 + Polster 12).
 
 | Seite | Karte | Grafik |
 |---|---|---|
@@ -2107,8 +2110,9 @@ wie vorher). Darunter, 16 nach dem Satz, der **Umschalter Karten/Liste** der Sei
 | Impact | keine (seit 22.10. abends); angelegt wird über "Create" im Seitenkopf, darunter der Trenner; unter dem Satz Grid/List | Events als Pins auf einer Zeitachse, einer hervorgehoben (Zeichen von Event Tracking); im Canvas gegen Kurven und Kartenstapel gewählt |
 
 **Liste der Übersicht (Impact, 22.10. abends, Lukas: "auch einen Tabellenmodus anbieten ... ein Switcher, der für
-beide Listen gilt").** Der Umschalter ist der der Ad Library (`.up-seg` mit den Zeichen `layoutGrid`/`listIcon`,
-Tooltips "Grid"/"List", `aria-pressed`), in der Adresse `impact_layout=list` (Vorgabe Karten schreibt nichts, ein
+beide Listen gilt").** Der Umschalter ist das Segment aus core (`.up-seg`) mit Zeichen UND Wort (seit 22.10. spät:
+"Cards" mit `layoutGrid`, "List" mit `listIcon`; `.up-seg-btn` kennt die Form: Abstand 7, Zeichen 14, 12/500), `aria-pressed`,
+die Gruppe heißt wie das Etikett "Display data as"; in der Adresse `impact_layout=list` (Vorgabe Karten schreibt nichts, ein
 Wechsel ist ein eigener Eintrag im Verlauf, `UC.ansichtsParameter` nimmt ihn beim Verlassen mit und bringt ihn
 zurück; ein eigener Name, weil `layout` der Ad Library gehört). Er steht nur, wo es etwas umzuschalten gibt (Laden,
 Einträge), nicht im Fehler- und Leerzustand. Je Abschnitt eine Tabelle aus core wie die Liste der Ad Library:

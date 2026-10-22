@@ -755,6 +755,8 @@
     "Citation Tracking created": "Citation Tracking erstellt", "Created {date}": "Erstellt am {date}", "All active": "Alle aktiven",
     /* Startbereich der Uebersicht (22.10.). */
     "Measure the impact of your changes": "Miss die Wirkung deiner Änderungen",
+    /* Der Umschalter der Uebersicht (22.10. spaet); "List" steht in core ("Liste"). */
+    "Display data as": "Daten anzeigen als", "Cards": "Karten",
     "This event no longer exists": "Dieses Event gibt es nicht mehr",
     "It may have been deleted by someone in your team.": "Vielleicht hat es jemand aus deinem Team gelöscht.",
     "See how launches, campaigns and new pages change your visibility and citations in AI answers.":
@@ -2144,24 +2146,26 @@
        angelegt wird ueber "Create" im Seitenkopf. Die Karten der Eintraege bleiben darunter. Steht in jedem Zustand der Uebersicht
        -- Laden, Fehler, leer --, er braucht keine Daten. */
     /* Seit 22.10. abends (Lukas: "eher top aligned ... wo die Heading bei Technical Page Audit platziert ist") steht der Text oben statt
-       mittig, die Ueberschrift auf derselben Hoehe wie die von Page Audit (events.css .uev-start-text). Darunter der Umschalter Karten
-       oder Liste fuer beide Abschnitte (ansichtHtml). */
+       mittig, die Ueberschrift auf derselben Hoehe wie die von Page Audit (events.css .uev-start-text). Unten in der Spalte, mit der
+       Unterkante der Grafik buendig, die Zeile "Display data as" mit dem Umschalter Karten oder Liste fuer beide Abschnitte (ansichtHtml). */
     function startGeruest() {
       return '<section class="uev-start">' +
         '<div class="uev-start-text"><h2 class="up-heading up-sec-h">' + esc(t("Measure the impact of your changes")) + '</h2>' +
           '<p class="up-sec-sub">' + esc(t("See how launches, campaigns and new pages change your visibility and citations in AI answers.")) + '</p>' +
-          ansichtHtml() + '</div>' +
+          '<div class="uev-start-fuss"><span class="up-label">' + esc(t("Display data as")) + '</span>' + ansichtHtml() + '</div></div>' +
         startGrafik() +
       '</section>';
     }
-    /* DER UMSCHALTER KARTEN/LISTE: das Segment mit Zeichen der Ad Library (ads.js segHtml "uad-ansicht": .up-seg aus core, Zeichen
-       layoutGrid und listIcon, Name als aria-label und Tooltip), dieselben Woerter Grid und List. aria-pressed sagt die Wahl. */
+    /* DER UMSCHALTER KARTEN/LISTE: das Segment aus core (.up-seg) mit Zeichen UND Wort (22.10. spaet, Lukas: "der Switcher mit Text zu
+       den Icons 'Cards' und 'List'") -- .up-seg-btn kennt die Form schon (core.css: Abstand 7, Zeichen 14, Schrift 12/500, "lifted from an
+       ICON-ONLY switcher"). Zeichen wie in der Ad Library (layoutGrid, listIcon). Das Wort steht da, also kein Tooltip und kein eigenes
+       aria-label je Knopf; die Gruppe heisst wie das Etikett davor. aria-pressed sagt die Wahl. */
     function ansichtHtml() {
-      return '<div class="up-seg uev-ansicht" role="group" aria-label="' + esc(t("View")) + '">' +
-        [["grid", "Grid", "layoutGrid"], ["list", "List", "listIcon"]].map(function (w) {
+      return '<div class="up-seg uev-ansicht" role="group" aria-label="' + esc(t("Display data as")) + '">' +
+        [["grid", "Cards", "layoutGrid"], ["list", "List", "listIcon"]].map(function (w) {
           var an = state.layout === w[0];
-          return '<button type="button" class="up-seg-btn' + (an ? " is-active" : "") + '" data-wert="' + w[0] + '" aria-pressed="' + an + '"' +
-            ' aria-label="' + esc(t(w[1])) + '" data-tip="' + esc(t(w[1])) + '">' + UC.icon(w[2], 2) + '</button>';
+          return '<button type="button" class="up-seg-btn' + (an ? " is-active" : "") + '" data-wert="' + w[0] + '" aria-pressed="' + an + '">' +
+            UC.icon(w[2], 2) + '<span>' + esc(t(w[1])) + '</span></button>';
         }).join("") + '</div>';
     }
     /* Die Wahl an Umschalter, Wurzel (is-liste: das Zahnrad der Abschnitte) und Liste bringen. */
@@ -2549,8 +2553,8 @@
       ABSCHNITTE.forEach(function (art) { var f = abschnitt(art).typFilter; if (f) f.neu(); });
       /* Nicht geladen, Fehler oder Zeitablauf: EIN Zustand fuer die ganze Seite, im ersten Abschnitt; der zweite ist nicht da. */
       /* Der Umschalter Karten/Liste steht nur, wo es etwas umzuschalten gibt: beim Laden und mit Eintraegen, nicht im Fehler- und
-         nicht im Leerzustand (dort stuende er neben einem Satz, der in beiden Formen gleich aussieht). */
-      function schalterZeigen(an) { var s = elMain.querySelector(".uev-ansicht"); if (s) s.hidden = !an; }
+         nicht im Leerzustand (dort stuende er neben einem Satz, der in beiden Formen gleich aussieht). Mit ihm sein Etikett. */
+      function schalterZeigen(an) { var s = elMain.querySelector(".uev-start-fuss"); if (s) s.hidden = !an; }
       var liste = state.layout === "list";
       function ganz(html, skelett) {
         ABSCHNITTE.forEach(function (art) { zahlSetzen(art, null, skelett && art === "event"); abschnittZeigen(art, art === "event"); });
