@@ -22,9 +22,12 @@ nachbauen und nicht überschreiben. Kommt keiner: dann ist es wirklich neu.
 python3 .scan_comments.py               # §28: kein */ in CSS-Kommentaren
 python3 .check_reinvention.py           # Nachbauten und gesprengte Bauteile
 python3 .check_skala.py                 # Maße außerhalb der Skala (seit 21.09.)
+python3 .check_mira_werkzeuge.py        # Mira ruft dieselben Funktionen wie die UI (seit 22.10.)
 ```
 
-Alle drei müssen sauber sein. `.check_reinvention.py` meldet Verdachtsfälle, keine Gewissheiten —
+Alle vier müssen sauber sein. **Bekommt eine Funktion eine neue Version, steht sie im selben Commit
+auch in `mira-werkzeuge.json`** – der Mira-Agent ruft genau die Funktionen der UI, ohne eigene
+Wrapper (Plan `bubble/mira_agent_22_10/UMSETZUNGSPLAN.md`, Q4). `.check_reinvention.py` meldet Verdachtsfälle, keine Gewissheiten —
 jeden Treffer entweder beheben oder mit einem Satz begründen, warum er hier richtig ist.
 
 ---
