@@ -463,7 +463,8 @@
       function lesen() { return stand ? stand.get() : UC.intentFilterGet(); }
       var kit = UC.makeLeistenFilter(host, { instanceId: basis, arten: {
         branded: {
-          label: function () { return tx("Branded"); }, chip: function () { return tx("Branded"); }, leer: "Off",
+          /* "Excluded" statt "Off" (22.10.): "Off" las sich als "Branded-Filter aus, also alles drin" und meinte das Gegenteil. */
+          label: function () { return tx("Branded"); }, chip: function () { return tx("Branded"); }, leer: "Excluded",
           optionen: function () { return [{ key: "all", name: tx("Include Branded") }, { key: "branded", name: tx("Only Branded") }]; },
           auswahl: function () { var b = lesen().branded; return b === "all" || b === "branded" ? [b] : []; },
           setzen: function (l) {
@@ -1170,14 +1171,28 @@
       /* UC.t, wo es das gibt -- eine aeltere core.js ohne Katalog laesst die englischen Worte stehen,
          statt die Leiste zu zerlegen. */
       function tr(s) { return UC.t ? UC.t(s) : s; }
+      /* DER STANDARD STEHT DA (22.10., Fall lee-up.de/cedric-leenen): ohne Wahl schliesst die App Branded-Prompts aus
+         (UC.intentFilterGet, "non_branded"). Bis dahin stand das nur als Wert im geschlossenen Menue, und eine Seite, die nur
+         Branded-Prompts zitiert hatten, las sich mit 0 Zitaten wie ein Datenfehler. Ein Chip OHNE X nennt den Umfang, wie
+         Vercels vorgewaehlte "Production" oder GA4 "All users"; ein Klick oeffnet die Wahl (Include Branded, Only Branded).
+         Nur Branded: der einzige Filter mit einer Vorgabe, die etwas ausschliesst. Er zaehlt nicht als gesetzter Filter
+         (kein Clear All, has-filters bleibt aus), die Wurzel traegt dafuer has-standard. */
+      function standardChip(f) {
+        return '<span class="up-entchip is-static ufb-chip is-klick is-standard" data-chip="' + esc(f.key) + '">' +
+          '<button class="ufb-chip-auf" type="button" data-chip-open="' + esc(f.key) + '" aria-haspopup="menu"' +
+            ' data-tip="' + esc(tr("Branded prompts are left out of the metrics.")) + '">' +
+            '<span class="ufb-chip-ic">' + zeichenVon(f) + '</span><span class="ufb-chip-lbl">' + esc(tr("Non-branded prompts")) + '</span>' +
+          '</button></span>';
+      }
       function renderChips() {
-        var teile = [];
+        var teile = [], standard = false;
         /* In der grossen Form ist der Chip selbst ein Knopf: ein Klick oeffnet SEIN Untermenue
            direkt darunter (oeffnen() unten), das X leert wie bisher. */
         var klick = gross();
         liste.forEach(function (f) {
           if (ausGemeldet(f)) return;
           var c = chipText(f);
+          if (!c && f.key === "branded") { teile.push(standardChip(f)); standard = true; return; }
           if (!c) return;
           /* DAS ZEICHEN DES FILTERS VORNE (24.09. angefordert, mit dem Sortier-Chip als Vorbild:
              Zeichen, leiser Bezug, lauter Wert, X). Es ist dasselbe, das die Zeile im Panel
@@ -1223,6 +1238,7 @@
           elChips.__ufbHtml = html;
           elChips.__ufbErster = elChips.firstChild;
         }
+        root.classList.toggle("has-standard", standard);
         chipZustand();
       }
 

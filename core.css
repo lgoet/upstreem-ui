@@ -4842,9 +4842,11 @@
     .up-root[data-leiste="yes"] .up-leiste-scope .ufb-root,
     .up-root[data-leiste="yes"] .up-leiste-scope .ufb-bar,
     .up-root[data-leiste="yes"] .up-leiste-scope .ufb-root.has-filters .ufb-chips,
+    .up-root[data-leiste="yes"] .up-leiste-scope .ufb-root.has-standard .ufb-chips,
     .up-leiste-fluss > .ufb-root,
     .up-leiste-fluss > .ufb-root > .ufb-bar,
-    .up-leiste-fluss > .ufb-root.has-filters .ufb-chips { display: contents; }
+    .up-leiste-fluss > .ufb-root.has-filters .ufb-chips,
+    .up-leiste-fluss > .ufb-root.has-standard .ufb-chips { display: contents; }
     .up-root[data-leiste="yes"] .up-leiste-scope .ufb-sep,
     .up-leiste-fluss > .ufb-root .ufb-sep { display: none; }
     .up-root[data-leiste="yes"] .up-leiste-scope .ufb-clear,

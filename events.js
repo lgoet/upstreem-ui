@@ -420,7 +420,7 @@
     vergleich: { h: "Comparison", t: "Upstreem compares the affected Prompts with other eligible Prompts that were active when this event was created." },
     /* Die Spalte "First cited" der URL-Tabelle (03.10.: "bitte einen Explainer, der die Metrik
        erklaert"). Beispielwerte oben wie in jeder Spaltenerklaerung. */
-    zitiert: { h: "First cited", t: "When an AI response first cited this URL for the affected prompts after the event. \u201cBefore event start\u201d means it was also cited in the six months before the event. This always covers all models and markets, whatever the filters say.",
+    zitiert: { h: "First cited", t: "When an AI response first cited this URL for the affected prompts after the event. \u201cBefore event start\u201d means it was also cited in the six months before the event. This always covers all models and markets, whatever the filters say. Branded prompts only count when the Branded filter includes them.",
       chips: [{ text: "After 10 days (18. Sep 2026)", ja: true }, { text: "Not yet" }] }
   };
   var METRIKEN = [
@@ -806,8 +806,8 @@
     "First cited": "Erstmals zitiert", "Global share before": "Global Share vorher", "Global share after": "Global Share nachher",
     "On event day": "Am Event-Tag", "After {n} days ({date})": "Nach {n} Tagen ({date})", "After 1 day ({date})": "Nach 1 Tag ({date})",
     "Before event start": "Vor Eventstart", "After 10 days (18. Sep 2026)": "Nach 10 Tagen (18. Sep 2026)",
-    "When an AI response first cited this URL for the affected prompts after the event. \u201cBefore event start\u201d means it was also cited in the six months before the event. This always covers all models and markets, whatever the filters say.":
-      "Wann eine KI-Antwort diese URL nach dem Event zum ersten Mal für die betroffenen Prompts zitiert hat. \u201eVor Eventstart\u201c heißt: auch in den sechs Monaten vor dem Event zitiert. Das gilt immer für alle Modelle und Märkte, egal welche Filter gesetzt sind.",
+    "When an AI response first cited this URL for the affected prompts after the event. \u201cBefore event start\u201d means it was also cited in the six months before the event. This always covers all models and markets, whatever the filters say. Branded prompts only count when the Branded filter includes them.":
+      "Wann eine KI-Antwort diese URL nach dem Event zum ersten Mal für die betroffenen Prompts zitiert hat. \u201eVor Eventstart\u201c heißt: auch in den sechs Monaten vor dem Event zitiert. Das gilt immer für alle Modelle und Märkte, egal welche Filter gesetzt sind. Branded Prompts zählen nur, wenn der Branded-Filter sie einschließt.",
     "Not yet": "Noch nicht", "Not within 6 months": "Nicht in 6 Monaten",
     "No URLs added yet": "Noch keine URLs",
     "Add pages, articles or external sources associated with this event.":
@@ -1163,6 +1163,11 @@
     "Not cited yet ({n})": "Noch nicht zitiert ({n})",
     "Event date": "Eventdatum",
     "New or updated": "Neu oder aktualisiert", "New in the sitemap or updated since the event": "Neu in der Sitemap oder aktualisiert seit dem Event",
+    "Branded only": "Nur Branded",
+    "Only branded prompts cited this page, last on {date}. Branded prompts are left out of the metrics.":
+      "Nur Branded Prompts haben diese Seite zitiert, zuletzt am {date}. Branded Prompts fließen nicht in die Kennzahlen ein.",
+    "Only branded prompts cited this page. Branded prompts are left out of the metrics.":
+      "Nur Branded Prompts haben diese Seite zitiert. Branded Prompts fließen nicht in die Kennzahlen ein.",
     "No longer in sitemap": "Nicht mehr in der Sitemap",
     "Updated {date}": "Aktualisiert am {date}",
     "In sitemap since {date}": "Seit {date} in der Sitemap",
@@ -2495,6 +2500,9 @@
        alle bekannten ausser diesen, denn die RPC kennt nur eine Positivliste. */
     window.addEventListener("up-intentfilter", function () {
       if (!document.contains(root) || !state.eventId) return;
+      /* Die Sitemap rechnet seit 22.10. im Umfang des Filters: neu anfragen (der alte Stand bleibt stehen, bis der neue da ist),
+         gemerkte Suchtreffer gelten fuer den alten Umfang. */
+      delete abdGefragt[state.eventId]; abdSuche = {};
       analyseAnfordern(); renderDetail();
     });
     function filterUebernehmen(feld, d, schluessel) {
@@ -3821,10 +3829,22 @@
       });
       if (UC.segJetzt) { try { UC.segJetzt(box.querySelector(".uev-quellen-seg")); } catch (e) {} }
     }
+    /* BRANDED ONLY (22.10., Fall lee-up.de/cedric-leenen): eine Seite, die nur Branded-Prompts zitiert haben. Die zaehlen in
+       keiner Kennzahl (Vorgabe der App, Absprache 13.10.); ohne Marke stand die Seite mit 0 neben "heute" in der Tabelle und
+       mit "1 citation" in der Sitemap und las sich wie ein Datenfehler. Die DB liefert branded_only (branded_v1.sql); die
+       Marke steht dort, wo sonst das Datum bzw. "Not cited yet" steht, der Tooltip sagt, wann zuletzt. */
+    function nurBrandedMarke(tag, klasse) {
+      var d = String(tag || "").slice(0, 10);
+      var tip = d ? ersetze(t("Only branded prompts cited this page, last on {date}. Branded prompts are left out of the metrics."), { date: datum(d) })
+        : t("Only branded prompts cited this page. Branded prompts are left out of the metrics.");
+      return '<span class="up-marke is-leise ' + klasse + '" data-tip="' + esc(tip) + '">' + esc(t("Branded only")) + '</span>';
+    }
     function urlTabelleHtml(kopf, zeilen, wz, evTag, q) {
       return '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
         zeilen.map(function (u) {
           var hp = hostPfad(u.url), tag = String(u.first_observed_day || "").slice(0, 10), neu = !wz && !!tag && !!evTag && tag > evTag;
+          var beob = u.branded_only === true ? nurBrandedMarke(u.branded_last_cited_day, "uev-beob")
+            : tag ? '<span class="up-marke is-leise uev-beob' + (neu ? " is-ja" : "") + '">' + esc(datum(tag)) + '</span>' : '<span class="up-num is-empty">–</span>';
           var modelle = isArr(u.models_after) ? u.models_after : [];
           /* Die Zeile oeffnet das URL-Detail, wie in der Tabelle der URLs (Beschluss 2). Eine Antwort zeigt
              das Event-Detail gar nicht mehr: sie steht im Drawer der URL. */
@@ -3832,7 +3852,7 @@
             '<div class="up-td up-var-name uev-td-url"><span class="up-fav up-logo-box has-img"><img src="' + esc(favicon(u.url)) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>' +
               '<span class="uev-url-txt"><span class="uev-url-haupt" title="' + esc(u.url || "") + '">' + UC.highlight(pfadText(hp), q) + '</span>' +
               '<span class="uev-url-host">' + UC.highlight(hp.host, q) + '</span></span></div>' +
-            '<div class="up-td uev-td-zahl uev-td-beob">' + (tag ? '<span class="up-marke is-leise uev-beob' + (neu ? " is-ja" : "") + '">' + esc(datum(tag)) + '</span>' : '<span class="up-num is-empty">–</span>') + '</div>' +
+            '<div class="up-td uev-td-zahl uev-td-beob">' + beob + '</div>' +
             '<div class="up-td uev-td-zahl">' + zahlWert(u.citations_after) + '</div>' +
             '<div class="up-td uev-td-zahl">' + zahlWert(u.prompts_after) + '</div>' +
             '<div class="up-td uev-td-zahl"' + (modelle.length ? ' data-tip="' + esc(modelle.map(modellName).join(", ")) + '"' : '') + '>' + zahlWert(modelle.length) + '</div>' +
@@ -3937,12 +3957,26 @@
       for (i = 0; i < l.length; i++) if (l[i] && wert != null && String(l[i].value) === String(wert)) return l[i];
       return null;
     }
+    /* DER UMFANG DER SITEMAP (22.10., branded_v1.sql): die Abdeckung bekommt den Intent-Filter der App (p_intents, p_branded) wie
+       die URL-Liste darueber -- sonst zaehlte die Sitemap Zitate von Branded-Prompts und die Tabelle nicht (lee-up.de/cedric-leenen:
+       "1 citation" neben 0). Kennt die DB die Argumente noch nicht (PGRST202, Datei nicht eingespielt), fragt der Aufruf einmal
+       ohne sie nach und bleibt fuer den Seitenaufruf dabei: die Sitemap rechnet dann wie vorher ueber alle Prompts, statt zu
+       verschwinden. ABD_PF.stand: null unbekannt, true kennt sie, false nicht. */
+    var ABD_PF = { stand: null };
+    function abdMitPf() { return ABD_PF.stand !== false && Object.keys(intentP()).length > 0; }
     function abdRpc(fn, o) {
-      var tm = team();
+      var tm = team(), ip = fn === "get_impact_event_coverage_v1" && abdMitPf() ? intentP() : null, p = {}, k;
+      for (k in o) if (Object.prototype.hasOwnProperty.call(o, k)) p[k] = o[k];
+      if (ip) for (k in ip) if (Object.prototype.hasOwnProperty.call(ip, k)) p[k] = ip[k];
       return (tm ? Promise.resolve(tm) : (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(""))).then(function (tm2) {
         if (!tm2) return { ok: false, status: 0, fehler: { code: "", message: "", hint: "", details: "" } };
-        return UC.rpc(fn, mitTeam(o, tm2), { timeoutMs: 20000 });
-      }).then(function (erg) { return erg || { ok: false, status: 0, fehler: {} }; });
+        return UC.rpc(fn, mitTeam(p, tm2), { timeoutMs: 20000 });
+      }).then(function (erg) {
+        erg = erg || { ok: false, status: 0, fehler: {} };
+        if (ip && fehltFn(erg)) { ABD_PF.stand = false; return abdRpc(fn, o); }
+        if (ip && erg.ok) ABD_PF.stand = true;
+        return erg;
+      });
     }
     function abdAnfordern(eid, danach) {
       if (demo || ABD_DA.stand === false || !UC.rpc || !eid) { if (danach) danach(); return; }
@@ -4232,11 +4266,16 @@
          heisst nur, dass die Sitemap die Seite nach dem Eventtag neu fuehrt oder ihr lastmod darauf liegt, NICHT dass
          sie zitiert wurde. Eine nicht zitierte Seite sagt darum "Not cited yet" (im Reiter Not cited yet steht das
          schon im Reiter: keine Wiederholung); eine zitierte, neue sagt, was die DB wirklich weiss. */
+      /* Nur von Branded-Prompts zitiert (22.10.): im Umfang der App nicht zitiert, darum ersetzt "Branded only" die Marke
+         "Not cited yet" (auch im Reiter Not cited yet, dort sagt sie mehr als der Reiter), und die Zeile oeffnet das
+         URL-Detail wie eine zitierte -- dort stehen die Laeufe. */
+      var nurBr = !zit && p.branded_only === true;
       var marke = "";
-      if (!zit) { if (opt.tab !== "offen") marke = '<span class="up-marke is-leise uev-abd-marke">' + esc(t("Not cited yet")) + '</span>'; }
+      if (nurBr) marke = nurBrandedMarke(p.branded_last_cited_day, "uev-abd-marke");
+      else if (!zit) { if (opt.tab !== "offen") marke = '<span class="up-marke is-leise uev-abd-marke">' + esc(t("Not cited yet")) + '</span>'; }
       else if (p.is_new === true) marke = '<span class="up-marke is-leise uev-abd-marke" data-tip="' + esc(t("New in the sitemap or updated since the event")) + '">' + esc(t("New or updated")) + '</span>';
-      var offen = zit ? ' is-zitiert" role="link" tabindex="0" data-url="' + esc(treffer && treffer.url ? treffer.url : p.url || "") : "";
-      return '<div class="uev-abd-seite' + (opt.name != null ? " is-im-baum" : "") + (weg ? " is-weg" : "") + offen + '"' + (zit ? "" : ' data-abd-seite="1" data-url="' + esc(p.url || "") + '"') + (opt.tiefe ? ' style="--uev-tiefe:' + opt.tiefe + '"' : '') + '>' +
+      var offen = zit || nurBr ? ' is-zitiert" role="link" tabindex="0" data-url="' + esc(treffer && treffer.url ? treffer.url : p.url || "") : "";
+      return '<div class="uev-abd-seite' + (opt.name != null ? " is-im-baum" : "") + (weg ? " is-weg" : "") + offen + '"' + (zit || nurBr ? "" : ' data-abd-seite="1" data-url="' + esc(p.url || "") + '"') + (opt.tiefe ? ' style="--uev-tiefe:' + opt.tiefe + '"' : '') + '>' +
         zielFavKlein(p.url || "", '<span class="uev-abd-fav0">' + UC.icon("globe", 2) + '</span>') +
         '<span class="uev-abd-pfad" title="' + esc(p.url || "") + '">' + abdLinkHtml(p.url, pfad, opt.q) + '</span>' +
         marke +
@@ -4510,7 +4549,12 @@
             if (q && q.code === "time_budget" && isArr(q.target_ids)) q.target_ids.forEach(function (tid) { e.zeitBudget[String(tid)] = true; });
           });
           e.pauseBis = 0;
-          e.daten = erg.daten; e.mehr = {}; e.filt = {}; e.filtFehler = {}; abdBaumZ = {}; fertig(null); return;
+          e.mehr = {}; e.filt = {}; e.filtFehler = {}; abdBaumZ = {};
+          /* Die Antwort der Function rechnet ohne den Intent-Filter der App (22.10., branded_v1): mit Filter holt die Seite die
+             Abdeckung einmal neu, bis dahin bleibt der bisherige Stand stehen und der Knopf im Lauf -- sonst zaehlte die Sitemap
+             nach jedem Refresh die Branded-Zitate wieder mit. */
+          if (abdMitPf()) { abdAnfordern(eid, function () { fertig(null); }); return; }
+          e.daten = erg.daten; fertig(null); return;
         }
         /* Zu frueh (Refresh 1 je Stunde und Event) oder zu viele Abrufe (10 je Minute und Nutzer): kein
            Fehler und kein Wiederholen, nur die Zeit, ab der es wieder geht. */

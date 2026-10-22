@@ -1777,6 +1777,35 @@ das Ziel bekommt ihn in `zeigen(id, kontext)`, wartet auf `UC.drawerFilterBereit
 `brille` in `upstreemExportSetContext`. Gegenstück zum Lesen ist `up-intentfilter-lokal` (detail.key, detail.still:
 still = Übernahme beim Öffnen, der Drawer lädt selbst).
 
+## 8e. Branded: der Standard steht da, „Branded only“ statt stiller 0 (seit 22.10.)
+
+Gemeldet 21.10. (lee-up.de/cedric-leenen, Citation Tracking): eine Seite, die nur ein Branded-Prompt zitiert hatte, stand
+in „Cited URLs“ mit 0 neben „First cited heute“, das URL-Detail mit „Last seen today“ ohne Prompt Runs, die Sitemap mit
+„1 citation“. Kein Datenfehler: die App schließt Branded-Prompts von Haus aus (`p_branded` `non_branded`, Absprache 13.10.),
+aber nur ein Teil der Werte folgte dem, und der Filter stand nirgends. Recherche (Sentry, GA4, PostHog, Vercel, Search
+Console, Peec, AthenaHQ): `reports/Branded Prompts sichtbar kennzeichnen.md`. Seitdem:
+
+```
+Standard-Chip  In jeder Filterleiste mit der Zeile Branded steht ohne Wahl der Chip "Non-branded prompts" (ohne X,
+               Zeichen bubbleChatUser, Klick öffnet die Wahl; .ufb-chip.is-standard, Wurzel .has-standard statt
+               .has-filters: kein Clear All). Mit Wahl der bisherige Chip "Branded: …" mit X. Im Menü heißt der
+               Standard "Excluded", nicht "Off" ("Off" las sich als "alles drin"). Vorbild Vercel "Production",
+               GA4 "All users". Nur Branded: der einzige Filter, dessen Vorgabe etwas ausschließt.
+Ein Umfang     Jede Zahl, jedes Datum und die Frage, ob eine Zeile erscheint, rechnen im selben Filter (Sentry:
+               First/Last seen folgen der Umgebung). Die Sitemap schickt p_intents/p_branded mit; nach "Refresh"
+               holt sie die Abdeckung mit Filter neu (die Edge rechnet ohne).
+Branded only   Kippt der Ausschluss eine Ja/Nein-Antwort (im Filter nicht zitiert, mit Branded schon), steht die
+               leise Marke "Branded only" dort, wo sonst Datum bzw. "Not cited yet" steht (Tabelle: Spalte
+               First cited; Sitemap: Platz der Marke, auch im Reiter Not cited yet), Tooltip "Only branded
+               prompts cited this page, last on {date}. …". Die Zeile öffnet das URL-Detail. Reine
+               Größenunterschiede (5 statt 7) bekommen keinen Hinweis: den Umfang sagt der Chip.
+```
+
+Bauen: `nurBrandedMarke(tag, klasse)` in events.js, Felder `branded_only`, `branded_last_cited_day` aus
+`get_impact_event_urls_v1` und `get_impact_event_coverage_v1` (DB `bubble/branded_kennzeichnen_22_10/branded_v1.sql`).
+Fehlt der DB das Argument (PGRST202), fragt die Sitemap einmal ohne nach (`ABD_PF`). Das URL-Detail (scope_last_cited_at,
+Note „Show Branded Runs“) folgt mit der Drawer-Arbeit (§8d).
+
 ## 9. Skeleton / Loading (Geist, seit 15.10.)
 
 **Eine Form für alle Skelette**, gelesen an vercel.com/geist/skeleton: ein wandernder Glanz statt

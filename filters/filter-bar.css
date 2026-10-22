@@ -195,9 +195,11 @@
 
 /* Ohne aktiven Filter gibt es weder Strich noch Chips noch Clear All -- und zwar display: none
    und nicht bloss durchsichtig, sonst belegt die leere Leiste weiter ihre Breite. */
-.ufb-root:not(.has-filters) .ufb-sep,
-.ufb-root:not(.has-filters) .ufb-chips,
+.ufb-root:not(.has-filters):not(.has-standard) .ufb-sep,
+.ufb-root:not(.has-filters):not(.has-standard) .ufb-chips,
 .ufb-root:not(.has-filters) .ufb-clear { display: none; }
+/* Der Standard-Chip (22.10., "Non-branded prompts"): ohne X, darum rechts dasselbe Polster wie links. */
+.up-entchip.ufb-chip.is-standard { padding: 0 10px; }
 /* Die eigene Chip-Zeile (data-chips-ziel, 22.10., Kopf der Drawer): dieselbe Reihe wie .ufb-chips, ohne Chip ganz
    weg (keine leere Zeile), Clear All nur bei einem gesetzten Filter -- dieselben Regeln wie in der Leiste. */
 .ufb-chipzeile { display: flex; align-items: center; gap: 8px; row-gap: 8px; flex-wrap: wrap; min-width: 0; }

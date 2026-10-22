@@ -2015,6 +2015,10 @@
     "Filter for prompts that name a brand": "Nach Prompts filtern, die eine Marke nennen",
     "Branded prompts": "Branded Prompts",
     "Included": "Einbezogen",
+    /* Der Standard-Chip der Filterleiste und der Wert der Zeile Branded (22.10., filters/filter-bar.js). */
+    "Non-branded prompts": "Non-branded Prompts",
+    "Excluded": "Ausgeschlossen",
+    "Branded prompts are left out of the metrics.": "Branded Prompts fließen nicht in die Kennzahlen ein.",
     "Your prompts": "Deine Prompts",
     "What is the intent?": "Was ist der Intent?",
     "Where the question sits in the customer journey: getting to know a topic, comparing options, or ready to buy. AI sets it, and you can change it.": "Wo die Frage in der Customer Journey steht: ein Thema kennenlernen, Anbieter vergleichen oder kaufen. Die KI ordnet zu, du kannst es ändern.",
