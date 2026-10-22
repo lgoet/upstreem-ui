@@ -480,8 +480,12 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-schritte li { font-size: var(--up-fs-l); line-height: 1.5; color: var(--vc-text); padding-left: 2px; }
 .upa-schritte li::marker { color: var(--vc-muted); font-variant-numeric: tabular-nums; }
 .upa-fixplattformen { --up-cols: minmax(200px, 1.2fr) minmax(110px, .6fr) minmax(0, 3fr); }
-.upa-root .upa-fixplattformen .up-row.upa-fixp { height: auto; min-height: 48px; flex: 0 0 auto; padding-top: 10px; padding-bottom: 10px; align-items: start; }
-.upa-fixp .up-td { align-self: center; gap: 10px; }
+/* Die senkrechten Linien sind die linken Raender der Zellen (core .up-td). Das Polster gehoert darum in die ZELLE, nicht in
+   die Zeile: mit 10 oben und unten an der Zeile und mittig gestellten Zellen hoerten die Linien je 10 vor der Kante auf
+   (Lukas 22.10.: "die gridlines beachten das padding. sollen sie nicht ... eine richtige grid tabelle wie alle unsere
+   Tabellen"). Jetzt reichen die Zellen ueber die volle Zeilenhoehe, der Inhalt steht mittig darin. */
+.upa-root .upa-fixplattformen .up-row.upa-fixp { height: auto; min-height: 48px; flex: 0 0 auto; padding-top: 0; padding-bottom: 0; align-items: stretch; }
+.upa-fixp .up-td { align-self: stretch; height: auto; padding-top: 10px; padding-bottom: 10px; gap: 10px; }
 .upa-fixp-satz .upa-satz { font-size: var(--up-fs-m); }
 .upa-root.is-narrow .upa-fixplattformen { --up-cols: minmax(0, 1fr) minmax(100px, auto); }
 .upa-root.is-narrow .upa-fixp-satz { grid-column: 1 / -1; }
@@ -538,7 +542,9 @@ a.upa-ident-url:hover span { text-decoration: underline; }
    Abschnitte (32) unter der Domain; auf normaler Breite schmaler als die Spalte: 600 (vorher 520, abends "etwas groesser"). Bei
    1440 bleiben bis zum Fenster 54 frei (Spalte 654). */
 .upa-kopfzone.is-k .upa-kopfzone-l { gap: 32px; }
-.upa-root:not(.is-narrow) .upa-kopfzone.is-k .upa-kk { max-width: 600px; }
+/* 680 statt 600 (Lukas 22.10. spaet: "gib den 4 KPI boxen noch etwas mehr max width"): bei 1440 fuellen sie damit die Spalte
+   bis zum Abstand vor dem Fenster (654), breiter erst auf grossen Bildschirmen. */
+.upa-root:not(.is-narrow) .upa-kopfzone.is-k .upa-kk { max-width: 680px; }
 .upa-kk { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .upa-kk-i { display: flex; flex-direction: column; gap: 4px; min-width: 0; box-sizing: border-box; padding: 10px 12px;
   border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--vc-bg); }

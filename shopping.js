@@ -229,6 +229,9 @@
     "Largest Visibility changes": "Größte Visibility-Änderungen",
     "No product title, listing or brand contains \u201c{q}\u201d.": "Kein Produkttitel, Listing oder Markenname enthält \u201e{q}\u201c.",
     "No observed products match these filters.": "Keine beobachteten Produkte passen zu diesen Filtern.",
+    "No observed products of {brand} match these filters.": "Keine beobachteten Produkte von {brand} passen zu diesen Filtern.",
+    "No observed products were listed with {merchant} in these filters.": "In diesen Filtern war kein beobachtetes Produkt bei {merchant} gelistet.",
+    "No observed products of {brand} were listed with {merchant} in these filters.": "In diesen Filtern war kein beobachtetes Produkt von {brand} bei {merchant} gelistet.",
     "No AI Shopping products observed": "Keine KI-Shopping-Produkte beobachtet",
     "None of the AI responses in this range showed shopping products.": "Keine KI-Antwort in diesem Zeitraum hat Shopping-Produkte gezeigt.",
     "No tracked brand appeared in AI shopping results in this range.": "In diesem Zeitraum kam keine getrackte Marke in KI-Shopping-Ergebnissen vor.",
@@ -288,6 +291,29 @@
       t: "Price shown next to the product in AI shopping results during the selected period. Not a live shop price." },
     merchant: { h: "Merchant Share", f: "Mentions of this merchant ÷ all merchant mentions",
       t: "How often a merchant was listed with observed products. This shows presence in AI results, not sales or conversions." },
+    /* JE ORT DER RICHTIGE SATZ (22.10., Pruefung aller Erklaerkarten nach Lukas' Meldung zu Merchants im Detail): in den
+       Tabellen der Marken (Brand Landscape, Brands) ist jede Zeile EINE Marke -- dort sagten Share of Shelf und Presence
+       "your products", Observations "the product". In den Haendlertabellen ist jede Zeile ein Haendler, in Recent
+       Appearances ein einzelner Auftritt (eine Position, ein Preis, kein Durchschnitt und keine Spanne). Die Werte selbst
+       sind dieselben Felder wie vorher; anders ist nur, wovon der Satz spricht. */
+    shareBrand: { h: "Share of Shelf", f: "Product observations of the brand ÷ all product observations",
+      t: "The brand's part of all product placements observed in shopping results. A product shown twice in one response counts once." },
+    presenceBrand: { h: "Presence", f: "Responses with at least one product of the brand ÷ shopping responses",
+      t: "How often at least one of the brand's products appeared when an AI response showed shopping products." },
+    obsBrand: { h: "Observations", f: "Count of product observations of the brand",
+      t: "The number of times a product of the brand was seen, each product counted once per AI response. A count, not a rate." },
+    obsMerchant: { h: "Observations", f: "Count of product observations with this merchant",
+      t: "The number of times a product was seen listed with this merchant, each product counted once per AI response. A count, not a rate." },
+    posMerchant: { h: "Avg. Product Position", f: "Average of observed positions (1 = first)",
+      t: "The average place of the products listed with this merchant in shopping results, counting from 1. Lower is better." },
+    merchantProd: { h: "Share", f: "Mentions of this merchant ÷ all merchant mentions of this product",
+      t: "How often this merchant was listed with this product. This shows presence in AI results, not sales or conversions." },
+    obsMerchantProd: { h: "Observations", f: "Count of observations of this product with this merchant",
+      t: "The number of AI responses in which this product was listed with this merchant. A count, not a rate." },
+    posTreffer: { h: "Position", f: "1 = first. Single card: the product was shown on its own",
+      t: "The place of the product in this shopping result, counting from 1. Lower is better." },
+    priceTreffer: { h: "Price", f: "As shown in this response",
+      t: "The price shown next to the product in this AI response. Not a live shop price." },
     /* Die Kacheln von Brands und Merchants (05.10.: jede Kachel der Reihe bekommt ihre Erklaerung). */
     brandsObserved: { h: "Brands observed", f: "Tracked brands with at least one observed product",
       t: "How many of your tracked brands appeared in shopping results in this period. Products without a tracked brand are not counted." },
@@ -334,7 +360,24 @@
     "Most merchant mentions": "Die meisten Händlernennungen",
     "The merchant listed most often with the observed products in this period.": "Der Händler, der in diesem Zeitraum am häufigsten mit den beobachteten Produkten gelistet war.",
     "Mentions of the top merchant ÷ all merchant mentions": "Nennungen des stärksten Händlers ÷ alle Händlernennungen",
-    "The top merchant's part of all merchant mentions on observed products.": "Der Anteil des stärksten Händlers an allen Händlernennungen bei beobachteten Produkten."
+    "The top merchant's part of all merchant mentions on observed products.": "Der Anteil des stärksten Händlers an allen Händlernennungen bei beobachteten Produkten.",
+    "Product observations of the brand ÷ all product observations": "Produktbeobachtungen der Marke ÷ alle Produktbeobachtungen",
+    "The brand's part of all product placements observed in shopping results. A product shown twice in one response counts once.": "Der Anteil der Marke an allen beobachteten Produktplatzierungen in Shopping-Ergebnissen. Ein Produkt, das in einer Antwort zweimal erscheint, zählt einmal.",
+    "Responses with at least one product of the brand ÷ shopping responses": "Antworten mit mindestens einem Produkt der Marke ÷ Shopping-Antworten",
+    "How often at least one of the brand's products appeared when an AI response showed shopping products.": "Wie oft mindestens ein Produkt der Marke erschien, wenn eine KI-Antwort Shopping-Produkte zeigte.",
+    "Count of product observations of the brand": "Anzahl der Produktbeobachtungen der Marke",
+    "The number of times a product of the brand was seen, each product counted once per AI response. A count, not a rate.": "Wie oft ein Produkt der Marke gesehen wurde, jedes Produkt einmal je KI-Antwort. Eine Anzahl, keine Rate.",
+    "Count of product observations with this merchant": "Anzahl der Produktbeobachtungen mit diesem Händler",
+    "The number of times a product was seen listed with this merchant, each product counted once per AI response. A count, not a rate.": "Wie oft ein Produkt mit diesem Händler gelistet gesehen wurde, jedes Produkt einmal je KI-Antwort. Eine Anzahl, keine Rate.",
+    "The average place of the products listed with this merchant in shopping results, counting from 1. Lower is better.": "Der durchschnittliche Platz der Produkte, die mit diesem Händler gelistet waren, gezählt ab 1. Kleiner ist besser.",
+    "Mentions of this merchant ÷ all merchant mentions of this product": "Nennungen dieses Händlers ÷ alle Händlernennungen dieses Produkts",
+    "How often this merchant was listed with this product. This shows presence in AI results, not sales or conversions.": "Wie oft dieser Händler mit diesem Produkt gelistet war. Das zeigt Präsenz in KI-Ergebnissen, keine Verkäufe oder Conversions.",
+    "Count of observations of this product with this merchant": "Anzahl der Beobachtungen dieses Produkts mit diesem Händler",
+    "The number of AI responses in which this product was listed with this merchant. A count, not a rate.": "Die Zahl der KI-Antworten, in denen dieses Produkt mit diesem Händler gelistet war. Eine Anzahl, keine Rate.",
+    "1 = first. Single card: the product was shown on its own": "1 = erste. Einzelkarte: das Produkt stand allein",
+    "The place of the product in this shopping result, counting from 1. Lower is better.": "Der Platz des Produkts in diesem Shopping-Ergebnis, gezählt ab 1. Kleiner ist besser.",
+    "As shown in this response": "So, wie er in dieser Antwort stand",
+    "The price shown next to the product in this AI response. Not a live shop price.": "Der Preis, der in dieser KI-Antwort neben dem Produkt stand. Kein aktueller Shop-Preis."
   });
 
   /* Stabile Fehlercodes (Uebergabe 9) -> was der Nutzer tun kann. Alles andere: der allgemeine Satz. */
@@ -447,18 +490,33 @@
                   firstBrand: ["65.6%", "2.9%"], firstProd: ["66.8%", "4.1%"], vis: ["37.8%", "6.5%"],
                   obs: ["49", "8"], merchant: ["25.7%", ""], price: ["€13.49–€14.99", ""], brandsObserved: ["31", ""],
                   ownRank: ["#1", ""], topCompetitor: ["12.0%", ""], merchantsObserved: ["32", ""],
-                  topMerchant: ["Amazon.de", ""], topMerchantShare: ["25.7%", ""] }[key];
-      if (key === "pos") return '<span class="up-explain-row">' + HASH_ERKL + '<span>2.0</span></span>';
+                  topMerchant: ["Amazon.de", ""], topMerchantShare: ["25.7%", ""],
+                  shareBrand: ["31.9%", ""], presenceBrand: ["84.7%", ""], obsBrand: ["77", ""], obsMerchant: ["62", ""],
+                  merchantProd: ["63.0%", ""], obsMerchantProd: ["17", ""], priceTreffer: ["€14.99", ""] }[key];
+      if (key === "pos" || key === "posMerchant") return '<span class="up-explain-row">' + HASH_ERKL + '<span>2.0</span></span>';
+      /* Ein einzelner Auftritt steht ganzzahlig in der Zelle ("# 2"), nicht als Durchschnitt. */
+      if (key === "posTreffer") return '<span class="up-explain-row">' + HASH_ERKL + '<span>2</span></span>';
       if (!bsp) return "";
       return '<span class="up-explain-row">' + esc(bsp[0]) + (bsp[1] ? hoch + '<span class="up-explain-up">' + esc(bsp[1]) + '</span>' : '') + '</span>';
     }
+    /* TITEL = DAS ETIKETT AM ORT (22.10.; Format der Erklaerkarten: "Titel = das Label der Kachel/Spalte"). Gemessen
+       standen sechs Karten unter einem anderen Namen als ihr Ort: "Observed price" an der Spalte Price, "Brand Presence"
+       an Presence, "Avg. Position" an Avg. Product Position und Position, "Merchant Share" an Share und an Merchant
+       Distribution, "Share of Shelf" an Your Share of Shelf. Der Titel kommt darum aus dem Etikett, an dem das Zeichen
+       steht (Spaltenkopf, Kachel, Abschnitt, Faktenzeile) -- eine Regel aus dem Aufbau statt einer Liste je Ort. h im
+       Eintrag bleibt der Rueckfall fuer ein Zeichen ohne Etikett. */
+    function ortEtikett(z) {
+      if (!z || !z.closest) return "";
+      var th = z.closest(".up-th"), el = th ? th.querySelector(".up-th-txt") : z.closest(".up-kpi-label, .up-sec-h, dt");
+      return el ? str(el.textContent).trim() : "";
+    }
     if (UC.makeExplain) UC.makeExplain({ root: root, triggerSel: ".ush-erklaer", getIsDark: isDark,
-      html: function (key) {
+      html: function (key, ausloeser) {
         var e = ERKLAER[key];
         if (!e) return "";
         var vis = erklaerVorschau(key);
         return (vis ? '<div class="up-explain-vis">' + vis + '</div>' : '') +
-          '<div class="up-explain-h">' + esc(t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>' +
+          '<div class="up-explain-h">' + esc(ortEtikett(ausloeser) || t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>' +
           '<div class="up-explain-t">' + esc(t(e.f)) + '</div>';
       } });
     function info(key) {
@@ -763,8 +821,12 @@
     root.querySelector(".ush-filterleiste").addEventListener("click", function () {
       if (state.seite === "products") haendlerHolen();
     }, true);
-    /* Welche Filter die Filterzeile je Reiter zeigt: die drei der Produkttabelle nur auf Products. */
-    function leisteStellen() {
+    /* Welche Filter die Filterzeile je Reiter zeigt: die drei der Produkttabelle nur auf Products.
+       EIGENER NAME (22.10.): die Funktion hiess wie "die eine Leiste" weiter unten (leisteStellen, 20.10.). Zwei
+       Funktionsdeklarationen mit einem Namen in einem Geltungsbereich -- es gilt die letzte, diese hier lief also nie.
+       Gemessen: data-shbrand-visible blieb auf Products "no", Segment, Brand und Merchant fehlten im Menue Filters,
+       und eine Marke aus einem Klick in Brands filterte die Tabelle ohne Chip (Lukas: "die sichtbaren Filter"). */
+    function filterSichtbarStellen() {
       var fb = root.querySelector(".ush-filterleiste"), an = state.seite === "products" ? "yes" : "no";
       if (!fb) return;
       Object.keys(ID_FF).forEach(function (k) {
@@ -1219,7 +1281,7 @@
       var s = state.seite;
       /* Die Filter der Produkttabelle: sichtbar je Reiter, Liste und Haken auf Stand (die Marken-
          und Haendlernamen kommen mit den Antworten). sync meldet nur, was sich geaendert hat. */
-      leisteStellen();
+      filterSichtbarStellen();
       ffSync();
       /* Der ganze-Seite-Zustand: keine Shopping-Ergebnisse oder Shopping fuer diese Modelle gar
          nicht verfuegbar (Uebergabe 5). Er steht ueber allem anderen, auch ueber dem Detail. */
@@ -1326,17 +1388,25 @@
     }
     /* DER UMSCHALTER IM SEITENKOPF (20.10., wie Brands und Citations): "Chart and table" / "Table only" blendet die Charts der Seite aus (die
        Linie der Overview und der Brands, die Balken der Merchants) und wieder ein. Kennzahlen und Tabellen bleiben. Gemerkt im Browser
-       (UC.bandAusMerken), ein Schalter fuer die ganze Seite; auf Products, wo es keinen Chart gibt, ist er verborgen. */
+       (UC.bandAusMerken), ein Schalter fuer die ganze Seite.
+       AUF JEDEM REITER DA UND WIRKSAM (22.10., Lukas: auf Products tat "Table only" nichts, der Schalter blieb stehen und sprang
+       erst auf Brands um). Ursache hier, nicht in core: ohne Chart setzte diese Funktion nur hidden an den Schalter und kehrte
+       zurueck. hidden wirkt dort nicht (.up-seg in core setzt display, und jede Autorenregel schlaegt das hidden des Browsers;
+       gemessen display flex, 80 breit), und der Klick lief in den Rueckruf des letzten Reiters: er merkte "aus", rief diese
+       Funktion, und die kehrte wieder vor UC.bandAus zurueck -- der Schalter wurde nie neu gestellt. Jetzt geht jeder Reiter
+       durch UC.bandAus: mit Chart ist das Band der Chart (Overview, Brands, Merchants und seit dem 22.10. das Produkt-Detail,
+       sonst sagte der Schalter dort "Table only" ueber einem sichtbaren Chart), ohne Chart (Products) die Seite selbst als
+       Anker -- sie traegt kein .up-band, die Regel "ausgeblendet ist das Band ganz weg" trifft sie also nicht. */
     function bandSchalten(name) {
-      var band = name === "overview" || name === "brands" ? sek("chart") : name === "merchants" ? sek("balken") : null;
-      var sw = root.querySelector('.up-bandsw[data-band="' + instanceId + '"]');
-      if (!band || !UC.bandAus) { if (sw) sw.hidden = true; return; }
-      var aus = !!(UC.bandAusGemerkt && UC.bandAusGemerkt(instanceId)), war = band.classList.contains("is-band-aus");
-      UC.bandAus(band, aus, { id: instanceId, setzen: function (neu) {
+      var band = name === "overview" || name === "brands" || name === "detail" ? sek("chart") : name === "merchants" ? sek("balken") : null;
+      var anker = band || elMain.querySelector(":scope > .ush-seite");
+      if (!anker || !UC.bandAus) return;
+      var aus = !!(UC.bandAusGemerkt && UC.bandAusGemerkt(instanceId)), war = !!band && band.classList.contains("is-band-aus");
+      UC.bandAus(anker, aus, { id: instanceId, setzen: function (neu) {
         if (UC.bandAusMerken) UC.bandAusMerken(instanceId, !!neu);
         bandSchalten(state.seite);
       } });
-      sw = root.querySelector('.up-bandsw[data-band="' + instanceId + '"]');
+      var sw = root.querySelector('.up-bandsw[data-band="' + instanceId + '"]');
       if (sw) sw.hidden = false;
       /* Wieder eingeblendet: ein Canvas, das ausgeblendet gemessen wurde, hat Breite 0. */
       if (war && !aus && linie && linie.resize) setTimeout(function () { try { linie.resize(); linie.relayoutLegend && linie.relayoutLegend(); } catch (e) {} }, 60);
@@ -1541,7 +1611,9 @@
           var r = e.target.closest && e.target.closest(".up-bar-row[data-bar-key]");
           if (!r) return;
           var key = r.getAttribute("data-bar-key");
-          if (key && key.indexOf("__rest") !== 0) seiteOeffnen("products", true, { haendler: key, marke: null });
+          /* Wie die Zeile eines Haendlers (zeileOeffnen): genau dieser Filter, Marke und Segment zurueck auf alle (22.10.,
+             Klickrouten: der Balken liess ein gewaehltes Segment stehen, die Zeile nicht). */
+          if (key && key.indexOf("__rest") !== 0) seiteOeffnen("products", true, { haendler: key, marke: null, seg: "all" });
         });
       }
     }
@@ -1580,8 +1652,11 @@
       if (andere) return UC.markenChip({ name: t("Other (unassigned)") }, { ltr: "–", nameHtml: '<span class="ush-andere">' + esc(t("Other (unassigned)")) + '</span>' });
       return UC.markenChip(m, { nameHtml: hl(str(m.name).trim(), q), nach: duMarke(m, meta) });
     }
-    function duMarke(m, meta) {
-      return m && m.type === "own" && !eigeneOhneTreffer(meta) ? '<span class="up-marke up-you">' + esc(t("You")) + '</span>' : '';
+    /* immer: die Zeile der eigenen Marke in der Tabelle Brands (22.10., Lukas: "keep it", als eigene Marke kennzeichnen).
+       Ohne Treffer liefert die DB sie dort trotzdem (mit 0 und ohne Produkte) -- ohne die Marke "You" stand sie wie ein
+       fremder Eintrag mit lauter Nullen da. Sonst bleibt die Marke ohne Treffer weg wie bisher (Kennzahlen, Charts). */
+    function duMarke(m, meta, immer) {
+      return m && m.type === "own" && (immer || !eigeneOhneTreffer(meta)) ? '<span class="up-marke up-you">' + esc(t("You")) + '</span>' : '';
     }
     function haendlerName(n) { return str(n).trim(); }
     function haendlerHtml(n, q) {
@@ -1671,8 +1746,8 @@
     }
     var TABELLEN = {
       landscape: { erste: { label: "Brand", min: 220, sk: { w: 110, logo: true } }, spalten: [
-        sp("share", "Share of Shelf", 154, 1.2, 90, 60, { info: "share" }),
-        sp("presence", "Presence", 120, 1, 80, 44, { info: "presence" }),
+        sp("share", "Share of Shelf", 154, 1.2, 90, 60, { info: "shareBrand" }),
+        sp("presence", "Presence", 120, 1, 80, 44, { info: "presenceBrand" }),
         sp("products", "Products", 104, 0.8, 50, 30),
         sp("pos", "Avg. Position", 124, 1, 70, 36, { info: "pos", flach: 137 }),
         sp("first", "First Position Rate", 156, 1.1, 40, 44, { info: "firstBrand", flach: 173 }),
@@ -1697,10 +1772,10 @@
         sp("merchants", "Merchants", 128, 1.1, 40, 70),
         sp("seen", "Last Seen", 120, 0.9, 20, 60, { sort: "last_seen" })] },
       brands: { erste: { label: "Brand", min: 220, sort: "name", sk: { w: 110, logo: true } }, spalten: [
-        sp("share", "Share of Shelf", 154, 1.2, 90, 60, { sort: "share_of_shelf", info: "share", flach: 168 }),
-        sp("presence", "Presence", 126, 0.9, 80, 44, { sort: "presence", info: "presence", flach: 136 }),
+        sp("share", "Share of Shelf", 154, 1.2, 90, 60, { sort: "share_of_shelf", info: "shareBrand", flach: 168 }),
+        sp("presence", "Presence", 126, 0.9, 80, 44, { sort: "presence", info: "presenceBrand", flach: 136 }),
         sp("products", "Products", 104, 0.8, 60, 30, { sort: "products", flach: 112 }),
-        sp("obs", "Observations", 148, 0.9, 50, 36, { sort: "observations", info: "obs", flach: 161 }),
+        sp("obs", "Observations", 148, 0.9, 50, 36, { sort: "observations", info: "obsBrand", flach: 161 }),
         sp("pos", "Avg. Position", 144, 1, 70, 36, { sort: "avg_position", info: "pos", flach: 158 }),
         sp("first", "First Position Rate", 176, 1.1, 40, 44, { sort: "first_position_rate", info: "firstBrand", flach: 194 }),
         sp("change", "Change", 110, 0.9, 65, 40, { sort: "share_of_shelf_delta" }),
@@ -1708,13 +1783,13 @@
       merchants: { erste: { label: "Merchant", min: 240, sort: "name", sk: { w: 120, logo: true } }, spalten: [
         sp("share", "Share", 150, 1.2, 90, 60, { sort: "observations", info: "merchant" }),
         sp("products", "Products", 104, 0.8, 80, 30, { sort: "products", flach: 112 }),
-        sp("obs", "Observations", 148, 1.1, 70, 50, { sort: "observations", info: "obs", flach: 161 }),
-        sp("pos", "Avg. Product Position", 192, 1.1, 60, 36, { sort: "avg_position", info: "pos", flach: 213 }),
+        sp("obs", "Observations", 148, 1.1, 70, 50, { sort: "observations", info: "obsMerchant", flach: 161 }),
+        sp("pos", "Avg. Product Position", 192, 1.1, 60, 36, { sort: "avg_position", info: "posMerchant", flach: 213 }),
         sp("firstseen", "First Seen", 120, 1, 30, 60, { sort: "first_seen" }),
         sp("seen", "Last Seen", 120, 1, 40, 60, { sort: "last_seen" })] },
       dhaendler: { erste: { label: "Merchant", min: 220, sk: { w: 120, logo: true } }, spalten: [
-        sp("share", "Share", 124, 1, 90, 40, { info: "merchant" }),
-        sp("obs", "Observations", 128, 1, 80, 30, { info: "obs", flach: 140 }),
+        sp("share", "Share", 124, 1, 90, 40, { info: "merchantProd" }),
+        sp("obs", "Observations", 128, 1, 80, 30, { info: "obsMerchantProd", flach: 140 }),
         sp("price", "Price", 160, 1.2, 70, 60, { info: "price" })] },
       /* Recent Appearances: die erste Spalte ist ein Datum (120 Untergrenze). Dahinter die
          Knopfspalte "View Response", gemessen (UC.makeAktionsSpur) statt geschaetzt. */
@@ -1723,8 +1798,8 @@
         sp("model", "Model", 150, 1.2, 90, { w: 70, logo: true }),
         sp("market", "Market", 90, 0.7, 50, 30),
         sp("topic", "Topic", 160, 1.4, 40, 80),
-        sp("position", "Position", 100, 0.8, 70, 30, { info: "pos", flach: 106 }),
-        sp("price", "Price", 110, 0.9, 60, 40, { info: "price" }),
+        sp("position", "Position", 100, 0.8, 70, 30, { info: "posTreffer", flach: 106 }),
+        sp("price", "Price", 110, 0.9, 60, 40, { info: "priceTreffer" }),
         sp("merchant", "Merchant", 180, 1.4, 80, { w: 90, logo: true }),
         sp("date", "Date", 120, 0.9, 20, 60)] }
     };
@@ -2440,7 +2515,7 @@
         var gef = !!(tb.suche || tb.marke || tb.haendler || tb.seg !== "all" || filterAktiv());
         tabInhalt('<div class="up-box">' + UC.leerHtml({ gefiltert: gef, was: "products", icon: "stackStar",
           titel: gef ? "No matching products" : "No products yet",
-          text: gef ? (tb.suche ? ersetze(t("No product title, listing or brand contains “{q}”."), { q: tb.suche }) : "No observed products match these filters.") : "",
+          text: gef ? (tb.suche ? ersetze(t("No product title, listing or brand contains “{q}”."), { q: tb.suche }) : leerSatzFilter(tb)) : "",
           knopf: gef ? "Clear search and filters" : "", knopfAttr: "data-ush-prodweg" }) + '</div>');
         pagerSetzen("products", 0); sortSync("products");
         return;
@@ -2452,6 +2527,17 @@
       spaltenAnwenden("products");
       pagerSetzen("products", vorige.prodTotal);
       sortSync("products");
+    }
+    /* DER LEERZUSTAND NENNT DEN FILTER (22.10., Lukas: Marke und Haendler als Filter, "wie immer"): kommt die Tabelle mit
+       einer Marke oder einem Haendler aus einem Klick leer zurueck (die eigene Marke ohne Treffer in Brands), sagt der Satz,
+       welcher Filter es ist -- der Chip steht oben in der Leiste, der Knopf darunter raeumt ihn. */
+    function leerSatzFilter(tb) {
+      var mk = tb.marke && tb.marke.id ? (str(tb.marke.name).trim() || (markenListe().filter(function (x) { return x.key === str(tb.marke.id); })[0] || {}).label || "") : "";
+      var hd = str(tb.haendler).trim();
+      if (mk && hd) return ersetze(t("No observed products of {brand} were listed with {merchant} in these filters."), { brand: mk, merchant: hd });
+      if (mk) return ersetze(t("No observed products of {brand} match these filters."), { brand: mk });
+      if (hd) return ersetze(t("No observed products were listed with {merchant} in these filters."), { merchant: hd });
+      return "No observed products match these filters.";
     }
     function prodZeile(p, meta, q) {
       var b = p.brand && typeof p.brand === "object" ? p.brand : { type: "other" };
@@ -2622,7 +2708,7 @@
       var tp = b.top_product && typeof b.top_product === "object" && str(b.top_product.source_product_id).trim() ? b.top_product : null;
       return '<div class="up-row ush-zeile' + (andere ? " is-andere" : "") + (angepinnt ? " is-angepinnt" : "") + '"' +
           (andere ? '' : ' data-marke="' + esc(b.company_id) + '" data-marke-name="' + esc(str(b.name).trim()) + '" role="link" tabindex="0"') + '>' +
-        '<div class="up-td">' + markeLogo(b) + markeName(b, q, true) + duMarke(b, meta) + '</div>' +
+        '<div class="up-td">' + markeLogo(b) + markeName(b, q, true) + duMarke(b, meta, true) + '</div>' +
         '<div class="up-td up-td-share up-var-sov">' + ringHtml(sos.v) + '</div>' +
         td("presence", pctHtml(kz(b.presence).v)) +
         td("products", ganzHtml(b.products)) +
@@ -2765,7 +2851,7 @@
       if (!d) {
         el.innerHTML = '<div class="up-box ush-hero"><div class="ush-hero-oben"><span class="ush-hero-bild is-sk"></span>' +
           '<div class="ush-hero-info"><span class="up-tsk-bar" style="width:120px"></span><span class="up-tsk-bar" style="width:60%"></span><span class="up-tsk-bar" style="width:40%"></span></div></div>' +
-          '<div class="up-kpiband is-4 ush-kpis">' + [0, 1, 2, 3].map(function () { return UC.kpiKarteSkelett ? UC.kpiKarteSkelett("ush-kpi") : ""; }).join("") + '</div></div>';
+          '<div class="up-kpiband is-4 ush-kpis">' + [0, 1, 2, 3].map(function () { return UC.kpiKarteSkelett ? UC.kpiKarteSkelett("ush-kpi", { fuss: 0 }) : ""; }).join("") + '</div></div>';
         return;
       }
       var p = d.product || {}, meta = d.meta || {}, b = p.brand && typeof p.brand === "object" ? p.brand : { type: "other" };
@@ -2782,10 +2868,13 @@
       /* Wie im Chart darunter: ein Tag ohne Wert ist 0, nur die Position bleibt eine Luecke. */
       function reihe(f) { return tr.map(function (x) { var v = metrikWert(f, x[f]); return v == null && !/position/.test(f) ? 0 : v; }); }
       var kv = kz(k.visibility), ko = kz(k.observations), kp = kz(k.avg_position), kf = kz(k.first_position_rate);
-      var fuss = vergleichFuss(meta);
+      /* OHNE FUSSZEILE (22.10., Lukas zu "vs. 09. Oct – 15. Oct 2026": "weg damit"): die Kacheln des Produkts nennen
+         den Vergleichszeitraum nicht mehr. Nur hier -- Overview, Brands und Merchants behalten ihn. Das Skelett oben
+         steht dafuer ohne Fusszeile (kpiKarteSkelett fuss 0): mit dem alten Skelett (100) waere die Kachel (82) beim Laden
+         um 18 gesprungen, so sind es 5 (77) -- die Sparkline macht die Wertzeile hoeher, wie vorher auch (100 zu 106). */
       function kachel(label, wert, trendH, spark) {
         /* Die Sparkline steht rechts in der Zeile des Werts, hinter dem Trend (Entwurf: 72 x 24). */
-        return kpiHtml({ label: label, wertHtml: wert, trendHtml: (trendH || "") + (spark ? '<span class="ush-spark">' + spark + '</span>' : ''), fussHtml: fuss });
+        return kpiHtml({ label: label, wertHtml: wert, trendHtml: (trendH || "") + (spark ? '<span class="ush-spark">' + spark + '</span>' : '') });
       }
       el.innerHTML = '<div class="up-box ush-hero">' +
         '<div class="ush-hero-oben">' +
@@ -2950,7 +3039,9 @@
     function zeichneDetailHaendler(d) {
       var el = sek("dhaendler");
       if (!el) return;
-      var platz = vorschauPlatz(el, "dhaendler", sekKopf("Merchants", "", "", "merchant"));
+      /* Ohne Erklaerkarte (22.10., Lukas: "an die Stelle muss ueberhaupt kein Tooltip"): am Titel stand die Karte Merchant
+         Share -- die Kennzahl einer Spalte, nicht der Abschnitt. Die Spalten darunter tragen ihre eigenen Karten. */
+      var platz = vorschauPlatz(el, "dhaendler", sekKopf("Merchants", ""));
       if (!d) { platz.innerHTML = tabelleHtml(kopfAus("dhaendler"), skelettAus("dhaendler", 3)); spaltenAnwenden("dhaendler"); return; }
       var l = (isArr(d.merchants) ? d.merchants : []).filter(function (m) { return m && typeof m === "object"; });
       if (!l.length) {

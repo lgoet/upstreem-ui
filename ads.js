@@ -207,6 +207,13 @@
     organic: { h: "Organic Context", f: "Brand mentioned in the organic answer of this prompt",
       t: "Whether this brand was also mentioned in the answer text of the same prompt. Only shown for brands Upstreem already tracks." }
   };
+  /* TITEL = LABEL (22.10., Erklaerkarten-Format): die Karte traegt als Titel genau die Beschriftung, an
+     der sie haengt. Am Kopf "Advertiser Share" der Overview stand "Ad Share", an der Spalte
+     "Appearances" der Advertisers "Ad Appearances" -- dieselbe Lage wie die Merchant-Share-Karte am
+     Kopf "Merchants" in Shopping. Satz und Formel bleiben die der Kennzahl; nur Titel und Probe
+     folgen dem Ort. */
+  ERKLAER.anteil = { h: "Advertiser Share", f: ERKLAER.share.f, t: ERKLAER.share.t };
+  ERKLAER.auftritte = { h: "Appearances", f: ERKLAER.appearances.f, t: ERKLAER.appearances.t };
   if (UC.addMessages) UC.addMessages("de", {
     "Responses with at least one Ad ÷ tracked responses": "Antworten mit mindestens einer Ad ÷ getrackte Antworten",
     "How often a tracked AI response contained at least one Ad.": "Wie oft eine getrackte KI-Antwort mindestens eine Ad enthielt.",
@@ -355,7 +362,8 @@
       if (key === "organic") {
         return '<span class="up-explain-row"><span class="up-explain-up">' + UC.icon("check", 2) + '</span><span>' + esc(t("Also mentioned organically")) + '</span></span>';
       }
-      var bsp = { coverage: "11.4%", advertisers: "6", appearances: "81", prompts: "13", share: "34.6%" }[key];
+      /* auftritte: die Zelle einer Zeile (HOLY, 28), nicht die Summe der Kachel. */
+      var bsp = { coverage: "11.4%", advertisers: "6", appearances: "81", prompts: "13", share: "34.6%", anteil: "34.6%", auftritte: "28" }[key];
       return bsp ? '<span class="up-explain-row">' + esc(bsp) + '</span>' : "";
     }
     if (UC.makeExplain) UC.makeExplain({ root: root, triggerSel: ".uad-erklaer", getIsDark: isDark,
@@ -459,8 +467,12 @@
     }
     function filterAktiv() {
       var f = state.filter, a = state.adFilter;
+      /* Im Detail eines Advertisers zaehlt der Advertiser-Filter nicht (22.10.): die RPC uebergeht ihn
+         dort, und seine Zeile ist ausgeblendet (advFilterStellen). Sonst sagte ein leerer Abschnitt
+         "No Ads match these filters." zu einem Filter, der weder wirkt noch zu sehen ist. */
+      var adv = state.seite !== "advertiser" && a.advertisers && a.advertisers.length;
       return !!((f.modelle && f.modelle.length) || (f.maerkte && f.maerkte.length) || (f.topics && f.topics.length) ||
-                (a.advertisers && a.advertisers.length) || (a.formate && a.formate.length));
+                adv || (a.formate && a.formate.length));
     }
     function liste(s) { return String(s || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean); }
     function toArr(x) {
@@ -666,8 +678,15 @@
     }
     root.querySelector(".uad-filterleiste").addEventListener("click", function () { optionenHolen(); }, true);
     /* Advertisers gilt im Detail eines Advertisers nicht (die RPC uebergeht ihn dort, Vertrag):
-       ausgeblendet, nicht geleert. Ad Format gilt ueberall. */
-    function leisteStellen() {
+       ausgeblendet, nicht geleert. Ad Format gilt ueberall.
+       EIGENER NAME (22.10.): bis hierher hiess diese Funktion wie "die eine Leiste" weiter unten
+       (leisteStellen). Zwei Funktionsdeklarationen mit einem Namen im selben Bereich: die spaetere
+       gewinnt an JEDER Aufrufstelle. Diese hier lief also nie -- im Detail stand der Chip
+       "Advertiser is ..." sichtbar da, obwohl die RPC ihn dort uebergeht --, und zeichnen() baute
+       statt ihrer bei jedem Zeichnen die Leiste neu: makeSticky und ein Resize-Zuhoerer mehr je
+       Antwort, Seite und Sortierung (gemessen in der Bibliothek: 11 nach 10 Seitenwechseln, danach 0,
+       und genau 1 je Aufbau eines Reiters). */
+    function advFilterStellen() {
       var fb = root.querySelector(".uad-filterleiste"), an = state.seite === "advertiser" ? "no" : "yes";
       if (fb && fb.getAttribute("data-adadv-visible") !== an) fb.setAttribute("data-adadv-visible", an);
     }
@@ -1186,7 +1205,7 @@
       if (root.isConnected === false) return;
       /* Die zwei Filter der Filterzeile: sichtbar je Seite, Liste und Haken auf Stand (die Namen
          kommen mit den Optionen). sync meldet der Leiste nur, was sich geaendert hat. */
-      leisteStellen();
+      advFilterStellen();
       ffSync();
       var g = geruestSchluessel();
       if (geruest !== g) baueGeruest();
@@ -1346,7 +1365,7 @@
           /* Advertiser Share und Topics with Ads als EIN Band mit zwei Einheiten und einer Linie
              dazwischen (senkrecht, gestapelt waagerecht; ads.css "DAS OFFENE BAND"). */
           '<div class="up-root uad-zwei uad-band up-band up-band-zwei up-band-raster" data-flach="yes"' + dunkel() + ' data-sek="zwei">' +
-            '<section class="uad-sek up-band-einheit" data-sek="anteil">' + kopf("Advertiser Share", { info: "share", tools: leiserKnopf("View all", 'data-uad-ziel="advertisers"') }) +
+            '<section class="uad-sek up-band-einheit" data-sek="anteil">' + kopf("Advertiser Share", { info: "anteil", tools: leiserKnopf("View all", 'data-uad-ziel="advertisers"') }) +
               '<div class="up-box uad-balkenbox up-band-flaeche up-band-inhalt"><div class="uad-balkenplatz"></div></div></section>' +
             /* Topics with Ads als ganze Tabelle wie alle anderen (06.10. angefordert): Suche und
                Display in der Kopfzeile, Seiten darunter. */
@@ -1449,7 +1468,7 @@
     var TABELLEN = {
       advertisers: { erste: { label: "Advertiser", min: 240, sort: "advertiser_name", sk: { w: 120, logo: true } }, spalten: [
         sp("share", "Ad Share", 130, 1.1, 90, 60, { sort: "ad_appearances", info: "share", flach: 134 }),
-        sp("n", "Appearances", 132, 1, 85, 30, { sort: "ad_appearances", info: "appearances", flach: 161 }),
+        sp("n", "Appearances", 132, 1, 85, 30, { sort: "ad_appearances", info: "auftritte", flach: 161 }),
         sp("prompts", "Prompts", 104, 0.8, 70, 30, { sort: "prompt_count", flach: 109 }),
         sp("topics", "Topics", 100, 0.8, 60, 30, { sort: "topic_count" }),
         /* 150: zwei Markt-Chips (Flagge 18, Code, Abstand 10) und "+N" muessen nebeneinander passen. */
@@ -1620,6 +1639,7 @@
     /* ============================================================================================
        Overview
        ============================================================================================ */
+    var OV_TEILE = ["chart", "zwei", "recent"];
     function zeichneOverview() {
       var a = ovAnfrage(), d = daten(a);
       var fe = !d && fehlerVon(a);
@@ -1627,17 +1647,18 @@
         /* Ein Fehler steht EINMAL, an der Stelle der Kennzahlen; der Rest traegt dann nichts, was
            wie Daten aussieht. */
         sek("kpis").innerHTML = '<div class="uad-kpifehler">' + fehlerKasten(a) + '</div>';
-        if (linie) linie.meldung(t("Ads data could not be loaded"));
         sek("anteil").querySelector(".uad-balkenplatz").innerHTML = "";
         sek("topics").querySelector(".uad-tabelle").innerHTML = "";
         topicsPager(null);
         sek("recent").querySelector(".uad-karten").innerHTML = "";
         /* Das Band von Advertiser Share und Topics hat ohne Inhalt nur noch seine Koepfe und Linien --
-           es geht ganz weg, statt als leerer Streifen dazustehen. */
-        sek("zwei").hidden = true;
+           es geht ganz weg, statt als leerer Streifen dazustehen. Dasselbe seit dem 22.10. fuer das
+           Diagramm und Recent Ads, wie im Advertiser-Detail (zeichneDetail): vorher stand der Satz im
+           Diagramm ein zweites Mal und "Recent Ads" als Kopf ohne Inhalt darunter. */
+        OV_TEILE.forEach(function (n) { var s = sek(n); if (s) s.hidden = true; });
         return;
       }
-      sek("zwei").hidden = false;
+      OV_TEILE.forEach(function (n) { var s = sek(n); if (s) s.hidden = false; });
       zeichneOvKpis(d);
       zeichneOvChart(d);
       zeichneAnteil(d);
@@ -1846,9 +1867,17 @@
       if (!platz) return;
       if (!d) { platz.innerHTML = '<div class="up-adgrid">' + kartenSkelett(6) + '</div>'; return; }
       var l = gueltigeAds(d.recent_ads).slice(0, 6);
-      if (!l.length) { platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ icon: "marketing", titel: "No Ads observed",
-        text: filterAktiv() ? "No Ads match these filters." : "None of the tracked AI responses in this range contained an Ad.",
-        knopf: filterAktiv() ? "Clear search and filters" : "", knopfAttr: "data-uad-alleweg" }) + '</div>'; return; }
+      /* Gefiltert der Leerzustand MIT gefiltert (22.10.): Lupe und "No matching Ads" wie die Ads im Detail
+         und die Bibliothek. Vorher stand hier auch mit Filtern "No Ads observed" -- eine Aussage ueber den
+         Zeitraum, die der Filter gar nicht zulaesst --, und der Knopf hiess "Clear search and filters" auf
+         einer Seite ohne Suche. */
+      if (!l.length) {
+        var gef = filterAktiv();
+        platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ icon: "marketing", gefiltert: gef, titel: gef ? "No matching Ads" : "No Ads observed",
+          text: gef ? "No Ads match these filters." : "None of the tracked AI responses in this range contained an Ad.",
+          knopf: gef ? "Clear filters" : "", knopfAttr: "data-uad-alleweg" }) + '</div>';
+        return;
+      }
       platz.innerHTML = '<div class="up-adgrid">' + l.map(function (x) { return karte(x); }).join("") + '</div>';
     }
     /* Leer ist nicht gefiltert: "passt zu diesen Filtern" nur, wenn welche gesetzt sind. */
@@ -2273,10 +2302,16 @@
       var gesamtN = anzahlWert(s.ad_appearances);
       /* Leer: derselbe Zustand wie "Recent Ads" der Uebersicht (zeichneRecent) -- Kacheln statt
          Zeilen, also der Leerzustand im Fluss mit seinem eigenen Polster, nicht die Tabellenflaeche
-         (15.10.; vorher ein Satz in 13px). Gefiltert ohne Knopf: hier haengt kein data-uad-alleweg. */
-      if (!l.length) { el.innerHTML = kopf("Ads", { zahl: 0, tools: werkzeuge }) + '<div class="up-box">' + UC.leerHtml({ icon: "marketing",
-        gefiltert: filterAktiv(), titel: filterAktiv() ? "No matching Ads" : "No Ads observed", knopf: "",
-        text: filterAktiv() ? "No Ads match these filters." : "None of the tracked AI responses in this range contained an Ad." }) + '</div>'; return; }
+         (15.10.; vorher ein Satz in 13px). Gefiltert MIT Knopf (22.10.): data-uad-alleweg haengt am
+         Klick der Wurzel und wirkt auch hier; ohne Knopf war das der einzige gefilterte Leerzustand
+         der Seite ohne Weg zurueck. */
+      if (!l.length) {
+        var gef = filterAktiv();
+        el.innerHTML = kopf("Ads", { zahl: 0, tools: werkzeuge }) + '<div class="up-box">' + UC.leerHtml({ icon: "marketing",
+          gefiltert: gef, titel: gef ? "No matching Ads" : "No Ads observed", knopf: gef ? "Clear filters" : "", knopfAttr: "data-uad-alleweg",
+          text: gef ? "No Ads match these filters." : "None of the tracked AI responses in this range contained an Ad." }) + '</div>';
+        return;
+      }
       /* Mehr Auftritte als gelieferte Ads: das sind die neuesten. Der Satz sagt es, der Knopf daneben
          fuehrt zu allen. */
       var hinweis = gesamtN != null && gesamtN > l.length ? '<p class="uad-hinweis">' + esc(ersetze(t("Showing the {n} most recent of {total}."), { n: ganz(l.length), total: ganz(gesamtN) })) + '</p>' : '';
@@ -2672,6 +2707,18 @@
        Wechsel braucht nichts weiter -- das Team steht in der Signatur, der Speicher des alten
        Teams wird also nie gezeigt. */
     if (UC.onTeamChange) UC.onTeamChange(function () { if (root.isConnected !== false) { zeichnen(); bedarf(); } }, root);
+    /* THEMENWECHSEL OHNE NEUAUFBAU (22.10.): die Linie traegt die Tinte des Themas, in dem sie gezeichnet
+       wurde (UC.chartInk), die Balken des Advertiser Share ihre Graustufe (UC.balkenGrau), die
+       Topic-Chips ihre Farbe nach isDark(). In Bubble baute ein Wechsel das Element neu (feedback
+       Themenwechsel = Neuaufbau); in der App bleibt es stehen, und makeLine zeichnet beim Wechsel nur
+       mit den Farben neu, die es bekommen hat. Gemessen vorher, Hell -> Dunkel ohne Neuladen: Linie
+       #1f1f1b statt #e0e0e0, erster Balken rgb(31, 31, 27) statt #e0e0e0 -- dunkel auf dunklem Grund. */
+    if (UC.onTheme) UC.onTheme(function () {
+      /* Verdeckt nicht: beim Wiederkommen zeichnet onViewChange ohnehin neu, im neuen Thema. */
+      if (root.isConnected === false || !sichtbar()) return;
+      zeichnen();
+      if (drawer && drawer.thema) drawer.thema();
+    });
 
     /* ---- Setter -------------------------------------------------------------------------------- */
     var ctrl = {

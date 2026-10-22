@@ -49,6 +49,11 @@
 .up-root.uad-rh { --up-tab-leer-zeile: var(--up-h-row); }
 .up-root.uad-rh.is-dense { --up-tab-leer-zeile: 34px; }
 .uad-seite > .uad-zwei.uad-band.up-band:has(+ .uad-sek) { margin-bottom: 0; }
+/* Dasselbe im Advertiser-Detail (22.10.): die Gruppe aus Kennzahlen und Activity endet mit dem Band, darunter
+   folgt der Abschnitt "Prompts" mit eigener Ueberschrift -- keine Tabellenzeile. Die core-Regel liess ihn 16
+   unter dem Band stehen, zwischen "Prompts" und "Ads" standen 32 (gemessen bei 1440 und 375). Eine Stufe
+   spezifischer als die core-Regel (0,6,0 gegen 0,5,0), nicht ueber die Ladereihenfolge. */
+.uad-root .uad-seite > .uad-gruppe:has(> .up-band:last-child):has(+ .uad-sek) { margin-bottom: 0; }
 .uad-seite { display: flex; flex-direction: column; --up-stapel-luft: 32px; gap: var(--up-stapel-luft); min-width: 0; }
 .uad-gruppe { display: flex; flex-direction: column; gap: var(--up-stapel-luft, 32px); min-width: 0; }
 /* Kennzahlen und Chart gehoeren zusammen: 16 (--up-band-luft) statt der 32 des Stapels, wie in Shopping (20.10., Nutzer: auf allen Seiten gleich). */
