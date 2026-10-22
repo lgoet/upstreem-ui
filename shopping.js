@@ -223,7 +223,7 @@
     "View Response": "Antwort ansehen", "Single card": "Einzelkarte",
     "No merchants were listed with this product.": "Mit diesem Produkt war kein Händler gelistet.",
     "No appearances in this range.": "Keine Auftritte in diesem Zeitraum.",
-    "Lower is better: position 1 sits at the top of the chart.": "Kleiner ist besser: Position 1 steht oben im Diagramm.",
+    "Position 1 sits at the top of the chart.": "Position 1 steht oben im Diagramm.",
     "{brand} presence": "Presence von {brand}", "{brand} avg. position": "Ø Position von {brand}",
     "Image": "Bild",
     "No brands yet": "Noch keine Marken", "No products yet": "Noch keine Produkte",
@@ -527,7 +527,8 @@
        chart." stand als Zeile ueber dem Diagramm (.ush-chartnote), nur bei Avg. Position -- sie sprang beim Umschalten herein
        und heraus. Jetzt traegt der Kopf mit dem Umschalter das Info-Zeichen (sekKopf, Schluessel "chart"), und die Karte
        erklaert die Kennzahl, die das Diagramm gerade zeigt: Platte, Titel = Etikett des gewaehlten Knopfs, Satz und Formel aus
-       ERKLAER; bei Avg. Position dazu der Satz ueber die umgedrehte Achse. Alles beim Oeffnen gebaut, also immer die Kennzahl
+       ERKLAER; bei Avg. Position dazu der Satz ueber die umgedrehte Achse (ohne "Lower is better:" davor -- das sagt der Satz der
+       Kennzahl schon, die Karte sagte es sonst zweimal). Alles beim Oeffnen gebaut, also immer die Kennzahl
        von jetzt. Overview und Brands zeigen je Marke eine Linie, darum dort die Marken-Fassung der Saetze. */
     var DIAGRAMM_ERKL = {
       overview: { presence: "presenceBrand", share_of_shelf: "shareBrand", avg_position: "pos", first_position_rate: "firstBrand" },
@@ -541,7 +542,7 @@
       return (vis ? '<div class="up-explain-vis">' + vis + '</div>' : '') +
         '<div class="up-explain-h">' + esc(t(metrikLabel()) || t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>' +
         '<div class="up-explain-t">' + esc(t(e.f)) + '</div>' +
-        (m === "avg_position" ? '<div class="up-explain-t">' + esc(t("Lower is better: position 1 sits at the top of the chart.")) + '</div>' : '');
+        (m === "avg_position" ? '<div class="up-explain-t">' + esc(t("Position 1 sits at the top of the chart.")) + '</div>' : '');
     }
     if (UC.makeExplain) UC.makeExplain({ root: root, triggerSel: ".ush-erklaer, .ush-kpi .up-th-info[data-explain]", getIsDark: isDark,
       html: function (key, ausloeser) {
