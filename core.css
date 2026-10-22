@@ -5848,6 +5848,15 @@
   border: 1px solid var(--vc-border); border-radius: var(--up-r-s);
   background: var(--vt-logo-bg); object-fit: contain; display: block; }
 .up-root[data-theme="dark"] .up-bar-logo { background: var(--vc-text); border-color: var(--vc-text); }
+/* MODELL-LOGOS OHNE HELLE PLATTE (23.10., Lukas: "LLM-Logos brauchen nirgendwo in der App im Darkmode
+   einen hellen Background"). Die Platte oben ist fuer Favicons und Markenlogos, die oft dunkel auf
+   transparent sind; ein Modell-Logo ist im Dunkeln selbst hell (OpenAI als weisse Datei ueber
+   modelLogoUrl). Das Kaestchen bleibt mit Rahmen und Polster, nur der Grund ist dunkel -- die Flaeche
+   der Karte und nicht transparent: im Balken steht es auf der Fuellung, und die ist im Dunkeln in
+   den ersten Stufen hell (BALKEN_GRAU_DUNKEL beginnt bei #e0e0e0), ein weisses Logo darauf waere weg.
+   Das Spiegelbild des Hellen, wo es Weiss mit Rahmen auf jeder Fuellung steht. */
+.up-root[data-theme="dark"] .up-bar-logo.is-modell { background: var(--vc-bg); border-color: var(--vc-border); }
+.up-root[data-theme="dark"] .up-bar-logo.is-modell.is-zeichen { color: var(--vc-third); }
 /* Die Zeichen-Platte (makeBarList, it.zeichen, 04.10.): dasselbe Kaestchen, darauf das Zeichen in
    der Tinte der Logo-Platten (--vt-logo-ink, wie der Buchstabe in .up-logo-box). */
 .up-bar-logo.is-zeichen { display: inline-flex; align-items: center; justify-content: center; color: var(--vt-logo-ink, var(--vc-muted)); }
@@ -5970,6 +5979,14 @@
 .up-logo-box img { width: 22px; height: 22px; border-radius: calc(var(--up-r-m) - 1px); object-fit: cover; display: block; }
 .up-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
 .up-logo-box.has-img .up-logo-ltr { display: none; }
+/* Ein Modell- oder Plattform-Logo in der Kachel (.is-modell, 23.10.: Page Audit, MCP Server): im Dunkeln
+   ohne die helle Platte, wie der Modell-Chip (.up-model-chip .up-ment-logo) -- die Logos sind dort selbst
+   hell. Durchsichtig statt einer Flaeche: die Kachel steht in Tabellenzeilen, und deren Hover faerbt den
+   Grund. Der Buchstabe steht dann auf der Zeile, also in ihrer Schrift statt in der Tinte der Platte.
+   (Die Erklaerkarte am <body> braucht keine eigene Zeile: sie ist keine .up-root, --vt-logo-bg ist dort
+   gar nicht gesetzt, die Kachel also schon durchsichtig -- gemessen 23.10.) */
+.up-root[data-theme="dark"] .up-logo-box.is-modell { background: transparent; }
+.up-root[data-theme="dark"] .up-logo-box.is-modell .up-logo-ltr { color: var(--vc-muted); }
 /* EIN ZEICHEN STATT DES ANFANGSBUCHSTABENS (06.10., Ads: "Werbetreibende ohne Logo zeigen das
    Werbetreibende-Zeichen"). Dieselbe Stelle und Tinte wie der Buchstabe, in beiden Kacheln: der
    Logo-Kachel der Tabellen (24px, Zeichen 14) und dem 18px-Logo der Chips (Zeichen 11). Kommt

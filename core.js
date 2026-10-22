@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261197;
+  var BUILD = 20261198;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -5069,10 +5069,13 @@
   /* ---- OPENAI IN HELL UND DUNKEL (05.10.) ---------------------------------------------------
      Fuer OpenAI gibt es zwei Logos: schwarz (openai_light.svg) fuer helle Flaechen, weiss
      (openai_dark.png, transparent) fuer dunkle. Welches passt, haengt am GRUND, auf dem es sitzt,
-     nicht allein am Thema: die Balkenlisten (.up-bar-logo) und Miras Lauf-Chips tragen in BEIDEN
-     Themen eine helle Platte (--vt-logo-bg, im Dunkeln #e0e0e0) -- dort waere das weisse Logo
-     unsichtbar. Darum fragt die Funktion "dunkler Grund?" (dunkel); ohne Angabe gilt das Thema der
-     App, weil die Modell-Chips im Dunkeln keine Platte tragen.
+     nicht allein am Thema. Darum fragt die Funktion "dunkler Grund?" (dunkel); ohne Angabe gilt das
+     Thema der App. Seit dem 23.10. traegt KEIN Modell-Logo mehr im Dunkeln eine helle Platte (Lukas:
+     "LLM-Logos brauchen nirgendwo in der App im Darkmode einen hellen Background"): Modell-Chips,
+     Balkenlisten und Legenden mit it.modell, die Plattformen in Page Audit und die Apps der Seite
+     MCP Server (.is-modell). Der Grund folgt also ueberall dem Thema; false (immer schwarz) bleibt
+     nur fuer ein Logo, das in beiden Themen auf einer hellen Flaeche steht -- in der App gibt es
+     keins mehr.
      Erkannt wird OpenAI am Schluessel (chatgpt, openai, gpt-...), am Anbieter oder an einer der
      bisherigen Adressen (freepik, llm_logos/openai_logo.png) -- je nach Quelle kommt nur eins davon
      mit. Der Modell-Store liefert schon das passende (getModels, onModels); wer ein Logo aus einer
@@ -5104,9 +5107,10 @@
      und sobald sich irgendwo data-theme aendert -- ueber setUpstreemTheme, ueber data-isdark einer
      Komponente, ueber eine eingezogene Wurzel --, bekommt es die Variante seiner Wurzel. Die Wurzel
      und nicht das App-Thema, weil das der Grund ist, auf dem es sitzt (siehe oben).
-     Nur mit Merkmal: die Balkenlisten und Miras Lauf-Chips liegen in BEIDEN Themen auf heller
-     Platte und rufen modelLogoUrl ausdruecklich mit false -- die duerfen nicht mitkippen. Ein
-     vergessenes Merkmal laesst ein Logo veralten, ein fehlender Ausschluss machte es unsichtbar.
+     Nur mit Merkmal: ein Logo, das in beiden Themen auf heller Flaeche steht, ruft modelLogoUrl mit
+     false und darf nicht mitkippen (bis 23.10. die Balkenlisten und Miras Lauf-Chips; seitdem
+     tragen Modell-Logos im Dunkeln keine helle Platte mehr, siehe oben). Ein vergessenes Merkmal
+     laesst ein Logo veralten, ein fehlender Ausschluss machte es unsichtbar.
      Beobachtet wird nur das eine Attribut; es aendert sich beim Themenwechsel, sonst fast nie. */
   function openAiLogosAngleichen(scope){
     var bilder = (scope || document).querySelectorAll("img[data-up-logo-thema]");
@@ -19461,9 +19465,14 @@
      Ein MARKT traegt statt eines Logos it.flagge (Laendercode): dann das Flaggenplaettchen der
      App (flagHtml, 18x14, Rueckfallbuchstaben) und nicht eine Flaggen-PNG im quadratischen
      Logo-Kaestchen -- so stand sie bis zum 06.10. in Shopping ("Wo dieses Produkt erscheint"),
-     gestaucht und gerahmt, und sah anders aus als jede andere Flagge der App. */
+     gestaucht und gerahmt, und sah anders aus als jede andere Flagge der App.
+     Ein MODELL-Logo (it.modell, 23.10.: "LLM-Logos brauchen nirgendwo in der App im Darkmode einen
+     hellen Background") traegt is-modell: im Dunkeln steht es im Kaestchen auf dunklem Grund statt
+     auf der hellen Platte (core.css), und data-up-logo-thema laesst OpenAI mit dem Thema kippen
+     (openAiLogosAngleichen). Der Aufrufer gibt dafuer die Adresse nach dem Thema (modelLogoUrl). */
   function barLogoHtml(it, mitKasten, cls){
     if (it && it.flagge != null) return flagHtml(String(it.flagge), "up-bar-flagge" + (cls ? " " + cls : ""));
+    if (it && it.modell) cls = (cls ? cls + " " : "") + "is-modell";
     var blg = it && it.logo ? String(it.logo) : "";
     if (blg.indexOf("//") === 0) blg = "https:" + blg;
     /* data:image/ ist erlaubt (06.10.): die Landingpage traegt die eigene Marke als eingebettetes
@@ -19472,7 +19481,7 @@
     var ersatz = String((it && it.ersatz) || "globe");
     if (!/^[A-Za-z0-9_-]{1,40}$/.test(ersatz)) ersatz = "globe";
     if (blg) return '<img class="up-bar-logo' + (cls ? " " + cls : "") + '" src="' + esc(blg) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
-      ' data-ersatz="' + ersatz + '" onerror="if(window.UpstreemCore&amp;&amp;UpstreemCore.barLogoErsatz){UpstreemCore.barLogoErsatz(this)}else{this.remove()}"/>';
+      (it.modell ? ' data-up-logo-thema' : '') + ' data-ersatz="' + ersatz + '" onerror="if(window.UpstreemCore&amp;&amp;UpstreemCore.barLogoErsatz){UpstreemCore.barLogoErsatz(this)}else{this.remove()}"/>';
     return mitKasten ? '<span class="up-bar-logo is-zeichen' + (cls ? " " + cls : "") + '" aria-hidden="true">' + icon(ersatz, 2) + '</span>' : "";
   }
   function barLogoErsatz(img){
@@ -22089,8 +22098,9 @@
            gebraucht fuer Landesflaggen, die UC.flagHtml als span mit Bild und Rueckfallbuchstaben
            baut und die deshalb nicht durch it.logo passen (das ist eine URL). */
         var vorn = cfg.legendPrefix ? String(cfg.legendPrefix(it) || "") : "";
+        /* it.modell wie in barLogoHtml: is-modell fuer den Grund im Dunkeln, data-up-logo-thema fuer OpenAI. */
         return '<div class="up-donut-legend-row' + (clickable && it.key !== "other" ? " is-clickable" : "") + '" data-type-key="' + esc(it.key || "") + '"><span class="up-donut-legend-chip" style="background:' + it.color + '"></span>' + vorn +
-          (lg ? '<img class="up-donut-legend-logo" src="' + esc(lg) + '" alt="" loading="lazy"' +
+          (lg ? '<img class="up-donut-legend-logo' + (it.modell ? ' is-modell" data-up-logo-thema' : '"') + ' src="' + esc(lg) + '" alt="" loading="lazy"' +
                 ' referrerpolicy="no-referrer" onerror="this.remove()"/>' : "") +
           '<span class="up-donut-legend-name">' + esc(it.name) + '</span>' +
           '<span class="up-donut-legend-pct">' + esc(fmtPct(it.share, cfg.decimals)) + '</span></div>';
