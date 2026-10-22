@@ -58,8 +58,10 @@
   /* Englisch wie jede sichtbare Beschriftung; Deutsch setzt der Katalog von core ein. */
   var T = {
     titel:       "MCP Server",
-    startH:      "Use upstreem in Claude",
-    startS:      "Ask Claude about your brands, prompts and cited sources, with read-only access to your live upstreem data.",
+    /* Kopf nach dem Nutzen, nicht nach der Technik (Lukas 23.10.; Peec: "Build custom workflows with your AI visibility
+       data"). "Read-only" steht nur noch in der Karte daneben. */
+    startH:      "Build custom workflows with your data",
+    startS:      "Connect upstreem to Claude and turn your live AI visibility data into weekly briefs, competitor snapshots and content plans.",
     verbinden:   "Connect an app",
     bald:        "Coming soon",
     zugriff:     "Read-only access",
@@ -109,10 +111,12 @@
      Terminal ist eine Senke (Sicherheitspruefung 22.10.). Client IDs von Supabase sind UUIDs. */
   var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var SERVER_URL = /^(https:\/\/[A-Za-z0-9.-]+(:\d{2,5})?|http:\/\/(localhost|127\.0\.0\.1)(:\d{2,5})?)\/api\/mcp$/;
-  /* Beispielfragen je Weg (Canvas): allgemein, nie aus Teamdaten. Je zwei (Lukas 23.10.: die dritte zu Opportunities raus). */
+  /* Beispiele je Weg: allgemein, nie aus Teamdaten. Je zwei (Lukas 23.10.: die dritte zu Opportunities raus). Seit 23.10. als
+     kleine Workflows statt Fragen (Lukas: "build custom workflows with your data"; Vorbild Peec und Profound, die ihren
+     MCP-Server mit Arbeitsablaeufen bewerben: Wochenbericht, Seiten mit Verlusten, Kundenbericht, Content-Plan). */
   var FRAGEN = {
-    web:  ["Which sources get cited most for our brand?", "Where do competitors show up and we don't?"],
-    code: ["Summarize our AI visibility for this week.", "Which pages should we update for the prompts we lose?"]
+    web:  ["Write our weekly AI visibility brief: what changed and why?", "Which pages lost citations this month, and what should we update first?"],
+    code: ["Turn this week's visibility data into a client report.", "Build a content plan from the prompts where competitors win."]
   };
 
   /* Ein Ladezustand muss IMMER enden (CLAUDE.md 2). Wie oauth-consent.js. */
@@ -281,7 +285,7 @@
           schritt(2, satz("Start Claude Code, run {a}, choose {b} and then {c}.",
             { a: '<code class="umc-code">/mcp</code>', b: b("upstreem"), c: b("Authenticate") })) +
           schritt(3, satz("Sign in to upstreem in the browser window that opens and choose {a}.", { a: b("Allow access") })) +
-          schritt(4, satz("Ask, for example:"), fragenHtml(FRAGEN.code));
+          schritt(4, satz("Try a workflow:"), fragenHtml(FRAGEN.code));
       }
       return schritt(1, satz("In Claude, open {a} and click {b}.",
             { a: '<span class="umc-pfad">Settings' + ic("chevronRight", 2) + 'Connectors</span>', b: b("Add custom connector") })) +
@@ -290,7 +294,7 @@
           /* Die ID kennt nur die App: bis zu ihrer Antwort steht an ihrer Stelle ein Skelett in der Groesse des Kastens. */
           id ? kopie("id", id) : '<span class="up-tsk-bar umc-sk-kasten" aria-hidden="true"></span>') +
         schritt(4, satz("Click {a}, sign in to upstreem and choose {b}.", { a: b("Connect"), b: b("Allow access") })) +
-        schritt(5, satz("Start a chat and ask, for example:"), fragenHtml(FRAGEN.web));
+        schritt(5, satz("Start a chat and try a workflow:"), fragenHtml(FRAGEN.web));
     }
     function anleitungZeichnen(){
       var html = schritteHtml();

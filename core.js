@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261197;
+  var BUILD = 20261198;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -693,8 +693,8 @@
     "Filter": "Filtern",
     "Research settings": "Recherche einstellen",
     /* Seite MCP Server (mcp-server.js, 22.10.): ganze Saetze, die Namen aus Claudes Oberflaeche als {a}/{b}/{c} (bleiben englisch). */
-    "Use upstreem in Claude": "upstreem in Claude nutzen",
-    "Ask Claude about your brands, prompts and cited sources, with read-only access to your live upstreem data.": "Frag Claude nach deinen Brands, Prompts und zitierten Quellen, mit Lesezugriff auf deine aktuellen upstreem-Daten.",
+    "Build custom workflows with your data": "Eigene Workflows mit deinen Daten bauen",
+    "Connect upstreem to Claude and turn your live AI visibility data into weekly briefs, competitor snapshots and content plans.": "Verbinde upstreem mit Claude und mach aus deinen aktuellen Daten zur AI Visibility Wochenberichte, Wettbewerber-Überblicke und Content-Pläne.",
     "Connect an app": "App verbinden",
     "Coming soon": "Bald verfügbar",
     "Read-only access": "Nur Lesezugriff",
@@ -716,15 +716,15 @@
     "Name it {a} and paste the server URL.": "Nenne ihn {a} und füge die Server-URL ein.",
     "Open {a} and paste the OAuth Client ID.": "Öffne {a} und füge die OAuth Client ID ein.",
     "Click {a}, sign in to upstreem and choose {b}.": "Klicke auf {a}, melde dich bei upstreem an und wähle {b}.",
-    "Start a chat and ask, for example:": "Starte einen Chat und frag zum Beispiel:",
+    "Start a chat and try a workflow:": "Starte einen Chat und probier einen Workflow aus:",
     "Add upstreem in your terminal.": "Füge upstreem in deinem Terminal hinzu.",
     "Start Claude Code, run {a}, choose {b} and then {c}.": "Starte Claude Code, führe {a} aus, wähle {b} und dann {c}.",
     "Sign in to upstreem in the browser window that opens and choose {a}.": "Melde dich im Browserfenster, das sich öffnet, bei upstreem an und wähle {a}.",
-    "Ask, for example:": "Frag zum Beispiel:",
-    "Which sources get cited most for our brand?": "Welche Quellen werden für unsere Brand am häufigsten zitiert?",
-    "Where do competitors show up and we don't?": "Wo tauchen Wettbewerber auf und wir nicht?",
-    "Summarize our AI visibility for this week.": "Fass unsere AI Visibility für diese Woche zusammen.",
-    "Which pages should we update for the prompts we lose?": "Welche Seiten sollten wir für die Prompts überarbeiten, bei denen wir verlieren?",
+    "Try a workflow:": "Probier einen Workflow aus:",
+    "Write our weekly AI visibility brief: what changed and why?": "Schreib unseren Wochenbericht zur AI Visibility: Was hat sich geändert und warum?",
+    "Which pages lost citations this month, and what should we update first?": "Welche Seiten haben diesen Monat Zitate verloren, und was sollten wir zuerst überarbeiten?",
+    "Turn this week's visibility data into a client report.": "Mach aus den Daten dieser Woche einen Bericht für unseren Kunden.",
+    "Build a content plan from the prompts where competitors win.": "Erstell einen Content-Plan aus den Prompts, bei denen Wettbewerber vorne liegen.",
     /* Fehlermeldungen der Prompt-Research-Seite (Audit 14.10.: standen nur englisch da). */
     "Choose a market in the research settings.": "Wähle in den Einstellungen einen Markt.",
     "Enter at least one keyword to start a research.": "Gib mindestens einen Begriff ein, um eine Recherche zu starten.",
