@@ -3991,3 +3991,85 @@
 #ask-mira.up-root:is(.is-launcher, .is-pick-unten:not(.has-messages))[data-theme="dark"] .am-pick-panel { box-shadow: var(--up-e-2); }
 #ask-mira.up-root.is-launcher .am-eff-menu { top: calc(100% + 8px); bottom: auto; transform-origin: top right; }
 #ask-mira.up-root.is-launcher .am-eff:not(.is-open) .am-eff-menu { transform: translateY(-6px) scale(0.98); }
+
+/* ---------- ANTWORTEN ALS BLOECKE (P2, 22.10.) ----------------------------------------------------
+   Plan bubble/mira_agent_22_10/UMSETZUNGSPLAN.md, Q16. Text, Bezuege und Tabellen der neuen Antworten
+   tragen die Formen der alten (siehe ask-mira.js "ANTWORTEN ALS BLOECKE") und damit deren Regeln; neu
+   sind nur Erklaerkarte, Chart, Aktionskarte, die Zahlenspalte und die Blase des laufenden Texts.
+   Masse nach Rolle (CLAUDE.md 1c): Karten und Tabellen Radius 12, Kopfzeile 32, Schrift 12/13/14. */
+
+/* Zahlenspalten rechtsbuendig, der Kopf mit (Regel der App, "Zahlen in Zellen"). */
+#ask-mira .am-bubble th.am-zahl, #ask-mira .am-bubble td.am-zahl { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* Erklaerkarte (Q5): ein Einschub wie bei ChatGPT -- kleiner Titel oben links, Kopieren rechts. */
+#ask-mira .am-bubble .am-karte {
+  margin: 16px 0; border: 1px solid var(--am-border); border-radius: var(--up-r-2xl);
+  background: var(--up-feld-bg); overflow: hidden;
+}
+#ask-mira .am-bubble .am-karte:first-child { margin-top: 0; }
+#ask-mira .am-bubble .am-karte:last-child { margin-bottom: 0; }
+#ask-mira .am-karte-kopf {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  height: var(--up-h-btn); padding: 0 4px 0 12px; background: var(--am-soft); border-bottom: 1px solid var(--am-border);
+}
+#ask-mira .am-karte-titel {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--am-muted);
+}
+/* Der Knopf ist der Kopieren-Knopf der Antwort (.am-act-btn, 28 hoch in der 32 hohen Kopfzeile); auf der
+   grauen Kopfflaeche hebt ihn beim Ueberfahren die Linienfarbe ab, nicht die eigene Flaeche. */
+#ask-mira .am-karte-kopf .am-karte-kopie { flex: 0 0 auto; }
+#ask-mira .am-karte-kopf .am-karte-kopie:hover { background: var(--am-border); }
+#ask-mira .am-karte-text { padding: 12px 16px; }
+#ask-mira .am-karte-text > :first-child { margin-top: 0; }
+#ask-mira .am-karte-text > :last-child { margin-bottom: 0; }
+
+/* Chart (Q23): Kasten wie eine Tabelle der Antwort, darin die Bausteine aus core. */
+#ask-mira .am-bubble .am-chart {
+  margin: 24px 0 22px; border: 1px solid var(--am-border); border-radius: var(--up-r-2xl);
+  background: var(--up-feld-bg); padding: 12px 16px 16px; min-width: 0;
+}
+#ask-mira .am-bubble .am-chart:first-child { margin-top: 0; }
+#ask-mira .am-bubble .am-chart:last-child { margin-bottom: 0; }
+#ask-mira .am-chart-kopf { margin-bottom: 12px; }
+#ask-mira .am-chart-titel { font-size: var(--up-ueb-block-gr); font-weight: var(--up-ueb-block-gew); line-height: var(--up-ueb-block-zeile); letter-spacing: var(--up-ueb-block-spur); color: var(--am-text); }
+#ask-mira .am-chart-linie { position: relative; height: 220px; }
+#ask-mira .am-chart-linie canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+#ask-mira .am-chart-legende:not(:empty) { margin-top: 12px; }
+#ask-mira .am-chart-reihe { margin: 12px 0 6px; font-size: var(--up-ueb-gruppe-gr); font-weight: var(--up-ueb-gruppe-gew); color: var(--am-muted); }
+#ask-mira .am-chart-reihe:first-child { margin-top: 0; }
+#ask-mira .am-chart.is-doughnut .up-donut-center { display: none; }
+#ask-mira .am-chart-leer { margin: 0; font-size: var(--up-fs-m); color: var(--am-muted); }
+
+/* Aktionskarte (upstreem-app mira/AKTIONSKARTE.md, 4). */
+#ask-mira .am-bubble .am-akt {
+  margin: 16px 0; padding: 12px 16px; border: 1px solid var(--am-border); border-radius: var(--up-r-2xl);
+  background: var(--up-feld-bg); display: flex; flex-direction: column; gap: 8px;
+}
+#ask-mira .am-bubble .am-akt:first-child { margin-top: 0; }
+#ask-mira .am-akt-kopf { display: flex; align-items: center; gap: 8px; min-width: 0; }
+#ask-mira .am-akt-ic { flex: 0 0 auto; display: inline-flex; color: var(--am-muted); }
+#ask-mira .am-akt-ic svg { width: 16px; height: 16px; fill: none; stroke: currentColor; }
+#ask-mira .am-akt-titel { flex: 1 1 auto; min-width: 0; font-size: var(--up-ueb-block-gr); font-weight: var(--up-ueb-block-gew); line-height: var(--up-ueb-block-zeile); color: var(--am-text); }
+#ask-mira .am-akt-marke {
+  flex: 0 0 auto; height: 20px; padding: 0 7px; border-radius: var(--up-r-s); line-height: 20px;
+  font-size: var(--up-fs-xs); font-weight: var(--up-fw-h); background: var(--am-soft); color: var(--am-muted);
+}
+#ask-mira .am-akt-marke.is-failed { color: var(--vt-down); }
+#ask-mira .am-akt-ziel { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--up-fs-m); color: var(--am-muted); }
+#ask-mira .am-akt-fav { flex: 0 0 auto; width: 16px; height: 16px; border-radius: var(--up-r-xs); }
+#ask-mira .am-akt-zieltext { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#ask-mira .am-akt-zieladr { min-width: 0; flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--am-muted-2); }
+#ask-mira .am-bubble .am-akt-grund, #ask-mira .am-bubble .am-akt-satz { margin: 0; font-size: var(--up-fs-m); color: var(--am-muted); }
+#ask-mira .am-bubble .am-akt-satz.is-fehler { color: var(--vt-down); }
+#ask-mira .am-akt-fuss { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; flex-wrap: wrap; }
+#ask-mira .am-akt-kosten { font-size: var(--up-fs-s); color: var(--am-muted-2); }
+#ask-mira .am-akt-knoepfe { display: inline-flex; gap: 8px; }
+#ask-mira .am-akt-lauf { display: inline-flex; align-items: center; }
+#ask-mira .am-akt-knopf { text-decoration: none; }
+/* Link auf einen fertigen Job (Zusammenfassung, P3): eine Zeile, der Knopf rechts im Kopf. */
+#ask-mira .am-job .am-akt-kopf .am-akt-knopf { flex: 0 0 auto; }
+#ask-mira .am-akt-knopf[aria-disabled="true"] { opacity: .5; pointer-events: none; }
+
+/* Der laufende Text (askMiraStreamText): dieselbe Blase wie die Antwort, unter dem Arbeitsprotokoll. */
+#ask-mira .am-msg-loading .am-bubble.am-live { margin-top: 16px; }
