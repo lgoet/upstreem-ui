@@ -290,14 +290,16 @@
   #ask-mira.am-is-typing .am-oppc-btn:not(.on) + .am-oppc-br + .am-oppc-br { display: none !important; }
   .am-messages {
     max-width: 920px; margin: 0 auto; width: 100%;
-    display: flex; flex-direction: column; gap: 38px;
+    /* 24 statt 38 (22.10. abends, G1): zwischen Frage und Antwort stehen damit 24 statt 64 -- die Knoepfe unter
+       der Frage stehen seitdem links neben der Blase (unten) und belegen keine eigene Zeile mehr. */
+    display: flex; flex-direction: column; gap: 24px;
   }
 
   .am-msg { display: flex; gap: 12px; align-items: flex-start; min-width: 0; animation: amMsgIn 280ms cubic-bezier(0.22,0.61,0.36,1) both; }
   .am-msg.is-user { flex-direction: row-reverse; }
 
   .am-msg-main { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; gap: 6px; }
-  .am-msg.is-user .am-msg-main { align-items: flex-end; }
+  .am-msg.is-user .am-msg-main { flex-direction: row-reverse; align-items: flex-end; }
   .am-msg.is-assistant .am-msg-main { align-items: flex-start; }
 
   .am-bubble {
@@ -306,11 +308,16 @@
     font-size: 16px; line-height: 1.7; position: relative;
   }
   .am-msg.is-assistant .am-bubble {
+    /* 26 statt 1.7 (27,2): eine Spur dichter (G1, 22.10. abends). Die Groesse bleibt 16 -- die 15 aus dem
+       Canvas liegt nicht auf der Skala. */
+    line-height: 26px;
     background: transparent; border: 0; box-shadow: none;
     padding: 1px 0 0; border-radius: 0;
     width: 100%; max-width: min(100%, 782px); color: var(--am-text);
   }
   .am-msg.is-user .am-bubble {
+    /* Die Frage in Tabellengroesse (G1): 14/22, Polster 9/14 -- sie ist Kontext, die Antwort ist der Inhalt. */
+    font-size: var(--up-fs-l); line-height: 22px; padding: 9px 14px;
     background: var(--am-user-bg); color: var(--am-user-text);
     border-top-right-radius: var(--up-r-xs);
   }
@@ -452,12 +459,13 @@
   .am-fq-text { min-width: 0; }
 
   /* Rich content inside assistant bubbles */
-  .am-bubble p { margin: 0 0 10px; }
+  .am-bubble p { margin: 0 0 12px; }
   .am-bubble p:last-child { margin-bottom: 0; }
-  .am-bubble strong, .am-bubble b { font-weight: 700; }
-  /* full-bold lines act as headings (no h-tags): first line +2.5px, later bold lines +1.5px */
-  .am-bubble .am-mh1 { font-size: calc(1em + 2.5px); }
-  .am-bubble .am-mh2 { font-size: calc(1em + 1px); }
+  /* Fett in Textgroesse und 600 (G1, 22.10. abends). Vorher 700, und ganz fette Zeilen wuchsen als
+     Ersatzueberschrift um 2,5 bzw. 1px (17 und 18,5 -- beide nicht auf der Skala). Die Klassen bleiben
+     (ask-mira.js setzt sie), Ueberschriften tragen jetzt h3 und h4. */
+  .am-bubble strong, .am-bubble b { font-weight: var(--up-fw-h); }
+  .am-bubble .am-mh1, .am-bubble .am-mh2 { font-size: inherit; }
   .am-bubble ul, .am-bubble ol { margin: 8px 0 10px; padding-left: 20px; }
   .am-bubble li { margin: 3px 0; }
   .am-bubble li::marker { color: var(--am-muted-2); }
@@ -472,9 +480,16 @@
      22 ist die naechste Stufe der Skala (--up-fs-2xl) und gibt der obersten Ebene einen echten
      Schritt. h4 BLEIBT auf 16 und traegt seinen Unterschied zum Text weiter ueber das Gewicht --
      eine dritte Groesse dazwischen waere die Stufe, die es nicht gibt. */
-  .am-bubble h3 { margin: 14px 0 6px; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
-  .am-bubble h4 { margin: 12px 0 6px; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
-  .am-bubble h3:first-child, .am-bubble h4:first-child { margin-top: 0; }
+  /* SEIT DEM 22.10. ABENDS (G1) die Stufen aus core: eine Antwort, die mit einer Ueberschrift beginnt, traegt
+     sie als Titel 20/26/600 (--up-fs-modaltitel, wie Popups); jede weitere Ueberschrift ist ein Abschnitt
+     16/24/600 (--up-ueb-abschnitt-*, wie jede Abschnittsueberschrift der App) mit 24 Luft davor. h4 ebenso:
+     unter dem Abschnitt gibt es bei 16er Text keine kleinere Stufe, die noch ueber dem Text laege. */
+  .am-bubble h3, .am-bubble h4 {
+    margin: 24px 0 8px; font-size: var(--up-ueb-abschnitt-gr); font-weight: var(--up-ueb-abschnitt-gew);
+    line-height: var(--up-ueb-abschnitt-zeile); letter-spacing: var(--up-ueb-abschnitt-spur);
+  }
+  .am-bubble h3:first-child { margin: 0 0 12px; font-size: var(--up-fs-modaltitel); line-height: 26px; letter-spacing: -0.4px; }
+  .am-bubble h4:first-child { margin-top: 0; }
   .am-logo-wrap { display: inline-flex; align-items: center; vertical-align: middle; white-space: normal; overflow-wrap: anywhere; word-break: break-word; max-width: 100%; margin-left: 8px; cursor: pointer; }
   td > .am-logo-wrap:first-child, th > .am-logo-wrap:first-child,
   p > .am-logo-wrap:first-child, li > .am-logo-wrap:first-child,
@@ -519,14 +534,16 @@
   #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="prompt"],
   .am-set-backdrop[data-citation="icon"] .am-logo-wrap[data-type="domain"] {
     display: inline-flex; align-items: center; vertical-align: middle; max-width: 100%; min-width: 0;
-    margin: 2px 0; background: var(--am-soft-2); border-radius: var(--up-r-m); padding: 0 6px;
+    margin: 2px 0; background: var(--up-sel-bg); border-radius: var(--up-r-s); padding: 0 6px;
     /* DER CHIP IST HOEHER ALS SEIN INHALT (18.09.: "sodass die auch wirklich im grauen Container
        liegen"). Vorher bestimmte der Inhalt die Hoehe: 22px Bild in einem 22px Chip, also null
        Luft oben und unten -- das Favicon SASS nicht im Grau, es WAR das Grau.
        24px ist die Hoehe des Markenchips daneben, also nichts Neues in dieser Zeile. Damit hat
        das 20px-Favicon 2px Luft und das 18px-Zeichen im Icon-Modus 3px -- und beide Modi sind
-       gleich hoch, worum es beim Grund schon ging. */
-    min-height: 24px;
+       gleich hoch, worum es beim Grund schon ging.
+       Seit dem 22.10. abends (G1) 22 hoch, Radius 4 (Rolle bis 24) und die leise Flaeche der Marken. Die
+       Zeilenhoehe am Chip selbst: sonst erbt er die 26 des Textes und steht 26 hoch. */
+    min-height: 22px; line-height: 20px;
   }
   #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="url"] .am-inline-ic,
   #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="url"] .am-inline-logo,
@@ -577,7 +594,9 @@
   #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="url"] .am-logo-text,
   #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="domain"] .am-logo-text,
   .am-set-backdrop[data-citation="icon"] .am-logo-wrap[data-type="domain"] .am-logo-text {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px;
+    /* Seit dem 22.10. abends (G1) ohne Schreibmaschinenschrift: 13/500 wie ein Chip der App. Domain und URL
+       sagt das Zeichen davor, die Schrift muss es nicht noch einmal sagen. */
+    font-family: inherit; font-size: var(--up-fs-m); font-weight: var(--up-fw-m);
   }
   .am-inline-logo {
     width: 24px; height: 24px; border-radius: var(--up-r-m); object-fit: cover;
@@ -680,10 +699,16 @@
   #ask-mira .am-table-scroll { overflow-x: auto !important; overflow-y: hidden !important; }
   .am-table-scroll:first-child { margin-top: 0; }
   .am-table-scroll:last-child { margin-bottom: 0; }
-  .am-bubble table { border-collapse: collapse; width: 100%; font-size: 14px; table-layout: auto; }
+  /* Die Tabelle im Kasten wie eine Tabelle der App (G1, 22.10. abends): Rand, Radius 12, Feldflaeche, der Kopf
+     ohne Flaeche in 13/500 und der dritten Textfarbe. separate statt collapse: sonst nimmt die Tabelle den
+     Radius nicht an. */
+  .am-bubble table {
+    border-collapse: separate; border-spacing: 0; width: 100%; font-size: 14px; table-layout: auto;
+    border: 1px solid var(--am-border); border-radius: var(--up-r-2xl); overflow: hidden; background: var(--up-feld-bg);
+  }
   .am-bubble thead th {
-    text-align: left; font-weight: 600; color: var(--am-muted);
-    background: var(--am-soft); padding: 9px 12px; white-space: normal; overflow-wrap: break-word;
+    text-align: left; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--am-muted-2);
+    background: transparent; padding: 9px 12px; white-space: normal; overflow-wrap: break-word;
     border-bottom: 1px solid var(--am-border);
   }
   .am-bubble tbody td { padding: 9px 12px; border-bottom: 1px solid var(--am-border); vertical-align: top; white-space: normal; overflow-wrap: break-word; }
@@ -923,39 +948,44 @@
   }
   .am-think-text.is-out { transform: translateY(-95%); opacity: 0; }
   .am-think-text.is-in  { transform: translateY(95%);  opacity: 0; }
-  /* Der Glanz, der frueher ueber dem Hinweis "Tiefe Suche" lief. Der Hinweis ist weg; der Glanz
-     liegt jetzt auf dem Text des LAUFENDEN Schritts -- also genau in der Zeile, die auch den
-     Spinner traegt. Die Schriftfarbe bleibt, wie sie ist: background-color: currentColor nimmt den
-     Ton der Zeile (--am-muted), und weil -webkit-text-fill-color transparent ist und color NICHT
-     angefasst wird, faerbt der Verlauf nur die Glyphen. Kein blauer Text, kein blauer Glanz. */
+  /* Glanz und Drehen des alten Protokolls: seit dem 22.10. abends traegt der laufende Satz den Glanz aus core
+     (.up-glanz) und das Feld den Ring aus core (UC.ringHtml). Die zwei Keyframes bleiben fuer den Vertrag. */
   @keyframes amShimmer { from { background-position: -120% 0; } to { background-position: 220% 0; } }
+  @keyframes amRunSpin { to { transform: rotate(360deg); } }
 
-  /* ---- Arbeitsprotokoll: Uhr, Trennlinie, Schrittliste ----------------------------------------
-     Eine Zeile: Spinner, Zeichen, Text, dahinter die Logos. Solange der Schritt laeuft, steht der
-     Spinner ganz links und schiebt den Rest um seine Breite nach rechts; ist der Schritt fertig,
-     faehrt seine Breite auf 0 und die Zeile rueckt nach links an den Rand der Liste. Deshalb
-     KEIN gap an der Zeile, sondern Aussenabstaende an den Teilen: ein gap bleibt auch bei Breite 0
-     stehen, und die fertige Zeile stuende 10px eingerueckt.
-     Der Auftritt einer Zeile laeuft ueber grid-template-rows 0fr -> 1fr: die Liste waechst weich
-     mit, statt um die Zeilenhoehe zu springen. Die Dauern und die Kurve stehen seit dem 22.10. als
-     --up-lauf-* in core.css (dieselben Werte), weil Page Audit dasselbe Protokoll zeigt. */
-  .am-run { width: 100%; max-width: min(100%, 782px); }
-  .am-run.is-live { padding-bottom: 30px; }        /* Luft unter dem Laufenden, wie beim alten Ladebild */
-  /* Nach der Antwort Luft nach unten: die Liste ist ein eigener Block und soll nicht am Text der
-     Antwort kleben. 30 statt urspruenglich 14, in zwei Schritten je acht: der letzte Punkt der
-     Liste und der erste Satz Miras werden sonst als ein Absatz gelesen. Mit .am-msg-main gap 6
-     sind es 36 auf dem Schirm. */
-  .am-run:not(.is-live) { margin-bottom: 30px; }
+  /* ---- Arbeitsprotokoll (22.10. abends, Canvas "Mira Chat Redesign": S1, T1, C1, F1) --------------------
+     Kopf: die Uhr; nach dem ersten Wort der Antwort (T1) davor der Ring und dahinter die Phase. Darunter die
+     Schiene: eine Zeile je Runde (.am-run-step) mit Punkt (.am-run-dot) und den Saetzen ihrer Aufrufe
+     nebeneinander (.am-run-saetze) -- senkrecht ist Zeit, waagerecht gleichzeitig. Keine Trennlinie mehr unter
+     der Uhr, keine Logos. Fertig (C1) ist der Kopf ein Knopf, der den Koerper auf- und zuklappt; Koerper und
+     Zeile klappen ueber grid-template-rows 0fr/1fr mit den Dauern aus core (--up-lauf-*). */
+  .am-run { width: 100%; max-width: min(100%, 782px); margin-bottom: 10px; }
+  /* Unter der Kopfzeile 16 bis zum Text: 10 hier + 6 gap von .am-msg-main, laufend wie fertig (vorher 36
+     bzw. 15). Waehrend die Schritte laufen, steht darunter nichts: dort die Luft von vorher. */
+  .am-run.is-live:not(.is-zu) { padding-bottom: 30px; }
+  .am-run.is-fertig.is-offen { margin-bottom: 20px; }
   .am-run-head {
-    display: flex; align-items: center; min-height: 19px;
-    padding-bottom: 11px; border-bottom: 1px solid var(--am-border);
+    display: flex; align-items: center; gap: 8px; min-height: 20px;
+    font-size: var(--up-fs-l); font-weight: var(--up-fw-m); line-height: 20px; color: var(--am-muted);
   }
-  /* Ohne Schritte (Neuladen, alter Chat) bleibt nur die Uhr -- eine Trennlinie ohne Liste darunter
-     waere ein Strich um nichts. */
-  .am-run.is-bare .am-run-head { border-bottom: 0; padding-bottom: 0; }
-  .am-run.is-bare { margin-bottom: 9px; }
-  .am-run-clock { font-size: 14px; font-weight: 500; color: var(--am-muted); line-height: 1; }
-  .am-run-steps { display: flex; flex-direction: column; }
+  .am-run-clock { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--am-muted); line-height: 1; font-variant-numeric: tabular-nums; }
+  .am-run-kring, .am-run-phase { display: none; }
+  .am-run-kring { width: 14px; height: 14px; flex: 0 0 14px; align-items: center; }
+  .am-run.is-zu .am-run-kring { display: inline-flex; }
+  .am-run.is-zu .am-run-phase { display: inline; color: var(--am-muted-2); font-weight: var(--up-fw-n); }
+  /* C1: der Kopf als Knopf. Fokus wie jeder Knopf der App: 2px Ring mit 2px Abstand. */
+  .am-run-auf { border: 0; background: transparent; padding: 0; margin: 0; font: inherit; cursor: pointer; border-radius: var(--up-r-xs); gap: 6px; }
+  .am-run-auf:hover, .am-run-auf:hover .am-run-clock { color: var(--am-text); }
+  .am-run-auf:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
+  .am-run-chev { width: 14px; height: 14px; flex: 0 0 14px; display: inline-flex; color: var(--am-muted-2); }
+  .am-run-chev svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* Ohne Protokoll (Neuladen, alter Chat) bleibt nur die Uhr. */
+  .am-run.is-bare { margin-bottom: 10px; }
+  /* Der Koerper: offen solange es laeuft und aufgeklappt; zu ab dem ersten Wort (T1) und fertig zugeklappt (C1). */
+  .am-run-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--up-lauf-auf) var(--up-lauf-kurve); }
+  .am-run.is-zu .am-run-body, .am-run.is-fertig:not(.is-offen) .am-run-body { grid-template-rows: 0fr; }
+  .am-run-steps { min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+  /* Eine Runde waechst auf (0fr -> 1fr, core laufAuftritt) */
   .am-run-step {
     display: grid; grid-template-rows: 0fr; opacity: 0;
     transition: grid-template-rows var(--up-lauf-auf) var(--up-lauf-kurve), opacity var(--up-lauf-blende) ease;
@@ -963,114 +993,52 @@
   .am-run-step.is-in { grid-template-rows: 1fr; opacity: 1; }
   /* min-height:0 und overflow:hidden sind die Bedingung dafuer, dass 0fr die Zeile wirklich zufaltet */
   .am-run-inner { min-height: 0; overflow: hidden; }
-  .am-run-line { display: flex; align-items: center; padding-top: 11px; min-width: 0; }
-  .am-run-spin {
-    width: 14px; height: 14px; flex: 0 0 auto; margin-right: 10px;
-    transition: opacity var(--up-lauf-blende) ease, transform var(--up-lauf-blende) var(--up-lauf-kurve),
-                width var(--up-lauf-platz) var(--up-lauf-kurve), margin-right var(--up-lauf-platz) var(--up-lauf-kurve);
+  /* Die Zeile: 10 Luft oben (der Abstand der Runden), Punkt, Saetze. Die Schiene laeuft durch die ganze
+     Zeile, in der ersten erst ab dem Punkt und in der letzten nur bis zum Punkt (is-letzte, runLinie) --
+     so stossen die Stuecke zweier Zeilen ohne Luecke aneinander, auch wenn Saetze umbrechen. */
+  .am-run-line { position: relative; display: flex; align-items: flex-start; gap: 10px; padding-top: 10px; min-width: 0; }
+  .am-run-line::before { content: ""; position: absolute; left: 6.5px; top: 0; bottom: 0; width: 1px; background: var(--am-border); }
+  .am-run-step:first-child .am-run-line::before { top: 22px; }
+  .am-run-step.is-letzte .am-run-line::before { bottom: auto; height: 22px; }
+  .am-run-step:first-child.is-letzte .am-run-line::before { display: none; }
+  /* Der Punkt deckt die Schiene: hohl, solange die Runde laeuft, voll, wenn alle ihre Aufrufe fertig sind. */
+  .am-run-dot { position: relative; z-index: 1; flex: 0 0 14px; width: 14px; height: 24px; display: inline-flex; align-items: center; justify-content: center; }
+  .am-run-dot::before {
+    content: ""; width: 6px; height: 6px; box-sizing: border-box; border-radius: var(--up-r-voll);
+    border: 1.5px solid var(--am-muted-3); background: var(--am-bg);
+    transition: background var(--up-lauf-farbe) ease, border-color var(--up-lauf-farbe) ease;
   }
-  /* Innen dreht es, aussen blendet es aus -- sonst kaempfen Drehung und Uebergang um dasselbe transform */
-  .am-run-spin i {
-    display: block; width: 14px; height: 14px; border-radius: 50%;
-    border: 1.8px solid var(--am-border); border-top-color: var(--am-muted);
-    animation: amRunSpin var(--up-lauf-dreh) linear infinite;
+  .am-run-step.is-done .am-run-dot::before { border-color: var(--am-muted-2); background: var(--am-muted-2); }
+  .am-run-dot.is-ring::before { display: none; }
+  .am-run-dot.is-ring .up-ring { background: var(--am-bg); border-radius: var(--up-r-voll); }
+  .am-run-saetze { display: flex; flex-wrap: wrap; gap: 2px 20px; min-width: 0; }
+  /* Ein Aufruf: Zeichenfeld und Satz. Die Saetze einer Runde kommen nacheinander (LAUF_TAKT.logo), wie vorher
+     die Logos. Im Feld liegen Ring, Zeichen und Warnzeichen uebereinander; die Klasse waehlt, ueberblendet wird. */
+  .am-run-schritt {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 24px; min-width: 0;
+    opacity: 0; transform: translateX(7px);
+    transition: opacity var(--up-lauf-logo) ease, transform var(--up-lauf-logo) var(--up-lauf-kurve);
   }
-  @keyframes amRunSpin { to { transform: rotate(360deg); } }
-  /* Fertig: der Spinner geht weg UND gibt seinen Platz ab -- Zeichen, Text und Chips ruecken in
-     einer Bewegung nach links an den Rand. */
-  .am-run-step.is-done .am-run-spin { opacity: 0; transform: scale(.5); width: 0; margin-right: 0; }
-  .am-run-step.is-cold .am-run-spin { visibility: hidden; }
-  .am-run-step.is-cold .am-run-spin i { animation: none; }
-  /* Das Zeichen der Zeile: ohne Kasten, zweite Textfarbe, feste Breite -- dadurch beginnt der Text
-     in JEDER Zeile an derselben Stelle. */
-  .am-run-ic {
-    width: 20px; height: 20px; flex: 0 0 auto; margin-right: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    color: var(--am-muted-2); transition: color var(--up-lauf-farbe) ease;
-  }
+  .am-run-schritt.is-in { opacity: 1; transform: none; }
+  .am-run-ic { position: relative; width: 16px; height: 16px; flex: 0 0 16px; color: var(--am-muted-2); transition: color var(--up-lauf-farbe) ease; }
+  .am-run-ic > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; transition: opacity var(--up-lauf-blende) ease; }
   .am-run-ic svg { width: 15px; height: 15px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .am-run-step.is-done .am-run-ic { color: var(--am-muted); }
-  /* Mira selbst: Kasten in der ersten Textfarbe, Zeichen darin in der Flaechenfarbe -- also in
-     beiden Themen der kraeftigste Gegensatz, den das Thema hat. */
-  .am-run-ic.is-mira {
-    border-radius: var(--up-r-s); background: var(--am-text); color: var(--am-bg);
-  }
-  .am-run-ic.is-mira svg { width: 12px; height: 12px; }
-  .am-run-step.is-done .am-run-ic.is-mira { color: var(--am-bg); }
-  .am-run-txt { font-size: 14px; font-weight: 500; line-height: 1.45; color: var(--am-muted); min-width: 0; transition: color var(--up-lauf-farbe) ease; }
-  .am-run-step.is-done .am-run-txt { color: var(--am-text); }
-  /* Die Denkzeile traegt ihren Text ABSOLUT positioniert -- das ist die Lauf-Mechanik, mit der er
-     wechselt. Absolute Kinder tragen nichts zur Breite bei: ohne flex-grow bliebe der Kasten 0 breit,
-     und sein overflow:hidden schnitte den Text weg. Gemessen: 0px Kastenbreite, Text unsichtbar. */
-  .am-run-step .am-think-loop { flex: 1 1 auto; }
-  .am-run-step .am-think-text { font-size: inherit; font-weight: inherit; }
-  .am-run-step.is-done .am-think-text { color: var(--am-text); }
-  /* Nur der laufende Schritt glaenzt: .is-done setzt core auf die Zeile, sobald sie fertig ist.
-     Die fertige Zeile bekommt ihre Fuellfarbe ausdruecklich zurueck -- ohne das bliebe sie
-     durchsichtig, sobald die Animation nicht mehr greift. */
-  /* Zwei Selektoren, weil die ERSTE Zeile anders gebaut ist als die uebrigen: dort steht der Text
-     nicht direkt in .am-run-txt, sondern in einem eigenen .am-think-text (absolut gesetzt, mit
-     eigener Farbe, damit er beim Wechsel hoch- und runterfahren kann). Der Glanz am Elternteil
-     traf dessen Glyphen deshalb nicht gleich -- die erste Zeile sah anders aus als die anderen.
-     Jetzt bekommt jede Zeile den Glanz da, wo ihr Text wirklich steht. */
-  .am-run-step:not(.is-done) .am-run-txt:not(.am-think-loop),
-  .am-run-step:not(.is-done) .am-think-text {
-    background-image: linear-gradient(100deg, rgba(255,255,255,0) 30%, var(--vc-mira-lauf-glanz) 50%, rgba(255,255,255,0) 70%);
-    background-color: currentColor;
-    background-size: 200% 100%; background-repeat: no-repeat; background-position: -120% 0;
-    -webkit-background-clip: text; background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: amShimmer var(--up-lauf-glanz) linear infinite reverse;
-  }
-  .am-run-step.is-done .am-run-txt, .am-run-step.is-done .am-think-text {
-    background: none; animation: none; -webkit-text-fill-color: currentColor;
-  }
+  .am-run-ic .up-ring { width: 14px; height: 14px; }
+  .am-run-zeichen, .am-run-warn { opacity: 0; }
+  .am-run-schritt.is-done .am-run-spin, .am-run-schritt.is-fehler .am-run-spin { opacity: 0; }
+  .am-run-schritt.is-done .am-run-zeichen, .am-run-schritt.is-fehler .am-run-warn { opacity: 1; }
+  /* F1: das Warnzeichen in der Farbe fuer schlechte Werte, der Satz bleibt grau (Tooltip am Schritt). */
+  .am-run-schritt.is-fehler .am-run-ic { color: var(--vt-down); }
+  /* Der unsichtbare Ring hoert nach dem Haken auf zu drehen (is-cold nach LAUF_TAKT.kalt, core laufAbhaken). */
+  .am-run-schritt.is-cold .am-run-spin .up-ring { animation: none; }
+  .am-run-txt { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); line-height: 20px; color: var(--am-muted); min-width: 0; transition: color var(--up-lauf-farbe) ease; }
+  .am-run-schritt.is-done .am-run-txt { color: var(--am-text); }
+  /* Stillgelegt seit dem 22.10. abends: die Saetze tragen keine Logos mehr (Vertrag). */
+  .am-run-lead { display: none; }
   @media (prefers-reduced-motion: reduce){
-    .am-run-step:not(.is-done) .am-run-txt:not(.am-think-loop),
-    .am-run-step:not(.is-done) .am-think-text {
-      background: none; animation: none; -webkit-text-fill-color: currentColor;
-    }
-  }
-  /* Die Logos hinter dem Text stehen als STAPEL, wie jeder andere Favicon-Satz im Haus
-     (.up-rb-cg-fav, .up-stack-item): leicht ineinandergeschoben, und ein Ring in der Farbe des
-     Grundes trennt sie, damit zwei aehnliche Logos nicht verschmelzen. Die Ueberlappung ist die
-     des Hauses im Verhaeltnis zur Groesse: -4px bei 15px, hier -5px bei 20px (4 * 20/15 = 5.3).
-     Vorher standen 8px Abstand dazwischen -- das war ein Chip-Satz, kein Stapel. */
-  .am-run-lead { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 0; margin-left: 14px; }
-  /* -5: drei Pixel weiter als die erste Fassung (-8), in zwei Schritten so gewuenscht. Gemessen
-     sind das 2px sichtbare Ueberlappung auf 17px Chipbreite. Die Chips tragen Rahmen und Polster,
-     deshalb ist der margin groesser als die Ueberlappung, die am Ende zu sehen ist. */
-  .am-run-lead > * + * { margin-left: -5px; }
-  .am-run-lead > * { opacity: 0; transform: translateX(7px) scale(.86); transition: opacity var(--up-lauf-logo) ease, transform var(--up-lauf-logo) var(--up-lauf-kurve); }
-  .am-run-step.is-in .am-run-lead > * { opacity: 1; transform: none; }
-  /* Der 24er-Favicon-Kasten des Hauses (.up-logo-box) auf 20px: helle Platte --vt-logo-bg, 1px
-     Polster, Radius und Bildmasse im selben Verhaeltnis (8*20/24, 22*20/24, 7*20/24). Ohne die
-     Platte verschwanden dunkle Logos im Dunkeln -- deshalb ist sie appweit hell, in BEIDEN Themen. */
-  .am-run-lead .am-tload-logo, .am-run-lead .am-tload-ai {
-    width: 20px; height: 20px; border-radius: var(--up-r-s); font-size: 11px;
-    background: var(--vt-logo-bg); border: 1px solid var(--am-border); padding: 1px;
-    /* Der Trennring des Stapels. 2px, wie bei den Punkten der Skala -- er haengt nicht an der
-       Groesse der Bilder, sondern soll die Naht zwischen ihnen sichtbar halten. */
-    box-shadow: 0 0 0 2px var(--am-bg, var(--vc-bg));
-  }
-  /* Das erste Logo liegt oben, die folgenden dahinter -- so liest sich der Stapel von links nach
-     rechts, statt dass das letzte alle anderen ueberdeckt. */
-  .am-run-lead > *:nth-child(1) { z-index: 5; }
-  .am-run-lead > *:nth-child(2) { z-index: 4; }
-  .am-run-lead > *:nth-child(3) { z-index: 3; }
-  .am-run-lead > *:nth-child(4) { z-index: 2; }
-  .am-run-lead > *:nth-child(5) { z-index: 1; }
-  .am-run-lead > * { position: relative; }
-  .am-run-lead .am-tload-logo img, .am-run-lead .am-tload-ai img {
-    width: 100%; height: 100%; border-radius: var(--up-r-s); object-fit: contain;
-  }
-  .up-root[data-theme="dark"] .am-run-lead .am-tload-logo,
-  .up-root[data-theme="dark"] .am-run-lead .am-tload-ai { border-color: transparent; background-clip: padding-box; }
-  @media (prefers-reduced-motion: reduce){
-    .am-run-step, .am-run-lead > *, .am-run-spin, .am-run-ic, .am-run-txt { transition: none !important; }
+    .am-run-step, .am-run-schritt, .am-run-body, .am-run-ic, .am-run-ic > span, .am-run-txt, .am-run-dot::before { transition: none !important; }
     .am-run-step { grid-template-rows: 1fr; opacity: 1; }
-    .am-run-lead > * { opacity: 1; transform: none; }
-    .am-run-spin i { animation: none !important; }
+    .am-run-schritt { opacity: 1; transform: none; }
   }
 
   /* brand + favicon chip = exactly the inline-logo style (24px, radius 8, soft bg, border, cover) */
@@ -1083,13 +1051,6 @@
   .am-tload-ai img { width: 24px; height: 24px; object-fit: contain; display: block; border-radius: var(--up-r-m); }
   .am-tload-ai.is-fb { background: var(--fb, var(--vc-mira-logo-rueckfall)) !important; border-radius: var(--up-r-m); }
   .am-tload-ai.is-fb img { display: none; }
-  @media (prefers-reduced-motion: reduce){
-    .am-run-step, .am-run-lead > *, .am-run-spin { transition: none !important; }
-    .am-run-step { grid-template-rows: 1fr; opacity: 1; }
-    .am-run-lead > * { opacity: 1; transform: none; }
-    .am-run-spin i { animation: none !important; }
-  }
-
   /* Suggested questions */
   .am-suggested { max-width: 920px; margin: clamp(14px, 4vh, 36px) auto 0; width: 100%; }
   #ask-mira.has-messages .am-suggested { display: none; }
