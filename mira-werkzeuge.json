@@ -361,6 +361,77 @@
       "parameter": {
         "slugs": { "pflicht": true, "schema": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 4 }, "beschreibung": "1-4 slugs, exactly as listed in the knowledge index of the instructions." }
       }
+    },
+    {
+      "_p3": "Aktionen (P3, Plan Q2/Q14): klasse frei = direkt mit Rueckgaengig, bestaetigen = nur Karte, Start per Klick (upstreem-app lib/mira/aktionen.ts, aktion-start.ts). Block der Sitzung P3 am Ende der Datei.",
+      "name": "create_opportunity",
+      "bereich": "aktionen",
+      "klasse": "frei",
+      "beschreibung": "Saves one recommendation as an Opportunity (a Task on the team's board) right away; the user gets an Undo button for 10 minutes. Only when the user's message asks to add, create or save a Task or Opportunity, or confirms your offer to do so. url = the ref of a URL from URL-level data you retrieved (sources_urls, sources_domain_urls, url_detail, a Response's cited pages), exactly as returned; a homepage is fine if that exact URL is the cited source, a Domain is never enough. At most one per URL. The card type (Get Listed, Create Matching Content, Improve Existing Content, Build Presence) follows the page's Citation Type by itself. Result: created true, or already_existed true when an active card for this URL exists (nothing new created). Not for showing saved Opportunities (use opportunities).",
+      "aufrufe": [{ "fn": "opportunities_create_v1", "rolle": "anlegen", "nur_mira": "Die UI legt Opportunities nur aus gespeicherten Mira-Aktionen an (opportunity_from_mira_v1, ask-mira.js); die gibt es erst nach dem Lauf. Direkt im Lauf mit Rueckgaengig (Q2, Klasse 2) braucht es das Anlegen aus einer URL; dieselbe Rechnung (create_mira_source_recommendation_v3, letzte 30 Tage, ohne Filter)." }],
+      "rueckweg": { "fn": "opportunity_undo_from_mira_v1", "wer": "fenster" },
+      "filter": [],
+      "parameter": {
+        "url": { "rpc": "p_lead_url", "pflicht": true, "schema": { "type": "string", "minLength": 2, "maxLength": 2000 }, "beschreibung": "Ref of the source URL (e.g. u12) from URL-level results." },
+        "title": { "rpc": "p_title", "pflicht": true, "schema": { "type": "string", "minLength": 3, "maxLength": 300 }, "beschreibung": "Card title: short and specific, about 4 to 8 words, in the user's language." },
+        "reason": { "rpc": "p_reason", "pflicht": true, "schema": { "type": "string", "minLength": 20, "maxLength": 2000 }, "beschreibung": "Why this matters: 2 to 3 full, plain sentences a non-expert understands, without abbreviations, in the user's language." }
+      }
+    },
+    {
+      "name": "set_opportunity_status",
+      "bereich": "aktionen",
+      "klasse": "frei",
+      "beschreibung": "Moves saved Opportunities to another status right away (Pending, In Progress, Done, Ignored); the user gets an Undo button. Only when the user asks to move, start, complete, ignore or reopen specific cards. Pass the ids from an opportunities result of this chat. Result: changed, unchanged (already had that status) and each changed card with its old and new status.",
+      "aufrufe": [{ "fn": "opportunities_set_status_v1", "rolle": "status" }],
+      "rueckweg": { "fn": "opportunities_set_status_v1", "wer": "fenster" },
+      "filter": [],
+      "parameter": {
+        "opportunity_ids": { "rpc": "p_ids", "pflicht": true, "schema": { "type": "array", "items": { "type": "string", "format": "uuid" }, "minItems": 1, "maxItems": 10 }, "beschreibung": "Ids of the Opportunities (id from an opportunities result), 1-10." },
+        "status": { "rpc": "p_status", "pflicht": true, "schema": { "type": "string", "enum": ["Created", "In Progress", "Done", "Ignored"] }, "beschreibung": "New status; Created is what the app shows as Pending." }
+      }
+    },
+    {
+      "name": "propose_page_audit",
+      "bereich": "aktionen",
+      "klasse": "bestaetigen",
+      "beschreibung": "Proposes a Page Audit: a technical check whether AI crawlers and AI search platforms can reach and read one public page. It does not start it: a card with the cost (1 audit of the weekly quota) and the audits left this week appears under your answer, and the user starts it with a click. Only when the user asks for an audit or agrees to your offer. url = the ref of a URL or Domain from the results (a Domain audits its homepage), or the address exactly as the user typed it. Result: proposed true, or blocked with the reason (the plan has no audits, or this week's audits are used up).",
+      "aufrufe": [{ "fn": "create_page_audit_v1", "rolle": "start" }, { "fn": "list_page_audits_v1", "rolle": "kontingent" }],
+      "kosten": { "einheit": "page_audit", "menge": 1, "kontingent": "audits_per_week" },
+      "filter": [],
+      "parameter": {
+        "url": { "rpc": "p_url", "pflicht": true, "schema": { "type": "string", "minLength": 2, "maxLength": 2048 }, "beschreibung": "Ref of a URL or Domain from the results (e.g. u3, d2), or the address as the user typed it." }
+      }
+    },
+    {
+      "name": "propose_prompt_research",
+      "bereich": "aktionen",
+      "klasse": "bestaetigen",
+      "beschreibung": "Proposes a Prompt Research: the AI writes up to 20 Prompt suggestions from search terms for one market; the user then accepts or ignores them on the Prompt Research page. It does not start it: a card with the cost (1 research; accepted suggestions use free Prompt slots) appears under your answer, and the user starts it with a click. Only when the user asks for new Prompt ideas or a research, or agrees to your offer. Without market the team's default market is used. Result: proposed true, or blocked (a research is already running for the user or in the team, or no Prompt slot is free); without a default market the result asks you to ask the user for the market.",
+      "aufrufe": [{ "edge": "start-job", "rolle": "start" }, { "fn": "prompt_research_jobs_v1", "rolle": "laufend" }, { "fn": "prompts_page_meta_v1", "rolle": "kontingent" }, { "fn": "app_start_v1", "rolle": "markt" }],
+      "kosten": { "einheit": "prompt_research", "menge": 1, "kontingent": "prompt_research_day" },
+      "filter": [],
+      "parameter": {
+        "keywords": { "rpc": "p_keywords", "pflicht": true, "schema": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 100 }, "minItems": 1, "maxItems": 20 }, "beschreibung": "1-20 search terms the research starts from, together at most 300 characters." },
+        "market": { "rpc": "p_market", "schema": { "type": "string", "minLength": 2, "maxLength": 2 }, "beschreibung": "Market as a two-letter code (DE, US, ...). Omit for the team's default market." },
+        "business_model": { "rpc": "p_business_model", "schema": { "type": "string", "enum": ["b2c", "b2b", "hybrid"] }, "vorgabe": "b2c", "beschreibung": "Who the business sells to." },
+        "persona": { "rpc": "p_persona", "schema": { "type": "string", "enum": ["student", "entrepreneur", "smb_owner", "parent_family", "tech_enthusiast"] }, "beschreibung": "Optional persona whose questions the suggestions imitate. Omit for none." },
+        "intents": { "rpc": "p_intents", "schema": { "type": "array", "items": { "type": "string", "enum": ["informational", "recommendation", "transactional"] }, "maxItems": 3 }, "beschreibung": "Optional intents; the suggestions are split evenly across them. Omit for no preference." },
+        "branded": { "rpc": "p_branded", "schema": { "type": "string", "enum": ["non_branded", "all"] }, "vorgabe": "non_branded", "beschreibung": "non_branded: suggestions never name a Brand (like the app's default); all: they may." }
+      }
+    },
+    {
+      "name": "propose_track_brand",
+      "bereich": "aktionen",
+      "klasse": "bestaetigen",
+      "beschreibung": "Proposes tracking a Brand as a competitor, or reactivating an inactive one. It does not start it: a card with the cost (1 Brand slot of the plan) and the free slots appears under your answer, and the user starts it with a click. Only when the user asks to track, add or reactivate a Brand, or agrees to your offer. Pass brand = the ref of a Brand from the results, or name and domain as the results show them or as the user typed them. Result: proposed true; already_tracked when it is tracked; blocked when the plan's Brand slots or today's limit for new Brands are used up.",
+      "aufrufe": [{ "fn": "brand_add_v1", "rolle": "anlegen" }, { "fn": "brands_set_status_v1", "rolle": "aktivieren" }, { "fn": "brands_page_meta_v1", "rolle": "kontingent" }],
+      "kosten": { "einheit": "brand", "menge": 1, "kontingent": "competitors_max_active" },
+      "filter": [],
+      "parameter": {
+        "brand": { "rpc": "p_company_ids", "schema": { "type": "string", "maxLength": 10 }, "beschreibung": "Ref of the Brand from the results (e.g. b4). Omit when the Brand is not in the results; then pass name and domain." },
+        "name": { "rpc": "p_name", "schema": { "type": "string", "minLength": 1, "maxLength": 75 }, "beschreibung": "Brand name, exactly as in the results or as the user wrote it." },
+        "domain": { "rpc": "p_domain", "schema": { "type": "string", "minLength": 4, "maxLength": 253 }, "beschreibung": "The Brand's domain, e.g. example.com." }
+      }
     }
   ]
 }

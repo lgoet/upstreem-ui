@@ -30,7 +30,9 @@ auch in `mira-werkzeuge.json`** – der Mira-Agent ruft genau die Funktionen der
 Wrapper (Plan `bubble/mira_agent_22_10/UMSETZUNGSPLAN.md`, Q4). Seit 22.10. bietet der MCP-Server (upstreem-app
 `/api/mcp`) dieselben Werkzeuge Claude, ChatGPT & Co. an: eine neue Funktion(sversion) braucht dann auch eine Zeile in
 `app.mcp_rpc_erlaubt` (Schreibschutz für OAuth-Tokens, Lexikon `40_interne_bausteine.md`), sonst antwortet das
-Werkzeug dort mit 403. `.check_reinvention.py` meldet Verdachtsfälle, keine Gewissheiten —
+Werkzeug dort mit 403. Aktionen (P3, Klasse `frei`/`bestaetigen`) bekommt nur der Mira-Agent, nie der MCP-Server; der
+Prüfer verlangt dort einen Rückweg (`frei`), eine Startfunktion (`bestaetigen`) und keine löschende Funktion, eine Edge
+Function steht als `"edge"` (z. B. `start-job`). `.check_reinvention.py` meldet Verdachtsfälle, keine Gewissheiten —
 jeden Treffer entweder beheben oder mit einem Satz begründen, warum er hier richtig ist.
 
 ---
