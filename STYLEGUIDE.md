@@ -2088,15 +2088,40 @@ leere Liste   UC.leerHtml ohne Knopf
 ```
 
 Ohne Karte (Impact seit 22.10. abends): Text und Grafik in EINER Zeile, die Grafikfläche genau so hoch wie ihr
-gezeichneter Teil (Impact 188, oben und unten darum keine Maske), der Text mittig daneben. Darunter ein Trenner
+gezeichneter Teil (Impact 188, oben und unten darum keine Maske). Darunter ein Trenner
 (1px `--vc-border`, vom Startbereich selbst getragen: padding-bottom 32 + border-bottom, margin-bottom 32), dazu
-oben 16 Polster zu den 16 unter dem Seitenkopf: von der Kopflinie bis zum Inhalt 32, vom Inhalt bis zum Trenner 32,
+oben 16 Polster zu den 16 unter dem Seitenkopf: von der Kopflinie bis zur Grafik 32, von der Grafik bis zum Trenner 32,
 vom Trenner bis zur Liste 32. Gemessen in hell, dunkel und 375, mit beiden Abschnitten, nur einem und leer.
+
+**Der Text steht oben, auf der Höhe von Page Audit** (22.10. abends, Lukas: "eher top aligned ... Ich mag sehr,
+wo die Heading bei Technical Page Audit platziert ist"): die Überschrift 47 unter der Kopflinie, links 2 -- in
+Page Audit 16 Abstand plus die Mitte der 112 hohen Zeile ((112 − 26 − 4 − 20) / 2 = 31), in Impact 16 Abstand,
+16 Polster und 15 Polster des Texts. Oben angeschlagen statt mittig, weil der Satz von Impact schon bei 1440 zwei
+Zeilen hat: der Text wächst nach unten, die Überschrift bleibt stehen. Gemessen bei 1440 und 1024 (Überschrift
+47/2, Satz 77/2 auf beiden Seiten; vorher Impact 91). Unter `is-narrow` ohne die 15 (32 unter der Kopflinie
+wie vorher). Darunter, 16 nach dem Satz, der **Umschalter Karten/Liste** der Seite (unten, "Liste der Übersicht").
 
 | Seite | Karte | Grafik |
 |---|---|---|
 | Page Audit | "What an audit checks", ein Absatz, "Run Audit" | Feld aus Browserfenstern, eines mit dem Zeichen der Prüfung |
-| Impact | keine (seit 22.10. abends); angelegt wird über "Create" im Seitenkopf, darunter der Trenner | Events als Pins auf einer Zeitachse, einer hervorgehoben (Zeichen von Event Tracking); im Canvas gegen Kurven und Kartenstapel gewählt |
+| Impact | keine (seit 22.10. abends); angelegt wird über "Create" im Seitenkopf, darunter der Trenner; unter dem Satz Grid/List | Events als Pins auf einer Zeitachse, einer hervorgehoben (Zeichen von Event Tracking); im Canvas gegen Kurven und Kartenstapel gewählt |
+
+**Liste der Übersicht (Impact, 22.10. abends, Lukas: "auch einen Tabellenmodus anbieten ... ein Switcher, der für
+beide Listen gilt").** Der Umschalter ist der der Ad Library (`.up-seg` mit den Zeichen `layoutGrid`/`listIcon`,
+Tooltips "Grid"/"List", `aria-pressed`), in der Adresse `impact_layout=list` (Vorgabe Karten schreibt nichts, ein
+Wechsel ist ein eigener Eintrag im Verlauf, `UC.ansichtsParameter` nimmt ihn beim Verlassen mit und bringt ihn
+zurück; ein eigener Name, weil `layout` der Ad Library gehört). Er steht nur, wo es etwas umzuschalten gibt (Laden,
+Einträge), nicht im Fehler- und Leerzustand. Je Abschnitt eine Tabelle aus core wie die Liste der Ad Library:
+`UC.makeColumns` mit `scrollen` (nie fällt eine Spalte weg, zu eng scrollt der Kasten waagerecht, die erste Spalte
+steht -- so auch am Telefon), je Spalte eine `art`, Table Settings (Spalten, Zeilenhöhe Default 55 / Compact 34)
+als letzter Knopf der Leiste des Abschnitts, nur in der Liste. Spalten = was die Karte der Art zeigt: Event
+Tracking Name (Logo-Kachel mit dem Zeichen in der Farbe des Events, Beschreibung als leise zweite Zeile, Compact
+ohne), Event date, Type (leise Marke), Status, Topics (Kopfzeichen `tags` wie der Topics-Filter), Prompts, Tracking;
+Citation Tracking Name, Tracking (mit den Favicons der Karte), Prompts, Created. Sortierköpfe nur für die Felder des
+Menüs "Sort" (Name, Event date, Created), derselbe Stand. Ein Klick oder Enter auf der Zeile öffnet wie die Karte,
+das Menü "…" der Karte steht am Ende der ersten Zelle beim Überfahren. Keine Gesamtzeile und keine Seiten: die Zahl
+steht im Kopf des Abschnitts, die Liste kommt ganz wie die Karten. Jeder Abschnitt trägt eine eigene
+`data-instance` (`<instanz>_event`, `_watch`): core merkt sich Zahlenspalten je Instanz und Spaltenklasse.
 
 Die Maße stehen noch in beiden Dateien (`.upa-start*`, `.uev-start*`), weil core in der Runde vom
 22.10. nicht angefasst wurde; Prompt Research baut dasselbe. Ein gemeinsamer Baustein in core ist offen.
@@ -2340,6 +2365,20 @@ Sitemap       Eigener Abschnitt direkt unter der URL-Tabelle jeder Regel (.uev-a
               None is on weareholy.com." mit dem Knopf "Add de.holy.com" (öffnet "Add to tracking"
               mit der Domain im Feld). Band: das Zeitraum-Band der Charts nur mit cfg.markerBand
               (events.js, beide Charts des Details); in allen anderen Charts bleibt der Pin.
+Page Audit    (22.10. abends) Die Angabe zum Audit einer URL ist die leise Marke aus core
+in Zeilen     (.up-marke.is-leise, 20 hoch, 11/600) mit Zeichen 12 in der Farbe der Bedeutung, 4
+              Abstand -- ein Link ins Audit. 12 vor ihr: in Cited URLs nach dem Host (.uev-url-unter
+              gap), in der Sitemap 10 der Zeile + 2 an der Marke. "Run audit" (.up-rowbtn) in der
+              Sitemap direkt hinter dem Pfad, ohne Hover und Fokus display: none (kein Platz),
+              beim Hover nimmt er Platz vom Pfad (flex 1); Marken und Angaben rechts bleiben,
+              keine andere Zeile bewegt sich (gemessen: vorher 90 px je Zeile reserviert).
+              Tastatur: mit dem Fokus in der Zeile ist er da und der nächste Tab-Halt.
+Höhe des      URL Share 64 höher (284 statt 220), 200 ms ease. Kasten und Chart als EINE Bewegung:
+Ziel-Charts   ein ResizeObserver am Kasten (nicht requestAnimationFrame, das liest die Höhe des
+              letzten Bilds) ruft je Größe stop(), render(), resize(), update("none") -- Leinwand
+              und Layout im selben Bild wie der Kasten; ohne das blieb die x-Achse 200 ms stehen
+              und sprang 120 ms nach dem Ende (resizeDelay) um 64 px. Linien eines Moduswechsels
+              stehen während der 200 ms gleich fertig da.
 ```
 
 ### Sticky Table-Header (nur wenn die Komponente direkt injiziert ist)

@@ -980,18 +980,59 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 /* 32 wie zwischen allen Abschnitten (CLAUDE.md 1d, Gaps 20.10.) und wie vom Startbereich zum ersten Abschnitt; bis 22.10. 40. */
 .uev-abschnitt:not([hidden]) ~ .uev-abschnitt:not([hidden]) { margin-top: 32px; }
 
+/* ---- DIE LISTE DER UEBERSICHT (22.10., events.js "DIE LISTE") ----
+   Tabelle aus core (.up-box, .up-thead, .up-row, .up-colscroll wie die Liste der Ad Library); hier nur Hoehen und die erste Zelle.
+   Table Settings stehen nur in der Liste (in den Karten gibt es keine Spalten, wie im Raster der Ad Library). */
+.uev-root:not(.is-liste) .uev-cols { display: none; }
+/* Am Telefon passt mit dem Zahnrad die Leiste des Event Tracking nicht mehr neben die Ueberschrift (gemessen 375: Zahnrad bei 376-408,
+   ausserhalb des Bilds): sie bricht dann in eine eigene Zeile, rechtsbuendig, wie core die Leiste bei is-vnarrow stellt
+   (.up-root[data-leiste="yes"].is-vnarrow .up-head-tools). Nur wenn es nicht passt -- passt es, bleibt die Zeile eine. */
+.uev-root.is-vnarrow.is-liste .uev-head { height: auto; min-height: 32px; flex-wrap: wrap; row-gap: 8px; }
+/* Zeilenhoehe wie Brands, Merchants und Page Audit (page-audit.css .upa-zeile): Default 55 (--up-h-row), Compact 34. Die Kette schlaegt
+   .up-row aus core (72). */
+.uev-tabbox .up-row:is(.uev-tzeile, .up-tsk) { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }
+.uev-abschnitt.is-dense .uev-tabbox .up-row:is(.uev-tzeile, .up-tsk) { height: 34px; flex: 0 0 34px; }
+/* Erste Zelle wie Page Audit (.upa-seite): Logo-Kachel, daneben Name (.up-zeilenname) und die Beschreibung der Karte als leise zweite
+   Zeile; Compact einzeilig ohne sie. */
+.uev-tabbox .up-td-name { gap: 10px; }
+.uev-tz-name { display: flex; flex: 1 1 auto; flex-direction: column; gap: 2px; min-width: 0; }
+.uev-tz-text { min-width: 0; font-size: var(--up-fs-s); color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.uev-abschnitt.is-dense .uev-tz-text { display: none; }
+/* Das Zeichen des Events in seiner Farbe wie das Profilbild der Karte (.uev-avatar); ohne Farbe die Tinte der Logo-Kachel. */
+.uev-tlogo .up-logo-zeichen { color: var(--uev-ton, var(--vt-logo-ink, var(--vc-muted))); }
+.uev-tz-wert { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.uev-tz-leer { color: var(--vc-third); }
+.uev-tz-ziele { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.uev-tz-ziele > .uev-tz-wert { flex: 0 1 auto; }
+.uev-tabbox .uev-status { min-width: 0; color: var(--vc-third); }
+.uev-tabbox .uev-status > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Das Menue der Karte ("…", Edit und Delete) am Ende der ersten Zelle, sichtbar beim Ueberfahren der Zeile, mit Fokus oder offen wie
+   auf der Karte (.uev-karte > .uev-mehr); ohne Zeiger immer. */
+.uev-tzeile .uev-mehr { margin-left: auto; opacity: 0; transition: opacity var(--up-t-1) var(--up-ease); }
+.uev-tzeile:is(:hover, :focus-within) .uev-mehr, .uev-tzeile .uev-mehr.is-open { opacity: 1; }
+@media (hover: none) { .uev-tzeile .uev-mehr { opacity: 1; } }
+
 /* ---- STARTBEREICH DER UEBERSICHT (22.10.) ----
    Masse aus page-audit.css (.upa-start, .upa-start-text; CLAUDE.md 1b "dieselben Zahlen"): zwei Spalten, 16 Abstand; links Titel
-   20/26/600/-0.4 und Satz 14/20 (das Paar aus Titel und Untertitel eines Popups), senkrecht mittig, hoechstens 520 breit; rechts die
+   20/26/600/-0.4 und Satz 14/20 (das Paar aus Titel und Untertitel eines Popups), oben (seit 22.10. abends, siehe unten), hoechstens 520 breit; rechts die
    Grafik. Seit 22.10. abends ohne Karte (Lukas: "nur heading + description links, chart grafik rechts") und mit einem Trenner zu den
    Abschnitten darunter, "mit gleichem gap drueber wie drunter": 32 ueber und 32 unter der Linie, der Abstand zwischen Abschnitten
    (CLAUDE.md 1d, Gaps). Die Linie traegt der Startbereich selbst (padding + border), so steht sie in jedem Zustand darunter --
    beide Abschnitte, nur einer, Leer-, Fehler- oder Ladezustand. Hier noch als Kopie von Page Audit, weil core in dieser Runde nicht
    angefasst wird; der gemeinsame Baustein ist in der Uebergabe benannt. */
-/* Oben 16 zu den 16 unter dem Seitenkopf (.uev-pagehead): der Inhalt steht mit 32 zwischen der Linie des Kopfs und dem Trenner, oben wie
+/* Oben 16 zu den 16 unter dem Seitenkopf (.uev-pagehead): die Grafik steht mit 32 zwischen der Linie des Kopfs und dem Trenner, oben wie
    unten gleich. Ohne die 16 sass der hervorgehobene Pin 16 unter der Kopflinie, aber 32 ueber dem Trenner (gemessen 22.10.). */
+/* OBEN STATT MITTIG (22.10. abends, Lukas: "eher top aligned ... Ich mag sehr, wo die Heading bei Technical Page Audit platziert ist"):
+   die Ueberschrift steht wie die von Page Audit 47 unter der Linie des Kopfs -- dort 16 Abstand plus (112 - 50) / 2, die Mitte der
+   112 hohen Zeile mit Titel 26, Luecke 4 und einer Zeile Satz 20. Hier 16 Abstand, 16 Polster des Startbereichs und 15 Polster des
+   Texts. Oben angeschlagen statt mittig: der Satz von Impact bricht schon bei 1440 um (zwei Zeilen), mittig stuende die Ueberschrift
+   damit hoeher als die von Page Audit; so waechst der Text nach unten, und der Umschalter darunter steht auf festem Platz. Links 2 wie
+   dort. Die Grafik bleibt, wo sie war (32 unter der Linie, 32 ueber dem Trenner). */
 .uev-start { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0 0 32px; padding: 16px 0 32px; border-bottom: 1px solid var(--vc-border); }
-.uev-start-text { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; min-height: 112px; max-width: 520px; padding: 0 0 0 2px; }
+.uev-start-text { grid-column: 1; grid-row: 1; align-self: start; display: flex; flex-direction: column; justify-content: flex-start; gap: 4px; max-width: 520px; padding: 15px 0 0 2px; }
+/* Der Umschalter Karten/Liste unter dem Satz: 16 Abstand wie zwischen Text und Karte in Page Audit (Luecke 4 plus 12). */
+.uev-start-text > .uev-ansicht { align-self: flex-start; margin-top: 12px; }
+.uev-start-text > .uev-ansicht[hidden] { display: none; }
 .uev-start-text .up-heading, .uev-start-text .up-sec-sub { margin: 0; }
 .uev-start-text .up-heading.up-sec-h { font-size: var(--up-fs-modaltitel); line-height: 26px; letter-spacing: -0.4px; white-space: normal; }
 .uev-start-text .up-sec-sub { font-size: var(--up-fs-l); line-height: 20px; }
@@ -999,7 +1040,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    Pins (y 70) bis zum Ende der langen Ticks (y 258), also 188. So endet der Startbereich an der letzten sichtbaren Linie, und die 32 ueber
    dem Trenner sind wirklich 32 (mit der Hoehe der fruehren Karte und oben und unten 12 % Maske standen unter den Ticks noch rund 70 leer).
    Oben und unten darum keine Maske mehr, seitlich wie das Fensterfeld von Page Audit 22 %. Linien in der Textfarbe, Pins in Rahmen und
-   Flaeche der Fenster dort (--vc-border, --vc-bg, --up-e-1). Der Text daneben steht in derselben Hoehe mittig. */
+   Flaeche der Fenster dort (--vc-border, --vc-bg, --up-e-1). Der Text daneben steht oben (.uev-start-text). */
 .uev-startgrafik { grid-column: 2; grid-row: 1; position: relative; height: 188px; overflow: hidden; color: var(--vc-text);
   -webkit-mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent);
   mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent); }
@@ -1019,7 +1060,8 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 /* Schmal: die Grafik weicht, der Text steht allein ueber dem Trenner (Page Audit dasselbe bei is-narrow). */
 .uev-root.is-narrow .uev-start { grid-template-columns: minmax(0, 1fr); }
 .uev-root.is-narrow .uev-startgrafik { display: none; }
-.uev-root.is-narrow .uev-start-text { min-height: 0; }
+/* Allein ueber dem Trenner ohne Polster: 32 von der Linie des Kopfs wie vorher, unten wie oben. */
+.uev-root.is-narrow .uev-start-text { padding-top: 0; }
 /* Der Auswahldialog "Create": die Karten sind seit dem 22.10. der Baustein aus core (UC.wkKarteHtml, .up-wk -- Masse und Begruendung
    stehen dort); hier stand bis dahin dieselbe Regel als .uev-wk. */
 /* Citation Tracking im Detail (19.10.): ohne Marken-Teile. Ausgeblendet wird wie im Modus "nur Zitierungen" (is-band-aus), dazu Hinweise,
@@ -1072,17 +1114,19 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-pa-start.is-busy { opacity: 1; pointer-events: none; }
 .uev-pa-start .up-btn-spin { width: 13px; height: 13px; border-width: 1.5px; }
 .uev-pa-start.is-busy > svg { display: none; }
-/* Die Angabe: Zeichen und Text in der leisen Schrift der Angaben rechts (.uev-abd-datum, 12), ein Link wie der Pfad der Sitemap
-   (.uev-abd-link: unterstrichen erst beim Ueberfahren). Keine Pille, kein Punkt. Das Zeichen traegt die Farbe der Bedeutung aus
-   UC.pageAuditStatus (ton pos, neg, warn, leise) wie die Zustandsangabe der Seite Page Audit (.upa-zustand), laufend dreht es mit
-   derselben Bewegung (upModalDreh aus core); der Text bleibt leise -- Page Audit hat keinen Score. Sie weicht nicht vor Pfad und Host
-   (die kuerzen zuerst), und erst wenn sie allein nicht mehr in die Zeile passt, kuerzt sie mit "…". */
-.uev-pa-angabe { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; max-width: 100%; min-width: 0; font-size: var(--up-fs-s); color: var(--vc-third);
-  text-decoration: none; white-space: nowrap; font-variant-numeric: tabular-nums; border-radius: var(--up-r-xs); }
+/* Die Angabe als leise Marke aus core (.up-marke.is-leise, 22.10. abends, Lukas: "pack den bitte aber in einen kleinen Chip"): Hoehe 20,
+   Polster 7, Radius, Schrift 11/600 und Flaeche kommen von dort, wie die Marken der Seite Page Audit (.upa-marke) und "First cited" in
+   derselben Tabelle. Hier nur, was die Marke nicht kennt: das Zeichen davor, nach der Schrift der Marke eine Stufe kleiner als vorher
+   (13 bei 12 -> 12 bei 11) und 4 Abstand. Ein Link wie der Pfad der Sitemap (unterstrichen erst beim Ueberfahren). Das Zeichen traegt die
+   Farbe der Bedeutung aus UC.pageAuditStatus (ton pos, neg, warn, leise) wie die Zustandsangabe der Seite Page Audit (.upa-zustand),
+   laufend dreht es mit derselben Bewegung (upModalDreh aus core); der Text bleibt leise -- Page Audit hat keinen Score. Sie weicht nicht
+   vor Pfad und Host (die kuerzen zuerst), und erst wenn sie allein nicht mehr in die Zeile passt, kuerzt sie mit "…". */
+.uev-pa-angabe { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; max-width: 100%; min-width: 0;
+  text-decoration: none; font-variant-numeric: tabular-nums; }
 .uev-pa-angabe[hidden] { display: none; }
 .uev-pa-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .uev-pa-ic { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
-.uev-pa-ic svg { width: 13px; height: 13px; display: block; }
+.uev-pa-ic svg { width: 12px; height: 12px; display: block; }
 .uev-pa-angabe.is-pos .uev-pa-ic { color: var(--vt-up); }
 .uev-pa-angabe.is-neg .uev-pa-ic { color: var(--vt-down); }
 .uev-pa-angabe.is-warn .uev-pa-ic { color: var(--vc-warn); }
@@ -1090,31 +1134,36 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 @media (prefers-reduced-motion: reduce) { .uev-pa-angabe.is-dreht .uev-pa-ic svg { animation: none; } }
 .uev-pa-angabe:hover { color: var(--vc-text); text-decoration: underline; }
 .uev-pa-angabe:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: 2px; }
-/* Cited URLs: die Angabe in der leisen zweiten Zeile hinter dem Host. Wird es eng, kuerzt zuerst der Host (er steht in jeder Zeile gleich);
-   reicht die Zeile nicht fuer beide (unter 220, gemessen: Host 84 + 8 + Angabe mit Zeichen 113), weicht er in Zeilen mit Audit ganz -- sonst stuende
-   vor der Angabe eine Luecke, wo der Host auf null gekuerzt ist (gesehen bei 768 Breite). Gemessen wird die Zeile selbst (Container),
-   nicht das Fenster: die erste Spalte ist schon bei 850 Breite auf ihrem Minimum. Dafuer fuellt der Text die Zelle bis zum Zeilenknopf. */
+/* Cited URLs: die Marke in der leisen zweiten Zeile hinter dem Host, 12 Abstand (bis 22.10. abends 8; Lukas: "das Gap minimal groesser ...
+   zwischen Domain und Anfang des Chips"). Wird es eng, kuerzt zuerst der Host (er steht in jeder Zeile gleich); reicht die Zeile nicht
+   fuer beide (unter 220, gemessen 22.10. abends: Host 84 + 12 + Marke "Reachable 5 of 7" mit Zeichen 122 = 218), weicht er in Zeilen mit
+   Audit ganz -- sonst stuende vor der Marke eine Luecke, wo der Host auf null gekuerzt ist (gesehen bei 768 Breite). Gemessen wird die
+   Zeile selbst (Container), nicht das Fenster: die erste Spalte ist schon bei 850 Breite auf ihrem Minimum. Dafuer fuellt der Text die
+   Zelle bis zum Zeilenknopf. */
 .uev-zielurls .uev-url-txt { flex: 1 1 auto; }
-.uev-url-unter { display: flex; align-items: center; gap: 8px; min-width: 0; container: uev-url-unter / inline-size; }
+/* Mindestens so hoch wie die Marke (20): sonst war die zweite Zeile mit Marke 4 hoeher als ohne, und der Pfad stand in Zeilen mit Audit
+   2 px hoeher als in den anderen (gemessen 39 gegen 35). */
+.uev-url-unter { display: flex; align-items: center; gap: 12px; min-width: 0; min-height: 20px; container: uev-url-unter / inline-size; }
 .uev-url-unter > .uev-url-host { flex: 0 1 auto; min-width: 0; }
 @container uev-url-unter (max-width: 219px) {
   .uev-url-unter:has(> a.uev-pa-angabe) > .uev-url-host { display: none; }
 }
-/* Sitemap: Tausch nach der Hausregel. Die Angabe rechts (Zahl der Zitate, Datum) und der Knopf liegen in DERSELBEN Rasterzelle, rechtsbuendig;
-   am Hover der Zeile weicht die Angabe und der Knopf steht an ihrer Stelle -- nie darueber, nie eine eigene Spalte. Die Zelle ist so breit
-   wie das Breitere von beiden, die Angabe zum Audit links daneben steht darum in allen Zeilen eines Reiters auf derselben Linie. */
-.uev-pa-tausch { display: grid; align-items: center; justify-items: end; flex: 0 0 auto; }
-/* Ohne die Funktionen (kein has-pa) ist der Behaelter nicht da: die Angabe rechts steht wie vorher als Kind der Zeile -- ein leerer Behaelter
-   kostete in Zeilen ohne Angabe die Luecke der Zeile (10, gemessen gegen die alte Fassung). */
-.uev-root:not(.has-pa) .uev-pa-tausch { display: contents; }
-.uev-pa-tausch > * { grid-area: 1 / 1; }
-.uev-pa-tausch > .up-rowbtn { margin-left: 0; }
-.uev-abd-seite:hover .uev-pa-tausch > .up-rowbtn { opacity: 1; pointer-events: auto; }
-.uev-root.has-pa:not(.is-vnarrow) .uev-abd-seite:hover .uev-pa-tausch > .uev-abd-datum,
-.uev-root.has-pa:not(.is-vnarrow) .uev-pa-tausch:focus-within > .uev-abd-datum,
-.uev-root.has-pa:not(.is-vnarrow) .uev-pa-tausch:has(> .is-busy) > .uev-abd-datum { visibility: hidden; }
-/* Beruehrung (kein Hover): Angabe und Knopf stehen beide, nebeneinander (Hausregel); der Knopf in Cited URLs ebenso. */
+/* Sitemap: dieselben 12 vor der Marke -- die Zeile hat 10 zwischen ihren Teilen (.uev-abd-seite), die Marke 2 dazu. */
+.uev-abd-seite > .uev-pa-angabe { margin-left: 2px; }
+/* SITEMAP: RUN AUDIT HINTER DEM PFAD (22.10. abends, Lukas: "der 'Run Audit'-Button, der nur on hover kommt (was gut ist), dafuer ist der
+   Platz in der Row jeweils schon reserviert ... meist einfach frei"). Bis dahin lag er mit der Angabe rechts in EINER Rasterzelle
+   (.uev-pa-tausch), so breit wie der Knopf -- in jeder Zeile stand rechts eine leere Flaeche in Knopfbreite, und Marken und Angaben
+   rueckten um sie nach links. Jetzt ist er ohne Hover und Fokus nicht da (display, kein Platz) und steht beim Hover direkt hinter dem Pfad:
+   den Platz gibt der Pfad, der als einziger Teil der Zeile waechst (flex 1) und sonst leer bis zur ersten Marke reicht. Marken, die
+   Marke zum Audit (ein Link, den man beim Hover erreichen muss) und die Angabe rechts bleiben stehen; keine andere Zeile bewegt sich (die
+   Zeile ist 40 hoch, der Knopf 24). Wie in Cited URLs, wo er am Ende der Adresse steht. Tastatur: mit dem Fokus in der Zeile (Zeile,
+   Link des Pfads) ist er da und der naechste Tab-Halt. Am Telefon (is-vnarrow) nimmt ihn core ganz weg (.up-rowbtn), wie bisher. */
+.uev-abd-seite > .uev-pa-start { display: none; margin-left: 0; }
+.uev-root.has-pa:not(.is-vnarrow) .uev-abd-seite:is(:hover, :focus-within) > .uev-pa-start { display: inline-flex; opacity: 1; pointer-events: auto; }
+/* Waehrend des Startens bleibt er stehen, auch ohne Hover, und nimmt keinen zweiten Klick (.uev-pa-start.is-busy oben). */
+.uev-root.has-pa:not(.is-vnarrow) .uev-abd-seite > .uev-pa-start.is-busy { display: inline-flex; pointer-events: none; }
+/* Beruehrung (kein Hover): der Knopf steht immer (Hausregel), in der Sitemap hinter dem Pfad, in Cited URLs am Ende der Adresse. */
 @media (hover: none) {
-  .uev-root.has-pa .uev-pa-tausch { display: flex; gap: 8px; }
+  .uev-root.has-pa:not(.is-vnarrow) .uev-abd-seite > .uev-pa-start { display: inline-flex; }
   .uev-root.has-pa .uev-pa-start { opacity: 1; pointer-events: auto; }
 }
