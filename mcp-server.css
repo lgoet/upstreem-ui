@@ -28,15 +28,10 @@
    eine Spalte mit den KI-Apps (vorher ein Faecher: "der Strich geht von links rein und der Fan ist nach
    oben gebeugt"). Ohne Zahl und Wort. Kacheln wie die Pins der Impact-Grafik (32 bzw. hier 28, Rahmen, e-1), der Knoten
    wie das hervorgehobene Fenster in Page Audit (Rahmen Schrift zu 45 %). Links laeuft das Feld per Maske
-   aus (Deckkraft, keine Themenfarbe), dahinter das Punktmuster der Landing-Karten (.upr-blasen-muster). */
+   aus (Deckkraft, keine Themenfarbe). Ohne Punktmuster dahinter (Lukas 23.10.: "das dottet pattern hinter der grafik ... weg"). */
 .umc-grafik { grid-column: 2; grid-row: 1; position: relative; height: 188px; overflow: hidden; min-width: 0;
   --umc-linie: color-mix(in srgb, var(--vc-text) 20%, transparent);
   --umc-linie-hl: color-mix(in srgb, var(--vc-text) 45%, transparent); }
-.umc-sg-muster { position: absolute; inset: 0; pointer-events: none;
-  background-image: radial-gradient(circle, color-mix(in srgb, var(--vc-text) 14%, transparent) 1px, transparent 1px);
-  background-size: 8px 8px;
-  -webkit-mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 45%, transparent 100%);
-  mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 45%, transparent 100%); }
 /* 480 breit und mittig: links 16 bis rechts 464 gezeichnet, der linke Rand laeuft ohnehin per Maske aus. */
 .umc-sg-feld { position: absolute; left: 50%; top: 0; width: 480px; height: 188px; margin-left: -240px;
   -webkit-mask-image: linear-gradient(to right, transparent 0, #000 120px);
@@ -170,3 +165,14 @@
 /* Die Liste kam nicht: ein roter Satz ohne Kasten (Memory "Fehler ohne Kasten") und "Try again". */
 .umc-fehler { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px; }
 .umc-fehler-satz { margin: 0; font-size: var(--up-fs-l); line-height: 20px; color: var(--vt-down); }
+/* "Refresh" im Kopf der Liste: Knopf aus core (32 hoch), Zeichen 14 wie im Segmentknopf; laeuft die Anfrage, steht der
+   Ring aus core an Stelle des Zeichens. Die Tabelle darunter dimmt wie beim Widerruf (.is-umc-busy). */
+.umc-neu { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.umc-neu .umc-neu-ic, .umc-neu .umc-ring { display: inline-flex; }
+.umc-neu .umc-neu-ic svg { width: 14px; height: 14px; display: block; }
+.umc-neu .umc-ring { display: none; }
+.umc-neu[aria-busy="true"] .umc-neu-ic { display: none; }
+.umc-neu[aria-busy="true"] .umc-ring { display: inline-flex; }
+.umc-neu[aria-disabled="true"], .umc-neu[aria-disabled="true"]:hover { cursor: default; }
+.umc-apps [data-umc-apps] .up-table { transition: opacity var(--up-t-2) var(--up-ease); }
+.umc-apps [data-umc-apps].is-umc-dimm .up-table { opacity: .5; pointer-events: none; }

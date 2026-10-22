@@ -17,6 +17,9 @@
      laden    bis die erste Antwort da ist: Skelett aus zwei Zeilen, gibt nach LADEN_MAX auf
      da       Tabelle, oder der Leerzustand aus core, wenn nichts verbunden ist
      fehler   der Satz aus der App und "Try again"
+   "Refresh" im Kopf der Liste (Lukas 23.10.: "ein update button ... der einfach diese tabelle unten updated") fragt neu:
+   mit Daten dimmt die Tabelle, bis die Antwort da ist (Memory "Dimmen statt Skelett"), ohne Daten das Skelett;
+   scheitert es, der Fehlerzustand. Beschriftung wie die uebrigen Knoepfe zum Neuladen ("Refresh", Impact).
    Anleitung und Zugriff stehen sofort (sie haengen nicht an der Antwort); nur die Client ID wartet auf
    die App und steht bis dahin als Skelett im Kasten.
 
@@ -74,6 +77,7 @@
     leerS:       "Apps you connect to upstreem show up here.",
     laedtNicht:  "We could not load your connected apps.",
     nochmal:     "Try again",
+    neu:         "Refresh",
     fragTitel:   "Revoke Access",
     fragSatz:    "{name} will no longer be able to read your upstreem data. You can connect it again at any time.",
     fragKnopf:   "Revoke Access",
@@ -147,7 +151,6 @@
           '<img src="' + esc(UC.modelLogoUrl ? UC.modelLogoUrl(k, logoVon(k), false) : logoVon(k)) + '" alt=""></span>';
       }
       return '<div class="umc-grafik" aria-hidden="true">' +
-        '<div class="umc-sg-muster"></div>' +
         '<div class="umc-sg-feld">' +
           '<svg class="umc-sg-linien" width="480" height="188" viewBox="0 0 480 188">' +
             '<path d="' + ys.map(function(y){ return "M44 " + y + "H64"; }).join("") + '"></path>' +
@@ -192,7 +195,13 @@
             '</div>' +
           '</section>' +
           '<section class="umc-abschnitt umc-apps">' +
-            '<div class="up-sec-head"><div class="up-sec-titles"><h2 class="up-heading up-sec-h">' + esc(t(T.apps)) + '</h2></div></div>' +
+            '<div class="up-sec-head"><div class="up-sec-titles"><h2 class="up-heading up-sec-h">' + esc(t(T.apps)) + '</h2></div>' +
+              /* Sekundaerer Knopf aus core, rechts und mittig zur Ueberschrift (.up-sec-head ist flex, align-items center). */
+              '<button type="button" class="up-btn-sec umc-neu" data-umc-neu aria-busy="false" aria-disabled="false">' +
+                '<span class="umc-neu-ic" aria-hidden="true">' + ic("refreshCw", 2) + '</span>' +
+                '<span class="umc-ring" aria-hidden="true">' + (UC.ringHtml ? UC.ringHtml(14) : "") + '</span>' +
+                '<span>' + esc(t(T.neu)) + '</span></button>' +
+            '</div>' +
             '<div class="up-box" data-umc-apps></div>' +
           '</section>' +
         '</div>';
@@ -213,6 +222,9 @@
     root.innerHTML = shell();
     var elSchritte = root.querySelector("[data-umc-schritte]");
     var elApps = root.querySelector("[data-umc-apps]");
+    var elNeu = root.querySelector("[data-umc-neu]");
+    /* Ein Neuaufbau (Thema) verliert die Uhr einer laufenden Anfrage: nie gedimmt ohne Uhr stehen bleiben. */
+    gem.neu = false;
     var tips = UC.makeTooltips ? UC.makeTooltips(root, istDunkel) : null;
     if (UC.widthTiers) UC.widthTiers(root);
     if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "mcpServer", name: T.titel, komponente: true });
@@ -352,6 +364,21 @@
     function appsZeichnen(){
       var html = appsHtml();
       if (elApps.__umcHtml !== html){ elApps.__umcHtml = html; elApps.innerHTML = html; }
+      /* Neu laden mit Daten: die Tabelle bleibt stehen und dimmt; der Knopf traegt den Ring, solange gefragt wird. */
+      var laeuft = !!gem.neu || gem.phase === "laden";
+      elApps.classList.toggle("is-umc-dimm", !!gem.neu);
+      elApps.setAttribute("aria-busy", laeuft ? "true" : "false");
+      if (elNeu){
+        elNeu.setAttribute("aria-busy", laeuft ? "true" : "false");
+        elNeu.setAttribute("aria-disabled", laeuft ? "true" : "false");
+      }
+    }
+    function neuLaden(){
+      if (gem.neu || gem.phase === "laden") return;
+      if (gem.phase === "da" && gem.daten) gem.neu = true;
+      else { gem.phase = "laden"; gem.fehler = ""; }
+      appsZeichnen();
+      laden();
     }
 
     function render(){ anleitungZeichnen(); appsZeichnen(); }
@@ -362,8 +389,9 @@
       if (uhrLaden) clearTimeout(uhrLaden);
       uhrLaden = setTimeout(function(){
         uhrLaden = null;
-        if (gem.phase !== "laden") return;
-        gem.phase = "fehler"; gem.fehler = T.laedtNicht;
+        /* Auch ein Neuladen mit stehender Tabelle endet: sonst bliebe sie gedimmt stehen. */
+        if (gem.phase !== "laden" && !gem.neu) return;
+        gem.phase = "fehler"; gem.fehler = T.laedtNicht; gem.neu = false;
         render();
       }, LADEN_MAX);
       fire("data-laden-fn", "umcLaden", {});
@@ -397,7 +425,7 @@
     }
 
     root.addEventListener("click", function(e){
-      var el = e.target && e.target.closest ? e.target.closest("[data-umc-reiter], [data-umc-kopie], [data-umc-widerruf], [data-umc-nochmal]") : null;
+      var el = e.target && e.target.closest ? e.target.closest("[data-umc-reiter], [data-umc-kopie], [data-umc-widerruf], [data-umc-nochmal], [data-umc-neu]") : null;
       if (!el || !root.contains(el)) return;
       if (el.hasAttribute("data-umc-reiter")){
         var r = el.getAttribute("data-umc-reiter");
@@ -417,6 +445,11 @@
       }
       if (el.hasAttribute("data-umc-nochmal")){
         gem.phase = "laden"; gem.fehler = ""; appsZeichnen(); laden();
+        return;
+      }
+      if (el.hasAttribute("data-umc-neu")){
+        if (el.getAttribute("aria-disabled") === "true") return;
+        neuLaden();
       }
     });
 
@@ -438,6 +471,7 @@
         if (uhrKnopf){ clearTimeout(uhrKnopf); uhrKnopf = null; }
         var warBusy = Object.keys(busy).filter(function(k){ return busy[k]; });
         busy = {};
+        gem.neu = false;
         if (!p){
           gem.phase = "fehler"; gem.fehler = T.laedtNicht;
         } else {
@@ -466,7 +500,7 @@
         if (uhrLaden){ clearTimeout(uhrLaden); uhrLaden = null; }
         if (uhrKnopf){ clearTimeout(uhrKnopf); uhrKnopf = null; }
         busy = {};
-        gem.phase = "laden"; gem.daten = null; gem.fehler = "";
+        gem.phase = "laden"; gem.daten = null; gem.fehler = ""; gem.neu = false;
         render(); laden();
         return true;
       },
