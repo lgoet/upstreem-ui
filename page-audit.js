@@ -1014,14 +1014,30 @@
 
     var elTable = elListe.querySelector("[data-table]");
     var elSuche = elListe.querySelector(".upa-suche"), elSucheIn = elListe.querySelector(".up-search-input");
-    var lst = { query: L.query, page: L.page, pageSize: L.pageSize, sortField: L.sort, sortDir: L.dir, loading: false, cols: {}, widths: {} };
+    var lst = { query: L.query, page: L.page, pageSize: L.pageSize, sortField: L.sort, sortDir: L.dir, loading: false, cols: {}, widths: {},
+                dense: false, rowHeight: "default" };
     UC.widthTiers(elListe);
+
+    /* ZEILENHOEHE wie in Brands und Merchants (22.10., Lukas): Default 55 (--up-h-row), Compact 34 (page-audit.css), im
+       Zahnrad ueber den Weg aus core (makeColumns rowHeightSwitch, oben im Menue "Row height"). Gemerkt je Instanz im
+       Browser wie dort (ush_dense__...); Klick im Menue unten bei elColsMenu. */
+    var HOEHEN = [{ key: "default", label: "Default" }, { key: "compact", label: "Compact" }];
+    var DICHTE_SCHL = "upa_dense__" + instanceId;
+    try { lst.dense = window.localStorage.getItem(DICHTE_SCHL) === "1"; } catch (x) {}
+    lst.rowHeight = lst.dense ? "compact" : "default";
+    elListe.classList.toggle("is-dense", lst.dense);
+    function dichteSetzen(an) {
+      lst.dense = !!an; lst.rowHeight = an ? "compact" : "default";
+      try { window.localStorage.setItem(DICHTE_SCHL, an ? "1" : "0"); } catch (x) {}
+      elListe.classList.toggle("is-dense", !!an);
+      kleben();
+    }
 
     var colsKit = UC.makeColumns({
       root: elListe, state: lst, columns: SPALTEN, storePrefix: "upa", instanceId: instanceId,
       /* firstShare 0.24 statt der 30 % aus core: die Seite ist eine Adresse, keine Ueberschrift --
          bei 1158 (1440 mit Seitenleiste) wich mit 30 % schon "Last audit". */
-      firstKey: "page", firstMin: 260, firstShare: 0.24, noActions: true,
+      firstKey: "page", firstMin: 260, firstShare: 0.24, noActions: true, rowHeightSwitch: HOEHEN,
       badgeSel: ".upa-cols-badge", cellPrefixes: ["up", "upa", "up-sum"],
       nachspann: function () { return zaehl ? zaehl.schalter() : null; },
       onChange: function () { tabelleZeichnen(); }
@@ -1032,6 +1048,8 @@
     var colsPop = UC.makePopover({ wrap: elListe.querySelector(".up-cols"), menu: elColsMenu, opener: elListe.querySelector(".up-cols-btn"), group: "upa-" + instanceId });
     elColsMenu.addEventListener("click", function (e) {
       if (e.target.closest("[data-colsall]")) { colsKit.selectAllCols(); colsKit.populateCols(); return; }
+      var rh = e.target.closest("[data-rowheight]");
+      if (rh) { dichteSetzen(rh.getAttribute("data-rowheight") === "compact"); colsKit.populateCols(); return; }
       var row = e.target.closest("[data-col]");
       if (!row) return;
       colsKit.toggleCol(row.getAttribute("data-col")); colsKit.populateCols();
@@ -1106,6 +1124,9 @@
       if (z && e.target === z) { e.preventDefault(); detailOeffnen(z.getAttribute("data-page-id"), "", true); }
     });
 
+    /* Compact stellt die zweite Zeile neben die erste, dort kuerzt sie ("Last r…", gemessen 22.10. bei 1440: 38 von 107 px):
+       der volle Satz im Tooltip, nur wenn er wirklich gekuerzt ist (UC.makeClipTip wie die Prompt-Spalten). */
+    if (tips && UC.makeClipTip) UC.makeClipTip(elListe, tips, ".upa-z2");
     if (elStart) elStart.addEventListener("click", function (e) { if (e.target.closest("[data-upa-anlegen]")) anlegenOeffnen(); });
     /* Der Lauf-Kasten steht ausserhalb von .upa-detail, darum ein eigener Hoerer. */
     if (elLb) elLb.addEventListener("click", function (e) {
@@ -1206,7 +1227,11 @@
            vorige); ohne Ergebnis steht der Status schon links, hier dann seine Startzeit. */
         if (laeuft && re) return laufStatusHtml(la);
         if (laeuft) return '<span class="upa-zweizeilig"><span class="upa-z1">' + esc(wann(la.acceptedAt)) + '</span></span>';
-        var wa = re && re.finishedAt ? re.finishedAt : (la ? (la.finishedAt || la.acceptedAt) : "");
+        /* Das Datum des NEUESTEN Laufs, und zwar seine Annahme (accepted_at): genau danach sortiert die Liste
+           (list_page_audits_v1, last_run = latest.accepted_at), und so steht er auch in Runs. Vorher stand hier das Ende
+           des letzten Ergebnisses -- eine Zeile mit abgebrochenem neuem Lauf zeigte "12. Aug 2026" und stand ueber
+           "20. Oct 2026" (gemessen 22.10., example.org; Lukas: das Datum, nach dem sortiert wird). */
+        var wa = la ? la.acceptedAt : (re ? re.finishedAt : "");
         var spaeter = la && re && la.runId !== re.runId ? la.status : "";
         /* Lief der letzte Lauf ins Leere (failed, cancelled, skipped), steht das daneben: das
            Ergebnis links ist dann das vorige. */
@@ -1317,8 +1342,59 @@
       return '<span class="upa-kontingent' + (q.remaining <= 0 ? " is-voll" : "") + '" tabindex="0" data-tip="' + esc(tip.trim()) + '">' +
         esc(t("{used} of {n} audits this week").replace("{used}", fmtInt(q.used)).replace("{n}", fmtInt(q.allowance))) + '</span>';
     }
+    /* GESPERRT, WENN KEIN AUDIT GEHT (22.10., Lukas): ist das Kontingent der Woche verbraucht oder hat der Tarif keine Page
+       Audits, sind Create Audit, Run Audit (Startkarte) und Run again gesperrt, der Grund steht im Tooltip. Derselbe Satz,
+       den die DB beim Absenden meldet (UC.pageAuditFehlerSatz zu page_audit_quota_exhausted), nur vor dem Klick statt
+       danach. aria-disabled statt disabled wie der gesperrte Export in core (.up-export[aria-disabled]): ein disabled-Knopf
+       bekommt kein mouseover, der Grund erschiene nie. Der Knopf bleibt fokussierbar, der Klick tut nichts (anlegenOeffnen,
+       nochmal). Ist das Rueckstelldatum schon vorbei (Seite seit Montag offen), entscheidet wieder der Server. */
+    function sperrGrund() {
+      var q = quota();
+      if (!q) return "";
+      if (q.allowance > 0 && (q.remaining > 0 || (q.resetsAt && Date.parse(q.resetsAt) <= Date.now()))) return "";
+      return D.fehlerSatz({ ok: false, fehler: { message: "page_audit_quota_exhausted",
+        details: JSON.stringify({ allowance: q.allowance, resets_at: q.resetsAt || null }) } }, { t: t, datum: UC.fmtDate }).satz;
+    }
+    var SPERR_SEL = "[data-upa-anlegen], .upa-nochmal, [data-upa-nochmal]";
+    function sperreAnwenden() {
+      var grund = sperrGrund();
+      [].forEach.call(root.querySelectorAll(SPERR_SEL), function (b) {
+        if (grund) {
+          if (b.getAttribute("aria-disabled") !== "true") b.setAttribute("aria-disabled", "true");
+          if (b.getAttribute("data-upa-grund") !== grund) b.setAttribute("data-upa-grund", grund);
+        } else if (b.getAttribute("aria-disabled") === "true") {
+          b.removeAttribute("aria-disabled"); b.removeAttribute("data-upa-grund");
+        }
+      });
+    }
+    /* Der Grund einer Sperre ist ein ganzer Satz (bis 122 Zeichen): als data-tip stand er einzeilig, 695 px breit, und lief
+       bei 375 aus dem Bild (gemessen 22.10.). Darum die breite, umbrechende Form aus core (makeTooltips showTipWide, 340,
+       mehrzeilig wie die Kuerzungs-Tooltips), ueber dasselbe Verhalten wie der Weg mit data-tip: 60 ms Verzug, weg beim
+       Verlassen, ein Klick davor hebt die Sperre des Tooltips auf (unsuppress). */
+    var grundEl = null, grundUhr = 0;
+    root.addEventListener("mouseover", function (e) {
+      var el = e.target.closest && e.target.closest("[data-upa-grund]");
+      if (!el || el === grundEl || !tips || !tips.showTipWide) return;
+      grundEl = el;
+      clearTimeout(grundUhr);
+      grundUhr = setTimeout(function () {
+        if (grundEl !== el || !el.isConnected) return;
+        if (tips.unsuppress) tips.unsuppress();
+        tips.showTipWide(el, el.getAttribute("data-upa-grund") || "");
+      }, 60);
+    });
+    root.addEventListener("mouseout", function (e) {
+      var el = e.target.closest && e.target.closest("[data-upa-grund]");
+      if (!el || el !== grundEl) return;
+      if (e.relatedTarget && el.contains(e.relatedTarget)) return;
+      grundEl = null; clearTimeout(grundUhr);
+      if (tips && tips.hideTip) tips.hideTip();
+    });
+    /* Nach jedem Zeichnen des Kopfs (auch wenn er unveraendert bleibt): die Startkarte und der Leerzustand des Details
+       stehen ausserhalb von elKopf, und das Kontingent kommt mit jeder Antwort neu. */
+    function kopfZeichnen() { kopfInhaltZeichnen(); sperreAnwenden(); }
     var kopfStand = "";
-    function kopfZeichnen() {
+    function kopfInhaltZeichnen() {
       /* Nur bei einer Aenderung neu: das leise Nachladen zeichnete sonst alle 2 s Knoepfe und Menues
          neu (ein offenes Menue ginge dabei zu). */
       var d0 = state.ansicht === "detail" ? dasDetail() : null, a0 = aktiverLauf(d0);
@@ -1395,12 +1471,22 @@
       var z = { 0.25: "¼", 0.5: "½", 0.75: "¾" }[r] || "";
       return (g || !z ? String(g) : "") + z;
     }
+    /* Was die Grenze sprengen wuerde, ist gesperrt (22.10.: planFrei stand schon da, wurde aber nirgends gefragt -- Weekly
+       liess sich waehlen, die DB wies es ab, und erst dann kam der Satz als Fehler). Der Grund steht im Tooltip der Wahl,
+       derselbe Satz wie diese Ablehnung (UC.pageAuditFehlerSatz zu page_audit_schedule_capacity). Die gewaehlte Stufe ist
+       nie gesperrt. aria-disabled wie die gesperrten Knoepfe: die Wahl bleibt im Tab-Kreis, Klick und Enter tun nichts. */
+    function planSperrSatz(k) {
+      return D.fehlerSatz({ ok: false, fehler: { message: "page_audit_schedule_capacity",
+        details: JSON.stringify({ capacity: k.capacity, used: k.used }) } }, { t: t }).satz;
+    }
     function planMenuHtml(d) {
       var jetzt = d && d.page ? d.page.schedule : "once", k = kapazitaet();
       var opt = [["once", "Not Scheduled", "Runs only when you start it."], ["weekly", "Weekly", "Runs every week at night."], ["monthly", "Monthly", "Runs once a month at night."]];
       return '<div class="up-pop-head">' + esc(t("Schedule")) + '</div>' +
         opt.map(function (o) {
-          return '<div class="up-pop-opt upa-planopt' + (o[0] === jetzt ? " is-active" : "") + '" role="menuitemradio" tabindex="0" aria-checked="' + (o[0] === jetzt) + '" data-plan="' + o[0] + '">' +
+          var zu = o[0] !== jetzt && !planFrei(o[0]);
+          return '<div class="up-pop-opt upa-planopt' + (o[0] === jetzt ? " is-active" : "") + '" role="menuitemradio" tabindex="0" aria-checked="' + (o[0] === jetzt) + '"' +
+            (zu ? ' aria-disabled="true" data-upa-grund="' + esc(planSperrSatz(k)) + '"' : '') + ' data-plan="' + o[0] + '">' +
             '<span class="upa-planopt-l"><span class="upa-planopt-t">' + esc(t(o[1])) + '</span><span class="upa-planopt-d">' + esc(t(o[2])) + '</span></span>' +
             '<span class="up-check">' + UC.icon("check", 2) + '</span></div>';
         }).join("") +
@@ -1414,14 +1500,21 @@
       if (e.target.closest(".upa-nochmal")) { nochmal(); return; }
       if (e.target.closest(".upa-abbrechen")) { abbrechen(); return; }
       var po = e.target.closest(".upa-planopt[data-plan]");
-      if (po) { if (planPop) planPop.close(false); planSetzen(po.getAttribute("data-plan")); return; }
+      if (po) {
+        if (po.getAttribute("aria-disabled") === "true") return;
+        if (planPop) planPop.close(false); planSetzen(po.getAttribute("data-plan")); return;
+      }
       if (e.target.closest(".upa-loeschen")) { if (mehrPop) mehrPop.close(false); loeschenFragen(); return; }
       if (e.target.closest(".upa-mehrmenu a")) { if (mehrPop) mehrPop.close(false); }
     });
     elKopf.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;
       var po = e.target.closest && e.target.closest(".upa-planopt[data-plan]");
-      if (po) { e.preventDefault(); if (planPop) planPop.close(false); planSetzen(po.getAttribute("data-plan")); return; }
+      if (po) {
+        e.preventDefault();
+        if (po.getAttribute("aria-disabled") === "true") return;
+        if (planPop) planPop.close(false); planSetzen(po.getAttribute("data-plan")); return;
+      }
       if (e.target.closest && e.target.closest(".upa-loeschen")) { e.preventDefault(); if (mehrPop) mehrPop.close(false); loeschenFragen(); }
     });
 
@@ -1448,6 +1541,7 @@
       return k.used + PLAN_KOSTEN[plan] <= k.capacity + 1e-9;
     }
     function anlegenOeffnen(vorgabe) {
+      if (sperrGrund()) return;
       var schl = D.schluessel(), letzte = null;
       var api = UC.makeModal({
         titel: "Create Audit",
@@ -2820,7 +2914,8 @@
         } catch (e) {}
       }
     }
-    function detailZeichnen() { detailInhaltZeichnen(); lbSync(); }
+    /* sperreAnwenden: der Leerzustand eines gescheiterten Laufs traegt "Run again" (data-upa-nochmal). */
+    function detailZeichnen() { detailInhaltZeichnen(); lbSync(); sperreAnwenden(); }
     function detailInhaltZeichnen() {
       var e = detailEintrag(), d = e && e.daten;
       if (e && e.fehler) {
@@ -3099,7 +3194,7 @@
     var schreibt = false;
     function nochmal() {
       var d = dasDetail();
-      if (!d || schreibt) return;
+      if (!d || schreibt || sperrGrund()) return;
       schreibt = true;
       var knopf = elKopf.querySelector(".upa-nochmal");
       if (knopf) knopf.disabled = true;
@@ -3207,19 +3302,33 @@
       if (detail) detailZeichnen();
       else { lbSync(); tabelleZeichnen(); kleben(); }
     }
+    /* DIE LAGE DER LISTE (22.10.): #main ist der eine Scrollbereich (CLAUDE.md 1d "Kleben"), das Detail setzt ihn auf 0 --
+       zurueck in der Liste stand man dann oben (gemessen 107 -> 0). Gemerkt wird beim Verlassen der Liste, aber nur, wenn
+       sie zu sehen war: oeffnet ein Einstieg von aussen das Detail (pageAuditOeffnen), gehoert die Lage von #main noch der
+       anderen Ansicht. In gem, damit ein Neuaufbau (Themenwechsel) sie behaelt. */
+    function hauptBereich() { return document.getElementById("main"); }
+    function listeLageMerken() {
+      var m = hauptBereich();
+      gem.listeLage = state.ansicht === "liste" && !elListe.hidden && sichtbar(root) && m ? m.scrollTop : 0;
+    }
     function detailOeffnen(pageId, runId, neuerEintrag) {
       if (!D.uuidOk(pageId)) return;
+      if (state.ansicht === "liste") listeLageMerken();
       var gleich = state.ansicht === "detail" && state.pageId === pageId && state.runId === (runId || "");
       state.ansicht = "detail"; state.pageId = pageId; state.runId = runId || ""; state.alleLaeufe = false;
       adresseSetzen(pageId, state.runId, !!neuerEintrag);
       zeigen();
-      try { var main = document.getElementById("main"); if (main && !gleich) main.scrollTop = 0; } catch (e) {}
+      try { var main = hauptBereich(); if (main && !gleich) main.scrollTop = 0; } catch (e) {}
       detailLaden({ leise: gleich || !!dasDetail() });
     }
     function zurListe(neuerEintrag) {
+      var warDetail = state.ansicht === "detail";
       state.ansicht = "liste"; state.pageId = ""; state.runId = "";
       adresseSetzen("", "", !!neuerEintrag);
       zeigen();
+      /* Nach zeigen(): die Liste steht mit ihren gemerkten Zeilen schon da, die Lage passt also wieder (ein leises
+         Nachladen danach tauscht nur Zeilen gleicher Hoehe). Ohne gemerkte Lage oben, nicht dort, wo das Detail stand. */
+      if (warDetail) { try { var m = hauptBereich(); if (m) m.scrollTop = gem.listeLage || 0; } catch (e) {} }
       if (!L.hatDaten || L.alt) listeLaden({ leise: L.hatDaten && !L.fehler });
     }
     function ausAdresse() {
@@ -3251,7 +3360,7 @@
       }, 0);
     });
     function leeren() {
-      L.daten = null; L.hatDaten = false; L.fehler = ""; L.page = 1; L.alt = true;
+      L.daten = null; L.hatDaten = false; L.fehler = ""; L.page = 1; L.alt = true; gem.listeLage = 0;
       Object.keys(DET).forEach(function (k) { delete DET[k]; });
     }
     /* Das erste Team (Direkteinstieg: es kommt aus app_start erst nach dem Aufbau) laedt; ein
@@ -3280,6 +3389,7 @@
         if (a) ms = Date.now() - new Date(a.acceptedAt).getTime() < 20000 ? 2000 : 5000;
       } else if (L.daten && L.daten.rows.some(function (r) { return r.latest && D.laeuft(r.latest.status); })) ms = 5000;
       fortPlanen(fortUhr ? null : 0);
+      startZeitPlanen();
       if (!ms) return;
       uhr = setTimeout(function () {
         uhr = null;
@@ -3327,6 +3437,24 @@
       });
     }
     function planenNachSicht() { if (state.ansicht === "detail") detailLaden({ leise: true }); else listeLaden({ leise: true }); }
+    /* "Started just now" GEHT MIT DER UHR (22.10.): der Satz im Lauf-Kasten und in der Laufzeile rechnet die Zeit ueber
+       UC.relativeTime (wann), gezeichnet wurde er aber nur bei einem Schrittwechsel -- nach dem letzten Schritt stand er
+       fest (gemessen: nach 79 s noch "Started just now."), und wer einen Lauf nach Minuten oeffnete, sah die Zeit vom
+       ersten Zeichnen. Solange im Detail ein Lauf wartet oder laeuft, zieht diese Uhr beide im Takt der Protokoll-Uhr
+       (LAUF_TAKT.uhr) nach. anzeigeVerteilen tauscht nur Text, der sich aendert -- kein Neuaufbau, kein Neustart einer
+       Bewegung. Verdeckt (andere Ansicht, Tab im Hintergrund) und ohne laufenden Lauf geht sie aus. */
+    var startZeitUhr = null;
+    function startZeitAus() { if (startZeitUhr) { clearInterval(startZeitUhr); startZeitUhr = null; } }
+    function startZeitPlanen() {
+      if (state.ansicht !== "detail" || !aktiverLauf(dasDetail()) || !root.isConnected) { startZeitAus(); return; }
+      if (startZeitUhr) return;
+      startZeitUhr = setInterval(function () {
+        var a = state.ansicht === "detail" && root.isConnected ? aktiverLauf(dasDetail()) : null;
+        if (!a) { startZeitAus(); return; }
+        if ((typeof document.hidden === "boolean" && document.hidden) || !sichtbar(root)) return;
+        anzeigeVerteilen(a.id);
+      }, UC.LAUF_TAKT.uhr);
+    }
     document.addEventListener("visibilitychange", function () { if (!document.hidden && root.isConnected && !uhr) planen(); });
 
     var ctrl = { root: root, neuLaden: function () { leeren(); ausAdresse(); if (state.ansicht === "liste") listeLaden({}); } };
