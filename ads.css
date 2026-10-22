@@ -58,6 +58,10 @@
 .uad-gruppe { display: flex; flex-direction: column; gap: var(--up-stapel-luft, 32px); min-width: 0; }
 /* Kennzahlen und Chart gehoeren zusammen: 16 (--up-band-luft) statt der 32 des Stapels, wie in Shopping (20.10., Nutzer: auf allen Seiten gleich). */
 .uad-gruppe > .uad-kpis + .up-band { margin-top: calc(var(--up-band-luft, 16px) - var(--up-stapel-luft, 32px)); }
+/* Ueber den Kennzahlen des Advertiser-Details dieselben 16 (22.10., CLAUDE.md 1d: Zusammenfassung zu Kennzahlen 16): Kopf und
+   Kennzahlen standen 32 auseinander, Kennzahlen und Chart 16. Dieselbe Regel wie in Shopping (.ush-gruppe, summary + kpis); nur mit
+   Inhalt im Kopf, leer bliebe der Stapel. */
+.uad-gruppe > [data-sek="held"]:not(:empty) + .uad-kpis { margin-top: calc(var(--up-band-luft, 16px) - var(--up-stapel-luft, 32px)); }
 .uad-sek { display: flex; flex-direction: column; min-width: 0; }
 /* hidden muss gegen die eigenen display-Regeln gewinnen (.uad-sek, .up-kpiband und .up-foot setzen
    display, und jede Autorenregel schlaegt das hidden des Browsers). */

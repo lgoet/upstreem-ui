@@ -260,6 +260,13 @@
 .ush-topics .is-mehr { flex: 0 0 auto; }
 .ush-topprodukt { display: inline-flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; }
 .ush-topprodukt:hover .ush-titel { text-decoration: underline; text-underline-offset: 2px; }
+/* Der Marken-Chip der Produktzeile als Filter (shopping.js markeFilterChip): ein Knopf ohne eigene Form, der Chip darin bleibt
+   wie er war (Logo 18, Name 13). Beim Ueberfahren der Name unterstrichen wie das Top-Produkt darueber; der Fokusring liegt aussen
+   mit 2 Abstand, Radius 4 (Stufe bis 24 hoch). min-width 0, damit der Name in einer schmalen Spalte weiter kuerzt. */
+.ush-markefilter { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; margin: 0; padding: 0; border: 0; background: none;
+  font: inherit; color: inherit; text-align: left; cursor: pointer; border-radius: var(--up-r-xs); }
+.ush-markefilter:hover .up-ment-name { text-decoration: underline; text-underline-offset: 2px; }
+.ush-markefilter:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
 
 /* Produktbild: Flaeche der Logo-Platten, das Bild ganz drin (contain), ohne Bild das Zeichen.
    Mit Rahmen wie im Entwurf: ohne ihn verschwand die weisse Platte auf der weissen Zeile, solange
