@@ -98,6 +98,13 @@
     chatgpt: "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/openai_light.svg",
     gemini:  "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/gemini_logo.webp"
   };
+  /* Nachschlagen nur in den eigenen Schluesseln: "constructor" o. ae. aus dem Prototyp gaebe sonst eine Funktion als
+     Bildadresse (Sicherheitspruefung 22.10., Hinweis 2). */
+  function logoVon(k){ return Object.prototype.hasOwnProperty.call(LOGO, k) ? LOGO[k] : ""; }
+  /* Was in den Terminalbefehl und die Kopierkaesten geht, wird geprueft, nicht nur escaped: ein Kopierkasten fuers
+     Terminal ist eine Senke (Sicherheitspruefung 22.10.). Client IDs von Supabase sind UUIDs. */
+  var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  var SERVER_URL = /^(https:\/\/[A-Za-z0-9.-]+(:\d{2,5})?|http:\/\/(localhost|127\.0\.0\.1)(:\d{2,5})?)\/api\/mcp$/;
   /* Beispielfragen je Weg (Canvas): allgemein, nie aus Teamdaten. */
   var FRAGEN = {
     web:  ["Which sources get cited most for our brand?", "Where do competitors show up and we don't?", "Which Opportunities should we tackle first?"],
@@ -137,7 +144,7 @@
       });
       function app(k, top, bald, ms){
         return '<span class="umc-sg-app umc-sg-teil' + (bald ? " is-bald" : "") + '" style="left: 424px; top: ' + top + 'px; animation-delay: ' + ms + 'ms">' +
-          '<img src="' + esc(UC.modelLogoUrl ? UC.modelLogoUrl(k, LOGO[k], false) : LOGO[k]) + '" alt=""></span>';
+          '<img src="' + esc(UC.modelLogoUrl ? UC.modelLogoUrl(k, logoVon(k), false) : logoVon(k)) + '" alt=""></span>';
       }
       return '<div class="umc-grafik" aria-hidden="true">' +
         '<div class="umc-sg-muster"></div>' +
@@ -222,8 +229,8 @@
 
     /* ---------------- Anleitung ---------------- */
     function serverUrl(){
-      var d = gem.daten;
-      return str(d && d.server_url) || (location.origin + "/api/mcp");
+      var u = str(gem.daten && gem.daten.server_url);
+      return SERVER_URL.test(u) ? u : (location.origin + "/api/mcp");
     }
     function kopie(art, text){
       return UC.kopierBoxHtml ? UC.kopierBoxHtml({ text: text, attr: ' data-umc-kopie="' + art + '"' }) : '<code>' + esc(text) + '</code>';
@@ -239,21 +246,24 @@
        Die eingesetzten Namen bleiben englisch -- es sind die Beschriftungen in Claude. */
     function satz(key, teile){
       var h = esc(t(key));
-      Object.keys(teile || {}).forEach(function(k){ h = h.replace("{" + k + "}", teile[k]); });
+      /* Als Funktion: ein String als Ersatz deutete $& und $` (Sicherheitspruefung 22.10., Hinweis 1). */
+      Object.keys(teile || {}).forEach(function(k){ h = h.replace("{" + k + "}", function(){ return teile[k]; }); });
       return h;
     }
     function b(x){ return '<b>' + esc(x) + '</b>'; }
     /* Claude Code braucht bei abgeschalteter dynamischer Registrierung die Client ID und einen festen Port fuer den
        Ruecksprung (code.claude.com/docs/en/mcp, "Use pre-configured OAuth credentials", "Use a fixed OAuth callback
        port"): sonst waehlt es einen zufaelligen Port, und Supabase vergleicht die Adresse exakt. */
-    function codeDa(){ return !!str(gem.daten && gem.daten.code_client_id); }
+    function codeDa(){ return UUID.test(str(gem.daten && gem.daten.code_client_id)); }
     function befehl(){
       var d = gem.daten || {};
-      return "claude mcp add --transport http --client-id " + str(d.code_client_id) + " --callback-port " + (str(d.code_port) || "33418") +
+      var port = /^\d{2,5}$/.test(str(d.code_port)) ? str(d.code_port) : "33418";
+      return "claude mcp add --transport http --client-id " + (codeDa() ? str(d.code_client_id) : "") + " --callback-port " + port +
         " upstreem " + serverUrl();
     }
     function schritteHtml(){
       var id = str(gem.daten && gem.daten.client_id);
+      if (!UUID.test(id)) id = "";
       if (gem.reiter === "code" && codeDa()){
         return schritt(1, satz("Add upstreem in your terminal."), kopie("befehl", befehl())) +
           schritt(2, satz("Start Claude Code, run {a}, choose {b} and then {c}.",
@@ -285,7 +295,7 @@
     /* ---------------- Verbundene Apps ---------------- */
     function appLogo(a){
       var k = str(a.known).toLowerCase();
-      if (LOGO[k]) return '<span class="up-logo-box has-img"><img src="' + esc(UC.modelLogoUrl ? UC.modelLogoUrl(k, LOGO[k], false) : LOGO[k]) + '" alt=""></span>';
+      if (logoVon(k)) return '<span class="up-logo-box has-img"><img src="' + esc(UC.modelLogoUrl ? UC.modelLogoUrl(k, logoVon(k), false) : logoVon(k)) + '" alt=""></span>';
       /* Unbekannter Client: der Anfangsbuchstabe auf der Platte, wie auf der Zustimmungsseite. */
       var n = str(a.name) || T.ersatzName;
       return '<span class="up-logo-box umc-ltr" aria-hidden="true">' + esc(n.charAt(0).toUpperCase()) + '</span>';
@@ -370,12 +380,13 @@
         uhrKnopf = setTimeout(function(){ uhrKnopf = null; if (busy[id]){ busy = {}; appsZeichnen(); if (UC.toast) UC.toast(T.widerrufFehler, { kind: "error" }); } }, KNOPF_MAX);
         fire("data-revoke-fn", "umcRevoke", { client_id: id, name: name });
       }
-      if (!UC.makeModal){ los(); return; }
+      /* Ohne Popup kein Widerruf: lieber nichts tun als ohne Rueckfrage (Sicherheitspruefung 22.10., Hinweis 3). */
+      if (!UC.makeModal) return;
       /* Gefahraktion nach Geist Modal (CLAUDE.md 1d): Cancel hat den Fokus, Enter am Gefahrknopf loest nie aus
          (wie gefahrFragen in prompt-research.js). */
       var m = UC.makeModal({
         titel: T.fragTitel, isDark: istDunkel,
-        inhaltHtml: '<div class="up-modal-saetze"><p class="up-modal-hinweis">' + esc(t(T.fragSatz).replace("{name}", name)) + '</p></div>',
+        inhaltHtml: '<div class="up-modal-saetze"><p class="up-modal-hinweis">' + esc(t(T.fragSatz).replace("{name}", function(){ return name; })) + '</p></div>',
         knoepfe: [
           { id: "ab", text: "Cancel", art: "sec" },
           { id: "weg", text: T.fragKnopf, art: "gefahr", aktion: function(){ los(); } }
