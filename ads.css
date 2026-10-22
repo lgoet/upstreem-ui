@@ -69,11 +69,14 @@
 
 /* ---- Abschnittskoepfe (.up-head aus core) ---------------------------------------------------------
    Das Erklaer-Zeichen (.up-th-info) zeigt sich in core nur im Tabellenkopf; hier wie in Shopping
-   beim Ueberfahren des Kopfs bzw. der Kachel, dicht hinter dem Wort. */
+   beim Ueberfahren des Kopfs, dicht hinter dem Wort. */
 .uad-heading { gap: 6px; }
 .uad-head .up-head-tools { flex-wrap: wrap; justify-content: flex-end; }
-.uad-root .uad-kpi .up-th-info, .uad-root .uad-head .up-th-info { margin-left: 0; }
-.uad-root .uad-kpi:hover .up-th-info, .uad-root .uad-head:hover .up-th-info { opacity: 1; }
+/* Die Kacheln tragen das Zeichen seit dem 22.10. abends aus core (kpiKarte explain, .up-kpi-label.has-info: oben rechts,
+   sichtbar beim Ueberfahren der Kachel), wie Page Audit und Shopping. Am Titel einer aufgeklappten Prompt-Zeile steht es
+   hinter dem Wort ("die neuesten n von m", ads.js neuesteInfo), sichtbar beim Ueberfahren ihres Kopfs. */
+.uad-root .uad-head .up-th-info, .uad-root .uad-auf-titel .up-th-info { margin-left: 0; }
+.uad-root .uad-head:hover .up-th-info, .uad-root .uad-auf-kopf:hover .up-th-info { opacity: 1; }
 .uad-root.is-narrow .uad-head { height: auto; flex-wrap: wrap; row-gap: 8px; }
 /* Nur mit Ueberschrift: dort rutschen die Werkzeuge schmal unter sie, an den linken Rand. In der
    einen Leiste (data-leiste: Advertisers, Ad Library) gibt es keine Ueberschrift, die Werkzeuge
@@ -97,8 +100,9 @@
 .uad-root.is-vnarrow .up-band .uad-head.up-band-head:has(> .up-head-tools:not(:empty)) { padding-top: 16px; padding-bottom: 8px; }
 
 /* ---- Kennzahlen --------------------------------------------------------------------------------- */
-.uad-kpi .up-kpi-label { display: inline-flex; align-items: center; gap: 6px; }
 .uad-kpifehler { grid-column: 1 / -1; }
+/* Das Skelett der Kachel Topics im Detail: ihre Fusszeile sind Topic-Chips (24), keine Textzeile (14). */
+.uad-kpi.is-sk.is-chipfuss .up-kpi-sk-zeile { min-height: var(--up-h-chip); }
 .uad-kpi .up-kpi-foot { min-width: 0; }
 
 /* ---- Diagramme ---------------------------------------------------------------------------------- */
@@ -273,7 +277,7 @@
    also weiter. */
 .uad-root [data-flach="yes"] .uad-auf { padding-right: calc(16px + var(--up-flach-aus)); }
 .uad-auf-kopf { display: flex; align-items: center; gap: 12px; padding-top: 8px; min-width: 0; }
-.uad-auf-titel { font-size: var(--up-ueb-gruppe-gr); font-weight: var(--up-ueb-gruppe-gew); color: var(--vc-muted); white-space: nowrap; }
+.uad-auf-titel { display: inline-flex; align-items: center; gap: 6px; font-size: var(--up-ueb-gruppe-gr); font-weight: var(--up-ueb-gruppe-gew); color: var(--vc-muted); white-space: nowrap; }
 .uad-auf-kopf .up-quietbtn { margin-left: auto; }
 .uad-auf-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 8px; }
 /* Hover, Druck und Fokus: .up-karte-klick aus core (13.10.), wie jede klickbare Karte. Das Skelett

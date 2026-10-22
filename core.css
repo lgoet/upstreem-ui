@@ -7848,8 +7848,8 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
 /* DAS INFO-ZEICHEN DER KACHEL (22.10. abends, UC.kpiKarte({ explain })): .up-th-info aus core, rechts in der Zeile des
    Etiketts -- also oben rechts in der Kachel (Lukas: "Icons, die on hover oben rechts in Cards sichtbar werden"). Es steht
    mit margin-left: auto aus der Grundregel von .up-th-info; sichtbar beim Ueberfahren der Kachel wie im Tabellenkopf beim
-   Ueberfahren der Kopfzelle. Shopping, Ads und die Details setzen ihr Zeichen selbst hinter das Wort und bleiben, wie sie sind
-   (ohne .has-info). */
+   Ueberfahren der Kopfzelle. Shopping und Ads seit dem 22.10. abends ebenso (kpiKarte explain); die Details setzen ihr Zeichen
+   selbst hinter das Wort und bleiben, wie sie sind (ohne .has-info). */
 .up-kpi-label.has-info { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .up-kpi:hover .up-kpi-label.has-info > .up-th-info { opacity: 1; }
 .up-kpi-row { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 8px; row-gap: 2px; min-height: var(--up-h-seg); }

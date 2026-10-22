@@ -219,6 +219,12 @@
      folgen dem Ort. */
   ERKLAER.anteil = { h: "Advertiser Share", f: ERKLAER.share.f, t: ERKLAER.share.t };
   ERKLAER.auftritte = { h: "Appearances", f: ERKLAER.appearances.f, t: ERKLAER.appearances.t };
+  /* DIE NEUESTEN STATT ALLER (22.10. abends): "Showing the 20 most recent of 28." stand als Tooltip auf der Ueberschrift "Ads"
+     im Advertiser-Detail und auf dem Titel "Ads observed for this prompt" -- ein Satz als Tooltip auf Text, den es nicht
+     geben soll (CLAUDE.md 1d, Page Audit v2). Jetzt steht er in der Karte hinter einem Info-Zeichen, das nur erscheint, wenn
+     es mehr gibt als gezeigt. Satz und Platte kommen aus dem Zeichen selbst (data-uad-gezeigt/-gesamt, erklaerZusatz):
+     jede aufgeklappte Prompt-Zeile hat ihre eigenen Zahlen. Titel = Etikett am Ort (ortEtikett); ohne Formel. */
+  ERKLAER.neueste = { h: "Ads" };
   if (UC.addMessages) UC.addMessages("de", {
     "Responses with at least one Ad ÷ tracked responses": "Antworten mit mindestens einer Ad ÷ getrackte Antworten",
     "How often a tracked AI response contained at least one Ad.": "Wie oft eine getrackte KI-Antwort mindestens eine Ad enthielt.",
@@ -363,7 +369,9 @@
        der Aufbau von Shopping. Ohne Trendpfeil: die Ads-RPCs liefern keinen Vorperiodenwert, ein
        Pfeil in der Probe versprache einen, den die Seite nie zeigt. Die Werte sind die der
        Uebergabe-Daten (Overview: 11.4%, 6, 81, 13; HOLY: 34.6%). */
-    function erklaerVorschau(key) {
+    function erklaerVorschau(key, ausloeser) {
+      var nz = key === "neueste" ? neuesteZahlen(ausloeser) : null;
+      if (nz) return '<span class="up-explain-row">' + esc(ganz(nz.n)) + '</span>';
       if (key === "organic") {
         return '<span class="up-explain-row"><span class="up-explain-up">' + UC.icon("check", 2) + '</span><span>' + esc(t("Also mentioned organically")) + '</span></span>';
       }
@@ -382,21 +390,43 @@
       var n = k ? anzahlWert(k.prompts_with_ads) : null, getrackt = k ? anzahlWert(k.tracked_prompts) : null;
       return n == null ? null : { n: n, anteil: getrackt != null && getrackt > 0 ? n / getrackt * 100 : null };
     }
-    function erklaerZusatz(key) {
+    /* Gezeigt und insgesamt, wie das Zeichen sie traegt (neuesteInfo). Ohne beide Zahlen gibt es keinen Satz. */
+    function neuesteZahlen(z) {
+      var n = z && z.getAttribute ? anzahlWert(z.getAttribute("data-uad-gezeigt")) : null;
+      var g = z && z.getAttribute ? anzahlWert(z.getAttribute("data-uad-gesamt")) : null;
+      return n != null && g != null && g > n ? { n: n, gesamt: g } : null;
+    }
+    function erklaerZusatz(key, ausloeser) {
+      var nz = key === "neueste" ? neuesteZahlen(ausloeser) : null;
+      if (nz) return '<div class="up-explain-t">' + esc(ersetze(t("Showing the {n} most recent of {total}."), { n: ganz(nz.n), total: ganz(nz.gesamt) })) + '</div>';
       var pa = key === "prompts" ? promptsMitAds() : null;
       return pa && anteilWert(pa.anteil) != null ? '<div class="up-explain-t">' + esc(ersetze(t("{pct} of tracked prompts"), { pct: pct(pa.anteil) })) + '</div>' : '';
     }
-    if (UC.makeExplain) UC.makeExplain({ root: root, triggerSel: ".uad-erklaer", getIsDark: isDark,
-      html: function (key) {
+    /* Das Etikett, an dem das Zeichen steht: die Ueberschrift ohne ihre Zahl, oder der Titel der aufgeklappten Zeile. */
+    function ortEtikett(z) {
+      var h = z && z.closest ? z.closest(".uad-heading, .uad-auf-titel") : null;
+      var l = h ? (h.querySelector(".up-head-label") || h) : null;
+      return l ? str(l.textContent).trim() : "";
+    }
+    /* Die Kacheln tragen das Zeichen aus core (kpiKarte explain, oben rechts, sichtbar beim Ueberfahren der Kachel; seit
+       22.10. abends wie Page Audit und Shopping), Koepfe und Spalten das eigene .uad-erklaer. */
+    if (UC.makeExplain) UC.makeExplain({ root: root, triggerSel: ".uad-erklaer, .uad-kpi .up-th-info[data-explain]", getIsDark: isDark,
+      html: function (key, ausloeser) {
         var e = ERKLAER[key];
         if (!e) return "";
-        var vis = erklaerVorschau(key);
+        var vis = erklaerVorschau(key, ausloeser);
         return (vis ? '<div class="up-explain-vis">' + vis + '</div>' : '') +
-          '<div class="up-explain-h">' + esc(t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>' +
-          '<div class="up-explain-t">' + esc(t(e.f)) + '</div>' + erklaerZusatz(key);
+          '<div class="up-explain-h">' + esc((key === "neueste" && ortEtikett(ausloeser)) || t(e.h)) + '</div>' +
+          (e.t ? '<div class="up-explain-t">' + esc(t(e.t)) + '</div>' : '') +
+          (e.f ? '<div class="up-explain-t">' + esc(t(e.f)) + '</div>' : '') + erklaerZusatz(key, ausloeser);
       } });
-    function info(key) {
-      return '<span class="up-th-info uad-erklaer" data-explain="' + esc(key) + '">' + UC.icon("info", 2) + '</span>';
+    function info(key, attr) {
+      return '<span class="up-th-info uad-erklaer" data-explain="' + esc(key) + '"' + (attr || '') + '>' + UC.icon("info", 2) + '</span>';
+    }
+    /* Das Zeichen "die neuesten n von m" -- nur, wenn es mehr gibt als gezeigt. */
+    function neuesteInfo(n, gesamt) {
+      n = anzahlWert(n); gesamt = anzahlWert(gesamt);
+      return n != null && gesamt != null && gesamt > n ? info("neueste", ' data-uad-gezeigt="' + n + '" data-uad-gesamt="' + gesamt + '"') : '';
     }
 
     /* ---- Gerueste: Kopf, Reiter, Filterzeile, Inhalt ----------------------------------------- */
@@ -1313,12 +1343,12 @@
          .up-leiste-scope) -- in der Library der Umschalter Ads/Prompts. */
       /* .up-band-head: im offenen Band die Ueberschriftzeile aus core (core.css "DAS OFFENE BAND");
          ausserhalb eines Bandes greift die Klasse nicht. */
-      /* o.tip: ein Hinweis zur Ueberschrift samt Zahl als Tooltip (22.10.: "Showing the 20 most recent of 28." stand als Zeile
-         unter den Karten, Memory "Keine Meta-Unterzeilen"). */
+      /* o.neueste: das Info-Zeichen "die neuesten n von m" (neuesteInfo) HINTER der Zahl, von der es spricht. Bis 22.10. abends
+         stand der Satz als Tooltip (o.tip) auf Ueberschrift und Zahl. */
       return '<div class="up-head uad-head up-band-head">' + (o.scope ? '<div class="up-leiste-scope uad-scope">' + o.scope + '</div>' : '') +
-        '<span class="up-heading uad-heading' + (mitZahl ? " has-count" : "") + '"' + (o.tip ? ' data-tip="' + esc(o.tip) + '"' : '') + '><span class="up-head-label">' + esc(t(titel)) + '</span>' +
+        '<span class="up-heading uad-heading' + (mitZahl ? " has-count" : "") + '"><span class="up-head-label">' + esc(t(titel)) + '</span>' +
           (o.info ? info(o.info) : '') +
-          '<span class="up-head-sep"></span><span class="up-head-count">' + (mitZahl ? esc(o.zahl) : '') + '</span></span>' +
+          '<span class="up-head-sep"></span><span class="up-head-count">' + (mitZahl ? esc(o.zahl) : '') + '</span>' + (o.neueste || '') + '</span>' +
         '<div class="up-head-tools uad-tools">' + (o.tools || '') + '</div>' +
       '</div>';
     }
@@ -1651,11 +1681,22 @@
       if (code === "filter_gone") return UC.leerHtml({ icon: "info", titel: titel, text: text, knopf: "Clear filters", knopfAttr: "data-uad-filterweg" });
       return UC.leerHtml({ icon: "info", titel: titel, text: text, knopf: "Try again", knopfAttr: 'data-uad-nochmal="' + esc(a.kanal) + '"' });
     }
+    /* o.explain: der Schluessel aus ERKLAER, kpiKarte setzt damit das Info-Zeichen oben rechts (22.10. abends, wie Shopping). */
     function kpiHtml(o) {
       o.klasse = (o.klasse ? o.klasse + " " : "") + "uad-kpi";
       return UC.kpiKarte ? UC.kpiKarte(o) : "";
     }
-    function kpiSkelett(n) { var h = ""; for (var i = 0; i < n; i++) h += UC.kpiKarteSkelett ? UC.kpiKarteSkelett("uad-kpi") : ""; return h; }
+    /* Das Skelett in den Faechern der Kachel (core kpiKarteSkelett fuss): so hoch wie die fertige Kachel, gemessen 58 zu 58
+       (Overview) und 92 zu 92 (Detail). Vorher die alte Form mit Fussbalken: 76 ueber Kacheln von 58 bzw. 92. fuss: je Kachel
+       nichts, eine Textzeile (1) oder die Zeile der Topic-Chips ("chips", 24 hoch statt 14, .uad-kpi.is-chipfuss in ads.css). */
+    function kpiSkelett(n, fuss) {
+      var h = "";
+      for (var i = 0; i < n; i++) {
+        var f = fuss && fuss[i];
+        h += UC.kpiKarteSkelett ? UC.kpiKarteSkelett(f === "chips" ? "uad-kpi is-chipfuss" : "uad-kpi", { fuss: f ? 1 : 0 }) : "";
+      }
+      return h;
+    }
     /* Die Kacheln zaehlen hoch wie in Shopping, Events und dem Agentic Dashboard (UC.zaehlHtml und
        UC.hochzaehlen) -- einmal je Wert und Ort. */
     function hochzaehlen(el) { if (UC.hochzaehlen) UC.hochzaehlen(el, "ads|" + instanceId + "|" + state.seite + "|" + (state.advertiser || "")); }
@@ -1663,11 +1704,6 @@
       v = art === "pct" ? anteilWert(v) : anzahlWert(v);
       if (v == null) return leerZelle();
       return UC.zaehlHtml ? UC.zaehlHtml(v, art === "pct" ? "pct1" : "int") : '<span class="up-num">' + esc(art === "pct" ? pct(v) : ganz(v)) + '</span>';
-    }
-    function erklaerAnLabels(el, keys) {
-      if (!el) return;
-      var l = el.querySelectorAll(".up-kpi-label");
-      for (var i = 0; i < l.length && i < keys.length; i++) if (keys[i]) l[i].insertAdjacentHTML("beforeend", info(keys[i]));
     }
     function ringHtml(v) {
       v = anteilWert(v);
@@ -1719,11 +1755,10 @@
       var k = objOder(d.kpis) || {};
       /* Ohne Fusszeile (22.10.): der Anteil an den getrackten Prompts steht in der Erklaerkarte der Kachel (erklaerZusatz). */
       el.innerHTML =
-        kpiHtml({ label: "Ad Coverage", wertHtml: zaehlWert("pct", k.ad_coverage_pct) }) +
-        kpiHtml({ label: "Advertisers", wertHtml: zaehlWert("int", k.advertisers) }) +
-        kpiHtml({ label: "Ad Appearances", wertHtml: zaehlWert("int", k.ad_appearances) }) +
-        kpiHtml({ label: "Prompts with Ads", wertHtml: zaehlWert("int", k.prompts_with_ads) });
-      erklaerAnLabels(el, ["coverage", "advertisers", "appearances", "prompts"]);
+        kpiHtml({ label: "Ad Coverage", explain: "coverage", wertHtml: zaehlWert("pct", k.ad_coverage_pct) }) +
+        kpiHtml({ label: "Advertisers", explain: "advertisers", wertHtml: zaehlWert("int", k.advertisers) }) +
+        kpiHtml({ label: "Ad Appearances", explain: "appearances", wertHtml: zaehlWert("int", k.ad_appearances) }) +
+        kpiHtml({ label: "Prompts with Ads", explain: "prompts", wertHtml: zaehlWert("int", k.prompts_with_ads) });
       hochzaehlen(el);
     }
     function linieZeichnen(labels, werte, label) {
@@ -2250,7 +2285,7 @@
     function zeichneDetailKpis(d) {
       var el = sek("kpis");
       if (!el) return;
-      if (!d) { el.innerHTML = kpiSkelett(4); return; }
+      if (!d) { el.innerHTML = kpiSkelett(4, [0, 0, "chips", 0]); return; }
       var s = objOder(d.summary) || {};
       /* Der Fuss der Topics nennt sie (Entwurf) -- aus den Prompts des Advertisers, denn summary
          traegt nur die Zahl. */
@@ -2262,11 +2297,10 @@
         });
       });
       el.innerHTML =
-        kpiHtml({ label: "Ad Appearances", wertHtml: zaehlWert("int", s.ad_appearances) }) +
+        kpiHtml({ label: "Ad Appearances", explain: "appearances", wertHtml: zaehlWert("int", s.ad_appearances) }) +
         kpiHtml({ label: "Prompts", wertHtml: zaehlWert("int", s.prompt_count) }) +
         kpiHtml({ label: "Topics", wertHtml: zaehlWert("int", s.topic_count), fussHtml: topics.length ? topicZelle(topics) : "" }) +
-        kpiHtml({ label: "Ad Share", wertHtml: zaehlWert("pct", s.ad_share_pct) });
-      erklaerAnLabels(el, ["appearances", "", "", "share"]);
+        kpiHtml({ label: "Ad Share", explain: "share", wertHtml: zaehlWert("pct", s.ad_share_pct) });
       hochzaehlen(el);
     }
     function zeichneDetailChart() {
@@ -2359,9 +2393,10 @@
           text: gef ? "No Ads match these filters." : "None of the tracked AI responses in this range contained an Ad." }) + '</div>';
         return;
       }
-      /* Mehr Auftritte als gelieferte Ads: das sind die neuesten. Der Satz sagt es als Tooltip an Ueberschrift und Zahl (seit
-         22.10., vorher eine Zeile unter den Karten), der Knopf daneben fuehrt zu allen. */
-      var hinweis = gesamtN != null && gesamtN > l.length ? ersetze(t("Showing the {n} most recent of {total}."), { n: ganz(l.length), total: ganz(gesamtN) }) : '';
+      /* Mehr Auftritte als gelieferte Ads: das sind die neuesten. Der Satz steht in der Karte hinter dem Info-Zeichen an der Zahl
+         (seit 22.10. abends; davor ein Tooltip auf der Ueberschrift, davor eine Zeile unter den Karten), der Knopf daneben fuehrt
+         zu allen. */
+      var hinweis = neuesteInfo(l.length, gesamtN);
       var inhalt;
       if (state.dGruppe === "campaign" && mitKampagne) {
         var gruppen = {}, reihenfolge = [];
@@ -2382,7 +2417,7 @@
             '<div class="up-adgrid">' + g.map(function (x) { return karte(x); }).join("") + '</div></div>';
         }).join("");
       } else inhalt = '<div class="up-adgrid">' + l.map(function (x) { return karte(x); }).join("") + '</div>';
-      el.innerHTML = kopf("Ads", { zahl: ganz(l.length), tools: werkzeuge, tip: hinweis }) + inhalt;
+      el.innerHTML = kopf("Ads", { zahl: ganz(l.length), tools: werkzeuge, neueste: hinweis }) + inhalt;
     }
 
     /* ============================================================================================
@@ -2491,13 +2526,12 @@
               '<span class="uad-zweizeilig"><span class="uad-titel" title="' + esc(titel) + '">' + esc(titel) + '</span>' +
               '<span class="uad-unter"><span>' + esc(str(x.advertiser_name).trim()) + '</span><span>' + esc(datum(x.observed_at)) + '</span></span></span></button>';
           }).join("") + '</div>';
-          /* An der Grenze des Vertrags (AUF_LIMIT) sind es die neuesten: als Tooltip am Titel (22.10., vorher eine Zeile unter der Liste). */
-          if (auftritte != null && auftritte > l.length && l.length >= AUF_LIMIT) {
-            hinweis = ersetze(t("Showing the {n} most recent of {total}."), { n: ganz(l.length), total: ganz(auftritte) });
-          }
+          /* An der Grenze des Vertrags (AUF_LIMIT) sind es die neuesten: der Satz in der Karte hinter dem Info-Zeichen am Titel
+             (22.10. abends; davor ein Tooltip auf dem Titel, davor eine Zeile unter der Liste). */
+          if (auftritte != null && auftritte > l.length && l.length >= AUF_LIMIT) hinweis = neuesteInfo(l.length, auftritte);
         }
       }
-      return '<div class="uad-auf"><div class="uad-auf-kopf"><span class="uad-auf-titel"' + (hinweis ? ' data-tip="' + esc(hinweis) + '"' : '') + '>' + esc(t("Ads observed for this prompt")) + '</span>' +
+      return '<div class="uad-auf"><div class="uad-auf-kopf"><span class="uad-auf-titel">' + esc(t("Ads observed for this prompt")) + hinweis + '</span>' +
         leiserKnopf("Open Prompt Detail", 'data-prompt="' + esc(pid) + '"') + '</div>' + inhalt + '</div>';
     }
 
