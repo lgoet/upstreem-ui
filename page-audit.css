@@ -207,7 +207,11 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-start-text { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; min-height: 112px; max-width: 520px; padding: 0 0 0 2px; }
 /* Unterzeile 4 unter dem Titel (Ueberschriften-Stufen, CLAUDE.md 1d): die Browser-Raender von h2 und p weg, den Abstand traegt gap. */
 .upa-start-text .up-heading, .upa-start-text .up-sec-sub { margin: 0; }
-.upa-start-text .up-sec-sub { line-height: 1.45; }
+/* Je eine Stufe groesser (Lukas 22.10. abends): Titel und Satz sind der Kopf der Seite, keine Abschnittsueberschrift. Die Stufe
+   ueber dem Abschnitt (Geist heading-16) ist Geists heading-20, 20/26/600/-0.4 (--up-fs-modaltitel, wie der Titel eines Popups),
+   der Satz darunter copy-14 statt copy-13, 14/20 (--up-fs-l) -- dasselbe Paar wie Titel und Untertitel eines Popups. */
+.upa-start-text .up-heading.up-sec-h { font-size: var(--up-fs-modaltitel); line-height: 26px; letter-spacing: -0.4px; }
+.upa-start-text .up-sec-sub { font-size: var(--up-fs-l); line-height: 20px; }
 .upa-start > .up-wk { grid-column: 1; grid-row: 2; }
 /* NEU (nicht in core): die Grafik, ein Feld aus Browserfenstern (Vorlage: Vercel). Rand per Maske ausgeblendet (Deckkraft,
    keine Themenfarbe); Fenster, Rahmen und Punkte aus --vc-*. */
@@ -236,10 +240,12 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-root.is-narrow .upa-start-text { min-height: 0; }
 
 /* ---------- Reiter des Details (core makePageNav) ----------
-   Der Abstand zum Kopf kommt aus core (.up-ph-nav, 32); darunter 24 bis zum Inhalt wie auf der Leinwand (Version 9, Detail B). */
+   Wie eine Unterseiten-Navigation (Lukas 22.10. abends: "da ist ein komischer Gap"): direkt unter der Kopfzeile (core, Liste der
+   Reiterleisten mit margin-top 0, gemessen in Brands und Citations: Kopf 0-48, Reiter ab 48), der Inhalt 16 darunter wie dort
+   (.ubr-main, .ucs-main: Polster oben 16). Vorher 32 ueber und 24 unter den Reitern. */
 .upa-root .upa-nav[hidden] { display: none; }
 .upa-root.has-upa-nav .upa-pagehead { margin-bottom: 0; }
-.upa-root.has-upa-nav .upa-nav + .upa-main { margin-top: 24px; }
+.upa-root.has-upa-nav .upa-nav + .upa-main { margin-top: 16px; }
 
 /* ---------- Befunde: Etiketten je Plattform und Profilansicht (UMSETZUNGSPLAN 14) ----------
    NEU (nicht in core): die Liste je Plattform im Befund und die aufklappbare Plattformzeile. Marken aus core (.up-marke.is-leise). */
@@ -253,8 +259,24 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-root .upa-kasten .up-row.upa-paufklapp:hover { background: var(--vt-row-hover); }
 .upa-root .upa-kasten .up-row.upa-paufklapp:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: calc(var(--up-focus-w) * -1); }
 .upa-td-chev { justify-content: flex-end; }
-.upa-pkoerper { display: block; border-bottom: 1px solid var(--vc-border); }
+/* DIE LINIEN DER PLATTFORM-TABELLE (22.10. abends, gemeldet: "doppelte oder dreifache bottom border"). Gemessen: 8 Doppellinien
+   -- jede Zeile trug ihre Linie (core .up-row), der zugeklappte Koerper darunter eine zweite (1px hoch, nur Rand), und unter der
+   letzten Zeile kam der Rand des Kastens als dritte dazu. Jetzt traegt die Zeile ihre Linie (CLAUDE.md 1e), der Koerper nur, solange
+   er offen ist: als Schatten nach innen unten an seinem Inneren -- das schrumpft beim Zuklappen mit (grid 1fr -> 0fr) und hat
+   zugeklappt keine Hoehe, also auch keine Linie. Unten schliesst der Kasten: die letzte Zeile ohne Linie, ihr offener Koerper
+   traegt dafuer die Linie zur Zeile oben in sich. */
+.upa-pkoerper { display: block; }
 .upa-pkoerper[hidden] { display: none; }
+.upa-tab-plattformen .upa-pkoerper > .upa-klapp-in { box-shadow: inset 0 -1px 0 var(--vc-border); }
+.upa-tab-plattformen .up-tbody > .up-row:nth-last-child(2) { border-bottom: 0; }
+.upa-tab-plattformen .up-tbody > .upa-pkoerper:last-child > .upa-klapp-in { box-shadow: inset 0 1px 0 var(--vc-border); }
+/* "Tracked" hinter dem Namen (statt der Gruppenzeilen): Name und Marke in einer Zeile, der Name kuerzt, die Marke nie. */
+.upa-pname { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.upa-pname .up-zeilenname { min-width: 0; }
+/* Ganz schmal (375: der Spalte bleiben rund 120 fuer Text, gemessen "ChatGPT Search" auf 48 gekuerzt): die Marke rutscht in die
+   zweite Zeile, an die Stelle des Crawler-Namens -- der steht auch in der aufgeklappten Zeile ("Page loads for OAI-SearchBot"). */
+.upa-root.is-vnarrow .upa-tab-plattformen .upa-pname { flex-wrap: wrap; row-gap: 2px; }
+.upa-root.is-vnarrow .upa-td-plattform .upa-url { display: none; }
 .upa-root.is-vnarrow .upa-pkoerper-in { padding-left: 12px; }
 
 /* ---------- Rohdaten: Hover-Tausch in der Zeile (Memory "Hover-Tausch in Listen") ---------- */
@@ -262,8 +284,11 @@ a.upa-ident-url:hover span { text-decoration: underline; }
    auch beim Fokus), die Angabe geht dann. Der Knopf bleibt im Fluss, damit die Tastatur ihn erreicht. */
 .upa-roh { display: grid; align-items: center; justify-items: start; min-width: 0; }
 .upa-roh > * { grid-area: 1 / 1; }
-.upa-tab-belege .upa-rohknopf { margin-left: 0; }
-.upa-tab-belege .up-row:hover .upa-rohtext, .upa-tab-belege .up-row:focus-within .upa-rohtext { visibility: hidden; }
+/* Seit v2 heisst die Tabelle .upa-tab-abrufe; die Regeln zielten noch auf .upa-tab-belege und trafen nichts -- gemessen 22.10.
+   abends: beim Ueberfahren Knopf deckend (opacity 1) UEBER dem sichtbaren "JSON" (beide ab x 1289). Gemeldet: "sie clippen
+   uebereinander". Ausgeblendet wird die Angabe genau dann, wenn core den Knopf zeigt (.up-row:hover, :focus-visible). */
+.upa-tab-abrufe .upa-rohknopf { margin-left: 0; }
+.upa-tab-abrufe .up-row:hover .upa-rohtext, .upa-tab-abrufe .upa-roh:has(.upa-rohknopf:focus-visible) .upa-rohtext { visibility: hidden; }
 
 /* ---------- Create Audit: Zeitplan beim Anlegen (core .up-seg.is-lg) ---------- */
 
@@ -442,18 +467,31 @@ a.upa-ident-url:hover span { text-decoration: underline; }
    Breitengrenze und ohne Polster unten, der Hinweis "You can leave this page" ganz unten, mittig. */
 .upa-kopfzone.is-lauf .upa-run { max-width: none; padding: 0; }
 .upa-run-weg { margin: 32px 0 0; text-align: center; font-size: var(--up-fs-s); color: var(--vc-third); }
-/* Kopf mit kompakten Kennzahlen (Lukas 22.10.): links Domain und Kennzahlen, rechts das Bildschirmfoto, 440 breit (vorher 380);
-   die Kennzahlen 32 unter der Domain. Im Lauf dieselbe Breite. NEU, nicht in core: die kompakte Kennzahl
-   (.upa-kk) -- Kandidat fuer core, sobald eine zweite Seite sie braucht. Radius 8: Kachel und Zeile sind 37 und hoeher. */
-.upa-kopfzone.is-k, .upa-kopfzone.is-lauf { grid-template-columns: minmax(0, 1fr) 440px; }
+/* Kopf mit kompakten Kennzahlen (Lukas 22.10.): links Domain und Kennzahlen, rechts das Bildschirmfoto, 480 breit (380, dann 440;
+   22.10. abends "etwas groesser", das Fenster wird damit 25 hoeher); die Kennzahlen 32 unter der Domain. Im Lauf dieselbe Breite.
+   NEU, nicht in core: die kompakte Kennzahl (.upa-kk) -- Kandidat fuer core, sobald eine zweite Seite sie braucht. Radius 8: Kachel
+   und Zeile sind 37 und hoeher. */
+.upa-kopfzone.is-k, .upa-kopfzone.is-lauf { grid-template-columns: minmax(0, 1fr) 480px; }
 /* Lukas 22.10.: die Kennzahlen nicht mehr unten buendig mit dem Fenster (das gab rund 80 px Luft), sondern im festen Abstand der
-   Abschnitte (32) unter der Domain; auf normaler Breite schmaler als die Spalte. */
+   Abschnitte (32) unter der Domain; auf normaler Breite schmaler als die Spalte: 600 (vorher 520, abends "etwas groesser"). Bei
+   1440 bleiben bis zum Fenster 54 frei (Spalte 654). */
 .upa-kopfzone.is-k .upa-kopfzone-l { gap: 32px; }
-.upa-root:not(.is-narrow) .upa-kopfzone.is-k .upa-kk { max-width: 520px; }
+.upa-root:not(.is-narrow) .upa-kopfzone.is-k .upa-kk { max-width: 600px; }
 .upa-kk { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .upa-kk-i { display: flex; flex-direction: column; gap: 4px; min-width: 0; box-sizing: border-box; padding: 10px 12px;
   border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--vc-bg); }
-.upa-kk-l { font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Etikett links, das Info-Zeichen aus core (.up-th-info, margin-left: auto) rechts in derselben Zeile -- oben rechts in der Kachel,
+   sichtbar beim Ueberfahren der Kachel wie im Tabellenkopf (22.10. abends; vorher war die ganze Kachel der Ausloeser). */
+.upa-kk-l { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-muted); }
+.upa-kk-lt { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upa-kk-i:hover .up-th-info { opacity: 1; }
+/* Abschnittstitel und Befundgruppe: das Zeichen direkt hinter dem Wort (wie die Abschnittskoepfe in Shopping und Ads), sichtbar
+   beim Ueberfahren des Kopfs. */
+.upa-sec-head .up-sec-h { gap: 6px; }
+.upa-sec-head .up-th-info, .upa-bgruppe-kopf .up-th-info { margin-left: 0; }
+.upa-sec-head:hover .up-th-info, .upa-bgruppe-kopf:hover .up-th-info { opacity: 1; }
+/* "See finding" holt den Befund ins Bild: 16 Luft ueber ihm statt an der Kante. */
+.upa-fixliste > .upa-befund { scroll-margin-top: 16px; }
 .upa-kk-w { display: inline-flex; align-items: center; gap: 8px; font-size: var(--up-fs-xl); font-weight: var(--up-fw-h); color: var(--vc-text); font-variant-numeric: tabular-nums; }
 .upa-kk-w .up-num { font-size: inherit; font-weight: inherit; }
 .upa-kk-w .up-trend { font-size: var(--up-fs-m); }

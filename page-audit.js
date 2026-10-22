@@ -78,7 +78,6 @@
     "Stopping the audit…": "Audit wird gestoppt…",
     "Platforms": "Plattformen", "Findings": "Befunde", "Runs": "Läufe", "Checks": "Checks",
     "Measurements": "Messwerte", "Evidence": "Belege", "Run details": "Details zum Lauf",
-    "Tracked by your team": "Von deinem Team getrackt", "Other platforms": "Weitere Plattformen",
     "Not reachable": "Nicht erreichbar", "Not confirmed": "Nicht bestätigt",
     "Potential issues": "Mögliche Probleme", "Coverage": "Abdeckung",
     "First run": "Erster Lauf", "Persistent": "Bleibt", "New": "Neu", "Rules updated": "Regeln aktualisiert",
@@ -174,7 +173,6 @@
     "Waiting for {s}": "Wartet seit {s}",
     "Waiting in the queue": "In der Warteschlange",
     "We request one URL with the crawler names of seven AI search platforms and check what can stop them: robots.txt rules for each crawler, the response and redirects, noindex and snippet rules, and how much of the text is there before JavaScript runs.": "Wir rufen eine URL mit den Crawler-Namen von sieben KI-Suchen ab und prüfen, was sie aufhalten kann: robots.txt-Regeln je Crawler, Antwort und Weiterleitungen, noindex- und Snippet-Regeln und wie viel Text schon vor JavaScript da ist.",
-    "We sent the requests with each platform's crawler name from our servers. The real crawlers may get a different response.": "Wir haben die Anfragen mit dem Crawler-Namen jeder Plattform von unseren Servern geschickt. Die echten Crawler können eine andere Antwort bekommen.",
     "Weekly counts as 1 audit a week, monthly as ¼.": "Wöchentlich zählt als 1 Audit pro Woche, monatlich als ¼.",
     "What an audit checks": "Was ein Audit prüft",
     "What each AI search platform gets when it requests this page.": "Was jede KI-Suche bekommt, wenn sie diese Seite abruft.",
@@ -262,7 +260,10 @@
     "Conditional: applies when the platform fetches the page itself.": "Bedingt: gilt, wenn die Plattform die Seite selbst abruft.",
     "Unverified: no published test has measured it for this platform yet.": "Unbestätigt: Noch kein veröffentlichter Test hat das für diese Plattform gemessen.",
     "Nothing to fix on this page.": "Nichts zu beheben auf dieser Seite.",
-    "These were found before but could not be measured the same way in this run, so they are not counted as resolved.": "Diese wurden vorher gefunden, ließen sich in diesem Lauf aber nicht gleich messen. Deshalb zählen sie nicht als behoben.",
+    /* 22.10. abends: der Satz zu "No longer reported" steht jetzt als Erklaerkarte in core (EXPLAIN_TEXT pa_not_compared,
+       mit Deutsch im core-Katalog); hier nur die Titel der Befundgruppen, die die Karte als Titel traegt. */
+    "No longer reported, not compared": "Nicht mehr gemeldet, nicht verglichen",
+    "Resolved since the previous run": "Seit dem vorigen Lauf behoben",
     "Documented": "Dokumentiert",
     "Conditional": "Bedingt",
     "Unverified": "Unbestätigt",
@@ -321,6 +322,9 @@
     if (!a) return "";
     return '<span class="up-marke is-leise upa-marke is-' + a.ton + '" data-tip="' + esc(t(a.tip)) + '">' + esc(t(a.text)) + '</span>';
   }
+  /* "Tracked" hinter dem Namen einer Plattform, die das Team trackt (22.10. abends, statt der Gruppenzeilen): die leise Marke
+     aus core (.up-marke.is-leise), dieselbe wie "Competitor" hinter einem Markennamen. Das Wort steht im core-Katalog. */
+  function trackedHtml() { return '<span class="up-marke is-leise upa-marke upa-tracked">' + esc(t("Tracked")) + '</span>'; }
   /* Das Favicon der Seite (google.com/s2 wie ueberall, UC.faviconUrl); ohne Bild der Globus (.up-fav). */
   function seitenLogo(url, gross) {
     var f = UC.faviconUrl ? UC.faviconUrl(url, 64) : "";
@@ -347,9 +351,12 @@
     }
     return null;
   }
-  function sekKopf(titel, unter, rechts) {
+  /* Das Info-Zeichen aus core (.up-th-info mit data-explain, Karte ueber UC.makeExplain): wie in jedem Spaltenkopf. An Kachel
+     und Abschnittstitel erscheint es beim Ueberfahren (page-audit.css), Erklaerungen stehen nie mehr als Tooltip auf Text. */
+  function infoHtml(schl) { return '<span class="up-th-info" data-explain="' + esc(schl) + '">' + UC.icon("info", 2) + '</span>'; }
+  function sekKopf(titel, unter, rechts, erklaer) {
     return '<div class="up-sec-head upa-sec-head"><div class="up-sec-titles">' +
-      '<span class="up-heading up-sec-h">' + esc(t(titel)) + '</span>' +
+      '<span class="up-heading up-sec-h">' + esc(t(titel)) + (erklaer ? infoHtml(erklaer) : '') + '</span>' +
       (unter ? '<span class="up-sec-sub">' + esc(t(unter)) + '</span>' : '') +
       '</div>' + (rechts || '') + '</div>';
   }
@@ -1042,8 +1049,10 @@
     }
 
     /* v2 (Lukas 22.10., Canvas v8 "4 Kopf A"): die Kennzahlen kompakt links unter der Domain, neben dem Bildschirmfoto, 2 x 2,
-       Etikett ueber dem Wert. Die Bedeutung jeder Kennzahl steht in der Erklaerkarte der Kachel (UC.makeExplain), nicht als Zeile
-       darunter. Verglichen wird nur zwischen zwei vollstaendigen Laeufen derselben Regeln. */
+       Etikett ueber dem Wert. Die Bedeutung jeder Kennzahl steht in der Erklaerkarte (UC.makeExplain), nicht als Zeile darunter;
+       seit dem 22.10. abends hinter dem Info-Zeichen oben rechts in der Kachel, sichtbar beim Ueberfahren (vorher war die ganze
+       Kachel der Ausloeser -- Lukas: "verhaelt sich voellig anders, als User das gewohnt sind"). Verglichen wird nur zwischen
+       zwei vollstaendigen Laeufen derselben Regeln. */
     function kpiKleinHtml(d) {
       var s = d.selected, r = s && s.run, vor = null;
       if (s && s.previousRunId) for (var i = 0; i < d.runs.length; i++) if (d.runs[i].id === s.previousRunId) { vor = d.runs[i]; break; }
@@ -1057,7 +1066,7 @@
         { label: "Coverage", wert: von(r.coverageSatisfied, r.coverageRequired), trend: "", key: "pa_coverage" }
       ];
       return '<div class="upa-kk">' + l.map(function (x) {
-        return '<div class="upa-kk-i" tabindex="0" data-explain="' + esc(x.key) + '"' + (x.trend ? ' data-trend="1"' : '') + '><span class="upa-kk-l">' + esc(t(x.label)) + '</span>' +
+        return '<div class="upa-kk-i"' + (x.trend ? ' data-trend="1"' : '') + '><span class="upa-kk-l"><span class="upa-kk-lt">' + esc(t(x.label)) + '</span>' + infoHtml(x.key) + '</span>' +
           '<span class="upa-kk-w"><span class="up-num">' + esc(x.wert) + '</span>' + (x.trend || '') + '</span></div>';
       }).join("") + '</div>';
     }
@@ -1327,6 +1336,8 @@
       d.runs.forEach(function (x) { if (x.id === s.previousRunId) vorLauf = x; });
       function voll(x) { return !!x && x.coverageRequired != null && x.coverageSatisfied === x.coverageRequired; }
       var wechselZeigen = !s.rulesChanged && voll(s.run) && voll(vorLauf);
+      /* Getrackte Plattformen zuerst, ohne Gruppenzeilen (Lukas 22.10. abends: "streich die Gruppierungs-Rows"): die
+         Zugehoerigkeit steht als Marke "Tracked" hinter dem Namen, die Reihenfolge innerhalb bleibt die von D.PROFILE. */
       var getrackt = [], weitere = [];
       D.PROFILE.forEach(function (p) {
         var m = modellVon(p);
@@ -1349,7 +1360,8 @@
         var pk = "upa-pk-" + instanceId + "-" + e.p.id;
         return '<div class="up-row upa-statisch upa-paufklapp' + (offen ? " is-offen" : "") + '" role="row" tabindex="0" data-upa-profil="' + esc(e.p.id) + '" aria-expanded="' + offen + '" aria-controls="' + esc(pk) + '">' +
           '<div class="up-td upa-td-plattform" role="cell">' + plattformLogo(e.p, e.m) +
-            '<span class="upa-seite"><span class="up-zeilenname">' + esc(e.p.name) + '</span>' +
+            '<span class="upa-seite"><span class="upa-pname"><span class="up-zeilenname">' + esc(e.p.name) + '</span>' +
+              (e.m ? trackedHtml() : '') + '</span>' +
             '<span class="upa-url upa-mono">' + esc(e.p.token) + '</span></span></div>' +
           '<div class="up-td upa-td-zugang" role="cell">' + zugang + wechsel + '</div>' +
           '<div class="up-td upa-td-robots" role="cell">' + robotsZelle(rb) + '</div>' +
@@ -1362,20 +1374,17 @@
           ketteHtml(e.p, rb, an, dir, js, bef) +
         '</div></div></div>';
       }
-      function gruppe(titel, liste) {
-        if (!liste.length) return "";
-        return '<div class="upa-gruppe" role="row"><span class="up-blockhead">' + esc(t(titel)) + '</span></div>' + liste.map(zeile).join("");
+      var koerper = getrackt.concat(weitere).map(zeile).join("");
+      /* Jeder Spaltenkopf mit Info-Zeichen und Erklaerkarte (EXPLAIN_TEXT pa_col_*), wie in jeder Tabelle der App; die fruehere
+         Fussnote zu Access (eigene Server, Kennung der Crawler) steht in deren Karte, nicht mehr als Tooltip auf dem Wort. */
+      function kopf(text, schl, klasse) {
+        return '<div class="up-th' + (klasse ? " " + klasse : "") + '" role="columnheader"><span class="up-th-txt">' + esc(t(text)) + '</span>' + infoHtml(schl) + '</div>';
       }
-      var koerper = getrackt.length ? gruppe("Tracked by your team", getrackt) + gruppe("Other platforms", weitere) : weitere.map(zeile).join("");
       return '<section class="upa-sek">' + sekKopf("Platforms", "What each AI search platform gets when it requests this page.") +
         '<div class="up-box upa-kasten upa-tab-plattformen"><div class="up-table" role="table">' +
           '<div class="up-thead" role="row" data-up-colsig="upa">' +
-            '<div class="up-th" role="columnheader"><span class="up-th-txt">' + esc(t("Platform")) + '</span></div>' +
-            /* Was frueher als Fussnote unter der Tabelle stand, steht im Tooltip der Spalte (22.10.: keine Erklaerzeilen). */
-            '<div class="up-th" role="columnheader"><span class="up-th-txt" data-tip="' + esc(t("We sent the requests with each platform's crawler name from our servers. The real crawlers may get a different response.")) + '">' + esc(t("Access")) + '</span></div>' +
-            '<div class="up-th upa-td-robots" role="columnheader"><span class="up-th-txt">' + esc(t("robots.txt")) + '</span></div>' +
-            '<div class="up-th upa-td-js" role="columnheader"><span class="up-th-txt">' + esc(t("Text without JavaScript")) + '</span></div>' +
-            '<div class="up-th up-th-zahl upa-td-c" role="columnheader"><span class="up-th-txt">' + esc(t("Coverage")) + '</span></div>' +
+            kopf("Platform", "pa_col_platform") + kopf("Access", "pa_col_access") + kopf("robots.txt", "pa_col_robots", "upa-td-robots") +
+            kopf("Text without JavaScript", "pa_col_js", "upa-td-js") + kopf("Coverage", "pa_col_coverage", "up-th-zahl upa-td-c") +
             '<div class="up-th upa-td-chev" role="columnheader"><span class="up-th-txt"></span></div>' +
           '</div><div class="up-tbody" role="rowgroup">' + koerper + '</div></div></div>' +
       '</section>';
@@ -1384,9 +1393,11 @@
     /* ---- Etiketten: Schweregrad je Befund, impact_basis je Befund und Plattform (UMSETZUNGSPLAN 14) ----
        Beide als leise Marke aus core (.up-marke.is-leise), Text statt Punkt. Sortiert wird nur nach dem
        Schweregrad -- die Wirkung steht daneben, ordnet aber nicht. */
+    /* Was die Schwere heisst, stand bis zum 22.10. abends als Tooltip auf jeder Marke; jetzt in der Erklaerkarte am Titel
+       "What to fix" (EXPLAIN_TEXT pa_fix) -- Erklaerungen gehoeren hinter ein Info-Zeichen. */
     function schwereHtml(sev) {
       var x = D.SCHWERE[sev];
-      return x ? '<span class="up-marke is-leise upa-marke upa-schwere" data-tip="' + esc(t("Severity: how much this matters for the tested path. It is set per finding, not per platform.")) + '">' + esc(t(x)) + '</span>' : '';
+      return x ? '<span class="up-marke is-leise upa-marke upa-schwere">' + esc(t(x)) + '</span>' : '';
     }
     /* Das Etikett der Wirkung. Im Tooltip zuerst, was das Etikett heisst (vorher eine Legende unter der Tabelle, 22.10.:
        keine Erklaerzeilen), dann der datierte Satz der Registry (mit Quellen und Zeitraum) -- im Text steht der kurze Satz je
@@ -1527,11 +1538,12 @@
       });
       var behoben = s.previousFindings.filter(function (f) { return f.change === "resolved"; });
       var unklar = s.previousFindings.filter(function (f) { return f.change !== "resolved"; });
-      /* Was eine Gruppe heisst, steht im Tooltip ihres Titels (22.10.: keine Erklaerzeilen unter Bauteilen). */
-      function gruppe(titel, l, tip) {
+      /* Was eine Gruppe heisst, steht in der Erklaerkarte am Info-Zeichen ihres Titels (22.10.: keine Erklaerzeilen unter
+         Bauteilen; abends: kein Tooltip auf dem Titel selbst, sondern das Zeichen wie an jedem Spaltenkopf). */
+      function gruppe(titel, l, erklaer) {
         if (!l.length) return "";
-        return '<div class="upa-bgruppe"><div class="upa-bgruppe-kopf"><span class="up-blockhead"' + (tip ? ' tabindex="0" data-tip="' + esc(t(tip)) + '"' : '') + '>' + esc(t(titel)) + '</span>' +
-          '<span class="upa-bgruppe-n">' + esc(fmtInt(l.length)) + '</span></div>' +
+        return '<div class="upa-bgruppe"><div class="upa-bgruppe-kopf"><span class="up-blockhead">' + esc(t(titel)) + '</span>' +
+          '<span class="upa-bgruppe-n">' + esc(fmtInt(l.length)) + '</span>' + (erklaer ? infoHtml(erklaer) : '') + '</div>' +
           '<div class="up-box upa-kasten upa-befunde">' + l.map(function (f) { return befundHtml(f, true, false); }).join("") + '</div></div>';
       }
       var oben;
@@ -1542,10 +1554,10 @@
           zeichen: voll ? "checkCircle" : "helpCircle", ton: voll ? "pos" : "leise" }) +
           '<p class="upa-satz is-leise">' + esc(t(voll ? "All required public measurements completed. This doesn't prove that a platform indexes or cites the page." : "Some measurements are missing, so this is not a clean result.")) + '</p></div>';
       }
-      return '<section class="upa-sek">' + sekKopf("What to fix", !liste.length ? "Nothing to fix on this page." : liste.length === 1 ? "One thing to fix on this page." : "Restrictions first, then by severity.") +
+      return '<section class="upa-sek">' + sekKopf("What to fix", !liste.length ? "Nothing to fix on this page." : liste.length === 1 ? "One thing to fix on this page." : "Restrictions first, then by severity.", "", liste.length ? "pa_fix" : "") +
         oben +
         gruppe("Resolved since the previous run", behoben) +
-        gruppe("No longer reported, not compared", unklar, "These were found before but could not be measured the same way in this run, so they are not counted as resolved.") +
+        gruppe("No longer reported, not compared", unklar, "pa_not_compared") +
       '</section>';
     }
 
@@ -1590,11 +1602,14 @@
         var pz = D.CHECK_ZUSTAND[c.previousState];
         wechsel = '<span class="upa-leise">' + esc(t("Previously: {state}").replace("{state}", t(pz ? pz.text : c.previousState))) + '</span>';
       } else if (c.rulesChanged) wechsel = aenderungHtml("rules_changed");
+      /* "See finding" fuehrt zum Befund, der aus diesem Check entstand (finding.check_keys), nicht nur auf den Reiter Overview
+         (Lukas 22.10. abends: "kommt man einfach nur auf den Overview"). Ohne zugehoerigen Befund kein Knopf. */
+      var bf = st === "finding" ? s.findings.filter(function (f) { return f.checkKeys.indexOf(k.key) >= 0; })[0] : null;
       return '<div class="upa-crow' + (st === "finding" ? " is-befund" : "") + '">' +
         '<span class="upa-zustand is-' + ton + '"><span class="upa-zustand-ic" aria-hidden="true">' + UC.icon(ic, 2) + '</span></span>' +
         '<span class="upa-crow-t"><span class="upa-crow-n">' + esc(t(name || k.name)) + '</span><span class="upa-crow-k">' + esc(k.key + " " + t(k.name)) + '</span></span>' +
         '<span class="upa-crow-w">' + esc(wert) + '</span>' + wechsel +
-        (st === "finding" ? '<button type="button" class="up-btn-sec upa-crow-link" data-upa-zumbefund>' + esc(t("See finding")) + '</button>' : '') +
+        (bf ? '<button type="button" class="up-btn-sec upa-crow-link" data-upa-zumbefund="' + esc(bf.causeKey || bf.id) + '">' + esc(t("See finding")) + '</button>' : '') +
       '</div>';
     }
     function klappGruppe(schl, titel, zahl, inhalt, offenVorgabe) {
@@ -1786,7 +1801,15 @@
       if (!elNav || elNav.hidden === !an) return;
       elNav.hidden = !an;
       root.classList.toggle("has-upa-nav", an);
-      if (an && nav) { try { nav.positionUnderline(elNav.querySelector(".up-ph-navitem.is-selected"), false); } catch (e) {} }
+      /* Beim Einblenden auch neu einpassen (core __upStrichNeu: Zeichen weg bzw. kuerzen, dann der Strich): makePageNav hat die
+         verborgene Leiste mit Breite 0 gemessen und nichts eingepasst -- gemessen 22.10. abends bei 375: Reiter bis x 427,
+         52 px Ueberlauf in #main. */
+      if (an && nav) {
+        try {
+          if (typeof elNav.__upStrichNeu === "function") elNav.__upStrichNeu();
+          else nav.positionUnderline(elNav.querySelector(".up-ph-navitem.is-selected"), false);
+        } catch (e) {}
+      }
     }
     function detailZeichnen() {
       var e = detailEintrag(), d = e && e.daten;
@@ -1831,15 +1854,44 @@
         }, 1000);
       }
     }
-    /* Erklaerkarten der Kennzahlen (Memory "Erklaerkarten-Format"): helle Platte mit dem Wert, wie die Kachel ihn zeigt (mit
-       Trend, wenn sie einen zeigt), Titel = Etikett, Satz aus UC.explainCopy (core EXPLAIN_TEXT pa_*). Ausloeser ist die Kachel
-       selbst: der Canvas v8 hat kein Zeichen und keine Zeile daran. */
-    if (UC.makeExplain && UC.explainCopy) UC.makeExplain({ root: root, triggerSel: "[data-explain^='pa_']", getIsDark: isDark,
+    /* Erklaerkarten (Memory "Erklaerkarten-Format"): helle Platte mit einem Wert, wie die Zelle bzw. Kachel ihn zeigt, Titel =
+       Etikett, Satz aus UC.explainCopy (core EXPLAIN_TEXT pa_*). Ausloeser ist seit dem 22.10. abends ueberall das Info-Zeichen
+       (.up-th-info, wie in jeder Tabelle der App), nicht mehr die ganze Kachel.
+         Kachel (Kopf und Evidence)  die Platte zeigt den Wert der Kachel selbst (mit Trend, wenn sie einen zeigt)
+         Spaltenkopf der Plattformen ein Beispiel aus der Spalte, gut und schlecht untereinander (wie Share in den Tabellen)
+         Abschnitt / Befundgruppe    die Marken, um die es im Satz geht */
+    var BSP_PLATTFORM = D.PROFILE[0];
+    function erklaerPlatte(key, el) {
+      var kachel = el && el.closest ? el.closest(".upa-kk-i, .up-kpi") : null;
+      if (kachel) {
+        var w = kachel.querySelector(".upa-kk-w, .up-kpi-row");
+        return w ? '<span class="up-explain-row">' + w.innerHTML + '</span>' : '';
+      }
+      function zeile(h) { return '<span class="up-explain-row">' + h + '</span>'; }
+      function zu(text, zeichen, ton) { return zustandHtml({ text: text, zeichen: zeichen, ton: ton }); }
+      if (key === "pa_col_platform") {
+        var m = modellVon(BSP_PLATTFORM);
+        return zeile(plattformLogo(BSP_PLATTFORM, m) + '<span class="upa-seite"><span class="upa-pname"><span class="up-zeilenname">' + esc(BSP_PLATTFORM.name) + '</span>' +
+          trackedHtml() + '</span><span class="upa-url upa-mono">' + esc(BSP_PLATTFORM.token) + '</span></span>');
+      }
+      if (key === "pa_col_access") return zeile(zu("Reachable", "checkCircle", "pos")) + zeile(zu("Not reachable", "ban", "neg"));
+      if (key === "pa_col_robots") return zeile(zu("Allowed", "checkCircle", "pos")) + zeile(zu("Blocked", "ban", "neg"));
+      if (key === "pa_col_js") return zeile(zu("No issue", "checkCircle", "pos")) + zeile('<span class="up-marke is-leise upa-marke">' + esc(t(D.WIRKUNG.conditional.text)) + '</span>');
+      if (key === "pa_col_coverage") return zeile('<span class="up-num">' + esc(von(11, 11)) + '</span>');
+      if (key === "pa_fix") return zeile('<span class="upa-fix-n is-neg">1</span><span class="up-marke is-leise upa-marke">' + esc(t("Restriction")) + '</span>' +
+        '<span class="up-marke is-leise upa-marke">' + esc(t(D.SCHWERE.high)) + '</span>');
+      if (key === "pa_not_compared") return zeile('<span class="upa-zustand is-leise"><span class="upa-zustand-ic" aria-hidden="true">' + UC.icon("helpCircle", 2) + '</span></span>' + aenderungHtml("not_comparable"));
+      return "";
+    }
+    if (UC.makeExplain && UC.explainCopy) UC.makeExplain({ root: root, triggerSel: ".up-th-info[data-explain^='pa_']", getIsDark: isDark, cls: "upa-erklaer",
       html: function (key, el) {
-        var e = UC.explainCopy(key, { trend: el && el.getAttribute("data-trend") ? ", compared with the previous run" : "" });
+        var kachel = el && el.closest ? el.closest(".upa-kk-i, .up-kpi") : null;
+        var e = UC.explainCopy(key, { trend: kachel && (kachel.getAttribute("data-trend") || kachel.querySelector(".up-trend")) ? ", compared with the previous run" : "" });
         if (!e) return "";
-        var w = el && el.querySelector(".upa-kk-w, .up-kpi-row");
-        return (w ? '<div class="up-explain-vis"><span class="up-explain-row">' + w.innerHTML + '</span></div>' : '') +
+        /* Titel = Etikett: jedes h der pa_*-Schluessel ist wortgleich das Etikett an Kachel, Spaltenkopf oder Abschnitt (und
+           geht durch denselben Katalog). */
+        var vis = erklaerPlatte(key, el);
+        return (vis ? '<div class="up-explain-vis">' + vis + '</div>' : '') +
           '<div class="up-explain-h">' + esc(e.h) + '</div><div class="up-explain-t">' + esc(e.t) + '</div>';
       } });
     elDetail.addEventListener("click", function (e) {
@@ -1856,7 +1908,8 @@
         catch (x) { if (UC.legacyCopy) UC.legacyCopy(txt); fertig(); }
         return;
       }
-      if (e.target.closest("[data-upa-zumbefund]")) { reiterSetzen("overview"); detailZeichnen(); return; }
+      var zb = e.target.closest("[data-upa-zumbefund]");
+      if (zb) { zumBefund(zb.getAttribute("data-upa-zumbefund")); return; }
       var pr = e.target.closest(".upa-paufklapp[data-upa-profil]");
       if (pr) { profilUmschalten(pr); return; }
       var k = e.target.closest(".upa-befund-kopf");
@@ -1894,6 +1947,27 @@
         if (ch) ch.innerHTML = UC.icon(auf ? "chevronUp" : "chevronDown", 2);
       };
       if (UC.zeileHalten) UC.zeileHalten(pr, aendern, { dauer: 200 }); else aendern();
+    }
+    /* "See finding" aus den Checks (22.10. abends): Reiter Overview, der Befund offen gezeichnet und ins Bild geholt. Offen VOR
+       dem Zeichnen (state.offen haelt ihn ueber jedes Neuzeichnen, auch das leise Nachladen), danach einmal hinrollen. Kein
+       UC.zeileHalten: dort bleibt eine Zeile stehen, waehrend etwas darueber auf- oder zugeht -- hier soll sie erst ins Bild
+       kommen, und aufgeklappt ist sie schon beim Zeichnen (ohne Bewegung). Oben Luft ueber scroll-margin (page-audit.css).
+       Der Fokus geht auf den Kopf des Befunds, ohne zweiten Sprung. Fehlt der Befund (anderer Lauf), steht die Liste im Bild. */
+    function zumBefund(schl) {
+      if (schl) state.offen[schl] = true;
+      reiterSetzen("overview");
+      detailZeichnen();
+      var ziel = null;
+      [].forEach.call(elDetail.querySelectorAll(".upa-fixliste > .upa-befund[data-befund]"), function (b) {
+        if (!ziel && b.getAttribute("data-befund") === schl) ziel = b;
+      });
+      if (!ziel) { var l = elDetail.querySelector(".upa-fixliste"); ziel = l ? l.closest(".upa-sek") : null; }
+      if (!ziel) return;
+      /* Sofort, nicht weich: der Reiter wechselt ohnehin mit einem Schlag, und eine weiche Fahrt laeuft nur, solange der
+         Browser malt -- gemessen im verdeckten Pruefstand: scrollTop blieb bei 0, der Befund 1441 unter der Oberkante. */
+      try { ziel.scrollIntoView({ block: "start", behavior: "instant" }); } catch (x) { ziel.scrollIntoView(true); }
+      var kopf = ziel.querySelector(".upa-befund-kopf");
+      if (kopf) { try { kopf.focus({ preventScroll: true }); } catch (x) {} }
     }
     elDetail.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;

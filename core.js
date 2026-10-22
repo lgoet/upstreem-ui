@@ -3542,6 +3542,22 @@
       "Zeichen Seitentext in unserem Browser, nachdem Skripte bis zu 10 Sekunden liefen.",
     "Text blocks of the rendered page that are not in the initial HTML.":
       "Textblöcke der gerenderten Seite, die nicht im ersten HTML stehen.",
+    /* Page Audit (22.10. abends), EXPLAIN_TEXT pa_col_*, pa_fix, pa_not_compared. Die Etiketten (Platform, Access,
+       Coverage, What to fix ...) stehen im Katalog der Seite. */
+    "The AI search platform and the name of the crawler it fetches pages with. Tracked marks the platforms your team tracks. Open a row to see each step for that platform.":
+      "Die KI-Suche und der Name des Crawlers, mit dem sie Seiten abruft. Beobachtet kennzeichnet die Plattformen, die dein Team beobachtet. Öffne eine Zeile, um jeden Schritt für diese Plattform zu sehen.",
+    "Whether this platform's crawler can get to the page. Not reachable: a rule or response blocks it, which keeps the page out of that platform's search. Not confirmed: some measurements are missing. We send the requests with each crawler's name from our servers, so the real crawler may get a different response.":
+      "Ob der Crawler dieser Plattform an die Seite herankommt. Nicht erreichbar: Eine Regel oder Antwort sperrt ihn, das hält die Seite aus der Suche dieser Plattform heraus. Nicht bestätigt: Einige Messungen fehlen. Wir schicken die Anfragen mit dem Namen jedes Crawlers von unseren Servern, der echte Crawler kann also eine andere Antwort bekommen.",
+    "What your robots.txt tells this platform's crawler about this page. Blocked: a Disallow rule applies, so the crawler is asked not to fetch the page. Hover a value to see the rule and its line.":
+      "Was deine robots.txt dem Crawler dieser Plattform zu dieser Seite sagt. Gesperrt: Eine Disallow-Regel greift, der Crawler wird also gebeten, die Seite nicht abzurufen. Fahre über einen Wert, um die Regel und ihre Zeile zu sehen.",
+    "Whether this platform gets the page's text without running JavaScript. No issue: the text is in the HTML your server sends. Conditional: when the platform fetches the page itself, it may miss text that only appears after JavaScript. Unverified: no published test has measured this for the platform yet.":
+      "Ob diese Plattform den Text der Seite bekommt, ohne JavaScript auszuführen. Kein Problem: Der Text steht im HTML, das dein Server schickt. Bedingt: Ruft die Plattform die Seite selbst ab, kann ihr Text fehlen, der erst nach JavaScript erscheint. Unbestätigt: Noch kein veröffentlichter Test hat das für diese Plattform gemessen.",
+    "How many of the measurements this platform needs were completed in this run. If any are missing, access can't be confirmed and Access shows Not confirmed.":
+      "Wie viele der Messungen, die diese Plattform braucht, in diesem Lauf abgeschlossen wurden. Fehlt eine, lässt sich der Zugang nicht bestätigen, und Zugang zeigt Nicht bestätigt.",
+    "Each item is one thing to fix, restrictions first. A restriction keeps a platform away from this page, a potential issue may limit how a platform uses it. The severity says how much it matters for this page, the logos show the platforms it affects.":
+      "Jeder Eintrag ist eine Sache zum Beheben, Sperren zuerst. Eine Sperre hält eine Plattform von dieser Seite fern, ein mögliches Problem kann einschränken, wie eine Plattform sie nutzt. Die Schwere sagt, wie viel es für diese Seite ausmacht, die Logos zeigen die betroffenen Plattformen.",
+    "These were found before but could not be measured the same way in this run, so they are not counted as resolved.":
+      "Diese wurden vorher gefunden, ließen sich in diesem Lauf aber nicht gleich messen. Deshalb zählen sie nicht als behoben.",
 
     /* ---- Prompt Recherche ---- */
     "Prompt Research": "Prompt Recherche",
@@ -4908,7 +4924,20 @@
     pa_coverage:      { h: "Coverage", t: "How many of the required measurements were completed. Only complete runs are compared with each other." },
     pa_text_raw:      { h: "Text in the initial HTML", t: "Characters of page text that your server sends, before any script runs." },
     pa_text_rendered: { h: "Text after JavaScript", t: "Characters of page text in our browser after scripts ran for up to 10 seconds." },
-    pa_blocks_added:  { h: "Blocks added by JavaScript", t: "Text blocks of the rendered page that are not in the initial HTML." }
+    pa_blocks_added:  { h: "Blocks added by JavaScript", t: "Text blocks of the rendered page that are not in the initial HTML." },
+    /* Die Spaltenkoepfe der Plattform-Tabelle (22.10. abends, Lukas: "das muss auch ein User verstehen, der das zum ersten Mal
+       sieht"). Je Satz: was die Spalte misst und was ein schlechter Wert heisst. Die Woerter der Werte stehen so im Satz, wie die
+       Zelle sie zeigt (Reachable, Blocked, Conditional ...). Access traegt die fruehere Fussnote (eigene Kennung, eigene Server).
+       Formulierungsgrenzen wie in den Befunden: "may", "keeps out of search", nie "cannot see". */
+    pa_col_platform:  { h: "Platform", t: "The AI search platform and the name of the crawler it fetches pages with. Tracked marks the platforms your team tracks. Open a row to see each step for that platform." },
+    pa_col_access:    { h: "Access", t: "Whether this platform's crawler can get to the page. Not reachable: a rule or response blocks it, which keeps the page out of that platform's search. Not confirmed: some measurements are missing. We send the requests with each crawler's name from our servers, so the real crawler may get a different response." },
+    pa_col_robots:    { h: "robots.txt", t: "What your robots.txt tells this platform's crawler about this page. Blocked: a Disallow rule applies, so the crawler is asked not to fetch the page. Hover a value to see the rule and its line." },
+    pa_col_js:        { h: "Text without JavaScript", t: "Whether this platform gets the page's text without running JavaScript. No issue: the text is in the HTML your server sends. Conditional: when the platform fetches the page itself, it may miss text that only appears after JavaScript. Unverified: no published test has measured this for the platform yet." },
+    pa_col_coverage:  { h: "Coverage", t: "How many of the measurements this platform needs were completed in this run. If any are missing, access can't be confirmed and Access shows Not confirmed." },
+    /* Was frueher als Tooltip an jeder Schwere-Marke und am Titel einer Befundgruppe stand (Erklaerungen gehoeren hinter ein
+       Info-Zeichen, 22.10. abends). */
+    pa_fix:           { h: "What to fix", t: "Each item is one thing to fix, restrictions first. A restriction keeps a platform away from this page, a potential issue may limit how a platform uses it. The severity says how much it matters for this page, the logos show the platforms it affects." },
+    pa_not_compared:  { h: "No longer reported, not compared", t: "These were found before but could not be measured the same way in this run, so they are not counted as resolved." }
   };
   function explainCopy(key, vars){
     var e = EXPLAIN_TEXT[key];
@@ -5944,10 +5973,14 @@
   function kpiKarte(o){
     o = o || {};
     var lbl = String(o.label || "");
-    /* o.explain (22.10., Page Audit): Schluessel aus EXPLAIN_TEXT; die Kachel ist dann der Ausloeser einer Erklaerkarte
-       (UC.makeExplain mit triggerSel auf [data-explain]), statt einer Fusszeile unter dem Wert. */
-    return '<div class="up-kpi' + (o.klasse ? " " + o.klasse : "") + '"' + (o.explain ? ' data-explain="' + esc(o.explain) + '" tabindex="0"' : '') + '>' +
-      '<span class="up-kpi-label" data-i18n="' + esc(lbl) + '">' + esc(t(lbl)) + '</span>' +
+    /* o.explain (22.10., Page Audit): Schluessel aus EXPLAIN_TEXT. Seit dem 22.10. abends traegt die Kachel dafuer das
+       Info-Zeichen aus core (.up-th-info mit data-explain) rechts in der Zeile des Etiketts, sichtbar beim Ueberfahren der
+       Kachel (core.css .up-kpi-label.has-info) -- nicht mehr die ganze Kachel als Ausloeser. Lukas: "Tooltips haben sich
+       ueber Icons zu oeffnen, die on hover oben rechts in Cards sichtbar werden". Die Karte baut der Aufrufer mit
+       UC.makeExplain (triggerSel auf das Zeichen); die Kachel findet er ueber closest(".up-kpi"). */
+    return '<div class="up-kpi' + (o.klasse ? " " + o.klasse : "") + '">' +
+      '<span class="up-kpi-label' + (o.explain ? " has-info" : "") + '" data-i18n="' + esc(lbl) + '">' + esc(t(lbl)) +
+        (o.explain ? '<span class="up-th-info" data-explain="' + esc(o.explain) + '">' + icon("info", 2) + '</span>' : '') + '</span>' +
       '<span class="up-kpi-row">' +
         (o.vorherHtml ? '<span class="up-kpi-vorher">' + o.vorherHtml + '</span><span class="up-kpi-pfeil" aria-hidden="true">' + icon("arrowRight", 2) + '</span>' : '') +
         '<span class="up-kpi-val">' + (o.wertHtml == null || o.wertHtml === "" ? "\u2013" : o.wertHtml) + '</span>' +
