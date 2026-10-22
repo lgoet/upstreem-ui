@@ -1165,6 +1165,15 @@ Tooltips schweben über der Seite und liegen nicht in der Oberfläche.
 Erscheint nach **60ms** Hover-Delay (bewusst kurz gehalten, „fast ohne Delay" wie Mira),
 verschwindet sofort bei Klick/Mousedown.
 
+**Auf dem Telefon per Tippen** (seit 22.10., Lukas: „per Tap, app-weit, wie die Erklärkarten“):
+Tippen auf einen Auslöser mit `data-tip`/`data-brandtip` öffnet den Chip (`.up-tip.is-tipp`; nur der
+wird unter `@media (hover: none)` gezeigt), Tippen daneben, ein zweites Tippen darauf, Escape oder
+Scrollen schließt. Reicht die Breite nicht, kommt die umbrechende Fassung (`is-wide`). **Nie statt
+einer Aktion:** an Knöpfen, Links, Feldern und Elementen mit eigener Rolle kommt kein Chip, ebenso
+nicht in Anklickbarem ohne Rolle (erkannt an `cursor: pointer`, z. B. eine Tabellenzeile, die einen
+Drawer öffnet). Kein `preventDefault`, kein `stopPropagation` – der Klick geht weiter wie immer.
+Gilt für jede Wurzel mit `makeTooltips`; nichts in den Komponenten zu tun.
+
 Die Farben stehen **literal** da, nicht über `var(--vc-text)`: Der Tooltip hängt an `<body>`,
 und `--vc-text` würde dort nicht mit dem Thema der Komponente wechseln (genau daran ist der
 Explainer-Tooltip einmal unsichtbar geblieben) -- und er soll ohnehin in beiden Themes gleich
@@ -2851,7 +2860,9 @@ Bis 15.10. war das offene Feld randlos und transparent (Notion-Stil), Text 14/50
   Timer nicht abbricht. Tooltip-Variante `.<pfx>-tip.is-wide` bricht um (max ~340px). Das
   native `title`-Attribut an Titel/URL entfernen, damit kein doppeltes Tooltip erscheint.
 - **Touch (`@media (hover: none)`):** Suchfeld auf `font-size: 16px` (verhindert iOS-Zoom
-  beim Fokus) und **Hover-Tooltips ausblenden** (`.<pfx>-tip { display:none !important; }`).
+  beim Fokus) und **Hover-Tooltips ausblenden** (`.<pfx>-tip { display:none !important; }`;
+  der Chip aus core seit 22.10. `.up-tip:not(.is-tipp) { display: none; }` – per Tippen geht er
+  auf, siehe §7).
   Die 16px-Regel muss die 14px-Aktiv-Regel überstimmen (gleiche Spezifität → im `@media`
   denselben Selektor `.<pfx>-search.is-open .<pfx>-search-input` nutzen, damit sie später
   greift).

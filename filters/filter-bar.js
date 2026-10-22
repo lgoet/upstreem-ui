@@ -696,7 +696,17 @@
             if (ziel === document.body) ziel.appendChild(w);
             else ziel.insertBefore(w, (h.nachbar && h.nachbar.parentNode === ziel) ? h.nachbar : null);
           } catch (e) {
-            try { document.body.appendChild(w); } catch (e2) {}
+            try { document.body.appendChild(w); ziel = document.body; } catch (e2) {}
+          }
+          /* AM KOERPER GEPARKT HEISST VERSTECKT (22.10., Klickrouten-Pruefung). Dort stand die Wurzel samt ihrem
+             geschlossenen Menue (Deckkraft 0, aber ausgelegt) im Fluss des <body>, und das Menue ragte rechts ueber
+             den Rand: gemessen in Impact bei 375 nach Detail -> Uebersicht eine Seite von 399 statt 375, waagerecht
+             rollbar, jeder feste Schleier eines Popups ebenso breit. Am Koerper wartet sie nur auf die naechste
+             Leiste (einziehen) oder auf ihre Abloesung -- Platz braucht sie dort keinen. hidden plus eine eigene
+             Marke: nur was HIER versteckt wurde, macht einziehen wieder sichtbar (filter-bar.css). */
+          if (ziel === document.body && w.parentNode === document.body) {
+            w.hidden = true;
+            w.setAttribute("data-ufb-geparkt", "yes");
           }
           if (w.__ufbHost === root) w.__ufbHost = null;
           delete eingezogen[f.key];
@@ -938,6 +948,8 @@
           }
           w.__ufbHost = root;
           host.appendChild(w);
+          /* Vom Koerper zurueck (heimschicken): wieder sichtbar. */
+          if (w.hasAttribute("data-ufb-geparkt")) { w.removeAttribute("data-ufb-geparkt"); w.hidden = false; }
           eingezogen[f.key] = w;
           etwasNeu = true;
           spiegelBeobachten(f, w);
