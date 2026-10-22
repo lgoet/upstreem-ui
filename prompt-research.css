@@ -527,6 +527,11 @@
    unten fuer die naechste Zeile, 6px nach rechts statt des Kommas (das bleibt fuer Kopieren und
    Vorlesen im Baum, sichtbar ist es nicht mehr). */
 .upr-inline-tag-body { margin: 0 6px 4px 0; }
+/* Der Farbstrich einer Topic ohne die graue Kachel dahinter (Lukas 22.10.: "die farbige Form ganz links steht in einem
+   grauen Container -- weg damit"). Die Kachel behaelt ihre 18 Breite, damit Strich, Emoji und Intent-Zeichen in
+   jedem Chip an derselben Stelle stehen; nur ihr Grund faellt. is-strich setzt allein prompt-research.js (buildTag),
+   Ask Mira zeigt Emoji und Zeichen weiter auf der Kachel. */
+.upr-inline-tag .up-feldchip-av.is-strich { background: transparent; }
 .upr-inline-tag-sep { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
 /* ---------- results ----------
@@ -625,9 +630,9 @@
      Dieselbe Loesung wie die Einladungstabelle in team-orga (data-up-locale am <html>, von core
      in jedem Sprachlauf gesetzt). */
   --upr-act-w: 176px;
-  /* Intent und Branded (14.10.) zwischen Tags und Volumen: Intent 150 (das breiteste Label mit
-     Zeichen, ohne Klick-Polster), Branded 150 (der Chip mit drei Favicons und "+N"). */
-  --up-cols: minmax(0, 2.4fr) minmax(0, 1.5fr) 150px 150px 150px var(--upr-act-w);
+  /* Intent (14.10.) zwischen Tags und Volumen: 150, das breiteste Label mit Zeichen, ohne Klick-Polster.
+     Branded hat seit dem 22.10. keine Spalte mehr, der Chip steht im Prompt-Text (.upr-prompt-marke). */
+  --up-cols: minmax(0, 2.4fr) minmax(0, 1.5fr) 150px 150px var(--upr-act-w);
   flex: 0 0 auto;
 }
 /* Deutsch: "Ignorieren" und "Beobachten" statt "Ignore" und "Track" -- gemessen 221px, plus
@@ -657,6 +662,14 @@
   font-size: 14px; line-height: 1.45; font-weight: 500; letter-spacing: -0.01em; color: var(--vc-text);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
 }
+/* Der Branded-Chip im Prompt-Text (22.10., wie .upt-prompt-marke der Prompt-Tabelle): rechts, so breit wie er
+   ist, 10 Abstand wie dort; der Text nimmt den Rest und bricht davor um. Form aus core (.up-branded). */
+.upr-box .upr-td-prompt { gap: 10px; }
+.upr-td-prompt .upr-prompt-text { flex: 1 1 auto; min-width: 0; }
+.upr-prompt-marke { flex: 0 0 auto; display: inline-flex; align-items: center; }
+/* Schmal nur die Logos bzw. das Brands-Zeichen, ohne "Branded" und Strich -- dieselbe Regel wie dort. */
+.upr-root.is-narrow .upr-prompt-marke .up-branded-lbl,
+.upr-root.is-narrow .upr-prompt-marke .up-branded-sep { display: none; }
 .upr-tags-list { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; overflow: hidden; }
 .upr-cell-empty { color: var(--vc-third); font-size: 13px; }
 
@@ -732,11 +745,10 @@
 .upr-fehler > span { padding-top: 8px; }
 
 /* ---------- responsive ---------- */
-/* Spalten seit dem 14.10.: 1 Prompt, 2 Tags, 3 Intent, 4 Branded, 5 Volumen, 6 Aktionen. Zuerst
-   geht Branded (die seltenste Angabe), dann Tags und Intent, zuletzt das Volumen. */
+/* Spalten seit dem 22.10.: 1 Prompt (mit dem Branded-Chip), 2 Tags, 3 Intent, 4 Volumen, 5 Aktionen. Zuerst
+   gehen Tags und Intent, zuletzt das Volumen. */
 @media (max-width: 1040px) {
   .upr-box { --up-cols: minmax(0, 2.2fr) minmax(0, 1.4fr) 140px 120px var(--upr-act-w); }
-  .upr-box .up-th:nth-child(4), .upr-box .up-td:nth-child(4) { display: none; }
   .upr-results-context { display: none; }
 }
 @media (max-width: 860px) {
@@ -745,7 +757,7 @@
   .upr-box .up-th:nth-child(3), .upr-box .up-td:nth-child(3) { display: none; }
 }
 @media (max-width: 560px) {
-  .upr-box .up-th:nth-child(5), .upr-box .up-td:nth-child(5) { display: none; }
+  .upr-box .up-th:nth-child(4), .upr-box .up-td:nth-child(4) { display: none; }
 
   /* Icon-only actions. At this width "Ignore"/"Track" cost more than they explain -- the x and the
      check carry the same meaning, and the 150px the labels needed came straight out of the prompt
@@ -831,16 +843,20 @@
 .upr-sk-fuss { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 4px; }
 .upr-sk-los { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
 .upr-sk-los svg { width: 14px; height: 14px; }
+/* Gesperrt (eine Recherche je Nutzer, 22.10.): aria-disabled statt disabled, damit der Tooltip mit dem Grund kommt.
+   Dieselben Werte wie .up-btn-pri:disabled in core (Deckkraft .4, kein Zeiger, Hover aendert nichts); core kennt
+   aria-disabled bisher nur am Export (.up-export), der Kopfknopf ist einer und braucht darum nichts. Vier Klassen
+   gegen .up-btn-pri:not(:disabled):hover (0,3,0). */
+.upr-sk-los.up-btn-pri[aria-disabled="true"],
+.upr-sk-los.up-btn-pri[aria-disabled="true"]:hover { opacity: .4; cursor: default; }
 /* NEU (nicht in core): die Grafik (Lukas 22.10., Canvas G3) -- Fragen als Sprechblasen, abwechselnd
-   links und rechts, eine hervorgehoben; rechts ueber beide Zeilen wie die Grafik auf Page Audit. Rand per
-   Maske ausgeblendet (Deckkraft, keine Themenfarbe). Eine Blase bricht nie um. */
+   links und rechts, eine hervorgehoben; rechts ueber beide Zeilen wie die Grafik auf Page Audit. Eine Blase
+   bricht nie um. Abends (Lukas: "mehr Padding", "statisch", "einige 16 bis 32 weiter rein"): Polster 40 oben und
+   unten, 56 seitlich, die Blasen stehen still und ganz im Feld. Die Randmaske der ersten Fassung ist damit weg --
+   sie blendete die Blasen am Rand aus, als waeren sie abgeschnitten; den weichen Rand traegt allein das Muster. */
 .upr-grafik { grid-column: 2; grid-row: 1 / span 2; position: relative; min-height: 0; overflow: hidden;
-  display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 0 40px;
-  --upr-punkt: color-mix(in srgb, var(--vc-text) 14%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent), linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
-  -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent), linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
-  mask-composite: intersect; }
+  display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 40px 56px;
+  --upr-punkt: color-mix(in srgb, var(--vc-text) 14%, transparent); }
 /* DAS MUSTER DAHINTER ist das der Karten der Landingpage (.ulh-vis-muster in landing-hero.css): 1px-Punkte
    im 8px-Raster, Blende als Oval etwas unter der Mitte. Nur die Farbe ist abgeleitet: dort #d8dbe0 fest (die
    Landing kennt nur hell), hier Schrift zu 14 % -- hell fast derselbe Ton, und sie dreht mit dem Thema. */
@@ -850,19 +866,22 @@
   -webkit-mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 45%, transparent 100%);
   mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 45%, transparent 100%); }
 /* Die Blase liegt UEBER dem Muster. Radius 16 wie eine Sprechblase der Toast-Karte (--up-r-3xl), Tiefe e-1 (liegt
-   auf der Flaeche). nth-of-type zaehlt nur die Blasen (das Muster ist ein div): die zweite und vierte rechts. */
+   auf der Flaeche). 36 hoch (1 + 8 + 18 + 8 + 1): fuenf Blasen mit 8 Abstand sind 212, mit 40 oben und unten 292 --
+   genau die 293 der Grafik bei 1440 (Hoehe von Text und Karte daneben). nth-of-type zaehlt nur die Blasen (das
+   Muster ist ein div): die zweite und vierte rechts. */
 .upr-blase { position: relative; z-index: 1; align-self: flex-start; max-width: 100%; display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 14px; box-sizing: border-box; border: 1px solid var(--vc-border); border-radius: var(--up-r-3xl);
-  background: var(--vc-bg); box-shadow: var(--up-e-1); font-size: var(--up-fs-m); line-height: 1.4; color: var(--vc-muted);
-  white-space: nowrap; transition: filter var(--up-t-3) var(--up-ease), opacity var(--up-t-3) var(--up-ease); }
+  padding: 8px 14px; box-sizing: border-box; border: 1px solid var(--vc-border); border-radius: var(--up-r-3xl);
+  background: var(--vc-bg); box-shadow: var(--up-e-1); font-size: var(--up-fs-m); line-height: 18px; color: var(--vc-muted);
+  white-space: nowrap; }
 .upr-blase:nth-of-type(2n) { align-self: flex-end; }
+/* Der Versatz: nicht alle Blasen an derselben Kante, sondern drei um 16, 24 und 32 weiter innen. max-width zieht den
+   Versatz ab, sonst schoebe eine lange Frage im schmalen Feld ueber den Rand hinaus. */
+.upr-blase:nth-of-type(2) { margin-right: 24px; max-width: calc(100% - 24px); }
+.upr-blase:nth-of-type(3) { margin-left: 32px; max-width: calc(100% - 32px); }
+.upr-blase:nth-of-type(5) { margin-left: 16px; max-width: calc(100% - 16px); }
 .upr-blase.is-hl { border-color: color-mix(in srgb, var(--vc-text) 45%, transparent); color: var(--vc-text); }
 .upr-blase svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .upr-blase-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-/* Der Wechsel alle 5 s (prompt-research.js, blasenTakt): die Blase verschwimmt, der Text wechselt, sie kommt an
-   derselben Stelle scharf zurueck. */
-.upr-blase.is-weg { filter: blur(6px); opacity: 0; }
-@media (prefers-reduced-motion: reduce) { .upr-blase { transition: none; } }
 /* Schmal: die Grafik weicht, Text und Karte stehen untereinander. */
 .upr-root.is-narrow .upr-start { grid-template-columns: minmax(0, 1fr); }
 .upr-root.is-narrow .upr-grafik { display: none; }
@@ -906,6 +925,13 @@
 .upr-lauf-form { flex: 0 0 auto; width: 8px; height: 8px; border-radius: var(--up-r-voll); background: var(--vt-warn-flaeche);
   transition: background-color var(--up-t-2) ease; }
 .upr-lauf.is-fertig .upr-lauf-form { background: var(--vt-up-flaeche); }
+/* Der Ring (UC.ringHtml 14) zwischen Punkt und Text, nur solange die Recherche laeuft -- Werte 1:1 aus .upa-lb-ring:
+   fertig zieht er sich in 200 ms zusammen, Breite 0 und der Abstand davor zurueck (-12 = gap), damit der Text ruhig
+   an den Punkt rueckt. (.check_reinvention.py haelt das fuer eine Slide-out-Suche: es ist der Platz des Rings.) */
+.upr-lauf-ring { display: flex; align-items: center; width: 14px; margin-left: -12px; opacity: 0; overflow: hidden; flex: 0 0 auto;
+  transition: width var(--up-t-2) ease, margin-left var(--up-t-2) ease, opacity var(--up-t-2) ease; }
+.upr-lauf:not(.is-fertig) .upr-lauf-ring { margin-left: 0; opacity: 1; }
+.upr-lauf.is-fertig .upr-lauf-ring { width: 0; }
 .upr-lauf-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .upr-lauf-h { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); line-height: 20px; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .upr-lauf-s { font-size: var(--up-fs-m); line-height: 20px; color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -914,12 +940,14 @@
 .upr-lauf-knopf { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; }
 .upr-lauf-knopf[hidden] { display: none; }
 .upr-lauf-knopf svg { width: 14px; height: 14px; }
-@media (prefers-reduced-motion: reduce) { .upr-lauf-s, .upr-lauf-form { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .upr-lauf-s, .upr-lauf-form, .upr-lauf-ring { transition: none; } }
 /* Telefon (eigene Box, is-vnarrow): neben "View Research" blieben dem Text 137 px, Begriffe und
    "12 prompts ready to review" waren beide gekuerzt. Der Knopf geht darum in eine eigene Zeile, rechts
-   wie "Start Research" in der Karte; der Text bekommt die volle Breite neben dem Punkt (8 + 12). */
+   wie "Start Research" in der Karte. Der Text geht von der Breite neben Punkt und Ring aus (8 + 12 + 14 + 12 = 46)
+   und waechst: laufend fuellt er die Zeile genau, fertig (Ring 0, sein Abstand zurueck) ist Platz uebrig, der Knopf
+   passt aber nicht mehr daneben und bricht um. */
 .upr-root.is-vnarrow .upr-lauf { flex-wrap: wrap; row-gap: 12px; }
-.upr-root.is-vnarrow .upr-lauf-text { flex-basis: calc(100% - 20px); }
+.upr-root.is-vnarrow .upr-lauf-text { flex: 1 1 calc(100% - 46px); }
 .upr-root.is-vnarrow .upr-lauf-knopf { margin-left: auto; }
 
 /* ---------- Das Popup "Start Research" (22.10.) ----------
@@ -934,6 +962,12 @@
    damit Begriffe und die vier Einstellungen in einer Reihe stehen, und ein hoeheres Feld. Unter 540 bleibt es
    das Blatt aus core (max-width 100 %). */
 .up-topicmodal-card.up-modal.upr-neu-karte { max-width: 720px; }
+/* Ein GESCHLOSSENES Menue des Felds gehoert aus dem Fluss (CLAUDE.md 1d, Popups). Es haengt absolut unter
+   seinem Ausloeser, nur durchsichtig, und ragte so 32 ueber die Karte hinaus: die Karte rollte (502 statt 470
+   bei 1440x900), obwohl nichts fehlte, und der klebende Fuss -- das letzte Kind im Fluss -- rollte mit nach
+   oben (Lukas 22.10.). Offen steht das Menue im Top Layer (menuEscape in core, :popover-open) und bleibt dort
+   bis zum Ende seines Ausblendens (dropEscape), darum blendet es weiter weich aus. */
+.upr-neu .upr-dd-menu:not(.is-shown):not(:popover-open) { display: none; }
 .upr-neu .upr-composer .upr-tag-editor { min-height: 140px; }
 .upr-neu .upr-start-btn, .upr-neu .upr-settings-toggle { display: none; }
 /* Der Satz "Tip: Be specific ..." unter dem Feld faellt im Popup weg (Memory "Keine Meta-Unterzeilen": keine

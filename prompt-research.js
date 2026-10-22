@@ -28,7 +28,7 @@
      Bubble calls these by name as soon as its own workflows run, which is regularly before
      core.js has finished loading. Queue everything and replay it in call order once the real
      implementations exist (STYLEGUIDE §25 step 2). */
-  var API_NAMES = ["setRunning", "setIdle", "setError", "setComplete", "setPrompts", "setResearchReady",
+  var API_NAMES = ["setRunning", "setIdle", "setError", "setComplete", "setPrompts", "setResearchReady", "setStartBlocked",
                    "setResearchMeta", "setPreviousResearches", "openHistory", "closeHistory",
                    "setTags", "setActionLoading", "setBusy", "setTheme", "setMarkets",
                    "setMarket", "setBusinessModel", "setPersona"];
@@ -240,6 +240,15 @@
   var tableMenu           = root.querySelector('#upr-table-menu');
   var tableMenuPopover    = root.querySelector('#upr-table-menu-popover');
   var acceptWithTagsBtn   = root.querySelector('#upr-accept-with-tags');
+  /* DIE ERGEBNISTABELLE IST VOM ERSTEN BILD AN EINGERICHTET (Lukas 22.10.: "beim Navigieren 1-2 s leer, kein
+     Skelett, obwohl die RPC sofort antwortet"). core schneidet auf einer Seite jeden .up-box weg, dessen Kopf noch
+     kein data-up-colsig traegt ("Keine rohe Tabelle", core.css), und gibt ihn erst nach 1,5 s frei -- das Merkmal
+     setzt makeColumns. Diese Tabelle hat aber kein makeColumns: ihre Spalten stehen fest in der CSS (--up-cols an
+     .upr-box), sie ist also fertig, sobald das Markup steht. Ohne das Merkmal stand Skelett UND Ergebnis 1,5 s
+     unsichtbar da (gemessen: clip-path inset(100%) bis 1500 ms nach dem Oeffnen). "statisch" statt einer
+     Spaltensignatur: makeColumns vergleicht den Wert nur in seinen eigenen Tabellen. */
+  var resultsKopf = root.querySelector('.upr-box .up-thead');
+  if (resultsKopf && !resultsKopf.hasAttribute('data-up-colsig')) resultsKopf.setAttribute('data-up-colsig', 'statisch');
   var tableMenuTrigger    = root.querySelector('#upr-table-menu-trigger');
   /* "Accept all Prompts <span data-count-label>(0)</span>": Text und Zahl liegen im SELBEN
      Element, der Text als eigener Knoten neben dem Zaehler. Der Sprachlauf laesst so etwas
@@ -355,7 +364,12 @@
       'Audience': 'Zielgruppe',
       'View Research': 'Recherche ansehen',
       '1 prompt ready to review': '1 Prompt zum Durchsehen',
-      '{n} prompts ready to review': '{n} Prompts zum Durchsehen'
+      '{n} prompts ready to review': '{n} Prompts zum Durchsehen',
+      /* Eine Recherche je Nutzer (22.10.): Tooltip am gesperrten Knopf und Meldungen der Seite. */
+      'You already have a research running': 'Bei dir läuft schon eine Recherche',
+      'You already have a research running.': 'Bei dir läuft schon eine Recherche.',
+      'A research is already running': 'Es läuft schon eine Recherche',
+      'This research has no open prompts left': 'Diese Recherche hat keine offenen Prompts mehr'
     });
   }
   var START = {
@@ -368,28 +382,18 @@
      Sprechblasen, abwechselnd links und rechts, eine hervorgehoben mit dem Zeichen der Seite. Die
      Fragen sind bewusst allgemein und nicht die des Teams ("sehr allgemein gehalten, nicht auf das
      Team bezogen"). Eine Blase bricht nie um (white-space: nowrap), darum ist jede Frage kurz.
-     Alle 5 s wechselt eine: sie verschwimmt, tauscht den Text und kommt an derselben Stelle wieder
-     (blasenTakt unten). Dahinter das Punktmuster der Karten der Landingpage (.ulh-vis-muster). */
+     Seit dem Abend des 22.10. steht sie still (Lukas: der Wechsel alle 5 s mit Unschaerfe "weg, statisch"),
+     darum genau fuenf Fragen. Dahinter das Punktmuster der Karten der Landingpage (.ulh-vis-muster). */
   var BLASEN = [
     'Best project management tool for small teams',
     'Which running shoes are best for flat feet?',
     'Is a heat pump worth it for an old house?',
     'Best CRM for a growing sales team',
-    'How do I pick a good coffee grinder?',
-    'Most reliable used cars under $15,000',
-    'Which e-bike has the longest range?',
-    'Best laptop for video editing on a budget',
-    'How to choose a mattress for back pain',
-    'Which VPN is fastest for streaming?',
-    'Best accounting software for freelancers',
-    'Are robot vacuums worth it with pets?',
-    'Best noise-cancelling headphones for travel',
-    'How much does solar for a home cost?',
-    'Which airline has the most legroom?'
+    'How do I pick a good coffee grinder?'
   ];
   function grafikHtml(){
     return '<div class="upr-grafik" aria-hidden="true"><div class="upr-blasen-muster"></div>' +
-      BLASEN.slice(0, 5).map(function(text, i){
+      BLASEN.map(function(text, i){
         return '<span class="upr-blase' + (i === 2 ? ' is-hl' : '') + '">' + (i === 2 ? UC.icon('telescope', 1.8) : '') +
           '<span class="upr-blase-t">' + esc(text) + '</span></span>';
       }).join('') + '</div>';
@@ -412,16 +416,21 @@
   function laufHtml(){
     return '<div class="up-box upr-lauf" role="status" aria-live="polite" hidden>' +
       '<span class="upr-lauf-form" aria-hidden="true"></span>' +
+      /* Zwischen Punkt und Text der Ring aus core, solange die Recherche laeuft (Lukas 22.10.: wie der Lauf-Kasten
+         von Page Audit, .upa-lb-ring). */
+      '<span class="upr-lauf-ring" aria-hidden="true">' + (UC.ringHtml ? UC.ringHtml(14) : '') + '</span>' +
       '<span class="upr-lauf-text"><span class="upr-lauf-h"></span><span class="upr-lauf-s"></span></span>' +
       '<button type="button" class="up-btn-pri upr-lauf-knopf" hidden><span>' + esc(tt('View Research')) + '</span>' + UC.icon('arrowRightLong', 2) + '</button>' +
     '</div>';
   }
-  /* Die eine Leiste wie auf Page Audit: rechts Suche und Table Settings, der Kopf klebt (makeSticky).
-     Links steht nichts -- es gibt keinen Filter, der die Liste aendert. KEINE SEITEN UND KEINE
-     GESAMTZEILE (Lukas 22.10., Canvas Reihe 5, L1): die DB liefert hoechstens die fuenf juengsten
-     fertigen Recherchen mit offenen Vorschlaegen (n8n raeumt den Rest weg) plus die laufende. */
+  /* Die eine Leiste wie auf Page Audit: rechts Suche und Table Settings, der Kopf klebt (makeSticky),
+     Gesamtzeile und Pagination kleben unten (data-kleb-fuss). Links steht nichts -- es gibt keinen
+     Filter, der die Liste aendert. Seit dem Abend des 22.10. wieder MIT Gesamtzeile und Seiten (Lukas: 25
+     Recherchen behalten statt 5, prompt_research_22_10_v1.sql): bis 25 fertige plus laufende sind mehr als
+     eine Seite, und jede Tabelle mit der einen Leiste traegt dann beides (Zeilen je Seite aus core, 15).
+     Vorher, bei hoechstens fuenf, waren beide weggelassen (Canvas Reihe 5, L1). */
   function listeHtml(){
-    return '<section class="up-root upr-liste" data-flach="yes" data-leiste="yes" data-sticky-top="16" data-instance="' + esc(instanceId + '_liste') + '">' +
+    return '<section class="up-root upr-liste" data-flach="yes" data-leiste="yes" data-kleb-fuss="yes" data-sticky-top="16" data-instance="' + esc(instanceId + '_liste') + '">' +
       '<div class="up-head upr-liste-head">' +
         '<div class="up-leiste-scope"></div>' +
         '<div class="up-head-tools">' +
@@ -440,6 +449,11 @@
         '</div>' +
       '</div>' +
       '<div class="up-box upr-liste-box"><div class="up-table" role="table" data-table></div></div>' +
+      '<div class="up-foot">' +
+        '<div class="up-pagesize"><span class="up-pagesize-lbl">' + esc(tt('Rows per page')) + '</span>' +
+          '<div class="up-pagesize-seg" role="group" aria-label="' + esc(tt('Rows per page')) + '"></div></div>' +
+        '<div class="up-pager"></div>' +
+      '</div>' +
     '</section>';
   }
   var startAnsicht = document.createElement('div');
@@ -450,29 +464,8 @@
     if (schale) schale.insertBefore(startAnsicht, resultsStage && resultsStage.parentNode === schale ? resultsStage : schale.firstChild);
   })();
 
-  /* Der Wechsel der Fragen: alle 5 s eine, nie dieselbe Blase zweimal hintereinander und nie eine Frage,
-     die schon steht. Die Blende (Unschaerfe und Deckkraft) laeuft in der CSS ueber --up-t-3; der Text
-     wechselt, wenn sie zu ist. Nur, solange die Startansicht zu sehen ist, und ohne Bewegung (reduzierte
-     Bewegung) gar nicht. Die Uhr endet mit der Wurzel. */
-  var BLENDE_MS = 260;   /* = --up-t-3, die Dauer der Blende in prompt-research.css */
-  var blasenLetzte = -1;
-  function blasenTakt(){
-    if (!root.isConnected){ clearInterval(blasenUhr); return; }
-    if (document.hidden || root.classList.contains('is-results') || (UC.istSichtbar && !UC.istSichtbar(startAnsicht))) return;
-    var l = startAnsicht.querySelectorAll('.upr-blase');
-    if (l.length < 2) return;
-    var i;
-    do { i = Math.floor(Math.random() * l.length); } while (i === blasenLetzte);
-    blasenLetzte = i;
-    var gezeigt = [].map.call(l, function(b){ return b.textContent; });
-    var frei = BLASEN.filter(function(x){ return gezeigt.indexOf(x) < 0; });
-    if (!frei.length) return;
-    var b = l[i], t = b.querySelector('.upr-blase-t'), neu = frei[Math.floor(Math.random() * frei.length)];
-    b.classList.add('is-weg');
-    setTimeout(function(){ if (t) t.textContent = neu; b.classList.remove('is-weg'); }, BLENDE_MS);
-  }
+  /* Ohne Bewegung (reduzierte Bewegung) wechselt der Satz im Laufstreifen nicht. */
   var ruhig = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  var blasenUhr = ruhig ? null : setInterval(blasenTakt, 5000);
   var elListe = startAnsicht.querySelector('.upr-liste'), elTable = elListe.querySelector('[data-table]');
   var elSuche = elListe.querySelector('.upr-liste-suche'), elSucheIn = elListe.querySelector('.up-search-input');
   if (UC.widthTiers) UC.widthTiers(elListe);
@@ -498,16 +491,19 @@
   var ZYKLEN = { research: ['research:asc', 'research:desc'], prompts: ['prompts:desc', 'prompts:asc'], market: ['market:asc', 'market:desc'],
                  intent: ['intent:asc', 'intent:desc'], audience: ['audience:asc', 'audience:desc'],
                  branded: ['branded:desc', 'branded:asc'], created: ['created:desc', 'created:asc'] };
-  /* Der Stand der Liste ueber einen Neuaufbau hinweg (Themenwechsel): Suche und Sortierung. */
-  var L = (vorrat && vorrat.liste) ? vorrat.liste : { query: '', sort: 'created', dir: 'desc' };
+  /* Der Stand der Liste ueber einen Neuaufbau hinweg (Themenwechsel): Suche, Sortierung, Seite. */
+  var L = (vorrat && vorrat.liste) ? vorrat.liste : { query: '', sort: 'created', dir: 'desc', page: 1, pageSize: UC.DEFAULT_PAGE_SIZE || 15 };
+  if (!L.page) L.page = 1;
+  if (!L.pageSize) L.pageSize = UC.DEFAULT_PAGE_SIZE || 15;
   /* geliefert: die Seite hat die Liste geschickt (sonst Skelett); fehler: sie war nicht lesbar. */
   var listeGeliefert = false;
-  var lst = { query: L.query, sortField: L.sort, sortDir: L.dir, loading: false, cols: {}, widths: {} };
+  var lst = { query: L.query, page: L.page, pageSize: L.pageSize, sortField: L.sort, sortDir: L.dir, loading: false, cols: {}, widths: {} };
   var colsKit = UC.makeColumns({
     root: elListe, state: lst, columns: SPALTEN, storePrefix: 'upr', instanceId: instanceId,
     /* Wie Page Audit (firstShare 0.24): die erste Spalte traegt kurze Begriffe, keine Ueberschrift. */
     firstKey: 'research', firstMin: 240, firstShare: 0.24, noActions: true,
-    badgeSel: '.upr-cols-badge', cellPrefixes: ['up', 'upr'],
+    badgeSel: '.upr-cols-badge', cellPrefixes: ['up', 'upr', 'up-sum'],
+    nachspann: function(){ return zaehl ? zaehl.schalter() : null; },
     onChange: function(){ tabelleZeichnen(); }
   });
   lst.cols = colsKit.readCols(); lst.widths = colsKit.readWidths();
@@ -533,7 +529,7 @@
     onFire: function(p){
       var q = String(p.query || '').trim();
       if (q === L.query) return;
-      L.query = q;
+      L.query = q; L.page = 1; lst.page = 1;
       tabelleZeichnen(); merke();
     },
     persist: function(){}
@@ -549,13 +545,19 @@
   });
   function sucheLeeren(){
     elSucheIn.value = ''; lst.query = ''; elSuche.classList.remove('has-text'); suche.cancel();
-    if (L.query){ L.query = ''; tabelleZeichnen(); merke(); }
+    if (L.query){ L.query = ''; L.page = 1; lst.page = 1; tabelleZeichnen(); merke(); }
   }
   if (L.query){ elSucheIn.value = L.query; elSuche.classList.add('is-open', 'has-text'); suche.syncTakeover(); }
+  var pager = UC.makePager({
+    root: elListe, state: lst,
+    total: function(){ return gefiltert().length; },
+    onChange: function(){ L.page = lst.page; L.pageSize = lst.pageSize; tabelleZeichnen(); merke(); },
+    onClamp: function(){ L.page = lst.page; tabelleZeichnen(); }
+  });
   var kopfSort = UC.makeHeadSort({
     root: elListe, state: lst, cycles: ZYKLEN, defaultSort: { field: 'created', dir: 'desc' },
     onSort: function(feld, dir){
-      lst.sortField = feld; lst.sortDir = dir; L.sort = feld; L.dir = dir;
+      lst.sortField = feld; lst.sortDir = dir; L.sort = feld; L.dir = dir; L.page = 1; lst.page = 1;
       kopfSort.syncHeadSorters(); tabelleZeichnen(); merke();
     }
   });
@@ -563,6 +565,14 @@
   function kleben(){ if (kleber && !root.classList.contains('is-results')) kleber.applySticky(); }
   if (UC.aufResize) UC.aufResize(kleben); else window.addEventListener('resize', kleben);
   if (UC.onResize) UC.onResize(elListe, function(){ colsKit.applyCols(); });
+  /* Die Gesamtzeile wie auf Page Audit: links die Anzahl, keine Berechnungen (Minus je Spalte). */
+  var zaehl = UC.makeZaehlZeile ? UC.makeZaehlZeile({
+    root: elListe, nach: elTable, instanceId: instanceId, praefix: 'upr',
+    cols: function(){ return colsKit; }, rechnen: {},
+    spalten: function(){ return SPALTEN.map(function(c){ return c.key; }); },
+    anzahl: function(){ return listeFehler ? null : (listeGeliefert ? gefiltert().length : null); },
+    laedt: function(){ return !listeGeliefert && !listeFehler; }
+  }) : null;
 
   function laeuftNoch(it){ return it.status === 'queued' || it.status === 'running'; }
   function begriffeText(it){ return (it.keywords && it.keywords.length) ? it.keywords.join(', ') : tt('Untitled research'); }
@@ -574,7 +584,7 @@
   function modellText(it){ return it.business_model ? (MODELL[String(it.business_model).toLowerCase()] || String(it.business_model)) : ''; }
   function personaZeile(it){ return it.persona ? tt(personaLabelVon(it.persona)) : ''; }
   function zielgruppe(it){ return [modellText(it), personaZeile(it)].filter(Boolean).join(', '); }
-  /* Gefiltert und sortiert -- alle Zeilen auf einmal (keine Seiten, siehe listeHtml). */
+  /* Gefiltert und sortiert -- die Grundlage fuer Seite, Gesamtzeile und Pagination. */
   function gefiltert(){
     var q = String(L.query || '').toLowerCase();
     var rows = !q ? previousResearches.slice() : previousResearches.filter(function(it){
@@ -673,6 +683,11 @@
        untereinander (Kopf, Karte, Leerzustand) -- wie auf Page Audit. */
     return UC.leerHtml({ icon: 'telescope', titel: 'No completed researches yet', text: 'Finished researches show up here so you can reopen them.' });
   }
+  function seite(rows){
+    var n = Math.max(1, Math.ceil(rows.length / L.pageSize));
+    if (L.page > n){ L.page = n; lst.page = n; }
+    return rows.slice((L.page - 1) * L.pageSize, L.page * L.pageSize);
+  }
   var sichtbar = [];
   function tabelleZeichnen(){
     var kopf = kopfHtml();
@@ -681,10 +696,14 @@
       elTable.innerHTML = kopf + '<div class="up-tbody">' + skelett(4) + '</div>';
     } else {
       var rows = listeFehler ? [] : gefiltert();
-      sichtbar = rows;
+      sichtbar = seite(rows);
       elTable.innerHTML = kopf + (sichtbar.length ? '<div class="up-tbody" role="rowgroup">' + sichtbar.map(zeileHtml).join('') + '</div>' : leerListeHtml());
     }
     colsKit.applyCols(); colsKit.syncColsBadge(); kopfSort.syncHeadSorters();
+    elListe.classList.toggle('is-onepage', !listeGeliefert);
+    lst.page = L.page; lst.pageSize = L.pageSize;
+    pager.renderPageSize(); pager.renderPager();
+    if (zaehl) zaehl.zeichnen();
     if (elListe.classList.contains('up-sticky') && kleber && kleber.syncTheadOffset) kleber.syncTheadOffset();
     kleben();
   }
@@ -692,6 +711,12 @@
     if (e.target.closest('.up-grip')) return;
     var so = e.target.closest('.up-th.is-sortable[data-sort]');
     if (so){ kopfSort.headSortClick(so.getAttribute('data-sort')); return; }
+    var ps = e.target.closest('[data-pagesize]');
+    if (ps){ pager.setPageSize(Number(ps.getAttribute('data-pagesize'))); return; }
+    if (e.target.closest('.up-page-prev')){ pager.goToPage(lst.page - 1); return; }
+    if (e.target.closest('.up-page-next')){ pager.goToPage(lst.page + 1); return; }
+    var pg = e.target.closest('.up-page[data-page]');
+    if (pg){ pager.goToPage(Number(pg.getAttribute('data-page'))); return; }
     if (e.target.closest('[data-upr-suche-weg]')){ sucheLeeren(); return; }
     var weg = e.target.closest('[data-upr-weg]');
     if (weg){
@@ -770,8 +795,22 @@
   /* Start einer neuen Recherche: Knopf im Kopf und Knopf der Startkarte, beide ueber denselben Weg. */
   root.addEventListener('click', function(e){
     var neu = e.target.closest && e.target.closest('[data-upr-neu]');
-    if (neu && root.contains(neu) && !neu.disabled) neueRecherche();
+    if (neu && root.contains(neu) && !neu.disabled && neu.getAttribute('aria-disabled') !== 'true') neueRecherche();
   });
+  /* GESPERRT: eine Recherche je Nutzer (Lukas 22.10.). Gesperrt, solange im Team eine laeuft (is-running) oder die
+     Seite einen Grund meldet (setStartBlocked: der eigene Lauf in einem anderen Team). aria-disabled statt
+     disabled, wie der gesperrte Export in core (.up-export[aria-disabled]): ein disabled-Knopf bekommt kein
+     mouseover, und der Grund steht im Tooltip. Der Knopf bleibt fokussierbar, Enter tut nichts (Klickweg oben). */
+  var startSperre = (vorrat && typeof vorrat.startSperre === 'string') ? vorrat.startSperre : null;
+  function startKnoepfeSetzen(){
+    var laeuft = root.classList.contains('is-running');
+    var grund = startSperre || (laeuft ? tt('A research is already running') : '');
+    root.querySelectorAll('[data-upr-neu]').forEach(function(b){
+      b.disabled = false;
+      if (grund){ b.setAttribute('aria-disabled', 'true'); b.setAttribute('data-tip', grund); }
+      else { b.removeAttribute('aria-disabled'); b.removeAttribute('data-tip'); }
+    });
+  }
 
   /* ---------- state (unchanged from the standalone) ---------- */
   var fallbackMarkets = [
@@ -844,7 +883,7 @@
       mitTags: acceptWithTags,
       aktion: root.classList.contains('is-action-loading'),
       eingabe: eingabe.stand(),
-      fehler: fehlerText, listeFehler: listeFehler, streifen: streifen,
+      fehler: fehlerText, listeFehler: listeFehler, streifen: streifen, startSperre: startSperre,
       liste: L
     };
   }
@@ -1010,6 +1049,7 @@
     fernrohrSetzen();          /* nach einem Neuaufbau der Gruppe steht sonst wieder das alte Zeichen da */
     root.classList.toggle('is-running', isRunning);
     root.classList.toggle('is-results', isResults);
+    klebenNurImErgebnis();
     root.classList.toggle('is-error', isError);
     /* Zurueck in der Startansicht: die Leiste der Liste neu messen (sie war verborgen). */
     if (!isResults) setTimeout(kleben, 0);
@@ -1021,7 +1061,8 @@
       startButton.innerHTML = (isRunning ? ICON.search : ICON.send) + '<span>' + (isRunning ? 'Researching' : 'Start Research') + '</span>';
       startButton.classList.toggle('is-running', isRunning);
     }
-    root.querySelectorAll('.upr-chip, .upr-dd-trigger, .upr-dd-option, .upr-dd-clear, .upr-dd-search, [data-upr-neu]').forEach(function(el){ if ('disabled' in el) el.disabled = isRunning; });
+    root.querySelectorAll('.upr-chip, .upr-dd-trigger, .upr-dd-option, .upr-dd-clear, .upr-dd-search').forEach(function(el){ if ('disabled' in el) el.disabled = isRunning; });
+    startKnoepfeSetzen();
     if (isRunning && settingsPanel){ settingsPanel.classList.remove('is-open', 'is-steht'); if (settingsToggle){ settingsToggle.setAttribute('aria-expanded', 'false'); settingsToggle.classList.remove('is-active'); } }
     if (tableMenu && !isResults) tableMenuPop.close();
     /* Seit dem 22.10. (Lukas, R3) laeuft eine Recherche im Streifen ueber der Liste; das Ladebild bleibt
@@ -1076,10 +1117,14 @@
       return '<span class="upr-cell-empty">–</span>';
     return UC.intentHtml(z, {});
   }
-  function brandedZelle(it){
+  /* BRANDED IM PROMPT-TEXT statt in einer eigenen Spalte (Lukas 22.10. abends: "wie in der Prompt-Tabelle"):
+     derselbe Chip aus core (UC.brandedHtml) rechts in der Zelle, nur bei einem branded Vorschlag -- sonst
+     steht nichts da und die Zelle haelt keinen Platz frei (prompts-table.js promptMarkeHtml). Nicht klickbar:
+     ein Vorschlag hat kein Branded-Menue, er wird erst getrackt ein Prompt. */
+  function promptMarkeHtml(it){
     var z = it && it.zeile;
-    if (!z || z.branded !== true || !UC.brandedHtml) return '<span class="upr-cell-empty">–</span>';
-    return UC.brandedHtml(z, {});
+    if (!z || z.branded !== true || !UC.brandedHtml) return '';
+    return '<span class="upr-prompt-marke">' + UC.brandedHtml(z, {}) + '</span>';
   }
   /* core's .up-topicchip, the same chip the prompts table and the topics manager draw, instead of
      the standalone's parallel .upr-tag-pill implementation. */
@@ -1184,8 +1229,10 @@
     if (!resultsBody) return;
     /* core's skeleton takes pixel widths and jitters them per row, so the block does not read as a
        rigid grid -- that is what the standalone's hand-written width table was doing by hand. */
+    /* Die Form der Tabelle: je Spalte ein Balken (Prompt, Tags, Intent, Volumen, Aktionen leer) -- vorher
+       nur vier fuer sechs Spalten, Intent und Volumen standen ohne Balken da. */
     resultsBody.innerHTML = UC.skeletonRows
-      ? UC.skeletonRows({ count: 8, cols: [{ w: 240, jitter: 40 }, { w: 150, jitter: 30 }, { w: 58 }, { w: 0 }] })
+      ? UC.skeletonRows({ count: 8, cols: [{ w: 240, jitter: 40 }, { w: 150, jitter: 30 }, { w: 96 }, { w: 58 }, { w: 0 }] })
       : '';
   }
 
@@ -1243,10 +1290,9 @@
     if (resultsBody){
       resultsBody.innerHTML = currentSuggestedPrompts.map(function(item, index){
         return '<div class="up-row" data-prompt-id="' + esc(item.id || '') + '" data-row-index="' + index + '">' +
-          '<div class="up-td"><span class="upr-prompt-text">' + esc(item.prompt_text) + '</span></div>' +
+          '<div class="up-td upr-td-prompt"><span class="upr-prompt-text">' + esc(item.prompt_text) + '</span>' + promptMarkeHtml(item) + '</div>' +
           '<div class="up-td">' + renderTags(item.tags) + '</div>' +
           '<div class="up-td upr-td-intent">' + intentZelle(item) + '</div>' +
-          '<div class="up-td upr-td-branded">' + brandedZelle(item) + '</div>' +
           '<div class="up-td">' + renderVolume(item.estimated_volume) + '</div>' +
           '<div class="up-td upr-td-actions"><div class="upr-row-actions">' +
             /* Schon uebersetzt, Schluessel in data-i18n: sonst mass die Aktionsspur die englische
@@ -1395,6 +1441,9 @@
     if (trigger) trigger.addEventListener('click', function(e){
       e.stopPropagation();
       dd.__pop.toggle();
+      /* Jedes Oeffnen mit leerer Suche (Klickroute 22.10.: nach "alb" und einer Wahl zeigte das Menue beim naechsten
+         Oeffnen nur noch Albanien, die uebrigen Maerkte waren ohne erkennbaren Grund weg). */
+      if (search && search.value && dd.__pop.isOpen()){ search.value = ''; search.dispatchEvent(new Event('input', { bubbles: true })); }
       if (dd.__pop.isOpen()) seiteWaehlen(dd, menu);
       syncDropdownOpenState();
       /* preventScroll (14.10., gemeldet: "beim Oeffnen scrollt die ganze Komponente nach oben"): der
@@ -1801,9 +1850,19 @@
      it wrong. Core's default of 171px is meant for a full app page with its own topbar, so the
      value has to be set — leaving the attribute off would pin 155px too low. */
   root.setAttribute("data-sticky-top", "16");
-  root.removeAttribute("data-sticky");
+  klebenNurImErgebnis();
   var stickyKit = UC.makeSticky ? UC.makeSticky(root, root.querySelector(".upr-results-stage .up-head")) : null;
   function applyStickyNow(){ if (stickyKit) stickyKit.applySticky(); }
+  /* Dieser Kleber gehoert dem ERGEBNIS, haengt aber an der Wurzel -- und core nimmt jedem .up-box unter
+     .up-sticky den Rand (.up-sticky .up-box, der klebende Kopf zeichnet ihn dort selbst). In der Startansicht
+     verlor so die Karte "How a research works" und der Laufstreifen den Rand der core-Karte (Lukas 22.10.:
+     "hat keine border"). Darum klebt die Wurzel nur im Ergebnis: data-sticky="no" ist der Schalter von core,
+     den applySticky bei jedem Aufruf liest, auch bei seinen eigenen spaeteren Versuchen. Die Liste der
+     Startansicht ist eine eigene .up-root mit eigenem Kleber und davon unberuehrt. */
+  function klebenNurImErgebnis(){
+    if (root.classList.contains('is-results')) root.removeAttribute('data-sticky');
+    else { root.setAttribute('data-sticky', 'no'); root.classList.remove('up-sticky'); }
+  }
   applyStickyNow();
   /* applySticky decides on/off from a one-off viewport measurement, and the toolbar's height
      changes when the results view appears at all — both need a re-run. */
@@ -1926,6 +1985,9 @@
       composerEl.classList.toggle('has-value', !empty);
       var val = getValue();
       if (textarea.value !== val) textarea.value = val;
+      /* Die Fehlerzeile gilt dem letzten Start: sobald das Feld wieder etwas enthaelt, ist sie ueberholt
+         (Klickroute 22.10.: "Enter at least one keyword" blieb stehen, obwohl schon ein Keyword drin war). */
+      if (!empty && fehlerText) fehlerZeigen('');
       try { editor.dispatchEvent(new CustomEvent('upr-tags-geaendert')); } catch(e){}
       merke();
     }
@@ -2106,6 +2168,9 @@
   api.setError    = function(msg){
     if (startWartet && neuPopup){
       startWartet = false;
+      /* Die Antwort ist da: die Sperre gegen Doppelklicks (1,2 s ab dem Klick) hat ihren Zweck erfuellt. Sonst
+         verpuffte ein sofortiger zweiter Versuch nach einer schnellen Ablehnung still (Klickroute 22.10.). */
+      root.__uprStartLocked = false;
       neuPopup.busy('ok', false);
       if (typeof msg === 'string') fehlerZeigen(msg);
       merke();
@@ -2145,6 +2210,12 @@
   /* Die Recherche ist fertig (22.10., R3): der Streifen wird gruen und bietet "View Research"; die Seite
      springt nicht mehr von selbst in die Vorschlaege. job = die Zeile aus prompt_research_jobs_v1 bzw.
      dem Realtime-Ereignis (job_id, keywords, prompt_count ...). */
+  /* setStartBlocked(text | null): der Grund, warum "Start Research" gesperrt ist, oder frei. */
+  api.setStartBlocked = function(text){
+    startSperre = typeof text === 'string' && text.trim() ? text.trim() : null;
+    startKnoepfeSetzen();
+    merke();
+  };
   api.setResearchReady = function(job){
     if (typeof job === 'string'){ try { job = JSON.parse(job); } catch(e){ job = null; } }
     if (!job || typeof job !== 'object' || !(job.job_id || job.id)) return;
@@ -2299,6 +2370,7 @@
   }
   /* Ein fertiger Streifen aus dem Vorrat (ein laufender kam schon ueber setResearchState zurueck). */
   streifenZeichnen();
+  startKnoepfeSetzen();
   aufbau = false;
   merke();
 

@@ -21,13 +21,14 @@
     loeschen: "prompt_research_delete_v1",
     start: "start-job"
   };
-  /* Die Liste rechts: 20 ist der Hoechstwert (Vorgabe der DB waeren 5). Sie traegt laufende,
-     fertige mit offenen Vorschlaegen und gescheiterte der letzten 24 h -- fuenf waeren nach
-     zwei Recherchen am Tag schon voll. */
-  var LISTE = 20;
+  /* Die Liste: 25 ist der Hoechstwert und so viele fertige Recherchen behaelt das Team seit dem 22.10.
+     (Lukas: 25 statt 5; prompt_research_22_10_v1.sql, prune und p_limit 1-25). Sie traegt laufende,
+     fertige mit offenen Vorschlaegen und gescheiterte der letzten 24 h. Kennt die DB noch 1-20 (Datei
+     nicht eingespielt), faellt die Seite einmal auf LISTE_ALT zurueck (jobsLaden). */
+  var LISTE = 25, LISTE_ALT = 20;
 
   function anfrage(fn, p) { return { fn: fn, params: p, sig: fn + "|" + JSON.stringify(p) }; }
-  function jobs(team) { return anfrage(FN.jobs, { p_team: str(team), p_limit: LISTE }); }
+  function jobs(team, grenze) { return anfrage(FN.jobs, { p_team: str(team), p_limit: grenze || LISTE }); }
   function ergebnis(team, jobId) { return anfrage(FN.ergebnis, { p_team: str(team), p_job_id: str(jobId) }); }
   function entscheiden(team, aktion, ids, mitTags) {
     var p = { p_team: str(team), p_action: aktion === "accept" ? "accept" : "ignore", p_ids: (isArr(ids) ? ids : []).map(str).filter(Boolean) };
@@ -83,7 +84,12 @@
     var rows = o.rows.filter(obj);
     var laufend = null;
     rows.forEach(function (r) { if (!laufend && istLauf(r.status)) laufend = r; });
-    return { rows: rows, laufend: laufend };
+    /* eigen (22.10., einer_je_nutzer_v1.sql): der eigene laufende Job, auch in einem anderen Team, oder null.
+       eigenBekannt: die DB liefert das Feld schon -- vorher weiss die Seite nicht, wessen Lauf es ist. */
+    var m = obj(o.meta) || {};
+    var eigen = obj(m.own_running);
+    return { rows: rows, laufend: laufend, eigen: eigen && str(eigen.job_id) ? eigen : null,
+             eigenBekannt: Object.prototype.hasOwnProperty.call(m, "own_running") };
   }
   /* { rows, meta, status, fehlerCode } -- rows sind die offenen Vorschlaege, so wie die Tabelle
      sie liest (id, prompt_text, market, estimated_volume, tags). */
@@ -115,6 +121,9 @@
        Mitgliedschaft. Bis befunde_db_v1.sql P0403 = HTTP 500 (ueber den Code bei "rechte"),
        danach PT402 = 402 (ohne diese Zeile "sonst"). start-job reicht beides durch. */
     if (/^team_access_/.test(m) || c === "PT402" || s === 402) return "zugang";
+    /* Vor "limit": auch PT409. Der Nutzer hat schon eine Recherche laufen, in einem anderen Team
+       (einer_je_nutzer_v1.sql, 22.10.; im selben Team antwortet der Start mit reused). */
+    if (m === "prompt_research_user_busy") return "besetzt";
     if (m === "prompt_research_limit_reached" || (c === "PT409" && /limit/.test(m))) return "limit";
     if (m === "prompt_research_not_found" || c === "PT404" || (s === 404 && /not_found/.test(m))) return "weg";
     if (m === "edge_not_configured" || m === "edge_not_implemented" || s === 503 || s === 501) return "nichtDa";
@@ -131,7 +140,7 @@
   }
 
   window.UpstreemPromptResearchDaten = {
-    FN: FN, LISTE: LISTE,
+    FN: FN, LISTE: LISTE, LISTE_ALT: LISTE_ALT,
     jobs: jobs, ergebnis: ergebnis, entscheiden: entscheiden, loeschen: loeschen,
     begriffe: begriffe, startBody: startBody, istLauf: istLauf,
     zuJobs: zuJobs, zuErgebnis: zuErgebnis, zuKontingent: zuKontingent,
