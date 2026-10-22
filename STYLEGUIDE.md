@@ -1341,6 +1341,13 @@ Breiten        werden dafür nicht vergrößert (Wunsch: lieber kürzen); nur wo
 Ausgenommen    "Mentioned?" (.up-th-mentlbl baut die Tabelle selbst) und die Landingpage
 ```
 
+**Erklärkarte an einer Kennzahl ohne Info-Zeichen** (seit 22.10., Page Audit): Trägt das Design an
+der Kachel weder Zeile noch Zeichen, ist die Kachel selbst der Auslöser (`data-explain` und
+`tabindex="0"`; `UC.kpiKarte({ explain })` setzt beides, eigene Kacheln schreiben es selbst). Die
+Karte bleibt im festen Format: Platte mit dem Wert, wie die Kachel ihn zeigt (mit Trend, wenn sie
+einen zeigt), Titel = Etikett, Satz aus `UC.explainCopy` (`EXPLAIN_TEXT` in core). Nie ein
+Tooltip mit Satz an einer Kennzahl, nie eine Fußzeile als Erklärung.
+
 **Tabellenköpfe im Drawer** (seit 15.10. spät, `core.css` „DIE TABELLENKOEPFE IM DRAWER“): jede
 Tabelle in einem Drawer (`.up-kdr`, `[id^="drawer-"]`) trägt den Kopf der Seitentabellen, behält
 aber ihren Kasten mit Rand und Radius 12 — sie wird **nicht** flach. **Im Dunkeln** (nach Geist)

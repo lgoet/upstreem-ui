@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261183;
+  var BUILD = 20261185;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -3526,6 +3526,22 @@
     /* Die Bausteine, aus denen core den Erklaersatz mit {scope} und {trend} zusammensetzt. */
     " for the tracked prompts": " auf die beobachteten Prompts",
     ", plus the change against the previous period": ", plus die Änderung gegenüber dem vorigen Zeitraum",
+    /* Page Audit (22.10.), EXPLAIN_TEXT pa_* */
+    ", compared with the previous run": ", verglichen mit dem vorigen Lauf",
+    "AI platforms with no access block and all required measurements done{trend}.":
+      "KI-Plattformen ohne Zugangssperre, bei denen alle nötigen Messungen gelaufen sind{trend}.",
+    "Rules or responses that block a platform from this page{trend}.":
+      "Regeln oder Antworten, die eine Plattform von dieser Seite aussperren{trend}.",
+    "Things that may limit how a platform can use the page, such as text that only appears after JavaScript{trend}.":
+      "Was einschränken kann, wie eine Plattform die Seite nutzt, etwa Text, der erst nach JavaScript erscheint{trend}.",
+    "How many of the required measurements were completed. Only complete runs are compared with each other.":
+      "Wie viele der nötigen Messungen abgeschlossen sind. Verglichen werden nur vollständige Läufe.",
+    "Characters of page text that your server sends, before any script runs.":
+      "Zeichen Seitentext, die dein Server schickt, bevor ein Skript läuft.",
+    "Characters of page text in our browser after scripts ran for up to 10 seconds.":
+      "Zeichen Seitentext in unserem Browser, nachdem Skripte bis zu 10 Sekunden liefen.",
+    "Text blocks of the rendered page that are not in the initial HTML.":
+      "Textblöcke der gerenderten Seite, die nicht im ersten HTML stehen.",
 
     /* ---- Prompt Recherche ---- */
     "Prompt Research": "Prompt Recherche",
@@ -4883,7 +4899,16 @@
        weil die Auswahl aus core kommt (colorScaleOptionsHtml) und der Erklaerkasten derselbe ist,
        den die Spaltenkoepfe benutzen -- eine Quelle fuer beide. */
     brandcolors: { h: "Brand Colors",
-                   t: "Every brand is drawn in its own color instead of a fixed palette. You set that color per brand in Settings under Your Brand, in the Brand Color section. Brands without one fall back to a neutral color." }
+                   t: "Every brand is drawn in its own color instead of a fixed palette. You set that color per brand in Settings under Your Brand, in the Brand Color section. Brands without one fall back to a neutral color." },
+    /* Page Audit (22.10.): die vier Kennzahlen im Kopf eines Audits und die drei Werte unter Evidence. {trend} nur bei den
+       Kacheln, die einen Trend zeigen; verglichen wird dort mit dem vorigen Lauf, nicht mit einem Zeitraum. */
+    pa_reachable:     { h: "Reachable", t: "AI platforms with no access block and all required measurements done{trend}." },
+    pa_restrictions:  { h: "Restrictions", t: "Rules or responses that block a platform from this page{trend}." },
+    pa_issues:        { h: "Potential issues", t: "Things that may limit how a platform can use the page, such as text that only appears after JavaScript{trend}." },
+    pa_coverage:      { h: "Coverage", t: "How many of the required measurements were completed. Only complete runs are compared with each other." },
+    pa_text_raw:      { h: "Text in the initial HTML", t: "Characters of page text that your server sends, before any script runs." },
+    pa_text_rendered: { h: "Text after JavaScript", t: "Characters of page text in our browser after scripts ran for up to 10 seconds." },
+    pa_blocks_added:  { h: "Blocks added by JavaScript", t: "Text blocks of the rendered page that are not in the initial HTML." }
   };
   function explainCopy(key, vars){
     var e = EXPLAIN_TEXT[key];
@@ -5919,7 +5944,9 @@
   function kpiKarte(o){
     o = o || {};
     var lbl = String(o.label || "");
-    return '<div class="up-kpi' + (o.klasse ? " " + o.klasse : "") + '">' +
+    /* o.explain (22.10., Page Audit): Schluessel aus EXPLAIN_TEXT; die Kachel ist dann der Ausloeser einer Erklaerkarte
+       (UC.makeExplain mit triggerSel auf [data-explain]), statt einer Fusszeile unter dem Wert. */
+    return '<div class="up-kpi' + (o.klasse ? " " + o.klasse : "") + '"' + (o.explain ? ' data-explain="' + esc(o.explain) + '" tabindex="0"' : '') + '>' +
       '<span class="up-kpi-label" data-i18n="' + esc(lbl) + '">' + esc(t(lbl)) + '</span>' +
       '<span class="up-kpi-row">' +
         (o.vorherHtml ? '<span class="up-kpi-vorher">' + o.vorherHtml + '</span><span class="up-kpi-pfeil" aria-hidden="true">' + icon("arrowRight", 2) + '</span>' : '') +
@@ -20059,6 +20086,224 @@
     if (EVM.lauf) return EVM.lauf.then(function(){ return EVM.stand === true; });
     return Promise.resolve(APP.start).then(function(){ return eventMeldungenStart(); }).then(function(){ return EVM.stand === true; });
   }
+  /* ── EIN AUDIT OEFFNEN (21.10., Page Audit) ──────────────────────────────────────────────────
+     Das Detail eines Audits liegt in der Ansicht "audits" (page-audit.js), die Adresse traegt
+     ?page_id=<uuid>, wahlweise &run_id=<uuid> fuer einen bestimmten Lauf. Hier in core und nicht in
+     page-audit.js aus demselben Grund wie eventOeffnen: die Datei laedt nur mit ihrer Ansicht, die
+     Einstiege kommen aber von ueberall (Impact "Run audit", die Meldung "Audit updated"). Eine
+     schon offene Seite hoert up-page-audit-open -- dort gibt es keinen Ansichtswechsel, den sie
+     sehen koennte. Nach aussen als window.upstreemPageAuditOpen (Vertrag mit der Impact-Session). */
+  var PAGE_AUDIT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  function pageAuditOeffnen(pageId, runId){
+    var id = String(pageId == null ? "" : pageId).trim(), lauf = String(runId == null ? "" : runId).trim();
+    if (!PAGE_AUDIT_ID.test(id)) return false;
+    if (!PAGE_AUDIT_ID.test(lauf)) lauf = "";
+    try {
+      var u = new URL(window.location.href);
+      u.searchParams.set("page_id", id);
+      if (lauf) u.searchParams.set("run_id", lauf); else u.searchParams.delete("run_id");
+      window.history.pushState(window.history.state, "", u.pathname + u.search + u.hash);
+    } catch(e){}
+    try { window.dispatchEvent(new CustomEvent("up-page-audit-open", { detail: { pageId: id, runId: lauf } })); } catch(e){}
+    try {
+      var offen = (typeof currentView === "function" && currentView()) || "";
+      if (offen !== "audits"){
+        if (typeof window.usnNavigieren === "function") window.usnNavigieren("audits");
+        else if (typeof window.showView === "function"){ window.showView("audits"); ansichtHalten("audits"); }
+      }
+    } catch(e){}
+    return true;
+  }
+  window.upstreemPageAuditOpen = function(pageId){ return pageAuditOeffnen(pageId); };
+  /* ── PAGE AUDIT: STATUS UND FEHLERSAETZE, GETEILT (21.10., Absprache mit der Impact-Sitzung) ───────────────────
+     Was die Seite Page Audit UND Impact ("Run audit" an einer zitierten URL) beide zeigen: der Status eines Laufs mit
+     Zeichen und Ton, und der Satz zu jedem Fehler von create_page_audit_v1 (Vertrag 27_page_audit.md). Eine Quelle:
+     page-audit-data.js liest beides von hier. Die Datenbank liefert Schluessel (status, message, hint, detail), nie Saetze.
+     ton: pos, neg, warn, leise (Farbe der Angabe); dreht: das Zeichen dreht sich (laufend). Englisch, uebersetzt wird
+     beim Zeichnen (t_ bzw. o.t des Aufrufers); die deutschen Eintraege stehen gleich darunter im Katalog. */
+  var PAGE_AUDIT_STATUS = {
+    queued: { text: "Queued", zeichen: "clock", ton: "leise" },
+    running: { text: "Running", zeichen: "loader", ton: "leise", dreht: true },
+    completed: { text: "Completed", zeichen: "checkCircle", ton: "leise" },
+    partial: { text: "Partial", zeichen: "alertCircle", ton: "leise" },
+    failed: { text: "Failed", zeichen: "alertCircle", ton: "neg" },
+    cancelled: { text: "Cancelled", zeichen: "ban", ton: "leise" },
+    skipped_quota: { text: "Skipped (quota)", zeichen: "clock", ton: "leise" }
+  };
+  /* hint von page_audit_invalid_url (_page_audit_url_v1) -> was der Nutzer aendern kann. */
+  var PA_URL_GRUND = {
+    empty: "Enter the URL of a page.",
+    too_long: "This URL is too long. Use an address with up to 2,048 characters.",
+    invalid: "This doesn't look like a valid URL. Check for spaces or special characters.",
+    scheme: "Only http and https addresses can be audited.",
+    fragment: "Remove the part after # from the URL. An audit checks the page without it.",
+    credentials: "Remove the username and password from the URL.",
+    port: "Only the standard ports can be audited (80 for http, 443 for https).",
+    host: "This host name isn't valid. Check the domain.",
+    ip_literal: "IP addresses can't be audited. Use the domain of the page.",
+    local_host: "This address isn't public. Only public websites can be audited.",
+    credentialed_query: "This URL contains a token or password. Remove it and try again."
+  };
+  addMessages("de", {
+    "Queued": "Wartet", "Completed": "Abgeschlossen", "Partial": "Teilweise", "Failed": "Fehlgeschlagen",
+    "Cancelled": "Abgebrochen", "Skipped (quota)": "Übersprungen (Kontingent)",
+    "Reachable": "Erreichbar", "{x} of {n}": "{x} von {n}",
+    "1 second": "1 Sekunde", "{n} seconds": "{n} Sekunden", "1 minute": "1 Minute", "{n} minutes": "{n} Minuten",
+    "1 hour": "1 Stunde", "{n} hours": "{n} Stunden", "{n} days": "{n} Tage",
+    "Enter the URL of a page.": "Gib die URL einer Seite ein.",
+    "This URL is too long. Use an address with up to 2,048 characters.": "Diese URL ist zu lang. Nimm eine Adresse mit höchstens 2.048 Zeichen.",
+    "This doesn't look like a valid URL. Check for spaces or special characters.": "Das sieht nicht nach einer gültigen URL aus. Prüf sie auf Leerzeichen oder Sonderzeichen.",
+    "Only http and https addresses can be audited.": "Prüfen lassen sich nur http- und https-Adressen.",
+    "Remove the part after # from the URL. An audit checks the page without it.": "Entfern den Teil nach # aus der URL. Ein Audit prüft die Seite ohne ihn.",
+    "Remove the username and password from the URL.": "Entfern Benutzername und Passwort aus der URL.",
+    "Only the standard ports can be audited (80 for http, 443 for https).": "Prüfen lassen sich nur die Standard-Ports (80 für http, 443 für https).",
+    "This host name isn't valid. Check the domain.": "Dieser Hostname ist ungültig. Prüf die Domain.",
+    "IP addresses can't be audited. Use the domain of the page.": "IP-Adressen lassen sich nicht prüfen. Nimm die Domain der Seite.",
+    "This address isn't public. Only public websites can be audited.": "Diese Adresse ist nicht öffentlich. Prüfen lassen sich nur öffentliche Websites.",
+    "This URL contains a token or password. Remove it and try again.": "Diese URL enthält ein Token oder Passwort. Entfern es und versuch es noch einmal.",
+    "You've used all {n} audits for this week.": "Du hast alle {n} Audits dieser Woche verbraucht.",
+    "You've used all audits for this week.": "Du hast alle Audits dieser Woche verbraucht.",
+    "Your quota resets on {date}.": "Dein Kontingent wird am {date} zurückgesetzt.",
+    "Your quota resets next Monday.": "Dein Kontingent wird nächsten Montag zurückgesetzt.",
+    "Your team started 10 audits in the last hour. You can start the next one in {time}.": "Dein Team hat in der letzten Stunde 10 Audits gestartet. Das nächste kannst du in {time} starten.",
+    "10 audits are already waiting or running. Try again when one has finished.": "10 Audits warten oder laufen schon. Versuch es noch einmal, wenn eines fertig ist.",
+    "This website was audited many times in the last hour. Try again in {time}.": "Diese Website wurde in der letzten Stunde sehr oft geprüft. Versuch es in {time} noch einmal.",
+    "Recurring audits can use up to {n} of your weekly audits, and this would exceed it. Set another page to Once first.": "Wiederkehrende Audits dürfen höchstens {n} deiner wöchentlichen Audits belegen, und das würde die Grenze überschreiten. Stell zuerst eine andere Seite auf Einmalig.",
+    "You've reached the limit for recurring audits. Set another page to Once first.": "Du hast die Grenze für wiederkehrende Audits erreicht. Stell zuerst eine andere Seite auf Einmalig.",
+    "This audit is running. Cancel it or wait until it has finished, then delete it.": "Dieses Audit läuft. Brich es ab oder warte, bis es fertig ist, und lösch es dann.",
+    "This audit no longer exists.": "Dieses Audit gibt es nicht mehr.",
+    "This is taking longer than expected. Please try again.": "Das dauert länger als erwartet. Bitte erneut versuchen.",
+    "Something went wrong on our side. Please try again.": "Bei uns ist etwas schiefgelaufen. Versuch es noch einmal.",
+    "The audit couldn't be started. Please try again.": "Das Audit konnte nicht gestartet werden. Versuch es noch einmal."
+  });
+  function paDetailJson(f){ try { return JSON.parse(String((f && f.details) || "")) || {}; } catch(e){ return {}; } }
+  function paZahl(v){ var n = Number(v); return v == null || v === "" || !isFinite(n) ? null : n; }
+  /* Sekunden -> "4 minutes", "1 hour" ... (fuer "Try again in ..."); aufgerundet, nie 0. */
+  function pageAuditDauerText(sek, tt){
+    tt = tt || t_;
+    var s = Math.max(1, Math.round(paZahl(sek) || 0));
+    if (s < 60) return s === 1 ? tt("1 second") : tt("{n} seconds").replace("{n}", String(s));
+    var m = Math.ceil(s / 60);
+    if (m < 60) return m === 1 ? tt("1 minute") : tt("{n} minutes").replace("{n}", String(m));
+    var h = Math.ceil(m / 60);
+    if (h < 48) return h === 1 ? tt("1 hour") : tt("{n} hours").replace("{n}", String(h));
+    return tt("{n} days").replace("{n}", String(Math.ceil(h / 24)));
+  }
+  /* Antwort eines Page-Audit-RPC (rpc: { ok, status, fehler:{message, hint, details} }) -> { satz, feld, grund, vorschlag,
+     neuerSchluessel }. feld "url": der Satz gehoert an das URL-Feld. vorschlag: die Adresse ohne Fragment (anbieten, nie selbst
+     starten). neuerSchluessel: der Aufrufer braucht einen neuen p_idempotency_key. o: { t, eingabe, datum(iso) -> Text, sonst }.
+     Nie der Code selbst im Bild (Keine Entwicklertexte im UI). */
+  function pageAuditFehlerSatz(erg, o){
+    o = o || {};
+    var tt = o.t || t_;
+    var f = (erg && erg.fehler) || {}, m = String(f.message || ""), h = String(f.hint == null ? "" : f.hint).trim();
+    if (m === "page_audit_invalid_url"){
+      var aus = { satz: tt(PA_URL_GRUND[h] || PA_URL_GRUND.invalid), feld: "url", grund: h };
+      if (h === "fragment" && o.eingabe){
+        var i = String(o.eingabe).indexOf("#");
+        if (i > 0) aus.vorschlag = String(o.eingabe).slice(0, i);
+      }
+      return aus;
+    }
+    if (m === "page_audit_quota_exhausted"){
+      var q = paDetailJson(f), allow = paZahl(q.allowance), wann = String(q.resets_at || "");
+      return { satz: (allow != null ? tt("You've used all {n} audits for this week.").replace("{n}", String(allow)) : tt("You've used all audits for this week.")) +
+        " " + (wann && o.datum ? tt("Your quota resets on {date}.").replace("{date}", o.datum(wann)) : tt("Your quota resets next Monday.")) };
+    }
+    if (m === "page_audit_hourly_limit") return { satz: tt("Your team started 10 audits in the last hour. You can start the next one in {time}.").replace("{time}", pageAuditDauerText(h, tt)) };
+    if (m === "page_audit_pending_limit") return { satz: tt("10 audits are already waiting or running. Try again when one has finished.") };
+    if (m === "page_audit_domain_rate_limited") return { satz: tt("This website was audited many times in the last hour. Try again in {time}.").replace("{time}", pageAuditDauerText(h, tt)) };
+    if (m === "page_audit_rate_limited" || (erg && erg.status === 429)) return { satz: tt("Too many requests in a short time. Please wait a moment.") };
+    if (m === "page_audit_schedule_capacity"){
+      var c = paDetailJson(f), kap = paZahl(c.capacity);
+      return { satz: kap != null
+        ? tt("Recurring audits can use up to {n} of your weekly audits, and this would exceed it. Set another page to Once first.").replace("{n}", String(Math.round(kap * 100) / 100))
+        : tt("You've reached the limit for recurring audits. Set another page to Once first.") };
+    }
+    if (m === "page_audit_running") return { satz: tt("This audit is running. Cancel it or wait until it has finished, then delete it.") };
+    if (m === "page_audit_not_found") return { satz: tt("This audit no longer exists.") };
+    if (m === "page_audit_idempotency_conflict") return { satz: tt("Something went wrong. Please try again."), neuerSchluessel: true };
+    /* Zeit abgelaufen (rpc: "timeout") oder Netz weg: ein Schreiben kann trotzdem angekommen sein -- der Aufrufer behaelt
+       seinen Schluessel, ein zweiter Versuch bekommt dann dieselbe Quittung. */
+    if (m === "timeout" || m === "aborted") return { satz: tt("This is taking longer than expected. Please try again.") };
+    if (m === "network") return { satz: tt("Check your connection and try again.") };
+    return { satz: tt(o.sonst || "Something went wrong on our side. Please try again.") };
+  }
+  /* ── DIE MELDUNG "AUDIT UPDATED" (21.10., Page Audit) ─────────────────────────────────────────
+     Nur nach einem GEPLANTEN Lauf (weekly, monthly) und OHNE Ergebnis darin -- so bestellt: eine
+     Karte mit dem Favicon der Seite, "Audit updated" und der Adresse, ein Klick oeffnet das Detail.
+     Form, Stapel und Ablauf wie die Meldungen der Events (evmZeigen): eine Karte bleibt stehen,
+     hoechstens drei (am Telefon eine), darunter der Hinweis auf den Rest.
+     GELESEN ist ein Stand je Nutzer (mark_page_audit_notices_read_v1, p_until), keine Liste: X oder
+     Klick markieren bis zum Ende DIESES Laufs. Was aelter ist, gilt dabei mit als gelesen -- es steht
+     ja schon darunter. Fehlt die Funktion (Datei 2 nicht eingespielt), ist das Feature still nicht da. */
+  var PAM = (window.__upAuditMeldungen = window.__upAuditMeldungen || { lauf: null, schlange: [], mehr: 0, offen: 0 });
+  addMessages("de", {
+    "Audit updated": "Audit aktualisiert",
+    "1 more audit was updated": "1 weiteres Audit wurde aktualisiert",
+    "{n} more audits were updated": "{n} weitere Audits wurden aktualisiert",
+    "View audits": "Audits ansehen"
+  });
+  function pamGelesen(bis){
+    return rpc("mark_page_audit_notices_read_v1", { p_team: APP.team, p_until: bis || null }, { timeoutMs: 15000 }).then(function(erg){
+      if (!erg || !erg.ok) console.error("[page-audit] notice could not be marked as read:", erg && erg.fehler ? erg.fehler.message : "");
+    });
+  }
+  function pamAnsicht(){
+    try {
+      if (typeof window.usnNavigieren === "function") window.usnNavigieren("audits");
+      else if (typeof window.showView === "function"){ window.showView("audits"); ansichtHalten("audits"); }
+    } catch(e){}
+  }
+  function pamHinweis(){
+    var n = PAM.schlange.length + PAM.mehr;
+    if (!n){ toastZu("pam-mehr"); return; }
+    var text = n === 1 ? t_("1 more audit was updated") : t_("{n} more audits were updated").replace("{n}", String(n));
+    toast(text, { kind: "neutral", bleibt: true, unten: true, roh: true, schluessel: "pam-mehr",
+      action: { label: t_("View audits"), onClick: pamAnsicht },
+      onClose: function(){ PAM.schlange = []; PAM.mehr = 0; } });
+  }
+  function pamZeigen(m){
+    PAM.offen++;
+    toast(t_("Audit updated"), {
+      kind: "neutral", bleibt: true, roh: true, schluessel: "pam-" + m.run_id,
+      karte: { bildUrl: faviconUrl(m.url, 64) || "", zeichen: icon("dna01", 1.8) },
+      /* Die Adresse in der Primaerfarbe wie "X is cited" (.up-toast-urlwort), sonst nichts: kein
+         Ergebnis, keine Zahl. */
+      inhalt: '<span class="up-toast-d"><span class="up-toast-urlwort">' + esc(evmKurz(m.url)) + '</span></span>',
+      onClick: function(){ pageAuditOeffnen(m.page_id, m.run_id); },
+      onClose: function(){
+        pamGelesen(m.finished_at);
+        PAM.offen = Math.max(0, PAM.offen - 1);
+        setTimeout(function(){
+          if (PAM.schlange.length && PAM.offen < evmSichtbar()) pamZeigen(PAM.schlange.shift());
+          pamHinweis();
+        }, 140);
+      }
+    });
+  }
+  function pageAuditMeldungenStart(){
+    if (PAM.lauf) return PAM.lauf;
+    if (!APP.team) return Promise.resolve(false);
+    PAM.lauf = rpc("list_page_audit_notices_v1", { p_team: APP.team }, { timeoutMs: 15000 }).then(function(erg){
+      var f = (erg && erg.fehler) || {};
+      if (erg && !erg.ok && (/PGRST202/.test(String(f.code || "")) || erg.status === 404)) return false;
+      if (!erg || !erg.ok){ console.error("[page-audit] notices could not be loaded:", f.message || ""); return false; }
+      var d = erg.daten && typeof erg.daten === "object" ? erg.daten : null;
+      var liste = d && isArr(d.rows) ? d.rows.filter(function(m){
+        return m && typeof m === "object" && PAGE_AUDIT_ID.test(String(m.page_id || "")) && typeof m.url === "string" && m.url;
+      }) : null;
+      if (!liste){ console.error("[page-audit] notices could not be read"); return false; }
+      PAM.mehr = Math.max(0, toNum(d.meta && d.meta.more_count) || 0);
+      /* Platz nur, was die Karten der Events uebrig lassen (gemeinsamer Stapel, evmSichtbar). */
+      var sichtbar = Math.max(0, evmSichtbar() - EVM.offen - PAM.offen);
+      liste.slice(0, sichtbar).forEach(pamZeigen);
+      PAM.schlange = liste.slice(sichtbar);
+      pamHinweis();
+      return true;
+    }, function(err){ console.error("[page-audit] notices could not be loaded:", err); return false; });
+    return PAM.lauf;
+  }
   /* DIE ANSICHT HALTEN (05.10.). Gemeldet: der Klick in die Leiste setzt ?view=..., aber eine
      Ansicht, die seit dem Seitenaufbau noch nie offen war, bleibt unsichtbar; nach einem Aufruf
      direkt auf sie geht es danach immer. Die Reihenfolge im Workflow ist: showView, DANN der
@@ -23826,7 +24071,15 @@
   function appStartAktiv(){ return !!APP.aktiv; }
   /* Die Meldungen je Event erst, wenn die Seite steht -- sie sind kein Teil des ersten Bildes.
      EVM.lauf haelt sie bei einem zweiten Start (appZugangWeg) bei einem Mal. */
-  function evmNachStart(){ setTimeout(function(){ try { eventMeldungenStart(); } catch(e){} }, 800); }
+  /* Die Meldungen der Audits danach (21.10.): sie teilen sich den Stapel, also erst, wenn die der
+     Events stehen -- pageAuditMeldungenStart zeigt nur so viele, wie noch Platz ist. */
+  function evmNachStart(){
+    setTimeout(function(){
+      var lauf = null;
+      try { lauf = eventMeldungenStart(); } catch(e){}
+      Promise.resolve(lauf).then(function(){ try { pageAuditMeldungenStart(); } catch(e){} }, function(){ try { pageAuditMeldungenStart(); } catch(e){} });
+    }, 800);
+  }
   /* 402 aus irgendeinem RPC: der Zugang ist weg (Abo beendet, Team geloescht). Der Start laeuft
      einmal neu und zeigt das Gate -- hoechstens alle 30 s, damit eine Seite voller Aufrufe nicht
      dreissig Starts ausloest. */
@@ -27038,7 +27291,10 @@
     /* ChatAdd01Icon -- Create with AI */
     chatAdd: '<path d="M21.9609 9C21.9865 9.72648 22 10.2292 22 11C22 11.7708 21.9865 12.5232 21.9609 13.2497C21.8772 15.6232 21.8353 16.8099 20.8699 17.7826C19.9046 18.7552 18.6843 18.8074 16.2437 18.9118C15.5098 18.9432 14.7498 18.9667 13.9693 18.9815C13.2282 18.9955 12.8576 19.0026 12.532 19.1266C12.2064 19.2506 11.9325 19.4855 11.3845 19.9553L9.20503 21.8242C9.07273 21.9376 8.90419 22 8.72991 22C8.32679 22 8 21.6732 8 21.2701V18.9219C7.91842 18.9186 7.83715 18.9153 7.75619 18.9118C5.31569 18.8074 4.09545 18.7552 3.13007 17.7825C2.16469 16.8099 2.12282 15.6232 2.03909 13.2497C2.01346 12.5232 2 11.7708 2 11C2 10.2292 2.01346 9.47679 2.03909 8.7503C2.12282 6.37683 2.16469 5.19009 3.13007 4.21745C4.09545 3.24481 5.3157 3.1926 7.7562 3.08819C9.09517 3.0309 10.5209 3 12 3C12.5067 3 13.0072 3.00363 13.5 3.0107"/>' +
              '<path d="M22 5H16M19 2V8"/>' +
-             '<path d="M12.1257 11H12.0007M8.125 11H8M12.2507 11C12.2507 11.1381 12.1388 11.25 12.0007 11.25C11.8627 11.25 11.7507 11.1381 11.7507 11C11.7507 10.8619 11.8627 10.75 12.0007 10.75C12.1388 10.75 12.2507 10.8619 12.2507 11ZM8.25 11C8.25 11.1381 8.13807 11.25 8 11.25C7.86193 11.25 7.75 11.1381 7.75 11C7.75 10.8619 7.86193 10.75 8 10.75C8.13807 10.75 8.25 10.8619 8.25 11Z"/>'
+             '<path d="M12.1257 11H12.0007M8.125 11H8M12.2507 11C12.2507 11.1381 12.1388 11.25 12.0007 11.25C11.8627 11.25 11.7507 11.1381 11.7507 11C11.7507 10.8619 11.8627 10.75 12.0007 10.75C12.1388 10.75 12.2507 10.8619 12.2507 11ZM8.25 11C8.25 11.1381 8.13807 11.25 8 11.25C7.86193 11.25 7.75 11.1381 7.75 11C7.75 10.8619 7.86193 10.75 8 10.75C8.13807 10.75 8.25 10.8619 8.25 11Z"/>',
+    /* Dna01Icon (Hugeicons, 21.10. angefordert): das Zeichen der Seite Page Audit -- Seitenleiste,
+       Krume, Ladebild und Meldung. Pfad wortgleich aus der Anfrage. */
+    dna01: '<path d="M8.6671 22C9.20107 21.466 9.73505 20.9321 9.24127 18M8.6671 15.3336C7.33381 10.0004 8.33378 9.00042 8.6671 8.6671C9.00042 8.33378 10.0004 7.33381 15.3336 8.6671M8.6671 15.3336C3.33394 14.0003 2.66664 14.6663 2 15.3329M8.6671 15.3336C14.0003 16.6668 14.9996 15.6662 15.3329 15.3329C15.6662 14.9996 16.6668 14.0003 15.3336 8.6671M22 8.6671C21.3334 9.33375 20.6667 10.0004 15.3336 8.6671M15.3329 2C14.799 2.53394 14.2654 3.06829 14.7592 6"/>'
   };
   /* ---- Nachtrag zu TOOLBAR_SEL ------------------------------------------------------------
      Drei Knoepfe dieser Liste tragen Zeichen AUS DEM SATZ. Oben, wo die Liste steht, gibt es
@@ -27771,6 +28027,24 @@
       '<div class="up-empty-h">' + esc(t_(titel)) + '</div>' +
       '<div class="up-empty-t">' + esc(t_(satz)) + '</div>' +
     '</div>';
+  }
+
+  /* DIE AUSWAHLKARTE (21.10., core.css .up-wk; Nutzer: "Die Cards gehoeren nach Core"). Die Karte aus dem Dialog
+     "Create" von Impact als geteilter Baustein: Titel mit Pfeil, ein Satz, die gekippte Tafel mit dem Zeichen.
+     o: { titel, satz, icon, invers, kompakt, klasse, daten: { name: wert } (als data-name, Werte escaped),
+     deaktiviert }. Titel und Satz englisch, uebersetzt wird hier (t_). Das Verhalten (Klick, Pfeiltasten im Raster)
+     bleibt beim Aufrufer -- die Karte weiss nicht, wohin sie fuehrt. */
+  function wkKarteHtml(o){
+    o = o || {};
+    var attr = "", daten = o.daten && typeof o.daten === "object" ? o.daten : {};
+    Object.keys(daten).forEach(function(k){ if (/^[a-z][a-z0-9-]*$/.test(k)) attr += ' data-' + k + '="' + esc(daten[k]) + '"'; });
+    return '<button type="button" class="up-wk' + (o.invers ? " is-invers" : "") + (o.kompakt ? " is-kompakt" : "") +
+      (o.klasse ? " " + esc(o.klasse) : "") + '"' + attr + (o.deaktiviert ? " disabled" : "") + '>' +
+      '<span class="up-wk-kopf"><span class="up-wk-t">' + esc(t_(o.titel || "")) + '</span>' +
+        '<span class="up-wk-pfeil" aria-hidden="true">' + icon("arrowUpRight", 2) + '</span></span>' +
+      (o.satz ? '<span class="up-wk-s">' + esc(t_(o.satz)) + '</span>' : '') +
+      '<span class="up-wk-tafel" aria-hidden="true"><span class="up-wk-feld">' + icon(o.icon || "plus", 1.8) + '</span></span>' +
+    '</button>';
   }
 
   /* ---- DER LEERZUSTAND ALS BAUSTEIN (22.09.) --------------------------------------------------
@@ -30202,6 +30476,9 @@
     granAvailability: granAvailability,
     granFuerZeitraum: granFuerZeitraum,
     rpc: rpc, edge: edge, kanal: kanal, nutzerId: nutzerId,
+    /* Das Token der Sitzung (21.10., Page Audit): fuer Aufrufe an Routen der App selbst (/api/...), die die
+       Mitgliedschaft mit dem Nutzer pruefen -- derselbe Weg wie rpc, frisch vor Ablauf. Promise auf den Text. */
+    sitzungsToken: rpcToken,
     warteSekunden: warteSekunden, warteSatz: warteSatz,
     unbekannteIds: unbekannteIds, filterBereinigen: filterBereinigen,
     rpcBereit: rpcBereit,
@@ -30269,7 +30546,7 @@
     normParams: normParams,
     makeToolGroup: makeToolGroup,
     leseFehlerHtml: leseFehlerHtml, fehlerSatzArt: fehlerSatzArt,
-    leerHtml: leerHtml,
+    leerHtml: leerHtml, wkKarteHtml: wkKarteHtml,
     /* Der Leerzustand eines Charts (15.10.): fuer Flaechen, die keinen der Chart-Bausteine
        benutzen (Landschaft in brands-overview, Heatmap des Performance Radar). */
     chartLeerHtml: chartLeerHtml,
@@ -30319,7 +30596,8 @@
     setModels: setModels,
     onModels: onModels,
     getEvents: getEvents, setEvents: setEvents, onEvents: onEvents, eventsStand: eventsStand, eventsChanged: eventsChanged,
-    EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen, eventMeldungenDa: eventMeldungenDa,
+    EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen, eventMeldungenDa: eventMeldungenDa, pageAuditOeffnen: pageAuditOeffnen,
+    pageAuditStatus: PAGE_AUDIT_STATUS, pageAuditFehlerSatz: pageAuditFehlerSatz, pageAuditDauerText: pageAuditDauerText,
     kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal, modalVerhalten: modalVerhalten,
     seitenSperreAbgleichen: seitenSperreAbgleichen,
     sparkHtml: sparkHtml, zahlZaehlen: zahlZaehlen, zaehlHtml: zaehlHtml, hochzaehlen: hochzaehlen,

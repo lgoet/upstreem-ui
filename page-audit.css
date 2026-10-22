@@ -1,0 +1,460 @@
+/* upstreem page-audit.css -- die Seite Page Audit (21.10.). Praefix upa. Braucht core.css.
+
+   Aus core und hier NICHT nachgebaut: Seitenkopf und Krumen (.up-ph-*, makePageCrumbs), die eine
+   Leiste samt Kleben (.up-head, data-leiste, makeSticky, data-kleb-fuss), Tabelle (.up-table,
+   .up-thead, .up-row, .up-th, .up-td, --up-cols aus makeColumns), Suche (.up-search), Spaltenmenue
+   (.up-cols), Pagination (.up-foot), Gesamtzeile (makeZaehlZeile), Kasten (.up-box), Kennzahlen
+   (.up-kpiband, UC.kpiKarte), Abschnittskopf (.up-sec-head, .up-sec-h, .up-sec-sub), Gruppe
+   (.up-blockhead), Marke (.up-marke.is-leise), Menue (.up-sort-menu, .up-pop-*), Popup
+   (UC.makeModal), Leer- und Fehlerzustand, Skelett, Ladebild, Favicon (.up-logo-box.up-fav).
+   Hier steht nur, was diese Seite wirklich eigen hat: Abstaende des Seitengeruests, die
+   zweizeiligen Zellen, die Zustandsangabe (Zeichen + Text), die Raster der Detailtabellen, die
+   aufklappbaren Befunde und die Belegauszuege.
+   Werte nach Vorbild (CLAUDE.md 1b): Seitenkopf wie teams.css/events.css (8 oben, 8 unten, 16
+   darunter), Abschnitte 32 auseinander wie im Event-Detail, Zeilen 55 (--up-h-row) wie Brands. */
+
+/* ---------- Seitengeruest ---------- */
+.upa-root { --upa-head-top: 8px; display: block; }
+/* Der Kopf ueber dem Deckstreifen der klebenden Leiste (dieselbe Begruendung wie teams.css). */
+.upa-root .upa-pagehead { padding: var(--upa-head-top) 0 8px; margin-bottom: 16px; position: relative; z-index: 7; background: var(--up-surface); }
+.upa-root .upa-liste.up-sticky .up-head::before { pointer-events: none; }
+.upa-kopfrechts { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.upa-kopfrechts .up-btn-sec { display: inline-flex; align-items: center; gap: 6px; }
+.upa-kopfrechts .up-btn-sec svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.upa-kopfrechts .up-btn-sec:disabled { color: var(--vc-fourth); cursor: default; }
+/* Das Wochenkontingent: leise neben dem Knopf (Plan 2: "x of y audits this week"). */
+.upa-kontingent { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); font-variant-numeric: tabular-nums;
+  white-space: nowrap; margin-right: 4px; outline: 0; }
+.upa-kontingent:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: 2px; border-radius: var(--up-r-xs); }
+.upa-kontingent.is-voll { color: var(--vt-down); }
+.upa-root.is-vnarrow .upa-kontingent { display: none; }
+.upa-root .upa-main { padding-bottom: 64px; }
+.upa-root .upa-main > [hidden] { display: none; }
+
+/* ---------- Kopfmenues (Zeitplan, Mehr) ----------
+   Die Huelle ist .up-sort mit .up-sort-menu aus core (rechtsbuendig unter dem Knopf). Breiter als
+   die 220 des Sortierers: der Zeitplan traegt je Wahl einen Satz. */
+.upa-planknopf > svg:last-child { width: 12px; height: 12px; color: var(--vc-third); }
+.upa-root .up-sort-menu.upa-planmenu { width: 288px; }
+.upa-planopt { align-items: flex-start; }
+.upa-planopt-l { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.upa-planopt-t { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
+.upa-planopt-d { font-size: var(--up-fs-s); font-weight: var(--up-fw-n); color: var(--vc-muted); white-space: normal; }
+.upa-planhinweis { margin: 0; padding: 2px 10px 6px; font-size: var(--up-fs-s); line-height: 1.45; color: var(--vc-third); white-space: normal; }
+.upa-mehrmenu a.up-pop-opt { text-decoration: none; }
+.upa-mehrmenu .up-pop-opt-l svg { width: 15px; height: 15px; color: var(--vc-third); flex: 0 0 auto; }
+.upa-mehrmenu .upa-loeschen, .upa-mehrmenu .upa-loeschen .up-pop-opt-l svg { color: var(--vt-down); }
+
+/* ---------- Die Zustandsangabe: Zeichen in der Farbe der Bedeutung, Text in der Schriftfarbe ----------
+   Ergebnis (4 Stufen), Status eines Laufs, Zugang einer Plattform, Zustand eines Checks. Keine
+   Pille, kein Punkt, keine Flaeche (Memory "Keine Punkt-Pillen"). */
+.upa-zustand { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--up-fs-l); font-weight: var(--up-fw-n); color: var(--vc-text); }
+.upa-zustand-ic { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
+.upa-zustand-ic svg { width: 15px; height: 15px; display: block; }
+.upa-zustand-t { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upa-zustand.is-pos .upa-zustand-ic { color: var(--vt-up); }
+.upa-zustand.is-neg .upa-zustand-ic { color: var(--vt-down); }
+.upa-zustand.is-warn .upa-zustand-ic { color: var(--vc-warn); }
+.upa-zustand.is-leise .upa-zustand-ic { color: var(--vc-third); }
+/* Laufend: das Zeichen dreht (der Spinner der Popups aus core, upModalDreh), nie ein Chevron. */
+.upa-zustand.is-dreht .upa-zustand-ic svg { animation: upModalDreh 1s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .upa-zustand.is-dreht .upa-zustand-ic svg { animation: none; } }
+/* Die Veraenderung als leise Marke (core .up-marke.is-leise); "New" und "Resolved" tragen die
+   Farbe ihrer Bedeutung im Text, die Flaeche bleibt die leise. */
+.upa-root .up-marke.upa-marke, .up-modal .up-marke.upa-marke { flex: 0 0 auto; }
+.upa-root .up-marke.upa-marke.is-neg { color: var(--vt-down); }
+.upa-root .up-marke.upa-marke.is-pos { color: var(--vt-up); }
+.upa-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: var(--up-fs-s); letter-spacing: -0.01em; }
+.upa-leise { font-size: var(--up-fs-m); color: var(--vc-muted); }
+
+/* ---------- Liste ---------- */
+.upa-root .upa-liste .up-row.upa-zeile { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }
+.upa-root .upa-liste .up-td-page { gap: 10px; }
+.upa-seite { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.upa-name, .upa-seite .up-zeilenname { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upa-url { min-width: 0; font-size: var(--up-fs-s); color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upa-zweizeilig { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.upa-z1 { font-size: var(--up-fs-l); color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upa-z2 { font-size: var(--up-fs-s); color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- Detail ---------- */
+.upa-detail { display: flex; flex-direction: column; gap: 32px; }
+.upa-detail > .up-empty, .upa-detail > .up-leer { padding-top: 32px; }
+.upa-ident { display: flex; align-items: flex-start; gap: 16px; min-width: 0; }
+/* Die Logoplatte der Seite, 40 hoch: Radius nach Rolle (ab 37 -> 8), das Bild konzentrisch. */
+.upa-root .up-logo-box.upa-logo-gross { width: 40px; height: 40px; border-radius: var(--up-r-l); }
+.upa-root .up-logo-box.upa-logo-gross img { width: 38px; height: 38px; border-radius: calc(var(--up-r-l) - 1px); }
+.upa-root .up-tsk-logo.upa-logo-gross { width: 40px; height: 40px; flex: 0 0 40px; border-radius: var(--up-r-l); }
+.upa-ident-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 auto; }
+.upa-ident.is-sk .upa-ident-txt { gap: 10px; padding-top: 4px; }
+.upa-ident-name { min-width: 0; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upa-ident-url { display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; text-decoration: none; }
+.upa-ident-url span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upa-ident-url svg { width: 12px; height: 12px; flex: 0 0 auto; color: var(--vc-third); }
+a.upa-ident-url:hover { color: var(--vc-text); }
+a.upa-ident-url:hover span { text-decoration: underline; }
+.upa-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: 8px; }
+.upa-metaitem { display: inline-flex; align-items: center; gap: 6px; font-size: var(--up-fs-m); color: var(--vc-muted); }
+.upa-metaitem svg { width: 14px; height: 14px; color: var(--vc-third); flex: 0 0 auto; }
+/* Ein neuer Lauf neben dem gezeigten Ergebnis: eine leise Zeile im Kasten-Rahmen. */
+.upa-laufzeile { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--vc-border);
+  border-radius: var(--up-r-l); background: var(--vc-bg); font-size: var(--up-fs-m); color: var(--vc-muted); }
+.upa-laufzeile .upa-zustand { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); }
+.upa-hinweis { display: flex; align-items: flex-start; gap: 8px; margin: 0; font-size: var(--up-fs-m); line-height: 1.45; color: var(--vc-muted); }
+.upa-hinweis svg { width: 14px; height: 14px; flex: 0 0 auto; margin-top: 2px; color: var(--vc-third); }
+.upa-ladebild { display: flex; justify-content: center; padding: 48px 0; }
+.upa-sek { display: flex; flex-direction: column; min-width: 0; }
+
+/* Die Tabellen des Details: .up-box mit core-Tabelle, das Raster je Tabelle als --up-cols (kein
+   makeColumns: feste Spalten, kein Spaltenmenue). Zeilen ohne Klick zeigen keinen Zeiger. */
+.upa-root .upa-kasten .up-row { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }
+.upa-root .upa-kasten .up-row.upa-statisch { cursor: default; }
+.upa-root .upa-kasten .up-row.upa-statisch:hover { background: transparent; }
+.upa-root .upa-kasten .up-td { gap: 10px; }
+.upa-tab-plattformen { --up-cols: minmax(220px, 1.8fr) minmax(150px, 1.1fr) minmax(130px, 1fr) minmax(170px, 1.2fr) minmax(96px, .6fr) 40px; }
+.upa-tab-laeufe { --up-cols: minmax(150px, 1.2fr) minmax(96px, .7fr) minmax(190px, 1.5fr) minmax(104px, .7fr) minmax(104px, .7fr) minmax(80px, .6fr); }
+.upa-tab-checks { --up-cols: minmax(280px, 2.4fr) minmax(160px, 1fr) minmax(170px, 1fr); }
+.upa-tab-mess { --up-cols: minmax(220px, 2fr) minmax(170px, 1fr) minmax(180px, 1fr); }
+.upa-tab-belege { --up-cols: minmax(260px, 2.4fr) minmax(76px, .5fr) minmax(140px, .9fr) minmax(84px, .6fr) minmax(76px, .5fr) minmax(150px, .9fr); }
+.upa-root .upa-kasten .up-row.upa-lauf, .upa-root .upa-kasten .up-row.upa-einzeilig { height: 48px; flex: 0 0 48px; }
+.upa-root .upa-kasten .up-row.upa-lauf.is-gewaehlt { background: var(--up-wahl-bg); }
+.upa-zeit { font-size: var(--up-fs-l); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.upa-gruppe { display: flex; align-items: flex-end; height: 36px; padding: 0 12px 7px; border-bottom: 1px solid var(--vc-border); }
+.upa-root .up-logo-box.upa-plogo { width: 24px; height: 24px; }
+.upa-checkkey { flex: 0 0 24px; color: var(--vc-third); }
+.upa-mlabel { min-width: 0; font-size: var(--up-fs-l); color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upa-bruch, .upa-diff { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.upa-zusatz { color: var(--vc-muted); }
+.upa-mehrlaeufe { align-self: flex-start; margin-top: 8px; padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); }
+.upa-mehrlaeufe:hover { color: var(--vc-text); }
+
+/* ---------- Befunde: aufklappbare Zeilen im Kasten ---------- */
+.upa-bgruppe { display: flex; flex-direction: column; gap: 8px; }
+.upa-bgruppe + .upa-bgruppe, .upa-keinbefund + .upa-bgruppe { margin-top: 20px; }
+.upa-bgruppe-kopf { display: flex; align-items: center; gap: 8px; }
+.upa-bgruppe-n { font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-third); font-variant-numeric: tabular-nums; }
+.upa-befund + .upa-befund { border-top: 1px solid var(--vc-border); }
+.upa-befund-kopf { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 0 12px; border: 0; background: transparent;
+  cursor: pointer; text-align: left; font: inherit; color: var(--vc-text); outline: 0; }
+.upa-befund-kopf:hover { background: var(--vt-row-hover); }
+.upa-befund-kopf:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: calc(var(--up-focus-w) * -1); }
+.upa-befund:first-child .upa-befund-kopf { border-radius: calc(var(--up-r-2xl) - 1px) calc(var(--up-r-2xl) - 1px) 0 0; }
+.upa-befund:last-child:not(.is-offen) .upa-befund-kopf { border-radius: 0 0 calc(var(--up-r-2xl) - 1px) calc(var(--up-r-2xl) - 1px); }
+.upa-befund:only-child:not(.is-offen) .upa-befund-kopf { border-radius: calc(var(--up-r-2xl) - 1px); }
+.upa-befund-titel { flex: 1 1 auto; min-width: 0; font-size: var(--up-fs-l); font-weight: var(--up-fw-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upa-befund-rechts { display: inline-flex; align-items: center; gap: 12px; flex: 0 0 auto; margin-left: auto; }
+.upa-befund-chev { display: inline-flex; color: var(--vc-third); }
+.upa-befund-chev svg { width: 16px; height: 16px; }
+.upa-pstapel { display: inline-flex; align-items: center; gap: 4px; }
+.upa-root .upa-pchip .up-logo-box { width: 20px; height: 20px; border-radius: var(--up-r-xs); }
+.upa-root .upa-pchip .up-logo-box img { width: 18px; height: 18px; border-radius: calc(var(--up-r-xs) - 1px); }
+/* Unter dem Titel eingerueckt: Polster 12 + Zeichen 15 + Abstand 10 = 37. */
+.upa-befund-koerper { display: flex; flex-direction: column; gap: 12px; padding: 0 16px 16px 37px; }
+/* Das hidden-Attribut gegen die eigene display-Regel (sonst stuende der zugeklappte Koerper offen). */
+.upa-befund-koerper[hidden] { display: none; }
+.upa-satz { margin: 0; font-size: var(--up-fs-l); line-height: 1.5; color: var(--vc-text); }
+.upa-satz.is-leise { color: var(--vc-muted); }
+.upa-absatz { display: flex; flex-direction: column; gap: 4px; }
+.upa-checks { margin: 0; font-size: var(--up-fs-s); color: var(--vc-third); }
+.upa-keinbefund { display: flex; flex-direction: column; gap: 6px; padding: 16px; }
+/* Belegauszuege sind Seiteninhalt: als Text (escaped) im pre, nie als HTML (HANDOFF 17). */
+.upa-beleg { margin: 0; padding: 10px 12px; max-height: 240px; overflow: auto; white-space: pre-wrap; word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: var(--up-fs-s); line-height: 1.5;
+  color: var(--vc-text); background: var(--vc-heading-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-l); }
+.upa-kv { display: grid; grid-template-columns: minmax(120px, 180px) minmax(0, 1fr); gap: 6px 16px; margin: 0; }
+.upa-kv dt { font-size: var(--up-fs-m); color: var(--vc-muted); }
+.upa-kv dd { margin: 0; min-width: 0; font-size: var(--up-fs-m); color: var(--vc-text); overflow-wrap: anywhere; }
+.upa-kv-lauf { padding: 16px; gap: 10px 16px; }
+
+/* ---------- Create Audit (Popup aus core) ---------- */
+.upa-vorschlag { align-self: flex-start; margin-top: 6px; padding: 0; border: 0; background: none; cursor: pointer; text-align: left;
+  font: inherit; font-size: var(--up-fs-m); color: var(--up-accent-ink); overflow-wrap: anywhere; }
+.upa-vorschlag:hover { text-decoration: underline; }
+.upa-vorschlag[hidden] { display: none; }
+
+/* ---------- Schmal ----------
+   Die Liste weicht ueber makeColumns (art). Die Detailtabellen nehmen erst die Nebenspalten weg,
+   dann die Zaehlspalten; der Befundkopf bricht um. */
+.upa-root.is-narrow .upa-td-i, .upa-root.is-narrow .upa-td-c, .upa-root.is-narrow .upa-td-trigger,
+.upa-root.is-narrow .upa-td-typ, .upa-root.is-narrow .upa-td-dauer { display: none; }
+.upa-root.is-narrow .upa-tab-plattformen { --up-cols: minmax(0, 1.6fr) minmax(0, 1.2fr) minmax(0, 1.2fr) 40px; }
+.upa-root.is-narrow .upa-td-js { display: none; }
+.upa-root.is-narrow .upa-tab-laeufe { --up-cols: minmax(0, 1.2fr) minmax(0, 1.5fr) minmax(88px, .7fr) minmax(96px, .7fr); }
+.upa-root.is-narrow .upa-tab-belege { --up-cols: minmax(0, 2fr) minmax(64px, .5fr) minmax(76px, .6fr) minmax(120px, .9fr); }
+.upa-root.is-narrow .upa-tab-checks { --up-cols: minmax(0, 2fr) minmax(130px, 1fr) minmax(130px, 1fr); }
+.upa-root.is-vnarrow .upa-td-r, .upa-root.is-vnarrow .upa-td-wechsel, .upa-root.is-vnarrow .upa-td-groesse,
+.upa-root.is-vnarrow .upa-td-roh, .upa-root.is-vnarrow .upa-pstapel { display: none; }
+.upa-root.is-vnarrow .upa-tab-plattformen { --up-cols: minmax(0, 1.4fr) minmax(0, 1fr) 40px; }
+.upa-root.is-vnarrow .upa-td-robots { display: none; }
+.upa-root.is-vnarrow .upa-tab-laeufe { --up-cols: minmax(0, 1fr) minmax(0, 1.2fr) minmax(76px, .7fr); }
+.upa-root.is-vnarrow .upa-tab-belege { --up-cols: minmax(0, 1fr) minmax(60px, auto); }
+.upa-root.is-vnarrow .upa-tab-checks { --up-cols: minmax(0, 1.4fr) minmax(0, 1fr); }
+.upa-root.is-vnarrow .upa-tab-mess { --up-cols: minmax(0, 1.4fr) minmax(0, 1fr); }
+.upa-root.is-vnarrow .upa-kv { grid-template-columns: minmax(0, 1fr); gap: 2px 0; }
+.upa-root.is-vnarrow .upa-kv dd + dt { margin-top: 8px; }
+.upa-root.is-vnarrow .upa-befund-koerper { padding-left: 12px; }
+.upa-root.is-vnarrow .upa-kopfrechts .up-btn-sec span { display: none; }
+.upa-root.is-vnarrow .upa-kopfrechts .up-btn-sec { width: 32px; padding: 0; justify-content: center; }
+.upa-root.is-vnarrow .upa-kopfrechts .upa-planknopf > svg:last-child { display: none; }
+
+/* ---------- Startbereich (Leinwand Version 9, 21.10. gewaehlt) ----------
+   Raster wie die Karten im Create-Dialog von Impact (zwei Spalten, 16): links oben Ueberschrift und ein Satz ohne
+   Karte, senkrecht mittig, darunter die Auswahlkarte aus core (.up-wk.is-kompakt); rechts ueber beide Zeilen die Grafik.
+   32 bis zur Leiste wie zwischen Abschnitten. */
+.upa-start { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto; gap: 16px; margin: 0 0 32px; }
+.upa-start[hidden] { display: none; }
+.upa-start-text { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; min-height: 112px; max-width: 520px; padding: 0 0 0 2px; }
+/* Unterzeile 4 unter dem Titel (Ueberschriften-Stufen, CLAUDE.md 1d): die Browser-Raender von h2 und p weg, den Abstand traegt gap. */
+.upa-start-text .up-heading, .upa-start-text .up-sec-sub { margin: 0; }
+.upa-start-text .up-sec-sub { line-height: 1.45; }
+.upa-start > .up-wk { grid-column: 1; grid-row: 2; }
+/* NEU (nicht in core): die Grafik, ein Feld aus Browserfenstern (Vorlage: Vercel). Rand per Maske ausgeblendet (Deckkraft,
+   keine Themenfarbe); Fenster, Rahmen und Punkte aus --vc-*. */
+.upa-fenster { grid-column: 2; grid-row: 1 / span 2; position: relative; min-height: 0; overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent), linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent), linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  mask-composite: intersect; }
+.upa-fenster-feld { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.upa-fenster-win { position: absolute; display: flex; flex-direction: column; width: 120px; height: 84px; box-sizing: border-box;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); background: var(--vc-bg); box-shadow: var(--up-e-1);
+  animation: upa-fenster-ein var(--up-t-3) var(--up-ease-auf) backwards; }
+.upa-fenster-punkte { display: flex; gap: 2px; padding: 8px 8px 0; }
+.upa-fenster-punkte i { width: 4px; height: 4px; border-radius: 50%; background: color-mix(in srgb, var(--vc-text) 14%, transparent); }
+.upa-fenster-win.is-hl { z-index: 1; border-color: color-mix(in srgb, var(--vc-text) 45%, transparent); }
+.upa-fenster-win.is-hl .upa-fenster-punkte i { background: color-mix(in srgb, var(--vc-text) 45%, transparent); }
+.upa-fenster-ic { display: flex; flex: 1 1 auto; align-items: center; justify-content: center; margin-top: -8px; color: var(--vc-text); }
+.upa-fenster-ic svg { width: 24px; height: 24px; }
+/* Start bei 30 % statt 0: laeuft die Zeitleiste nicht (verdeckte Ansicht, Vorschaubild), bleibt die Grafik sichtbar statt leer
+   (gemessen 21.10. im verdeckten Pruefstand: alle Animationen standen auf 0 ms). */
+@keyframes upa-fenster-ein { from { opacity: .3; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .upa-fenster-win { animation: none; } }
+/* Schmal: die Grafik weicht, Text und Karte stehen untereinander. */
+.upa-root.is-narrow .upa-start { grid-template-columns: minmax(0, 1fr); }
+.upa-root.is-narrow .upa-fenster { display: none; }
+.upa-root.is-narrow .upa-start-text { min-height: 0; }
+
+/* ---------- Reiter des Details (core makePageNav) ----------
+   Der Abstand zum Kopf kommt aus core (.up-ph-nav, 32); darunter 24 bis zum Inhalt wie auf der Leinwand (Version 9, Detail B). */
+.upa-root .upa-nav[hidden] { display: none; }
+.upa-root.has-upa-nav .upa-pagehead { margin-bottom: 0; }
+.upa-root.has-upa-nav .upa-nav + .upa-main { margin-top: 24px; }
+
+/* ---------- Befunde: Etiketten je Plattform und Profilansicht (UMSETZUNGSPLAN 14) ----------
+   NEU (nicht in core): die Liste je Plattform im Befund und die aufklappbare Plattformzeile. Marken aus core (.up-marke.is-leise). */
+.upa-jp { display: flex; flex-direction: column; gap: 14px; margin-top: 4px; }
+.upa-jp-zeile { display: flex; flex-direction: column; gap: 4px; }
+.upa-jp-kopf { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.upa-jp-kopf .up-zeilenname { margin-right: 2px; }
+.upa-jp-zeile .upa-satz { padding-left: 32px; }
+.upa-belegkopf { margin-top: 4px; }
+.upa-root .upa-kasten .up-row.upa-paufklapp { cursor: pointer; }
+.upa-root .upa-kasten .up-row.upa-paufklapp:hover { background: var(--vt-row-hover); }
+.upa-root .upa-kasten .up-row.upa-paufklapp:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: calc(var(--up-focus-w) * -1); }
+.upa-td-chev { justify-content: flex-end; }
+.upa-pkoerper { display: block; border-bottom: 1px solid var(--vc-border); }
+.upa-pkoerper[hidden] { display: none; }
+.upa-root.is-vnarrow .upa-pkoerper-in { padding-left: 12px; }
+
+/* ---------- Rohdaten: Hover-Tausch in der Zeile (Memory "Hover-Tausch in Listen") ---------- */
+/* Angabe und Knopf an derselben Stelle, sichtbar ist immer nur eines: der Knopf kommt mit dem Hover der Zeile (core .up-rowbtn,
+   auch beim Fokus), die Angabe geht dann. Der Knopf bleibt im Fluss, damit die Tastatur ihn erreicht. */
+.upa-roh { display: grid; align-items: center; justify-items: start; min-width: 0; }
+.upa-roh > * { grid-area: 1 / 1; }
+.upa-tab-belege .upa-rohknopf { margin-left: 0; }
+.upa-tab-belege .up-row:hover .upa-rohtext, .upa-tab-belege .up-row:focus-within .upa-rohtext { visibility: hidden; }
+
+/* ---------- Create Audit: Zeitplan beim Anlegen (core .up-seg.is-lg) ---------- */
+
+
+/* ---------- v2: die Startkarte (Lukas 21.10. nachts) ----------
+   Karte aus core (.up-box: Rahmen, Flaeche, Radius 12), darin Titel (Block-Stufe 14/600), die Erklaerung und unten rechts der
+   Hauptknopf "Run Audit ->". Polster 16 wie eine Kennzahlkarte, 12 Rhythmus. */
+.upa-start > .upa-startkarte { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; gap: 8px; padding: 16px; min-width: 0; }
+.upa-sk-titel { font-size: var(--up-ueb-block-gr); font-weight: var(--up-ueb-block-gew); line-height: var(--up-ueb-block-zeile); letter-spacing: var(--up-ueb-block-spur); color: var(--vc-text); }
+.upa-sk-satz { margin: 0; font-size: var(--up-fs-m); line-height: 1.5; color: var(--vc-muted); }
+.upa-sk-fuss { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 4px; }
+.upa-sk-los { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.upa-sk-los svg { width: 14px; height: 14px; }
+
+/* ---------- v2: Auf- und Zuklappen in 200 ms (Lukas: "das auf und zuklappen hat keine 200ms") ----------
+   Hoehe ueber grid-template-rows 0fr -> 1fr (wie Miras Arbeitsprotokoll): der Inhalt waechst weich, statt zu springen. Polster stehen
+   im inneren Kasten, sonst bliebe zugeklappt ein Rest stehen. Ohne Bewegung bei reduzierter Bewegung. */
+.upa-klapp { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--up-t-2) var(--up-ease); }
+.upa-klapp.is-offen { grid-template-rows: 1fr; }
+.upa-klapp-in { min-height: 0; overflow: hidden; }
+.upa-klapp:not(.is-offen) .upa-klapp-in { visibility: hidden; transition: visibility 0s linear var(--up-t-2); }
+@media (prefers-reduced-motion: reduce) { .upa-klapp, .upa-klapp:not(.is-offen) .upa-klapp-in { transition: none; } }
+.upa-befund-koerper.upa-klapp { padding: 0; gap: 0; }
+.upa-befund-in { display: flex; flex-direction: column; gap: 16px; padding: 4px 16px 20px 46px; }
+.upa-umfang { font-size: var(--up-fs-s); }
+/* Plattform aufgeklappt (Lukas 21. und 22.10.: "das top padding stimmt immer noch nicht"): die offene Zeile endet mit ihrer
+   Linie, der Inhalt beginnt 16 darunter und endet 16 vor der naechsten Linie -- oben und unten gleich (vorher 4 und 20, gemessen:
+   erster Inhalt 4 px unter der Linie). Links buendig mit dem Namen (Logo 24 + 10 Abstand + 12 Zellpolster = 46). */
+.upa-pkoerper.upa-klapp { display: grid; }
+.upa-pkoerper-in { display: flex; flex-direction: column; gap: 16px; padding: 16px 16px 16px 46px; }
+.upa-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: var(--up-fs-s); padding: 1px 5px; border-radius: var(--up-r-xs);
+  background: var(--vt-row-hover); color: var(--vc-text); }
+.upa-root .upa-kasten .up-row.upa-paufklapp.is-offen { background: var(--vt-row-hover); }
+.upa-root.is-vnarrow .upa-pkoerper-in, .upa-root.is-vnarrow .upa-befund-in { padding-left: 12px; }
+
+
+/* ---------- v2: Kopfzone mit Screenshot (Lukas: "oben rechts im Audit Overview einen Screen der Webseite") ----------
+   Seite und Kennzahlen (2 x 2) links, das Fenster rechts daneben (Canvas v8 "4 Kopf A", Breiten unten bei is-k/is-lauf). Das
+   Fenster ist dieselbe Form wie die Fenster der Startgrafik (Radius 12, Punkte, Rahmen). */
+.upa-kopfzone { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 24px; align-items: start; }
+.upa-kopfzone-l { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.upa-browser { margin: 0; display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl);
+  background: var(--vc-bg); box-shadow: var(--up-e-1); overflow: hidden; }
+.upa-browser-leiste { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border-bottom: 1px solid var(--vc-border); }
+.upa-browser-punkte { display: inline-flex; gap: 4px; flex: 0 0 auto; }
+.upa-browser-punkte i { width: 7px; height: 7px; border-radius: 50%; background: color-mix(in srgb, var(--vc-text) 16%, transparent); }
+.upa-browser-adresse { flex: 1 1 auto; min-width: 0; height: 20px; display: flex; align-items: center; justify-content: center; padding: 0 8px; border-radius: var(--up-r-xs);
+  background: var(--vt-row-hover); font-size: var(--up-fs-xs); color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upa-browser-bild { position: relative; aspect-ratio: 16 / 10; background: var(--vt-row-hover); overflow: hidden; }
+.upa-browser-bild img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.upa-browser-sk { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--vc-text) 6%, transparent) 50%, transparent 70%);
+  background-size: 200% 100%; animation: upa-sk-glanz 1.4s linear infinite; }
+@keyframes upa-sk-glanz { from { background-position: 120% 0; } to { background-position: -80% 0; } }
+.upa-browser-leer { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 16px; text-align: center;
+  font-size: var(--up-fs-s); color: var(--vc-third); }
+.upa-browser-leer svg { width: 24px; height: 24px; }
+.upa-root.is-narrow .upa-kopfzone { grid-template-columns: minmax(0, 1fr); }
+@media (prefers-reduced-motion: reduce) { .upa-browser-sk { animation: none; } }
+
+/* ---------- v2: Arbeitsprotokoll (Vorlage Mira, ask-mira.css .am-run) ----------
+   Uhr oben mit Haarlinie, je Phase eine Zeile: laufend mit Spinner und Glanz in der zweiten Textfarbe, fertig in der ersten. Werte
+   1:1 aus Miras Protokoll (Zeile 11 Luft, Zeichen 20, Text 14/500, Spinner 14). Die Dauern (420/380/320/460 ms) liegen bewusst
+   ausserhalb der Skala --up-t-*: Lukas 22.10. "wie bei Mira", damit sich beide Protokolle gleich anfuehlen. Aendert Mira sie,
+   hier mitziehen. */
+.upa-run { width: 100%; max-width: 640px; padding: 8px 0 32px; }
+.upa-run-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 19px; padding-bottom: 11px; border-bottom: 1px solid var(--vc-border); }
+.upa-run-clock { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--vc-muted); line-height: 1; font-variant-numeric: tabular-nums; }
+.upa-run-steps { display: flex; flex-direction: column; }
+.upa-run-step { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 420ms cubic-bezier(.2,.8,.3,1), opacity 320ms ease; }
+.upa-run-step.is-in { grid-template-rows: 1fr; opacity: 1; }
+.upa-run-inner { min-height: 0; overflow: hidden; }
+.upa-run-line { display: flex; align-items: center; padding-top: 11px; min-width: 0; }
+.upa-run-spin { width: 14px; height: 14px; flex: 0 0 auto; margin-right: 10px;
+  transition: opacity 320ms ease, transform 320ms cubic-bezier(.2,.8,.3,1), width 380ms cubic-bezier(.2,.8,.3,1), margin-right 380ms cubic-bezier(.2,.8,.3,1); }
+.upa-run-spin i { display: block; width: 14px; height: 14px; box-sizing: border-box; border-radius: 50%; border: 1.8px solid var(--vc-border); border-top-color: var(--vc-muted);
+  animation: upa-run-dreh 720ms linear infinite; }
+@keyframes upa-run-dreh { to { transform: rotate(360deg); } }
+.upa-run-step:is(.is-fertig, .is-kommt) .upa-run-spin { opacity: 0; transform: scale(.5); width: 0; margin-right: 0; }
+.upa-run-ic { width: 20px; height: 20px; flex: 0 0 auto; margin-right: 10px; display: inline-flex; align-items: center; justify-content: center; color: var(--vc-third); }
+.upa-run-ic svg { width: 15px; height: 15px; }
+.upa-run-step.is-fertig .upa-run-ic { color: var(--vc-muted); }
+.upa-run-txt { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); line-height: 1.45; color: var(--vc-muted); min-width: 0; transition: color 460ms ease; }
+.upa-run-step.is-fertig .upa-run-txt { color: var(--vc-text); }
+.upa-run-step.is-kommt .upa-run-txt, .upa-run-step.is-kommt .upa-run-ic { color: var(--vc-fourth); }
+.upa-run-step.is-laeuft .upa-run-txt {
+  background-image: linear-gradient(100deg, rgba(255,255,255,0) 30%, var(--vc-mira-lauf-glanz) 50%, rgba(255,255,255,0) 70%);
+  background-color: currentColor; background-size: 200% 100%; background-repeat: no-repeat; background-position: -120% 0;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: upa-run-glanz 1.56s linear infinite reverse; }
+@keyframes upa-run-glanz { from { background-position: -120% 0; } to { background-position: 220% 0; } }
+.upa-run-lead { display: inline-flex; align-items: center; margin-left: 14px; }
+.upa-run-lead .up-logo-box { width: 20px; height: 20px; box-shadow: 0 0 0 2px var(--up-surface); }
+.upa-run-lead .up-logo-box img { width: 16px; height: 16px; }
+.upa-run-lead > * + * { margin-left: -5px; }
+@media (prefers-reduced-motion: reduce) {
+  .upa-run-step.is-laeuft .upa-run-txt { background: none; animation: none; -webkit-text-fill-color: currentColor; }
+  .upa-run-spin i { animation: none; } }
+
+/* ---------- v2 Alternativen (Recherche 21.10., nur Scratch) ---------- */
+/* Plattform B: eine Kette von Fragen je Plattform (Google Search Console, Lumar). Spalten: Zeichen 16, Frage 200, Antwort. */
+.upa-kette { display: flex; flex-direction: column; gap: 10px; }
+.upa-kette-z { display: grid; grid-template-columns: 16px 200px minmax(0, 1fr); column-gap: 10px; align-items: baseline; }
+.upa-kette-z > .upa-zustand { align-self: start; padding-top: 2px; }
+.upa-kette-f { font-size: var(--up-fs-m); color: var(--vc-muted); }
+.upa-kette-a { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; font-size: var(--up-fs-m); color: var(--vc-text); }
+.upa-kette-w { font-weight: var(--up-fw-m); }
+.upa-kette-d { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; min-width: 0; color: var(--vc-muted); }
+.upa-kette-satz { flex: 1 0 100%; color: var(--vc-muted); line-height: 1.5; }
+.upa-kette-andere { font-size: var(--up-fs-m); }
+.upa-root.is-vnarrow .upa-kette-z { grid-template-columns: 16px minmax(0, 1fr); }
+.upa-root.is-vnarrow .upa-kette-a { grid-column: 2; }
+
+/* Befunde B: nummerierte Fix-Liste. Nummer 22 rund in der Farbe der Art, Titel und zwei Saetze untereinander. */
+.upa-fix-kopf { align-items: flex-start; padding-top: 14px; padding-bottom: 14px; }
+.upa-fix-n { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 22px; height: 22px; border-radius: var(--up-r-voll);
+  font-size: var(--up-fs-s); font-weight: var(--up-fw-h); font-variant-numeric: tabular-nums; background: var(--vt-row-hover); color: var(--vc-text); }
+.upa-fix-n.is-neg { color: var(--vt-down); }
+.upa-fix-n.is-warn { color: var(--vc-warn); }
+.upa-fix-txt { display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; min-width: 0; }
+.upa-fix-txt .upa-befund-titel { white-space: normal; }
+.upa-fix-kurz { font-size: var(--up-fs-m); line-height: 1.5; color: var(--vc-muted); }
+.upa-fix-kopf .upa-befund-rechts { padding-top: 1px; }
+.upa-fix-in { padding-left: 44px; }
+.upa-fix-schrittkopf { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.upa-kopie { display: inline-flex; align-items: center; gap: 6px; height: var(--up-h-chip); padding: 0 8px; border-radius: var(--up-r-xs); font-size: var(--up-fs-s); }
+.upa-kopie svg { width: 13px; height: 13px; }
+.upa-schritte { margin: 0; padding: 0 0 0 20px; display: flex; flex-direction: column; gap: 6px; }
+.upa-schritte li { font-size: var(--up-fs-l); line-height: 1.5; color: var(--vc-text); padding-left: 2px; }
+.upa-schritte li::marker { color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+.upa-fixplattformen { --up-cols: minmax(200px, 1.2fr) minmax(110px, .6fr) minmax(0, 3fr); margin-top: 4px; }
+.upa-root .upa-fixplattformen .up-row.upa-fixp { height: auto; min-height: 48px; flex: 0 0 auto; padding-top: 10px; padding-bottom: 10px; align-items: start; }
+.upa-fixp .up-td { align-self: center; gap: 10px; }
+.upa-fixp-satz .upa-satz { font-size: var(--up-fs-m); }
+.upa-root.is-narrow .upa-fixplattformen { --up-cols: minmax(0, 1fr) minmax(100px, auto); }
+.upa-root.is-narrow .upa-fixp-satz { grid-column: 1 / -1; }
+/* Ein Auszug, der nur nach JavaScript da ist: wie eine hinzugefuegte Zeile im Vergleich (Sitebulb, Ahrefs: gruen = hinzugefuegt). */
+.upa-diff { display: flex; flex-direction: column; margin-top: 4px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m); overflow: hidden; }
+.upa-diff-z { display: grid; grid-template-columns: 28px minmax(0, 1fr); background: var(--vc-pos-bg); }
+.upa-diff-z + .upa-diff-z { border-top: 1px solid var(--vc-border); }
+.upa-diff-plus { display: flex; justify-content: center; padding: 7px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--up-fs-s); color: var(--vc-pos); }
+.upa-diff-t { padding: 7px 12px 7px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--up-fs-s); line-height: 1.5; color: var(--vc-text); overflow-wrap: anywhere; }
+
+/* Checks B und C: Zeile mit Zeichen, Zielzustand (Schluessel leise darunter), Messwert rechts. */
+.upa-crows { display: flex; flex-direction: column; }
+.upa-crow { display: grid; grid-template-columns: 16px minmax(0, 1fr) minmax(0, auto) auto auto; column-gap: 12px; align-items: center; min-height: 55px; padding: 8px 16px; box-sizing: border-box; }
+.upa-crow + .upa-crow { border-top: 1px solid var(--vc-border); }
+.upa-crow > .upa-zustand { align-self: center; }
+.upa-crow-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.upa-crow-n { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--vc-text); }
+.upa-crow-k { font-size: var(--up-fs-s); color: var(--vc-third); }
+.upa-crow-w { font-size: var(--up-fs-m); color: var(--vc-muted); text-align: right; font-variant-numeric: tabular-nums; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upa-crow.is-befund .upa-crow-w { color: var(--vc-text); }
+.upa-crow-link { height: var(--up-h-chip); padding: 0 8px; border-radius: var(--up-r-xs); font-size: var(--up-fs-s); }
+.upa-bereich { display: flex; flex-direction: column; gap: 8px; }
+.upa-bereich + .upa-bereich, .upa-bereich + .upa-cgruppen { margin-top: 24px; }
+.upa-bereich-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 2px; }
+.upa-cgruppen { display: flex; flex-direction: column; }
+.upa-cgruppe + .upa-cgruppe { border-top: 1px solid var(--vc-border); }
+.upa-cgruppe-kopf { gap: 8px; }
+.upa-cgruppe-t { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); }
+.upa-cgruppe-in { border-top: 1px solid var(--vc-border); }
+.upa-cgruppe-in > .up-box { border: 0; border-radius: 0; }
+.upa-root.is-vnarrow .upa-crow { grid-template-columns: 16px minmax(0, 1fr); row-gap: 4px; }
+.upa-root.is-vnarrow .upa-crow-w { grid-column: 2; text-align: left; white-space: normal; }
+
+/* Evidence B: Abrufe mit User-Agent unter dem Namen, Spalte "Compared" fuer die Crawler. */
+.upa-tab-abrufe { --up-cols: minmax(300px, 2.6fr) minmax(64px, .4fr) minmax(150px, .9fr) minmax(84px, .5fr) minmax(70px, .4fr) minmax(130px, .7fr); }
+.upa-tab-abrufe .upa-url { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-xs); }
+.upa-root.is-narrow .upa-tab-abrufe { --up-cols: minmax(0, 2fr) minmax(56px, .4fr) minmax(130px, .9fr) minmax(110px, .7fr); }
+.upa-root.is-narrow .upa-tab-abrufe .upa-td-groesse, .upa-root.is-narrow .upa-tab-abrufe .upa-td-dauer { display: none; }
+.upa-bereich-kopf .upa-bgruppe-n { margin-right: auto; }
+.upa-sek > .upa-kpis + .upa-absatz { margin-top: 16px; }
+/* Liste: der laufende Schritt leise neben dem Status (Datei 5, get_page_audit_progress_v1). */
+.upa-laufstatus { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.upa-schritt { font-size: var(--up-fs-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Laufender erster Lauf (Lukas 22.10.): links Domain und Protokoll, rechts das Browserfenster; das Protokoll ohne eigene
+   Breitengrenze und ohne Polster unten, der Hinweis "You can leave this page" ganz unten, mittig. */
+.upa-kopfzone.is-lauf .upa-run { max-width: none; padding: 0; }
+.upa-run-weg { margin: 32px 0 0; text-align: center; font-size: var(--up-fs-s); color: var(--vc-third); }
+/* Kopf mit kompakten Kennzahlen (Lukas 22.10.): links Domain und Kennzahlen, rechts das Bildschirmfoto, 440 breit (vorher 380);
+   die Kennzahlen 32 unter der Domain. Im Lauf dieselbe Breite. NEU, nicht in core: die kompakte Kennzahl
+   (.upa-kk) -- Kandidat fuer core, sobald eine zweite Seite sie braucht. Radius 8: Kachel und Zeile sind 37 und hoeher. */
+.upa-kopfzone.is-k, .upa-kopfzone.is-lauf { grid-template-columns: minmax(0, 1fr) 440px; }
+/* Lukas 22.10.: die Kennzahlen nicht mehr unten buendig mit dem Fenster (das gab rund 80 px Luft), sondern im festen Abstand der
+   Abschnitte (32) unter der Domain; auf normaler Breite schmaler als die Spalte. */
+.upa-kopfzone.is-k .upa-kopfzone-l { gap: 32px; }
+.upa-root:not(.is-narrow) .upa-kopfzone.is-k .upa-kk { max-width: 520px; }
+.upa-kk { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.upa-kk-i { display: flex; flex-direction: column; gap: 4px; min-width: 0; box-sizing: border-box; padding: 10px 12px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--vc-bg); }
+.upa-kk-l { font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upa-kk-w { display: inline-flex; align-items: center; gap: 8px; font-size: var(--up-fs-xl); font-weight: var(--up-fw-h); color: var(--vc-text); font-variant-numeric: tabular-nums; }
+.upa-kk-w .up-num { font-size: inherit; font-weight: inherit; }
+.upa-kk-w .up-trend { font-size: var(--up-fs-m); }
+.upa-root.is-narrow .upa-kopfzone.is-k, .upa-root.is-narrow .upa-kopfzone.is-lauf { grid-template-columns: minmax(0, 1fr); }
