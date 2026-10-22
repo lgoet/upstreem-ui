@@ -7,6 +7,8 @@
      ?view=ads                                 Overview
      ?view=ads&ads=advertisers|library         die Reiter
      ?view=ads&ads=advertisers&advertiser=<n>  Advertiser Detail (der Reiter Advertisers bleibt an)
+     ?view=ads&ads=library&library=prompts     Ad Library: Prompts statt Ads (seit 22.10.; ohne den Parameter Ads)
+     ?view=ads&ads=library&layout=list         Ad Library: Liste statt Raster (seit 22.10.; ohne den Parameter Raster)
    Der Ad-Detail-Drawer ist ein Seiten-Drawer aus core (UC.makeSeitenDrawer): jedes Ad-Objekt traegt
    alle 29 Felder, er braucht also weder eine Anfrage noch ein Bubble-Element.
 
@@ -200,7 +202,10 @@
       t: "Distinct advertisers whose Ads appeared in the selected period." },
     appearances: { h: "Ad Appearances", f: "Count of observed Ads",
       t: "Every observed Ad counts once, even when the same creative appears again in another response." },
-    prompts: { h: "Prompts with Ads", f: "Prompts with at least one Ad ÷ tracked prompts",
+    /* Die Kachel zeigt die ANZAHL (22.10.: die Formel sagte "÷ tracked prompts", die Kachel 13) -- die Formel nennt also die
+       Zaehlung; der Anteil an den getrackten Prompts steht als Zusatz in der Karte (erklaerZusatz), seit er nicht mehr als
+       Fusszeile unter der Kachel steht. */
+    prompts: { h: "Prompts with Ads", f: "Count of tracked prompts with at least one Ad",
       t: "Tracked prompts that produced at least one Ad in any run." },
     share: { h: "Ad Share", f: "Appearances of this advertiser ÷ all Ad appearances",
       t: "An advertiser's part of all observed Ad appearances. This is presence in AI responses, not spend." },
@@ -221,7 +226,7 @@
     "Distinct advertisers whose Ads appeared in the selected period.": "Verschiedene Werbetreibende, deren Ads im gewählten Zeitraum erschienen.",
     "Count of observed Ads": "Anzahl beobachteter Ads",
     "Every observed Ad counts once, even when the same creative appears again in another response.": "Jede beobachtete Ad zählt einmal, auch wenn dasselbe Motiv in einer anderen Antwort wieder erscheint.",
-    "Prompts with at least one Ad ÷ tracked prompts": "Prompts mit mindestens einer Ad ÷ getrackte Prompts",
+    "Count of tracked prompts with at least one Ad": "Anzahl getrackter Prompts mit mindestens einer Ad",
     "Tracked prompts that produced at least one Ad in any run.": "Getrackte Prompts, die in irgendeinem Lauf mindestens eine Ad hervorgebracht haben.",
     "Appearances of this advertiser ÷ all Ad appearances": "Auftritte dieses Werbetreibenden ÷ alle Ad-Auftritte",
     "An advertiser's part of all observed Ad appearances. This is presence in AI responses, not spend.": "Der Anteil eines Werbetreibenden an allen beobachteten Ad-Auftritten. Das ist Präsenz in KI-Antworten, kein Budget.",
@@ -362,9 +367,24 @@
       if (key === "organic") {
         return '<span class="up-explain-row"><span class="up-explain-up">' + UC.icon("check", 2) + '</span><span>' + esc(t("Also mentioned organically")) + '</span></span>';
       }
+      /* Prompts with Ads mit dem Wert der Kachel: der Zusatz darunter (erklaerZusatz) ist ein Messwert, und eine Beispielzahl
+         in der Platte neben dem echten Anteil saehe aus wie ein Widerspruch. Ohne Daten die Beispielzahl. */
+      var pa = key === "prompts" ? promptsMitAds() : null;
+      if (pa) return '<span class="up-explain-row">' + esc(ganz(pa.n)) + '</span>';
       /* auftritte: die Zelle einer Zeile (HOLY, 28), nicht die Summe der Kachel. */
       var bsp = { coverage: "11.4%", advertisers: "6", appearances: "81", prompts: "13", share: "34.6%", anteil: "34.6%", auftritte: "28" }[key];
       return bsp ? '<span class="up-explain-row">' + esc(bsp) + '</span>' : "";
+    }
+    /* Prompts with Ads der offenen Overview: Anzahl und Anteil an den getrackten Prompts (22.10.). Der Anteil stand als Fusszeile
+       unter der Kachel ("92.9% of tracked prompts") und steht jetzt in ihrer Erklaerkarte (Memory "Keine Meta-Unterzeilen"). */
+    function promptsMitAds() {
+      var d = state.seite === "overview" ? daten(ovAnfrage()) : null, k = objOder(d && d.kpis);
+      var n = k ? anzahlWert(k.prompts_with_ads) : null, getrackt = k ? anzahlWert(k.tracked_prompts) : null;
+      return n == null ? null : { n: n, anteil: getrackt != null && getrackt > 0 ? n / getrackt * 100 : null };
+    }
+    function erklaerZusatz(key) {
+      var pa = key === "prompts" ? promptsMitAds() : null;
+      return pa && anteilWert(pa.anteil) != null ? '<div class="up-explain-t">' + esc(ersetze(t("{pct} of tracked prompts"), { pct: pct(pa.anteil) })) + '</div>' : '';
     }
     if (UC.makeExplain) UC.makeExplain({ root: root, triggerSel: ".uad-erklaer", getIsDark: isDark,
       html: function (key) {
@@ -373,7 +393,7 @@
         var vis = erklaerVorschau(key);
         return (vis ? '<div class="up-explain-vis">' + vis + '</div>' : '') +
           '<div class="up-explain-h">' + esc(t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>' +
-          '<div class="up-explain-t">' + esc(t(e.f)) + '</div>';
+          '<div class="up-explain-t">' + esc(t(e.f)) + '</div>' + erklaerZusatz(key);
       } });
     function info(key) {
       return '<span class="up-th-info uad-erklaer" data-explain="' + esc(key) + '">' + UC.icon("info", 2) + '</span>';
@@ -440,7 +460,24 @@
       var s = q ? str(q.get("ads")).trim() : "", a = q ? str(q.get("advertiser")).trim() : "";
       /* Ein Advertiser IST sein Name (p_advertiser_name). Ueberlang ist er keiner. */
       if (a && a.length <= 200) return { seite: "advertiser", advertiser: a };
-      return { seite: SEITE_OK[s] && s !== "advertiser" ? s : "overview", advertiser: null };
+      var seite = SEITE_OK[s] && s !== "advertiser" ? s : "overview";
+      /* ADS/PROMPTS UND RASTER/LISTE DER AD LIBRARY IN DER ADRESSE (22.10., Lukas: "ja"): vorher nur im Speicher der Seite, ein
+         Neuladen oder ein geteilter Link stand wieder auf Ads im Raster. Nur auf der Library gelesen -- auf den anderen Reitern
+         bleibt die gemerkte Wahl fuer den naechsten Besuch. Ein unbekannter Wert ist die Vorgabe. */
+      if (seite === "library") {
+        return { seite: seite, advertiser: null, modus: q && q.get("library") === "prompts" ? "prompts" : "ads",
+          ansicht: q && q.get("layout") === "list" ? "list" : "grid" };
+      }
+      return { seite: seite, advertiser: null };
+    }
+    /* Die Wahl der Library aus der Adresse in den Zustand; true, wenn sich etwas geaendert hat. Ein Wechsel zwischen Ads und Prompts
+       schliesst die aufgeklappten Prompts wie der Klick auf den Umschalter. */
+    function libraryAusAdresse(a) {
+      if (a.seite !== "library" || !a.modus) return false;
+      var lb = state.library, neu = lb.modus !== a.modus || lb.ansicht !== a.ansicht;
+      if (lb.modus !== a.modus) state.offen = {};
+      lb.modus = a.modus; lb.ansicht = a.ansicht;
+      return neu;
     }
     function adresseSetzen(neuerEintrag) {
       try {
@@ -449,6 +486,11 @@
         if (s === "overview") u.searchParams.delete("ads"); else u.searchParams.set("ads", s);
         if (state.seite === "advertiser" && state.advertiser) u.searchParams.set("advertiser", state.advertiser);
         else u.searchParams.delete("advertiser");
+        /* Die Vorgaben (Ads, Raster) stehen nicht in der Adresse. layout auch unter Prompts: die Wahl gilt wieder, sobald man
+           zurueck auf Ads schaltet, auch nach einem Neuladen. */
+        var lib = state.seite === "library";
+        if (lib && state.library.modus === "prompts") u.searchParams.set("library", "prompts"); else u.searchParams.delete("library");
+        if (lib && state.library.ansicht === "list") u.searchParams.set("layout", "list"); else u.searchParams.delete("layout");
         var neu = u.pathname + u.search + u.hash;
         if (neu === window.location.pathname + window.location.search + window.location.hash) return;
         if (neuerEintrag) window.history.pushState(window.history.state, "", neu);
@@ -1169,8 +1211,11 @@
     }
     function adresseAnwenden() {
       var a = adresseLesen();
-      if (a.seite === state.seite && a.advertiser === state.advertiser) return;
+      /* Zurueck und Vor zwischen Ads/Prompts oder Raster/Liste (22.10.): dieselbe Seite, aber eine andere Wahl der Library. */
+      var libNeu = libraryAusAdresse(a);
+      if (a.seite === state.seite && a.advertiser === state.advertiser && !libNeu) return;
       state.seite = a.seite; state.advertiser = a.advertiser;
+      persist();
       if (nav && nav.selectPage) nav.selectPage(a.seite === "advertiser" ? "advertisers" : a.seite, false);
       geruest = null;
       zeichnen(); krumenNeu(); bedarf();
@@ -1268,8 +1313,10 @@
          .up-leiste-scope) -- in der Library der Umschalter Ads/Prompts. */
       /* .up-band-head: im offenen Band die Ueberschriftzeile aus core (core.css "DAS OFFENE BAND");
          ausserhalb eines Bandes greift die Klasse nicht. */
+      /* o.tip: ein Hinweis zur Ueberschrift samt Zahl als Tooltip (22.10.: "Showing the 20 most recent of 28." stand als Zeile
+         unter den Karten, Memory "Keine Meta-Unterzeilen"). */
       return '<div class="up-head uad-head up-band-head">' + (o.scope ? '<div class="up-leiste-scope uad-scope">' + o.scope + '</div>' : '') +
-        '<span class="up-heading uad-heading' + (mitZahl ? " has-count" : "") + '"><span class="up-head-label">' + esc(t(titel)) + '</span>' +
+        '<span class="up-heading uad-heading' + (mitZahl ? " has-count" : "") + '"' + (o.tip ? ' data-tip="' + esc(o.tip) + '"' : '') + '><span class="up-head-label">' + esc(t(titel)) + '</span>' +
           (o.info ? info(o.info) : '') +
           '<span class="up-head-sep"></span><span class="up-head-count">' + (mitZahl ? esc(o.zahl) : '') + '</span></span>' +
         '<div class="up-head-tools uad-tools">' + (o.tools || '') + '</div>' +
@@ -1670,13 +1717,12 @@
       if (!el) return;
       if (!d) { el.innerHTML = kpiSkelett(4); return; }
       var k = objOder(d.kpis) || {};
-      var mit_ = anzahlWert(k.prompts_with_ads), getrackt = anzahlWert(k.tracked_prompts);
-      var fuss = mit_ != null && getrackt != null && getrackt > 0 ? esc(ersetze(t("{pct} of tracked prompts"), { pct: pct(mit_ / getrackt * 100) })) : "";
+      /* Ohne Fusszeile (22.10.): der Anteil an den getrackten Prompts steht in der Erklaerkarte der Kachel (erklaerZusatz). */
       el.innerHTML =
         kpiHtml({ label: "Ad Coverage", wertHtml: zaehlWert("pct", k.ad_coverage_pct) }) +
         kpiHtml({ label: "Advertisers", wertHtml: zaehlWert("int", k.advertisers) }) +
         kpiHtml({ label: "Ad Appearances", wertHtml: zaehlWert("int", k.ad_appearances) }) +
-        kpiHtml({ label: "Prompts with Ads", wertHtml: zaehlWert("int", k.prompts_with_ads), fussHtml: fuss });
+        kpiHtml({ label: "Prompts with Ads", wertHtml: zaehlWert("int", k.prompts_with_ads) });
       erklaerAnLabels(el, ["coverage", "advertisers", "appearances", "prompts"]);
       hochzaehlen(el);
     }
@@ -2084,13 +2130,14 @@
         var mo = e.target.closest(".uad-modus [data-wert]");
         if (mo) {
           var w = mo.getAttribute("data-wert") === "prompts" ? "prompts" : "ads";
-          if (w !== state.library.modus) { state.library.modus = w; state.offen = {}; persist(); zeichnen(); bedarf(); }
+          /* Mit eigenem Eintrag im Verlauf (22.10.): Zurueck im Browser schaltet zurueck, statt die Library zu verlassen. */
+          if (w !== state.library.modus) { state.library.modus = w; state.offen = {}; persist(); adresseSetzen(true); zeichnen(); bedarf(); }
           return;
         }
         var an = e.target.closest(".uad-ansicht [data-wert]");
         if (an) {
           var w2 = an.getAttribute("data-wert") === "list" ? "list" : "grid";
-          if (w2 !== state.library.ansicht) { state.library.ansicht = w2; persist(); zeichnen(); }
+          if (w2 !== state.library.ansicht) { state.library.ansicht = w2; persist(); adresseSetzen(true); zeichnen(); }
         }
       });
       /* Sortierung ueber die Spaltenkoepfe (UC.makeHeadSort): Feld und Richtung ergeben genau einen
@@ -2312,9 +2359,9 @@
           text: gef ? "No Ads match these filters." : "None of the tracked AI responses in this range contained an Ad." }) + '</div>';
         return;
       }
-      /* Mehr Auftritte als gelieferte Ads: das sind die neuesten. Der Satz sagt es, der Knopf daneben
-         fuehrt zu allen. */
-      var hinweis = gesamtN != null && gesamtN > l.length ? '<p class="uad-hinweis">' + esc(ersetze(t("Showing the {n} most recent of {total}."), { n: ganz(l.length), total: ganz(gesamtN) })) + '</p>' : '';
+      /* Mehr Auftritte als gelieferte Ads: das sind die neuesten. Der Satz sagt es als Tooltip an Ueberschrift und Zahl (seit
+         22.10., vorher eine Zeile unter den Karten), der Knopf daneben fuehrt zu allen. */
+      var hinweis = gesamtN != null && gesamtN > l.length ? ersetze(t("Showing the {n} most recent of {total}."), { n: ganz(l.length), total: ganz(gesamtN) }) : '';
       var inhalt;
       if (state.dGruppe === "campaign" && mitKampagne) {
         var gruppen = {}, reihenfolge = [];
@@ -2335,7 +2382,7 @@
             '<div class="up-adgrid">' + g.map(function (x) { return karte(x); }).join("") + '</div></div>';
         }).join("");
       } else inhalt = '<div class="up-adgrid">' + l.map(function (x) { return karte(x); }).join("") + '</div>';
-      el.innerHTML = kopf("Ads", { zahl: ganz(l.length), tools: werkzeuge }) + inhalt + hinweis;
+      el.innerHTML = kopf("Ads", { zahl: ganz(l.length), tools: werkzeuge, tip: hinweis }) + inhalt;
     }
 
     /* ============================================================================================
@@ -2430,7 +2477,7 @@
     }
     /* Die aufgeklappte Prompt-Zeile: die Ads dieses Prompts (Entwurf) und "Open Prompt Detail". */
     function aufklappHtml(pid, text, auftritte) {
-      var a = aufAnfrage({ text: text }), d = daten(a), inhalt;
+      var a = aufAnfrage({ text: text }), d = daten(a), inhalt, hinweis = "";
       if (!d) inhalt = fehlerVon(a) ? fehlerKasten(a) : '<div class="uad-auf-liste">' + [0, 1, 2].map(function () {
         return '<div class="uad-auf-ad is-sk"><span class="uad-bild uad-sk-flaeche"></span><span class="uad-zweizeilig"><span class="up-tsk-bar" style="width:140px"></span><span class="up-tsk-bar" style="width:90px"></span></span></div>';
       }).join("") + '</div>';
@@ -2444,12 +2491,13 @@
               '<span class="uad-zweizeilig"><span class="uad-titel" title="' + esc(titel) + '">' + esc(titel) + '</span>' +
               '<span class="uad-unter"><span>' + esc(str(x.advertiser_name).trim()) + '</span><span>' + esc(datum(x.observed_at)) + '</span></span></span></button>';
           }).join("") + '</div>';
+          /* An der Grenze des Vertrags (AUF_LIMIT) sind es die neuesten: als Tooltip am Titel (22.10., vorher eine Zeile unter der Liste). */
           if (auftritte != null && auftritte > l.length && l.length >= AUF_LIMIT) {
-            inhalt += '<p class="uad-hinweis">' + esc(ersetze(t("Showing the {n} most recent of {total}."), { n: ganz(l.length), total: ganz(auftritte) })) + '</p>';
+            hinweis = ersetze(t("Showing the {n} most recent of {total}."), { n: ganz(l.length), total: ganz(auftritte) });
           }
         }
       }
-      return '<div class="uad-auf"><div class="uad-auf-kopf"><span class="uad-auf-titel">' + esc(t("Ads observed for this prompt")) + '</span>' +
+      return '<div class="uad-auf"><div class="uad-auf-kopf"><span class="uad-auf-titel"' + (hinweis ? ' data-tip="' + esc(hinweis) + '"' : '') + '>' + esc(t("Ads observed for this prompt")) + '</span>' +
         leiserKnopf("Open Prompt Detail", 'data-prompt="' + esc(pid) + '"') + '</div>' + inhalt + '</div>';
     }
 
@@ -2754,11 +2802,13 @@
     root.__uadController = ctrl;
 
     /* ?ads und ?advertiser gehoeren der Ads-Ansicht (06.10., wie ?event in den Events). */
-    if (UC.ansichtsParameter) UC.ansichtsParameter({ ansicht: "ads", schluessel: ["ads", "advertiser"], owner: root,
+    /* library und layout (22.10.) ebenso: sonst blieben sie stehen, wenn man die Ansicht verlaesst. */
+    if (UC.ansichtsParameter) UC.ansichtsParameter({ ansicht: "ads", schluessel: ["ads", "advertiser", "library", "layout"], owner: root,
       onTeamWechsel: function () { if (state.seite !== "overview") seiteOeffnen("overview", false); } });
-    /* Erster Stand: die Adresse entscheidet. */
+    /* Erster Stand: die Adresse entscheidet, auf der Library auch ueber Ads/Prompts und Raster/Liste. */
     var a0 = adresseLesen();
     state.seite = a0.seite; state.advertiser = a0.advertiser;
+    if (libraryAusAdresse(a0)) persist();
     if (nav && nav.selectPage) nav.selectPage(a0.seite === "advertiser" ? "advertisers" : a0.seite, false);
     zeichnen();
     krumenNeu();

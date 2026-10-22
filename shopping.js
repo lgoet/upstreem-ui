@@ -202,7 +202,7 @@
     "{n} merchant": "{n} Händler", "{n} merchants": "{n} Händler", "{n} other merchants": "{n} weitere Händler",
     "Unknown": "Unbekannt", "Search products…": "Produkte durchsuchen…",
     "Search products": "Produkte durchsuchen",
-    "Search merchants": "Händler durchsuchen", "Previous images": "Vorherige Bilder", "Next images": "Nächste Bilder",
+    "Search merchants": "Händler durchsuchen", "Filter by {brand}": "Nach {brand} filtern", "Previous images": "Vorherige Bilder", "Next images": "Nächste Bilder",
     "No matching products": "Keine passenden Produkte", "No matching brands": "Keine passenden Marken", "No matching merchants": "Keine passenden Händler",
     "Clear search and filters": "Suche und Filter zurücksetzen",
     "Brands observed": "Beobachtete Marken", "Tracked brands. Unassigned products are not counted.": "Getrackte Marken. Nicht zugeordnete Produkte zählen nicht.",
@@ -1652,6 +1652,22 @@
       if (andere) return UC.markenChip({ name: t("Other (unassigned)") }, { ltr: "–", nameHtml: '<span class="ush-andere">' + esc(t("Other (unassigned)")) + '</span>' });
       return UC.markenChip(m, { nameHtml: hl(str(m.name).trim(), q), nach: duMarke(m, meta) });
     }
+    /* DER MARKEN-CHIP FILTERT (22.10., Lukas: "ja"): in der Products-Tabelle setzt ein Klick auf den Chip die Marke als Filter der
+       Tabelle -- derselbe Zustand wie der Klick auf eine Zeile im Reiter Brands (state.products.marke, Chip "Brand" in der Leiste),
+       nur ueber den Weg der Leiste (prodFilter): Haendler, Segment und Suche bleiben stehen, der Klick grenzt ein, statt den
+       Umfang zu wechseln. Der Rest der Zeile oeffnet weiter das Produkt. Ein Knopf, damit Tabulator und Enter ihn erreichen;
+       das title des Chips faellt weg, der Tooltip nennt den Namen schon (sonst stuenden zwei Hinweise uebereinander).
+       Kein Knopf ohne Id ("Other", nicht zugeordnet) und nicht fuer die Marke, nach der schon gefiltert ist: dort taete der
+       Klick nichts, der Chip bleibt Teil der Zeile. */
+    function markeFilterChip(m, meta, q) {
+      var chip = markeChip(m, meta, q);
+      m = m || {};
+      var id = str(m.company_id).trim(), name = str(m.name).trim(), akt = state.products.marke;
+      if (!id || m.type === "other" || !name || (akt && str(akt.id) === id)) return chip;
+      var tip = ersetze(t("Filter by {brand}"), { brand: name });
+      return '<button type="button" class="ush-markefilter" data-ush-markefilter="' + esc(id) + '" data-ush-markefilter-name="' + esc(name) + '"' +
+        ' aria-label="' + esc(tip) + '" data-tip="' + esc(tip) + '">' + chip.replace(' title="' + esc(name) + '"', '') + '</button>';
+    }
     /* immer: die Zeile der eigenen Marke in der Tabelle Brands (22.10., Lukas: "keep it", als eigene Marke kennzeichnen).
        Ohne Treffer liefert die DB sie dort trotzdem (mit 0 und ohne Produkte) -- ohne die Marke "You" stand sie wie ein
        fremder Eintrag mit lauter Nullen da. Sonst bleibt die Marke ohne Treffer weg wie bisher (Kennzahlen, Charts). */
@@ -2550,7 +2566,7 @@
         : '<span class="up-num is-empty">–</span>';
       return '<div ' + produktZeile(p) + '>' +
         '<div class="up-td">' + produktZelle(p, meta, true, q) + '</div>' +
-        td("brand", markeChip(b, meta, q)) +
+        td("brand", markeFilterChip(b, meta, q)) +
         '<div class="up-td up-td-vis up-var-sov">' + ringHtml(vis.v) + '</div>' +
         td("obs", ganzHtml(obs.v)) +
         td("pos", posHtml(pos.v)) +
@@ -3234,6 +3250,9 @@
       if (an) { if (UC.drawerOeffnen) UC.drawerOeffnen("response", an.getAttribute("data-antwort"), "shopping"); return; }
       var tp = z.closest(".ush-topprodukt[data-produkt]");
       if (tp) { produktOeffnen(tp.getAttribute("data-produkt")); return; }
+      /* Vor der Zeile: der Marken-Chip in der Produktzeile filtert, statt das Produkt zu oeffnen (markeFilterChip). */
+      var mf = z.closest("[data-ush-markefilter]");
+      if (mf) { prodFilter("marke", { id: mf.getAttribute("data-ush-markefilter"), name: mf.getAttribute("data-ush-markefilter-name") || "" }); return; }
       var zeile = z.closest(".up-row.ush-zeile");
       if (zeile) zeileOeffnen(zeile);
     });
