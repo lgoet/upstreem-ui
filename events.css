@@ -959,6 +959,14 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 /* 32 wie zwischen allen Abschnitten (CLAUDE.md 1d, Gaps 20.10.) und wie vom Startbereich zum ersten Abschnitt; bis 22.10. 40. */
 .uev-abschnitt:not([hidden]) ~ .uev-abschnitt:not([hidden]) { margin-top: 32px; }
 
+/* GEPARKTE FILTER DES DETAILS (22.10., Klickrouten-Pruefung): Modelle und Maerkte des Details (.uev-modelle, .uev-maerkte) zieht die Leiste
+   aus filters/filter-bar.js zu sich. Wird sie mit dem Detail abgerissen (zurueck zur Uebersicht), schickt sie die beiden "heim" -- und weil
+   es ihren Behaelter dann nicht mehr gibt, als Rueckfall an den <body> (heimschicken). Dort lag ihr geschlossenes Menue (Deckkraft 0, aber
+   ausgelegt, 284 breit) rechts ueber den Rand: gemessen bei 375 eine Seite von 398 statt 375, waagerechtes Scrollen, und der feste Schleier
+   jedes Popups wurde 398,5 breit, das Create-Popup sass 56 von links und rechts abgeschnitten. Am <body> stehen sie nur bis zum naechsten
+   Detail, das eine frische Wurzel mitbringt und die alte verwirft -- sie brauchen dort keinen Platz. */
+body > .up-root.uev-modelle, body > .up-root.uev-maerkte { display: none; }
+
 /* ---- STARTBEREICH DER UEBERSICHT (22.10.) ----
    Masse aus page-audit.css (.upa-start, .upa-start-text; CLAUDE.md 1b "dieselben Zahlen"): zwei Spalten, 16 Abstand; links Titel
    20/26/600/-0.4 und Satz 14/20 (das Paar aus Titel und Untertitel eines Popups), senkrecht mittig, hoechstens 520 breit; rechts die
@@ -1025,6 +1033,8 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 /* Die Wahl der Art ("Create", der allererste Schritt) bleibt im Hellen auf dem hellen Grau des Seitengrunds (20.10., Nutzer): die weissen Tafeln
    der Karten heben sich nur von Grau ab. Im Dunkeln gilt der Grund aller Popups. */
 .up-modal.uev-kind-karte, .up-modal.uev-kind-karte > .up-topicmodal-head { background: var(--up-seite-grau); }
+/* Breit genug fuer zwei Karten nebeneinander -- nur oberhalb der Blatt-Regel der Popups aus core (max-width 540: ganze Breite, unten). */
+@media (min-width: 541px) { .up-topicmodal-backdrop > .up-modal.uev-kind-karte { max-width: min(920px, calc(100vw - 32px)); } }
 .up-topicmodal-backdrop[data-theme="dark"] .up-modal.uev-kind-karte, .up-topicmodal-backdrop[data-theme="dark"] .up-modal.uev-kind-karte > .up-topicmodal-head { background: var(--up-popup-bg); }
 
 /* ---- SUCHE IN DEN URL-LISTEN (20.10.) ----------------------------------------------------------------------------------
