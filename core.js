@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261199;
+  var BUILD = 20261200;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -20576,6 +20576,7 @@
     "Your team started 10 audits in the last hour. You can start the next one in {time}.": "Dein Team hat in der letzten Stunde 10 Audits gestartet. Das nächste kannst du in {time} starten.",
     "10 audits are already waiting or running. Try again when one has finished.": "10 Audits warten oder laufen schon. Versuch es noch einmal, wenn eines fertig ist.",
     "This website was audited many times in the last hour. Try again in {time}.": "Diese Website wurde in der letzten Stunde sehr oft geprüft. Versuch es in {time} noch einmal.",
+    "This page was audited less than {n} minutes ago. You can run it again in {time}.": "Diese Seite wurde vor weniger als {n} Minuten geprüft. Du kannst sie in {time} erneut prüfen.",
     /* "Not Scheduled" wie im Zeitplan-Menue von Page Audit (22.10.): "Once" gibt es dort seit v2 nicht mehr. */
     "Recurring audits can use up to {n} of your weekly audits, and this would exceed it. Set another page to Not Scheduled first.": "Wiederkehrende Audits dürfen höchstens {n} deiner wöchentlichen Audits belegen, und das würde die Grenze überschreiten. Stell zuerst eine andere Seite auf „Nicht geplant“.",
     "You've reached the limit for recurring audits. Set another page to Not Scheduled first.": "Du hast die Grenze für wiederkehrende Audits erreicht. Stell zuerst eine andere Seite auf „Nicht geplant“.",
@@ -20621,6 +20622,15 @@
       if (allow === 0) return { satz: tt("Page audits aren't included in your plan.") + " " + tt("Choose a plan with page audits to run one.") };
       return { satz: (allow != null ? tt("You've used all {n} audits for this week.").replace("{n}", String(allow)) : tt("You've used all audits for this week.")) +
         " " + (wann && o.datum ? tt("Your quota resets on {date}.").replace("{date}", o.datum(wann)) : tt("Your quota resets next Monday.")) };
+    }
+    /* Je Seite hoechstens ein manueller Start in 10 Minuten (23.10., page_audit_cooldown_23_10_v1.sql): hint = Sekunden bis
+       wieder erlaubt. In ganzen Minuten, aufgerundet ("in 1 minute" auch fuer die letzten 40 s): Page Audit und Impact zeigen
+       den Satz als Grund an einem gesperrten Knopf, der sich mit der Uhr nachzieht -- Sekunden liefen dort jede Sekunde davon.
+       VOR dem allgemeinen 429 unten, sonst stuende "Too many requests". */
+    if (m === "page_audit_url_cooldown"){
+      var cd = paDetailJson(f), cdMin = paZahl(cd.cooldown_minutes) || 10;
+      return { satz: tt("This page was audited less than {n} minutes ago. You can run it again in {time}.")
+        .replace("{n}", String(cdMin)).replace("{time}", pageAuditDauerText(Math.max(60, Math.ceil((paZahl(h) || 60) / 60) * 60), tt)) };
     }
     if (m === "page_audit_hourly_limit") return { satz: tt("Your team started 10 audits in the last hour. You can start the next one in {time}.").replace("{time}", pageAuditDauerText(h, tt)) };
     if (m === "page_audit_pending_limit") return { satz: tt("10 audits are already waiting or running. Try again when one has finished.") };

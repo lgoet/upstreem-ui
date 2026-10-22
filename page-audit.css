@@ -33,6 +33,10 @@
 .upa-root .up-btn-sec.upa-nochmal[aria-disabled="true"]:hover,
 .upa-root .up-leer .up-empty-btn[data-upa-nochmal][aria-disabled="true"],
 .upa-root .up-leer .up-empty-btn[data-upa-nochmal][aria-disabled="true"]:hover { opacity: .45; cursor: default; background: transparent; }
+/* "Create Audit" im Popup, solange die eingegebene Seite gesperrt ist (23.10., Sperre je Seite 10 min): wie die Startkarte. Das
+   Popup haengt am <body>, darum ohne .upa-root, ueber die eigene Klasse am Knopf; die Kette schlaegt .up-btn-pri:not(:disabled):hover. */
+.up-modal-foot .up-btn-pri.upa-anlegen-ok[aria-disabled="true"],
+.up-modal-foot .up-btn-pri.upa-anlegen-ok[aria-disabled="true"]:hover { opacity: .4; cursor: default; }
 /* Das Wochenkontingent: leise neben dem Knopf (Plan 2: "x of y audits this week"). */
 .upa-kontingent { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); font-variant-numeric: tabular-nums;
   white-space: nowrap; margin-right: 4px; outline: 0; }
@@ -582,9 +586,10 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-laufstatus { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
 .upa-schritt { font-size: var(--up-fs-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Laufender erster Lauf (Lukas 22.10.): links Domain und Protokoll, rechts das Browserfenster; das Protokoll ohne eigene
-   Breitengrenze und ohne Polster unten, der Hinweis "You can leave this page" ganz unten, mittig. */
+   Breitengrenze und ohne Polster unten. Der Hinweis darunter ("You can leave this page") ist seit 23.10. weg (Lukas: "Juckt
+   keinen"); die Klasse bleibt stillgelegt stehen, nur fuer den Vertrag (.contract_snapshot.py), wie .up-row-goto in core. */
 .upa-kopfzone.is-lauf .upa-run { max-width: none; padding: 0; }
-.upa-run-weg { margin: 32px 0 0; text-align: center; font-size: var(--up-fs-s); color: var(--vc-third); }
+.upa-run-weg { display: none; }
 /* Kopf mit kompakten Kennzahlen (Lukas 22.10.): links Domain und Kennzahlen, rechts das Bildschirmfoto, 480 breit (380, dann 440;
    22.10. abends "etwas groesser", das Fenster wird damit 25 hoeher); die Kennzahlen 32 unter der Domain. Im Lauf dieselbe Breite.
    NEU, nicht in core: die kompakte Kennzahl (.upa-kk) -- Kandidat fuer core, sobald eine zweite Seite sie braucht. Radius 8: Kachel
