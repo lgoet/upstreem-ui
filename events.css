@@ -1026,13 +1026,20 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    die Ueberschrift steht wie die von Page Audit 47 unter der Linie des Kopfs -- dort 16 Abstand plus (112 - 50) / 2, die Mitte der
    112 hohen Zeile mit Titel 26, Luecke 4 und einer Zeile Satz 20. Hier 16 Abstand, 16 Polster des Startbereichs und 15 Polster des
    Texts. Oben angeschlagen statt mittig: der Satz von Impact bricht schon bei 1440 um (zwei Zeilen), mittig stuende die Ueberschrift
-   damit hoeher als die von Page Audit; so waechst der Text nach unten, und der Umschalter darunter steht auf festem Platz. Links 2 wie
-   dort. Die Grafik bleibt, wo sie war (32 unter der Linie, 32 ueber dem Trenner). */
+   damit hoeher als die von Page Audit; so waechst der Text nach unten. Links 2 wie dort. Die Grafik bleibt, wo sie war (32 unter der
+   Linie, 32 ueber dem Trenner). Die Spalte reicht ueber die ganze Zeile (stretch, die Zeile ist so hoch wie die Grafik, 188), damit die
+   Zeile mit dem Umschalter unten an ihr stehen kann (.uev-start-fuss). */
 .uev-start { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0 0 32px; padding: 16px 0 32px; border-bottom: 1px solid var(--vc-border); }
-.uev-start-text { grid-column: 1; grid-row: 1; align-self: start; display: flex; flex-direction: column; justify-content: flex-start; gap: 4px; max-width: 520px; padding: 15px 0 0 2px; }
-/* Der Umschalter Karten/Liste unter dem Satz: 16 Abstand wie zwischen Text und Karte in Page Audit (Luecke 4 plus 12). */
-.uev-start-text > .uev-ansicht { align-self: flex-start; margin-top: 12px; }
-.uev-start-text > .uev-ansicht[hidden] { display: none; }
+.uev-start-text { grid-column: 1; grid-row: 1; align-self: stretch; display: flex; flex-direction: column; justify-content: flex-start; gap: 4px; max-width: 520px; padding: 15px 0 0 2px; }
+/* UNTEN IN DER SPALTE (22.10. spaet, Lukas: "Mach den Switcher in der linken Heading-Gruppe bottom zentriert. Und da ein Text: Display data
+   as."): das Etikett aus core (.up-label, Stufe "Gruppe" 12/500/16 muted -- die Beschriftung vor bzw. ueber einem Bedienteil; nicht
+   .up-pagesize-lbl, das core am Telefon ausblendet) und der Umschalter in einer Zeile, senkrecht zueinander mittig, 8 Abstand wie
+   "Rows per page" vor seinem Segment (.up-pagesize). margin-top auto schiebt die Zeile an den Fuss der Spalte, ihre Unterkante (die des
+   Umschalters) liegt damit auf der Unterkante der Grafik daneben. Wird die Spalte knapp (is-narrow, ohne Grafik), bleibt das Polster 12:
+   16 nach dem Satz wie bisher (Luecke 4 plus 12). */
+.uev-start-fuss { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 12px; min-width: 0; }
+.uev-start-fuss[hidden] { display: none; }
+.uev-start-fuss > .up-label { white-space: nowrap; }
 .uev-start-text .up-heading, .uev-start-text .up-sec-sub { margin: 0; }
 .uev-start-text .up-heading.up-sec-h { font-size: var(--up-fs-modaltitel); line-height: 26px; letter-spacing: -0.4px; white-space: normal; }
 .uev-start-text .up-sec-sub { font-size: var(--up-fs-l); line-height: 20px; }
