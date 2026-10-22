@@ -2636,9 +2636,67 @@
        (.up-th-info, wie in jeder Tabelle der App), nicht mehr die ganze Kachel.
          Kachel (Kopf und Evidence)  die Platte zeigt den Wert der Kachel selbst (mit Trend, wenn sie einen zeigt)
          Spaltenkopf der Plattformen ein Beispiel aus der Spalte, gut und schlecht untereinander (wie Share in den Tabellen)
-         Abschnitt / Befundgruppe    die Marken, um die es im Satz geht */
+         Abschnitt / Befundgruppe    die Marken, um die es im Satz geht
+       Wo ein Stueck Code die Karte wirklich erklaert, zeigt die Platte stattdessen eine Codeprobe (PROBEN, 22.10.). */
     var BSP_PLATTFORM = D.PROFILE[0];
+    /* DIE CODEPROBEN (22.10., Lukas: "nutze da Beispieltext in HTML, Markdown und JavaScript Formatierungen, aehnlich wie
+       in Create with AI bei den Output Types"). Kasten und Farben aus core (UC.explainCodeHtml). Alle Proben zeigen EINE
+       erfundene Seite /pricing mit der Ueberschrift "Pricing" und einem Satz, den erst app.js einsetzt -- so haengen die
+       Karten zusammen: Evidence zeigt, was der Server schickt (HTML), was danach im Browser steht (HTML) und welches
+       Skript den Block einsetzt (JavaScript); die Spaltenkoepfe die Regel bzw. Antwort, die zu ihrem Wert fuehrt, und
+       darunter genau diesen Wert, wie die Zelle ihn zeigt. Keine Teamdaten, keine Uebersetzung: Code bleibt Code.
+       Nur wo der Code etwas erklaert; Platform, Coverage, die Kopfkacheln und "not compared" behalten ihre Platte.
+       Hoechstens 33 Zeichen je Zeile: die Karte mit Probe ist 320 breit, der Kasten 280 (core). */
+    var P_TEXT = "Plans start at $29.";
+    var P_ERSTES_HTML = [
+      [["mark", "<h1>"], "Pricing", ["mark", "</h1>"]],
+      [["mark", "<div"], " ", ["attr", "id"], "=", ["str", "\"plans\""], ["mark", "></div>"]],
+      [["mark", "<script"], " ", ["attr", "src"], "=", ["str", "\"/app.js\""], ["mark", "></script>"]]
+    ];
+    var PROBEN = {
+      /* Was der Server schickt: nur "Pricing" ist Text, der Platz fuer die Preise ist leer. */
+      pa_text_raw: { zeilen: P_ERSTES_HTML },
+      /* Dieselbe Seite, nachdem app.js lief: der Satz steht jetzt im Dokument. */
+      pa_text_rendered: { zeilen: [
+        [["mark", "<h1>"], "Pricing", ["mark", "</h1>"]],
+        [["mark", "<div"], " ", ["attr", "id"], "=", ["str", "\"plans\""], ["mark", ">"]],
+        ["  ", ["mark", "<p>"], P_TEXT, ["mark", "</p>"]],
+        [["mark", "</div>"]]
+      ] },
+      /* Das Skript, das den Block einsetzt: der Absatz steht als Zeichenkette in JavaScript, nicht im HTML. */
+      pa_blocks_added: { zeilen: [
+        [["comment", "// app.js"]],
+        ["document.", ["attr", "querySelector"], "(", ["str", "\"#plans\""], ")"],
+        ["  .", ["attr", "innerHTML"], " ="],
+        ["    ", ["str", "\"<p>" + P_TEXT + "</p>\""], ";"]
+      ] },
+      /* Die Antwort, die "Not reachable" ergibt, in der Form von curl -v (> Anfrage, < Antwort). */
+      pa_col_access: { zeilen: [
+        [["comment", ">"], " ", ["mark", "GET"], " ", ["str", "/pricing"], " HTTP/1.1"],
+        [["comment", ">"], " ", ["attr", "User-Agent"], ": " + BSP_PLATTFORM.token],
+        [["comment", "<"], " HTTP/1.1 ", ["num", "403"], " Forbidden"]
+      ], ergebnis: function () { return zustandHtml({ text: "Not reachable", zeichen: "ban", ton: "neg" }); } },
+      /* Die Regel, die "Blocked" ergibt. */
+      pa_col_robots: { zeilen: [
+        [["attr", "User-agent"], ": " + BSP_PLATTFORM.token],
+        [["attr", "Disallow"], ": ", ["str", "/pricing"]]
+      ], ergebnis: function () { return zustandHtml({ text: "Blocked", zeichen: "ban", ton: "neg" }); } },
+      /* Das erste HTML wie bei Evidence: die Ueberschrift kommt an, die Preise erst mit JavaScript -- "Conditional". */
+      pa_col_js: { zeilen: P_ERSTES_HTML,
+        ergebnis: function () { return '<span class="up-marke is-leise upa-marke">' + esc(t(D.WIRKUNG.conditional.text)) + '</span>'; } },
+      /* Ein Eintrag, wie Copy for AI ihn kopiert (kiText: Titel, Typ, Schwere). "Access was denied" ist der Befund zur
+         403 der Access-Probe. */
+      pa_fix: { zeilen: [
+        [["mark", "#"], " Access was denied"],
+        [["mark", "-"], " Type: Restriction"],
+        [["mark", "-"], " Severity: High"]
+      ] }
+    };
     function erklaerPlatte(key, el) {
+      var probe = PROBEN[key];
+      if (probe && UC.explainCodeHtml) {
+        return UC.explainCodeHtml(probe.zeilen) + (probe.ergebnis ? '<span class="up-explain-row">' + probe.ergebnis() + '</span>' : '');
+      }
       var kachel = el && el.closest ? el.closest(".upa-kk-i, .up-kpi") : null;
       if (kachel) {
         var w = kachel.querySelector(".upa-kk-w, .up-kpi-row");

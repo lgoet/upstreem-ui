@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261189;
+  var BUILD = 20261190;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -3554,8 +3554,8 @@
       "Ob diese Plattform den Text der Seite bekommt, ohne JavaScript auszuführen. Kein Problem: Der Text steht im HTML, das dein Server schickt. Bedingt: Ruft die Plattform die Seite selbst ab, kann ihr Text fehlen, der erst nach JavaScript erscheint. Unbestätigt: Noch kein veröffentlichter Test hat das für diese Plattform gemessen.",
     "How many of the measurements this platform needs were completed in this run. If any are missing, access can't be confirmed and Access shows Not confirmed.":
       "Wie viele der Messungen, die diese Plattform braucht, in diesem Lauf abgeschlossen wurden. Fehlt eine, lässt sich der Zugang nicht bestätigen, und Zugang zeigt Nicht bestätigt.",
-    "Each item is one thing to fix, restrictions first. A restriction keeps a platform away from this page, a potential issue may limit how a platform uses it. The severity says how much it matters for this page, the logos show the platforms it affects.":
-      "Jeder Eintrag ist eine Sache zum Beheben, Sperren zuerst. Eine Sperre hält eine Plattform von dieser Seite fern, ein mögliches Problem kann einschränken, wie eine Plattform sie nutzt. Die Schwere sagt, wie viel es für diese Seite ausmacht, die Logos zeigen die betroffenen Plattformen.",
+    "Each item is one thing to fix, restrictions first. A restriction keeps a platform away from this page, a potential issue may limit how a platform uses it. The severity says how much it matters for this page, the logos show the platforms it affects. Copy for AI copies an item as a task in Markdown.":
+      "Jeder Eintrag ist eine Sache zum Beheben, Sperren zuerst. Eine Sperre hält eine Plattform von dieser Seite fern, ein mögliches Problem kann einschränken, wie eine Plattform sie nutzt. Die Schwere sagt, wie viel es für diese Seite ausmacht, die Logos zeigen die betroffenen Plattformen. „Für KI kopieren“ legt einen Eintrag als Auftrag in Markdown in die Zwischenablage.",
     "These were found before but could not be measured the same way in this run, so they are not counted as resolved.":
       "Diese wurden vorher gefunden, ließen sich in diesem Lauf aber nicht gleich messen. Deshalb zählen sie nicht als behoben.",
 
@@ -4939,8 +4939,9 @@
     pa_col_js:        { h: "Text without JavaScript", t: "Whether this platform gets the page's text without running JavaScript. No issue: the text is in the HTML your server sends. Conditional: when the platform fetches the page itself, it may miss text that only appears after JavaScript. Unverified: no published test has measured this for the platform yet." },
     pa_col_coverage:  { h: "Coverage", t: "How many of the measurements this platform needs were completed in this run. If any are missing, access can't be confirmed and Access shows Not confirmed." },
     /* Was frueher als Tooltip an jeder Schwere-Marke und am Titel einer Befundgruppe stand (Erklaerungen gehoeren hinter ein
-       Info-Zeichen, 22.10. abends). */
-    pa_fix:           { h: "What to fix", t: "Each item is one thing to fix, restrictions first. A restriction keeps a platform away from this page, a potential issue may limit how a platform uses it. The severity says how much it matters for this page, the logos show the platforms it affects." },
+       Info-Zeichen, 22.10. abends). Der letzte Satz gehoert zur Platte: sie zeigt einen Eintrag als Markdown, wie Copy for
+       AI ihn kopiert (page-audit.js PROBEN) -- ohne den Satz waere die Probe nur Schmuck. */
+    pa_fix:           { h: "What to fix", t: "Each item is one thing to fix, restrictions first. A restriction keeps a platform away from this page, a potential issue may limit how a platform uses it. The severity says how much it matters for this page, the logos show the platforms it affects. Copy for AI copies an item as a task in Markdown." },
     pa_not_compared:  { h: "No longer reported, not compared", t: "These were found before but could not be measured the same way in this run, so they are not counted as resolved." }
   };
   function explainCopy(key, vars){
@@ -6957,6 +6958,26 @@
       },
       clear: clear
     };
+  }
+
+  /* DIE CODEPROBE DER ERKLAERKARTE (22.10., aus Create with AI nach core). Lukas: "nutze da Beispieltext in HTML, Markdown
+     und JavaScript Formatierungen, aehnlich wie in Create with AI bei den Output Types". Erst gab es die Probe nur dort
+     (.uca-sample), jetzt brauchen Page Audit (Evidence, Spaltenkoepfe, What to fix) dieselbe -- also EIN Baustein.
+     Geliefert wird nur der Kasten (.up-explain-code); die Platte (.up-explain-vis) setzt der Aufrufer drumherum, damit
+     unter dem Code noch eine Zeile mit dem Ergebnis stehen kann (Page Audit: Regel, dann "Blocked").
+     zeilen: eine Liste von Zeilen, jede eine Liste von Stuecken -- Text (ungefaerbt) oder [art, text] mit art aus
+     mark (Tag, Markdown-Zeichen, HTTP-Methode), attr (Attribut, Kopfzeile, Feld in robots.txt, Eigenschaft),
+     str (Zeichenkette, Pfad), num (Zahl, Status), comment (Kommentar). Eine Zeile darf auch ein blosser Text sein.
+     Escaped wird HIER, nie beim Aufrufer: die Proben zeigen Tags, und ein vergessenes &lt; waere sonst echtes Markup. */
+  var SY_ARTEN = { mark: 1, attr: 1, str: 1, num: 1, comment: 1 };
+  function explainCodeHtml(zeilen){
+    var z = Array.isArray(zeilen) ? zeilen : [zeilen];
+    return '<div class="up-explain-code">' + z.map(function(zeile){
+      return (Array.isArray(zeile) ? zeile : [zeile]).map(function(st){
+        if (Array.isArray(st)) return SY_ARTEN[st[0]] ? '<span class="up-sy-' + st[0] + '">' + esc(st[1]) + '</span>' : esc(st[1]);
+        return esc(st);
+      }).join("");
+    }).join("\n") + '</div>';
   }
 
   /* Column explainer popover (the "i" next to a metric header).
@@ -30903,7 +30924,7 @@
     makeSoftReload: makeSoftReload,
     legacyCopy: legacyCopy, auftrittNachholen: auftrittNachholen, ringHtml: ringHtml, kopierBoxHtml: kopierBoxHtml, kopierBoxKopieren: kopierBoxKopieren,
     makeEmptyGrace: makeEmptyGrace,
-    makeExplain: makeExplain, makeAnleitung: makeAnleitung,
+    makeExplain: makeExplain, makeAnleitung: makeAnleitung, explainCodeHtml: explainCodeHtml,
     STORE: STORE,
     LOADING_EXPLICIT: LOADING_EXPLICIT,
     makeTooltips: makeTooltips,

@@ -778,6 +778,12 @@
       --vc-syntax-auszeichnung: #7c3aed;
       --vc-syntax-attribut: #b45309;
       --vc-syntax-zeichenkette: #15803d;
+      /* Seit dem 22.10. auch die Codeproben von Page Audit (.up-explain-code): ein HTTP-Status braucht eine Zahl, JavaScript
+         und curl-Zeilen einen Kommentar. Zahl aus derselben Familie wie die drei darueber (Tailwind 700, dunkel 300: Blau),
+         Kommentar das Grau der Probenschrift (.up-explain-dot hell, --vc-third dunkel). Auf der Platte (hell Weiss, dunkel
+         #1f1f1b) 6,7:1 bzw. 5,0:1, dunkel 9,2:1 bzw. 6,4:1. */
+      --vc-syntax-zahl: #1d4ed8;
+      --vc-syntax-kommentar: #6f6f6f;
       /* Der aktuelle Treffer einer Suche mit Schritten (.up-hl.is-aktiv, 22.10., Page Audit "View initial
          HTML"): Geist Amber 700 (der Ton von --vt-warn-flaeche) mit dunkler Schrift, in BEIDEN Themen --
          die uebrigen Treffer bleiben das Gelb von .up-hl, wie in der Suche des Browsers. Schrift auf
@@ -968,6 +974,8 @@
       --vc-syntax-auszeichnung: #c4b5fd;
       --vc-syntax-attribut: #fcd34d;
       --vc-syntax-zeichenkette: #86efac;
+      --vc-syntax-zahl: #93c5fd;
+      --vc-syntax-kommentar: #a1a1a1;
       --vc-ki-schleier: rgba(0,0,0,0.60);
       --vc-fehler-ring: rgba(210,93,93,0.24);
       --vc-fehler-flaeche: rgba(210,93,93,0.10);
@@ -2538,6 +2546,34 @@
        eigene Tailwind-Toene (#6ee7b7, #fca5a5), die es nirgends sonst gab. */
     .up-explain-up { color: var(--vt-up); }
     .up-explain-down { color: var(--vt-down); }
+    /* DIE CODEPROBE (22.10., UC.explainCodeHtml): ein kurzes Beispiel in HTML, Markdown, JavaScript, robots.txt oder
+       HTTP auf der Platte, die Auszeichnung eingefaerbt -- die Farbe IST die Aussage (was das Format in den Text
+       schreibt, was ein Skript erst spaeter einsetzt). Vorbild und bis heute einziger Ort war Create with AI
+       (.uca-sample, .uca-sy-mark, .uca-sy-tag, .uca-sy-attr, .uca-sy-str in create-with-ai.css); Page Audit braucht
+       dieselbe, also steht sie hier. Die alten Namen stehen als zweiter Selektor daneben, weil der Vertrag sie fuehrt;
+       Create with AI setzt seit dem Umzug nur noch die neuen.
+       Breiter als die 248 des Standards: eine Codezeile bricht nicht um (white-space: pre), und 38 Zeichen in Mono 12
+       brauchen 274 px -- 320 minus Polster der Karte (2 x 8) und der Platte (2 x 12) lassen 280. Bei 375 Breite
+       bleibt die Karte ganz im Bild (makeExplain klemmt sie auf 8 Abstand), erst unter 336 waere sie zu breit. */
+    .up-explain:has(.up-explain-code), .up-explain.uca-explain { width: 320px; }
+    /* Oben und unten 10 statt 11: die Zeilenhoehe der Probe bringt eigene Luft mit. stretch, damit der Kasten die
+       ganze Breite hat und eine zu lange Zeile in ihm rollt statt die Platte aufzuschieben. */
+    .up-explain-vis:has(> .up-explain-code) { padding: 10px 12px; align-items: stretch; }
+    /* Mono 12 (--up-fs-s): Create with AI trug 11.5, das liegt zwischen zwei Stufen der Skala. Zeilenhoehe 1.6 haelt
+       die Zeile bei 19.2 statt 18.98 -- die Platte waechst um weniger als einen Pixel je Zeile. */
+    .up-explain-code, .uca-sample {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: var(--up-fs-s); line-height: 1.6; font-weight: 400; white-space: pre; overflow-x: auto;
+    }
+    .up-explain-code::-webkit-scrollbar, .uca-sample::-webkit-scrollbar { height: 0; }
+    /* Hell und dunkel aus denselben Marken: sie loesen an der Karte ([data-theme]) auf, die Platte steht im Thema der
+       Seite. Ungefaerbter Text erbt die Schrift der Platte -- dass Plain text bei Create with AI gar nichts einfaerbt,
+       IST dort die Aussage. */
+    .up-sy-mark, .uca-sy-mark, .uca-sy-tag { color: var(--vc-syntax-auszeichnung); }
+    .up-sy-attr, .uca-sy-attr { color: var(--vc-syntax-attribut); }
+    .up-sy-str, .uca-sy-str { color: var(--vc-syntax-zeichenkette); }
+    .up-sy-num { color: var(--vc-syntax-zahl); }
+    .up-sy-comment { color: var(--vc-syntax-kommentar); }
     /* Matches the real .up-stack-item/.up-stack-vis chip exactly (28x28, radius --up-r-m, 4px ring) —
        this sample must look like the actual table cell, not an older circular approximation of it. */
     /* Ohne Rahmen, seit der echte Chip keinen mehr hat -- die Zeile darueber verspricht, dass

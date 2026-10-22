@@ -107,37 +107,40 @@
      was sich zwischen den Formaten tatsaechlich aendert, statt drei verschiedene Beispiele zu
      vergleichen. Die Auszeichnung ist eingefaerbt, weil genau sie den Unterschied ausmacht --
      dass beim Plain Text nichts eingefaerbt ist, IST die Aussage.
+     Kasten und Farben kommen seit dem 22.10. aus core (UC.explainCodeHtml, .up-explain-code, .up-sy-*): Page Audit
+     zeigt dieselbe Art Probe. Zeilen als Stuecke, ["mark", "##"] ist eingefaerbt, blosser Text nicht; escaped wird in
+     core, deshalb stehen die Tags hier im Klartext.
      --------------------------------------------------------------------------- */
-  var M = function(s){ return '<span class="uca-sy-mark">' + s + "</span>"; };
-  var T = function(s){ return '<span class="uca-sy-tag">' + s + "</span>"; };
   var FORMATS = {
     markdown: {
       h: "Markdown",
       t: "Clean Markdown, ready to paste into most modern CMS and editors (Notion, Ghost, the WordPress block editor).",
-      sample:
-        M("##") + " Fast setup\n" +
-        "Works in " + M("**") + "minutes" + M("**") + ".\n" +
-        M("[") + "See pricing" + M("](/pricing)")
+      zeilen: [
+        [["mark", "##"], " Fast setup"],
+        ["Works in ", ["mark", "**"], "minutes", ["mark", "**"], "."],
+        [["mark", "["], "See pricing", ["mark", "](/pricing)"]]
+      ]
     },
     html: {
       h: "HTML",
       t: "Semantic tags only — headings, paragraphs, lists, links. No styling. For classic editors like WordPress or Webflow.",
-      sample:
-        T("&lt;h2&gt;") + "Fast setup" + T("&lt;/h2&gt;") + "\n" +
-        T("&lt;p&gt;") + "Works in " + T("&lt;b&gt;") + "minutes" + T("&lt;/b&gt;") + "." + T("&lt;/p&gt;") + "\n" +
-        T("&lt;a") + ' <span class="uca-sy-attr">href</span>=<span class="uca-sy-str">"/pricing"</span>' + T("&gt;") + "See pricing" + T("&lt;/a&gt;")
+      zeilen: [
+        [["mark", "<h2>"], "Fast setup", ["mark", "</h2>"]],
+        [["mark", "<p>"], "Works in ", ["mark", "<b>"], "minutes", ["mark", "</b>"], ".", ["mark", "</p>"]],
+        [["mark", "<a"], " ", ["attr", "href"], "=", ["str", "\"/pricing\""], ["mark", ">"], "See pricing", ["mark", "</a>"]]
+      ]
     },
     plain: {
       h: "Plain text",
       t: "No formatting at all. Best if you will style the content yourself in Google Docs or Word.",
-      sample: "Fast setup\nWorks in minutes.\nSee pricing: /pricing"
+      zeilen: ["Fast setup", "Works in minutes.", "See pricing: /pricing"]
     }
   };
 
   function explainHtml(key){
     var f = FORMATS[key];
     if (!f) return "";
-    return '<div class="up-explain-vis"><div class="uca-sample">' + f.sample + "</div></div>" +
+    return '<div class="up-explain-vis">' + UC.explainCodeHtml(f.zeilen) + "</div>" +
            '<div class="up-explain-h">' + esc(f.h) + "</div>" +
            '<div class="up-explain-t">' + esc(f.t) + "</div>";
   }

@@ -273,26 +273,9 @@
 /* ---------- Erklaerkarte der Formate ----------
    Das ist die App-Erklaerkarte (.up-explain aus core), nicht mehr ein eigener Tooltip-Typ. Sie
    haengt im Portal dieses Popups. Grund, Tinte und Platte kommen aus core (--vc-inverse-bg/-ink,
-   seit 28.09.); die Probe hat deshalb keine eigene Farbe mehr, sie erbt die Schrift der Platte --
-   genau das #1f1f1b / #eeedef, das hier vorher zweimal von Hand stand.
-   Breiter als die 248px des Standards, weil ein dreizeiliges Codebeispiel sonst mitten im Tag
-   umbricht und dann weder als Markdown noch als HTML lesbar ist. */
-.up-explain.uca-explain { width: 320px; }
-.uca-explain .up-explain-vis { padding: 10px 12px; gap: 3px; align-items: stretch; }
-.uca-sample {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 11.5px; line-height: 1.65; white-space: pre; overflow-x: auto;
-}
-.uca-sample::-webkit-scrollbar { height: 0; }
-/* Markdown-Auszeichnung und HTML-Tags eingefaerbt, damit man auf einen Blick sieht, WAS das
-   Format in den Text schreibt -- darum geht es bei der Wahl. Plain text bleibt bewusst einfarbig:
-   dass dort nichts eingefaerbt ist, IST die Aussage. */
-/* Hell und dunkel aus denselben Marken (core, 17.10.): sie loesen an der Karte ([data-theme]) auf --
-   dunkel #c4b5fd, #fcd34d, #86efac wie bisher in den eigenen dunklen Regeln. */
-.uca-sy-mark { color: var(--vc-syntax-auszeichnung); }
-.uca-sy-tag  { color: var(--vc-syntax-auszeichnung); }
-.uca-sy-attr { color: var(--vc-syntax-attribut); }
-.uca-sy-str  { color: var(--vc-syntax-zeichenkette); }
+   seit 28.09.). Seit dem 22.10. auch die Probe selbst: Kasten, Breite der Karte (320) und Farben
+   der Auszeichnung sind der core-Baustein der Codeprobe (UC.explainCodeHtml, .up-explain-code,
+   .up-sy-mark und Geschwister), weil Page Audit dieselbe Probe zeigt. Hier steht dazu nichts mehr. */
 
 /* ---------- Schema-Checkbox ---------- */
 .uca-cb-row {

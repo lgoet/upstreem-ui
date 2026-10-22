@@ -368,7 +368,7 @@ unverändert. Eine Spalte „Dark“ heißt: die Marke dreht mit dem Thema; ohne
 | Kalender: Hover, Wahl, Band, Endpunkt | `--vc-kalender-hover` / `-wahl` / `-band` / `-ende` | `#eaeaea` / `#e2e2e1` / `#ededed` / (Schrift) | `#2d2d2d` / `#383838` / `#313131` / `#e0e0e0` |
 | Karte Opportunities; Anfang Potenzial-Verlauf | `--vc-flaeche-durchscheinend`; `--vc-potenzial-anfang` | `#00000005`; `#c4c9d0` | `#ffffff0d`; `#4a4f56` |
 | Erklärkarte: Potenzial leer/Verlauf, Logo-Platte | `--vc-erklaer-potenzial-leer` / `-a` / `-b`, `--vc-erklaer-logo-platte` | `#e4e2e4` / `#c4c9d0` / `#1f1f1b`, `#f0f0ef` | `#23252a` / `#4a4a4a` / `#e0e0e0`, `#303030` |
-| Syntax der Formatvorschau (Create with AI) | `--vc-syntax-auszeichnung` / `-attribut` / `-zeichenkette` | `#7c3aed` / `#b45309` / `#15803d` | `#c4b5fd` / `#fcd34d` / `#86efac` |
+| Syntax der Codeprobe in Erklärkarten (`.up-explain-code`, Create with AI, Page Audit) | `--vc-syntax-auszeichnung` / `-attribut` / `-zeichenkette` / `-zahl` / `-kommentar` | `#7c3aed` / `#b45309` / `#15803d` / `#1d4ed8` / `#6f6f6f` | `#c4b5fd` / `#fcd34d` / `#86efac` / `#93c5fd` / `#a1a1a1` |
 | Schleier Create with AI | `--vc-ki-schleier` | `rgba(17,18,20,.34)` | Schwarz 60 % |
 | Fehler im Feld (Add Brand): Ring, Fläche | `--vc-fehler-ring` / `--vc-fehler-flaeche` | `rgba(176,32,12,.16)` / `.06` | `rgba(210,93,93,.24)` / `.10` |
 | Punkt der Akzentwahl (Preferences) | `--vc-akzent-punkt-standard` / `-blau` / `-azur` / `-indigo` / `-terrakotta` | `#1f1f1b` / `#3f66b0` / `#0075DE` / `#5E6AD2` / `#BD5836` | `#e0e0e0` / `#83abf4` / `#3D97F0` / `#7C8AF0` / `#D97757` |
@@ -1245,6 +1245,36 @@ Bildschirmrand seitlich verschoben wurde.
 
 **Auslöser:** Info-Icon 14×14 in `var(--vc-third)`, `opacity: 0`, erscheint beim Hover über
 die Spaltenüberschrift. **Kein `cursor: help`** — der Cursor bleibt wie im Rest der Zeile.
+
+**Codeprobe auf der Platte** (22.10., `UC.explainCodeHtml`): Wo ein Stück Code die Karte erklärt,
+zeigt die Platte statt des Werts ein kurzes Beispiel in HTML, Markdown, JavaScript, robots.txt oder
+HTTP, die Auszeichnung eingefärbt: die Farbe ist die Aussage. Vorbild ist Create with AI (die drei
+Ausgabeformate mit demselben Dreizeiler); seit dem 22.10. ist die Probe ein core-Baustein, Page
+Audit nutzt ihn mit.
+
+```
+UC.explainCodeHtml(zeilen)   zeilen = Liste von Zeilen, jede Zeile eine Liste von Stücken:
+                             Text (ungefärbt) oder [art, text], art aus
+                             mark     Tag, Markdown-Zeichen, HTTP-Methode     --vc-syntax-auszeichnung
+                             attr     Attribut, Kopfzeile, robots-Feld        --vc-syntax-attribut
+                             str      Zeichenkette, Pfad                      --vc-syntax-zeichenkette
+                             num      Zahl, HTTP-Status                       --vc-syntax-zahl
+                             comment  Kommentar, curl-Zeichen > und <         --vc-syntax-kommentar
+                             escaped wird in core, Tags stehen im Aufruf im Klartext
+Karte                        320 breit statt 248, sobald sie eine Probe enthält
+                             (.up-explain:has(.up-explain-code)); im Bild klemmt makeExplain sie
+                             auf 8 Abstand, also auch bei 375 Breite ganz sichtbar
+Platte                       Polster 10/12, Kinder auf volle Breite; unter dem Code darf eine
+                             .up-explain-row mit dem Ergebnis stehen, wie die Zelle es zeigt
+Kasten .up-explain-code      Mono 12 (--up-fs-s), Zeile 1.6 (19.2), white-space: pre, rollt
+                             waagerecht statt umzubrechen (ohne sichtbare Leiste)
+Zeilen                       höchstens 3-4, höchstens 33 Zeichen (Kasten 280, Mono 12 ≈ 7.2 je
+                             Zeichen; 38 gingen gerade noch); Englisch, keine Teamdaten
+Eine Seite für alle Karten   die Proben einer Ansicht zeigen DIESELBE erfundene Seite, damit die
+                             Karten zusammenhängen (Page Audit: /pricing, "Pricing", ein Satz,
+                             den erst app.js einsetzt; Create with AI: derselbe Dreizeiler je Format)
+Nur wo es erklärt            nie als Schmuck; die übrigen Karten behalten ihre Platte mit dem Wert
+```
 
 ---
 
