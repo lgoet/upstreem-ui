@@ -311,53 +311,254 @@
     heuristic: "This is a heuristic. We don't click, sign in or solve challenges, so check the page yourself.",
     content: "Measured with our text extractor in one browser. AI crawlers may extract text differently."
   };
+  /* Texte der 34 uebrigen Familien (22.10., "alle im gleichen Detailgrad wie der JS-Fall"): kurz ist die Zeile unter
+     dem Titel, warum der Absatz "Why it matters", schritte die Liste "How to fix". Jede Aussage hat eine Quelle im
+     Kommentar darueber (Notizen mit Zitaten: research_notes/Befundtexte Page Audit/); im sichtbaren Text stehen keine
+     Quellen. kurz und warum werden NICHT gefuellt (befundText), darum dort keine Platzhalter; auch die neuen Schritte
+     kommen ohne aus, damit t() sie findet. Wo eine Quelle fehlte, ist der Satz vorsichtiger oder weggelassen. */
   var BEFUNDE = {
-    "transport.dns_resolution_failed": { titel: "The domain could not be resolved", satz: "Our request could not resolve the page's host name.", schritt: "Check the DNS records of this host and that the domain is still active.", umfang: "request" },
-    "transport.tls_validation_failed": { titel: "The secure connection failed", satz: "The TLS certificate or handshake could not be validated. We never skip this check.", schritt: "Check that the certificate is valid, not expired and covers this host name.", umfang: "request" },
-    "transport.request_timeout": { titel: "The page did not respond in time", satz: "The request did not finish within 20 seconds.", schritt: "Check the response time of this page and whether it slows down unknown clients.", umfang: "request" },
-    "http.authentication_required": { titel: "The page requires sign-in", satz: "The server answered with HTTP 401.", schritt: "If this page should be public, remove the sign-in requirement for it.", umfang: "request" },
-    "http.access_denied": { titel: "Access was denied", satz: "The server answered our request with HTTP 403.", schritt: "Check firewall, bot protection and CDN rules for this page, and look for real crawler visits in your server logs.", umfang: "request" },
-    "http.not_found": { titel: "The page was not found", satz: "The server answered with HTTP 404.", schritt: "Restore the page or redirect it to its replacement, and fix links to it.", umfang: "request" },
-    "http.gone": { titel: "The page was removed", satz: "The server answered with HTTP 410, which means the page was removed permanently.", schritt: "If the page should exist, restore it or redirect it to its replacement.", umfang: "request" },
-    "http.rate_limited": { titel: "The request was rate limited", satz: "The server kept answering with HTTP 429, also after a retry.", schritt: "Check the rate limits that apply to crawlers.", umfang: "request" },
-    "http.server_error": { titel: "The server returned an error", satz: "The server kept answering with an error status, also after a retry.", schritt: "Check the server logs for this page.", umfang: "request" },
-    "http.empty_representation": { titel: "The page returned no content", satz: "The response was successful but empty, so there was nothing to examine.", schritt: "Check that the page sends its content for a normal GET request.", umfang: "request" },
-    "http.unexpected_status": { titel: "Unexpected response", satz: "The server returned a status without usable content.", schritt: "Check how the server answers a normal GET request for this page.", umfang: "request" },
-    "redirect.loop": { titel: "Redirect loop", satz: "The redirects lead back to an address that was already visited.", schritt: "Fix the redirect rules so the chain ends at one page.", umfang: "request" },
-    "redirect.unresolved": { titel: "The redirect chain does not end", satz: "A redirect had no usable target, or there were more than 5 redirects.", schritt: "Shorten the chain and let every redirect point to a valid address.", umfang: "request" },
-    "redirect.unsafe_destination": { titel: "Redirect to a non-public address", satz: "A redirect points to an address that is not publicly reachable, so it was not followed.", schritt: "Point the redirect to the public address of the page.", umfang: "request" },
-    "redirect.https_downgrade": { titel: "Redirect from HTTPS to HTTP", satz: "A secure address redirects to an insecure one.", schritt: "Redirect to the HTTPS address instead.", umfang: "request" },
-    "response.suspected_challenge": { titel: "Possible bot challenge", satz: "The page looks like a bot challenge or captcha instead of its content.", schritt: "Check your bot protection for search crawlers. Keep it on if it is intended.", umfang: "heuristic" },
-    "response.suspected_login_wall": { titel: "Possible login wall", satz: "The page shows a password field and no readable main content.", schritt: "If the content should be public, make it readable without signing in.", umfang: "heuristic" },
-    "response.suspected_soft_404": { titel: "Possible soft 404", satz: "The page answers with HTTP 200 but looks like an error page.", schritt: "Return a real 404 for missing pages, or restore the content.", umfang: "heuristic" },
-    "variants.ua_access_difference": { titel: "Different response for {token}", satz: "With the user agent of {token}, the page answered differently than for a normal request.", titelOhne: "Different response for a crawler user agent", satzOhne: "With a crawler's user agent, the page answered differently than for a normal request.", schritt: "Check CDN and bot rules for this user agent, and look for real crawler visits in your server logs.", umfang: "synthetic" },
-    "variants.language_access_failure": { titel: "A language version failed", satz: "With a language preference, the request failed or was denied while the normal request worked.", schritt: "Check the language redirects of this page.", umfang: "request" },
+    /* Quellen: Google, Debug network and DNS errors (developers.google.com/crawling/docs/troubleshooting/dns-network-errors):
+       unerreichbare indexierte URLs "removed from Google's index within days", A/CNAME- und NS-Eintraege pruefen; MDN Glossar DNS.
+       satz: der Worker meldet "dns" auch an einer Stufe der Weiterleitung (abruf.ts, zielPruefen je Hop). */
+    "transport.dns_resolution_failed": { titel: "The domain could not be resolved", kurz: "Without a DNS answer, the server of this page can't be found.",
+      warum: "To find the server, a client first looks up the host name in DNS. If that fails for crawlers too, they can't reach the page. Google removes indexed pages it can't reach from its index within days.",
+      schritte: ["Check the A and CNAME records of this host name and of any host it redirects to.", "Check that the domain is still registered and that its name servers answer.", "Run the audit again."],
+      satz: "Our request could not resolve the host name of the page or of a redirect target in DNS.", schritt: "Check the DNS records of this host and that the domain is still active.", umfang: "request" },
+    /* Quellen: RFC 9110 4.3.4 (Clients pruefen die Identitaet am Zertifikat; "Automated clients ... SHOULD terminate the
+       connection", Nutzer werden vorher gefragt); Google Search Console, HTTPS report (support.google.com/webmasters/answer/11396518):
+       "HTTPS has invalid certificate", "update your HTTPS certificate". */
+    "transport.tls_validation_failed": { titel: "The secure connection failed", kurz: "Crawlers and browsers that check the certificate stop here or show a warning.",
+      warum: "The certificate shows that the server really belongs to this address. If it isn't valid, automated clients such as crawlers should end the connection, and browsers ask visitors before going on. Google reports invalid certificates as an HTTPS error to fix.",
+      schritte: ["Check that the certificate is valid, not expired and issued for this exact host name.", "Renew or replace it, for example with your hosting provider or CDN.", "Run the audit again."],
+      satz: "The TLS certificate or handshake could not be validated. We never skip this check.", schritt: "Check that the certificate is valid, not expired and covers this host name.", umfang: "request" },
+    /* Quellen: Google, Debug network and DNS errors: Timeouts "similarly to 5xx server errors", Crawling verlangsamt sich,
+       unerreichbare indexierte URLs "within days" entfernt. satz nach abruf.ts/netz.ts: 5 s Verbindung, 20 s Antwort; eine
+       Wiederholung gibt es nur, wenn die Frist es erlaubt, darum steht sie nicht im Satz. */
+    "transport.request_timeout": { titel: "The page did not respond in time", kurz: "If crawlers also wait in vain, they get no page to read.",
+      warum: "A slow or stuck server delivers nothing to clients that stop waiting. Google treats timeouts like server errors: it crawls more slowly and removes indexed pages that stay unreachable within days.",
+      schritte: ["Check how long this page takes to load for a first visit, without cookies.", "Check whether your server, CDN or bot protection holds back requests from unknown clients.", "Run the audit again."],
+      satz: "Our request got no complete answer within our time limits (5 seconds to connect, 20 seconds for the response).", schritt: "Check the response time of this page and whether it slows down unknown clients.", umfang: "request" },
+    /* Quellen: MDN 401 (fehlende gueltige Anmeldedaten); Google Search Essentials, technical requirements: "requiring a log-in
+       ... Googlebot will not crawl it"; Google, HTTP status codes (developers.google.com/search/docs/crawling-indexing/http-network-errors):
+       "Google doesn't use the content from URLs that return 4xx status codes". */
+    "http.authentication_required": { titel: "The page requires sign-in", kurz: "Without a sign-in, crawlers can't read this page.",
+      warum: "HTTP 401 means the request lacked valid credentials. Google says Googlebot doesn't crawl pages that require a sign-in, and Google doesn't use content from pages that return 4xx.",
+      schritte: ["Check whether this page should be public.", "If it should, remove the sign-in requirement for this address in your server or CDN settings.", "Run the audit again."],
+      satz: "The server answered with HTTP 401.", schritt: "If this page should be public, remove the sign-in requirement for it.", umfang: "request" },
+    /* Quellen: MDN 403 ("understood the request but refused to process it"); Google HTTP status codes (4xx-Inhalte ungenutzt);
+       veroeffentlichte IP-Bereiche der Crawler: Google (verify-google-requests), OpenAI (searchbot.json), Perplexity
+       (perplexitybot.json), Anthropic (claude.com/crawling/bots.json). */
+    "http.access_denied": { titel: "Access was denied", kurz: "The server refused our request, so the page couldn't be read.",
+      warum: "HTTP 403 means the server understood the request and refused it. If crawlers get the same answer, they can't read the page, and Google doesn't use content from pages that return 4xx.",
+      schritte: ["Check firewall, bot protection and CDN rules for this page.", "Look in your server logs for visits from the crawlers' published IP addresses and the status they got.", "Run the audit again."],
+      satz: "The server answered our request with HTTP 403.", schritt: "Check firewall, bot protection and CDN rules for this page, and look for real crawler visits in your server logs.", umfang: "request" },
+    /* Quellen: MDN 404; Google HTTP status codes (4xx ungenutzt, frueher indexierte URL wird entfernt); Google AI features
+       (developers.google.com/search/docs/appearance/ai-features): "a page must be indexed"; Search Console Page indexing
+       (support.google.com/webmasters/answer/7440203): "404 responses are not necessarily a problem, if the page has been removed";
+       Google Troubleshoot crawling errors: verschoben -> 301. */
+    "http.not_found": { titel: "The page was not found", kurz: "There is no page at this address.",
+      warum: "HTTP 404 means the server found nothing at this address. Google doesn't index such pages, and AI Overviews and AI Mode only link to indexed pages. If the page was removed on purpose, this is fine.",
+      schritte: ["Check that the address is right, for example in the link or sitemap you took it from.", "If the page moved, redirect this address to the new one with a 301. If it was removed, update the links to it.", "Run the audit again."],
+      satz: "The server answered with HTTP 404.", schritt: "Restore the page or redirect it to its replacement, and fix links to it.", umfang: "request" },
+    /* Quellen: MDN 410 ("likely to be permanent"); Google HTTP status codes (4xx ungenutzt); Google AI features (nur indexierte Seiten). */
+    "http.gone": { titel: "The page was removed", kurz: "The server says this page was removed for good.",
+      warum: "HTTP 410 means the page is gone and likely won't come back. Google doesn't index such pages, and AI Overviews and AI Mode only link to indexed pages.",
+      schritte: ["Check whether this page was removed on purpose.", "If it should exist, restore it or redirect this address to its replacement with a 301.", "Run the audit again."],
+      satz: "The server answered with HTTP 410, which means the page was removed permanently.", schritt: "If the page should exist, restore it or redirect it to its replacement.", umfang: "request" },
+    /* Quellen: MDN 429 (RFC 6585 4); Google HTTP status codes: 429 "considered a server error", "5xx and 429 ... slow down",
+       indexierte URLs "eventually dropped". satz: der Worker wiederholt 429 nur bei Retry-After bis 10 s (abruf.ts), das
+       fruehere "also after a retry" stimmte also nicht immer. */
+    "http.rate_limited": { titel: "The request was rate limited", kurz: "The server asked us to slow down instead of sending the page.",
+      warum: "HTTP 429 says that a client sent too many requests in a given time. Google treats 429 as a server error: it crawls more slowly, and indexed pages that keep returning it are eventually dropped.",
+      schritte: ["Check the rate limits of your server, CDN or bot protection for this page.", "Make sure a single request from a new visitor isn't limited.", "Run the audit again."],
+      satz: "The server answered our request with HTTP 429, too many requests.", schritt: "Check the rate limits that apply to crawlers.", umfang: "request" },
+    /* Quellen: RFC 9110 15.6 / MDN Status (5xx: Server konnte die Anfrage nicht ausfuehren); Google HTTP status codes
+       (Crawling verlangsamt, indexierte URLs "eventually dropped"). satz: eine Wiederholung gibt es nur bei 502/503/504. */
+    "http.server_error": { titel: "The server returned an error", kurz: "The server answered with an error instead of the page.",
+      warum: "A 5xx status means the server couldn't handle the request. Google crawls more slowly when it gets server errors, and indexed pages that keep returning them are eventually dropped.",
+      schritte: ["Look up this request in your server's error logs.", "Fix the cause, or ask your hosting provider if the error comes from their side.", "Run the audit again."],
+      satz: "The server answered our request with an HTTP 5xx error status.", schritt: "Check the server logs for this page.", umfang: "request" },
+    /* Quellen: Google HTTP status codes: 204 "wasn't able to receive any content and therefore can't process it", leere
+       Seite -> soft 404; MDN 204. */
+    "http.empty_representation": { titel: "The page returned no content", kurz: "The server answered successfully but sent no content to read.",
+      warum: "Without content there is nothing to read or index. Google can't process a 204 response, and it reports empty pages as soft 404.",
+      schritte: ["Open the address in a private browser window and check that the page shows.", "Check that the server sends the page's HTML for a normal GET request, without cookies or a sign-in.", "Run the audit again."],
+      satz: "The response was successful but empty, so there was nothing to examine.", schritt: "Check that the page sends its content for a normal GET request.", umfang: "request" },
+    /* Quellen: Google Search Essentials, technical requirements: "Google only indexes pages that are served with an HTTP 200";
+       Google AI features (nur indexierte Seiten). */
+    "http.unexpected_status": { titel: "Unexpected response", kurz: "The server answered with a status that doesn't deliver the page.",
+      warum: "Google only indexes pages served with HTTP 200, and AI Overviews and AI Mode only link to indexed pages. With this status there was no content for us to check.",
+      schritte: ["Find out why your server answers a normal GET request for this page with this status.", "Change it so the page is served with HTTP 200.", "Run the audit again."],
+      satz: "The server returned a status without usable content.", schritt: "Check how the server answers a normal GET request for this page.", umfang: "request" },
+    /* Quellen: MDN Redirections ("no page will ever be found", Browser zeigen einen Fehler); Search Console Page indexing:
+       "Redirect error ... A redirect loop" als Grund fuer nicht indexiert. */
+    "redirect.loop": { titel: "Redirect loop", kurz: "The redirects go in a circle and never reach a page.",
+      warum: "A redirect loop never ends at a page, so no one gets the content: browsers show an error, and Google lists redirect loops as a reason a page isn't indexed.",
+      schritte: ["Follow the redirects of this address step by step, for example in your browser's developer tools.", "Fix the rule that sends it back to an earlier address, so the chain ends at one page.", "Run the audit again."],
+      satz: "The redirects lead back to an address that was already visited.", schritt: "Fix the redirect rules so the chain ends at one page.", umfang: "request" },
+    /* Quellen: Google HTTP status codes ("follow up to 10 redirect hops"); Search Console Page indexing ("A redirect chain that
+       was too long", "A bad or empty URL in the redirect chain"); unsere Grenze von 5 aus abruf.ts (BUDGET.weiterleitungen). */
+    "redirect.unresolved": { titel: "The redirect chain does not end", kurz: "The redirects don't lead to a page.",
+      warum: "Either a redirect had no valid target, or the chain went on for more than 5 steps, where our audit stops. Google follows up to 10 and lists chains that are too long and bad target addresses as redirect errors.",
+      schritte: ["Follow the redirects of this address step by step, for example in your browser's developer tools.", "Let each redirect point straight to the final page, with a valid address.", "Run the audit again."],
+      satz: "A redirect had no usable target, or there were more than 5 redirects.", schritt: "Shorten the chain and let every redirect point to a valid address.", umfang: "request" },
+    /* Quellen: unsere Regel (HANDOFF 4.1, 7.3; netz.ts zielPruefen: Schema, Zugangsdaten, Port, IP-Literal, nicht oeffentlich);
+       RFC 1918 3: private Adressen "have no global meaning", "cannot have IP connectivity to any host outside of the enterprise".
+       Titel und satz korrigiert: "non-public" traf nicht jeden Grund (auch ein unueblicher Port oder eine reine IP-Adresse). */
+    "redirect.unsafe_destination": { titel: "Redirect to an address we don't follow", kurz: "We couldn't check the page behind this redirect.",
+      warum: "Our audit only follows redirects to public web addresses on the standard ports. If the target is in a private network, crawlers on the internet can't reach it either, because private addresses aren't routed on the internet.",
+      schritte: ["Look at where this address redirects, for example in your browser's developer tools.", "Point the redirect to the public https address of the page.", "Run the audit again."],
+      satz: "A redirect points to an address our audit doesn't follow, such as a private network address, a bare IP address, a non-standard port or a link that isn't http or https.", schritt: "Point the redirect to the public address of the page.", umfang: "request" },
+    /* Quellen: Google, How to specify a canonical (developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls):
+       "Google prefers HTTPS pages over equivalent HTTP pages as canonical", ausser u. a. "The HTTPS page redirects to the HTTP page". */
+    "redirect.https_downgrade": { titel: "Redirect from HTTPS to HTTP", kurz: "A secure address ends on an unencrypted page.",
+      warum: "After the redirect, the page is loaded over http without encryption. Google usually prefers the HTTPS version of a page as canonical, but not when the HTTPS address redirects to HTTP.",
+      schritte: ["Find the redirect rule that sends this address to http://.", "Point it to the https address instead.", "Run the audit again."],
+      satz: "A secure address redirects to an insecure one.", schritt: "Redirect to the HTTPS address instead.", umfang: "request" },
+    /* Quellen: Google, Fix lazy-loaded content: "Google Search does not interact with your page"; OpenAI bots ("allowing requests
+       from our published IP ranges"), Perplexity crawlers (WAF-Regel aus User Agent UND IP), Anthropic (bots.json). satz
+       entschaerft: das Cloudflare-Merkmal kommt laut heuristics.json auch auf lesbaren Seiten vor. */
+    "response.suspected_challenge": { titel: "Possible bot challenge", kurz: "If crawlers get this check instead of the page, they have nothing to read.",
+      warum: "Our request got a response with signs of a bot check, such as a captcha. Google says its Search doesn't interact with pages, for example by clicking. Several AI search providers publish the IP addresses of their crawlers so you can let them through.",
+      schritte: ["Check your bot protection and CDN settings for this page.", "If search crawlers should get the page, allow them by user agent and published IP addresses together. Keep the protection if it's intended.", "Run the audit again."],
+      satz: "The response contains signs of a bot check or captcha, so the content may be hidden behind it.", schritt: "Check your bot protection for search crawlers. Keep it on if it is intended.", umfang: "heuristic" },
+    /* Quellen: Google Search Essentials, technical requirements ("requiring a log-in ... Googlebot will not crawl it");
+       der zweite Satz ist eine logische Folge, keine Behauptung ueber einen Anbieter. */
+    "response.suspected_login_wall": { titel: "Possible login wall", kurz: "If the content needs a sign-in, crawlers without an account can't read it.",
+      warum: "Google says Googlebot doesn't crawl pages that require a sign-in. Any other crawler would also need an account to read content behind one.",
+      schritte: ["Open the page in a private browser window and check what you see without signing in.", "If the content should be public, make it readable without a sign-in.", "Run the audit again."],
+      satz: "The page shows a password field and no readable main content.", schritt: "If the content should be public, make it readable without signing in.", umfang: "heuristic" },
+    /* Quellen: Google HTTP status codes (2xx mit Fehlerinhalt -> soft 404); Search Console Page indexing ("Soft 404" als Grund
+       fuer nicht indexiert); Google Troubleshoot crawling errors (404/410 fuer entfernte, 301 fuer verschobene Seiten).
+       warum nach heuristics.json: Titel oder H1 wie "page not found" und kein weiterer Haupttext. */
+    "response.suspected_soft_404": { titel: "Possible soft 404", kurz: "Google may treat this page as missing, although it reports success.",
+      warum: "The server reports success, but the title or main heading says the page wasn't found, and there is no other main text. Google calls this a soft 404 and lists it as a reason a page isn't indexed.",
+      schritte: ["Open the page and check whether the content is really missing.", "If the page is gone, return 404 or 410. If it moved, redirect it with a 301. If it should exist, restore the content.", "Run the audit again."],
+      satz: "The page answers with HTTP 200 but looks like an error page.", schritt: "Return a real 404 for missing pages, or restore the content.", umfang: "heuristic" },
+    /* Quellen: veroeffentlichte IP-Bereiche (Google verify-google-requests, OpenAI searchbot.json, Perplexity perplexitybot.json,
+       Anthropic bots.json); Perplexity: User Agent und IP gemeinsam pruefen. Ausloeser im Worker: 401, 403, 429, 5xx,
+       abgebrochene Kette oder Challenge-Merkmal nur mit dem Crawler-Namen (bewertung.ts). */
+    "variants.ua_access_difference": { titel: "Different response for {token}", kurz: "With this crawler's name, our request was refused or challenged. Without it, the page loaded.",
+      warum: "The server treats requests differently by their user agent. If it treats the real crawler like ours, that crawler can't read the page. The real crawler comes from IP addresses its provider publishes, ours came from our servers, so its result can differ.",
+      schritte: ["Check your firewall, CDN and bot protection rules for this crawler's user agent.", "If the crawler should get the page, allow it by user agent and published IP addresses together.", "Run the audit again."],
+      satz: "With the user agent of {token}, the page answered differently than for a normal request.", titelOhne: "Different response for a crawler user agent", satzOhne: "With a crawler's user agent, the page answered differently than for a normal request.", schritt: "Check CDN and bot rules for this user agent, and look for real crawler visits in your server logs.", umfang: "synthetic" },
+    /* Quellen: MDN Accept-Language (Browser setzen es nach ihrer Sprache); Google, Managing multi-regional and multilingual sites:
+       "Avoid automatically redirecting users from one language version ... to a different language version", Googlebot
+       "sends HTTP requests without setting Accept-Language". */
+    "variants.language_access_failure": { titel: "A language version failed", kurz: "Requests that state a preferred language, as browsers do, didn't get this page.",
+      warum: "Browsers tell the server which languages they prefer. With such a preference our request failed or was refused, without one it worked. Google advises against redirecting automatically by language, and Googlebot itself sends no language preference.",
+      schritte: ["Check the language redirects of this page in your server or CDN settings.", "Make sure every language version loads, or serve this page without redirecting by language.", "Run the audit again."],
+      satz: "With a language preference, the request failed or was denied while the normal request worked.", schritt: "Check the language redirects of this page.", umfang: "request" },
     "robots.search_path_disallowed": { kurz: "The platform's search crawler is asked not to fetch this page.", warum: "The search crawler of a platform reads robots.txt before it fetches a page. A rule that excludes it keeps this page out of that platform's search, while training crawlers are a separate decision.",
       schritte: ["Find the rule shown above in your robots.txt.", "Allow {token} on this path if this page should appear in {platform}. Training crawlers can stay blocked.", "Run the audit again."],
       schritteOhne: ["Find the rule shown above in your robots.txt.", "Allow the search crawler on this path if this page should appear in AI search. Training crawlers can stay blocked.", "Run the audit again."], titel: "Published robots policy excludes {token}", satz: "The captured robots file excludes the requested {path} path for {token}. This is a public policy observation.", titelOhne: "robots.txt excludes a search crawler", satzOhne: "The captured robots file excludes the requested path for a search crawler. This is a public policy observation.", schritt: "Review the exact rule if this URL is intended for {platform} visibility. Keep training policy separate.", schrittOhne: "Review the exact rule if this URL should be visible in AI search. Keep training policy separate.", umfang: "policy" },
-    "robots.grounding_policy_disallowed": { titel: "robots.txt excludes Google-Extended", satz: "The robots file excludes this path for Google-Extended, which controls use in Gemini answers. It does not affect Google Search.", schritt: "Review the rule if this page should be used in Gemini answers.", umfang: "policy" },
-    "directives.noindex": { titel: "The page is marked noindex", satz: "A noindex directive was found in the {source}.", satzOhne: "A noindex directive was found.", schritt: "Remove noindex if this page should appear in AI search.", umfang: "policy" },
-    "directives.expired": { titel: "The page has expired", satz: "An unavailable_after date in the past was found.", schritt: "Remove or update the date if the page should stay visible.", umfang: "policy" },
-    "directives.nosnippet": { titel: "Text previews are disabled", satz: "nosnippet or max-snippet:0 keeps Google from showing text from this page, also in AI features.", schritt: "Remove the directive if text from this page should be shown.", umfang: "policy" },
-    "directives.bing_preview_restriction": { titel: "Bing previews are limited", satz: "nosnippet or a max-snippet limit restricts Bing's text previews.", schritt: "Review the directive if you want fuller previews in Bing.", umfang: "policy" },
-    "directives.snippet_cap": { titel: "Preview length is limited", satz: "A max-snippet limit allows only a short excerpt. This is a limit, not an exclusion.", schritt: "Review the limit if longer excerpts should be shown.", umfang: "policy" },
-    "directives.bing_noarchive": { titel: "noarchive limits Copilot", satz: "Bing documents that noarchive keeps content out of Copilot and grounding answers.", schritt: "Remove noarchive if this page should be used in Copilot answers.", umfang: "policy" },
-    "directives.bing_nocache": { titel: "nocache limits Copilot", satz: "Bing documents that nocache limits how the content is used in Copilot answers.", schritt: "Review nocache if this page should be fully used in Copilot answers.", umfang: "policy" },
-    "directives.dynamic_conflict": { titel: "Directives change after rendering", satz: "The robots directives in the initial HTML differ from those after JavaScript ran.", schritt: "Serve the intended directives in the initial HTML.", umfang: "content" },
+    /* Quellen: Google common crawlers (developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers):
+       Google-Extended steuert Training kuenftiger Gemini-Modelle UND Grounding in Gemini Apps, "doesn't have a separate HTTP
+       request user agent string", "does not impact a site's inclusion in Google Search". Ein Token fuer beides, darum sagt
+       der Schritt, dass Erlauben auch das Training erlaubt. */
+    "robots.grounding_policy_disallowed": { titel: "robots.txt excludes Google-Extended", kurz: "Google is asked not to use this page for Gemini answers or Gemini training.",
+      warum: "Google-Extended is a robots.txt rule, not a crawler of its own. It decides whether content Google crawls may be used to train Gemini and to ground answers in Gemini Apps.",
+      schritte: ["Find the rule in your robots.txt that applies to Google-Extended on this path.", "Allow Google-Extended on this path if this page should be used in Gemini answers. That also allows its use for training Gemini.", "Run the audit again."],
+      satz: "The robots file excludes this path for Google-Extended, which controls use in Gemini answers. It does not affect Google Search.", schritt: "Review the rule if this page should be used in Gemini answers.", umfang: "policy" },
+    /* Quellen: Google robots meta tag (developers.google.com/search/docs/crawling-indexing/robots-meta-tag): noindex "Do not show
+       this page ... in search results", none = noindex, nofollow, Meta-Tag und X-Robots-Tag; Google AI features ("indexed");
+       Bing Webmaster Guidelines 10: "Use NOINDEX when a URL should NOT appear in Bing search, Copilot experiences, or
+       grounding API results" (am 22.10. im Browser gelesen). */
+    "directives.noindex": { titel: "The page is marked noindex", kurz: "A noindex rule asks search engines not to show this page, also in their AI answers.",
+      warum: "Google doesn't index pages with noindex, and AI Overviews and AI Mode only link to indexed pages. Bing names noindex as the way to keep a page out of Bing search, Copilot and grounding results.",
+      schritte: ["Find noindex or none in the robots meta tag of the page or in its X-Robots-Tag HTTP header.", "Remove it if the page should appear in search and AI answers. Keep it if the page should stay out.", "Run the audit again."],
+      satz: "A noindex directive was found in the {source}.", satzOhne: "A noindex directive was found.", schritt: "Remove noindex if this page should appear in AI search.", umfang: "policy" },
+    /* Quellen: Google robots meta tag: unavailable_after "Do not show this page in search results after the specified
+       date/time"; Google AI features ("indexed and eligible to be shown in Google Search"). */
+    "directives.expired": { titel: "The page has expired", kurz: "The date after which Google should stop showing this page has passed.",
+      warum: "The unavailable_after rule tells Google not to show a page in search results after a set date. AI Overviews and AI Mode only link to pages that can be shown in Google Search.",
+      schritte: ["Find unavailable_after in the robots meta tag or the X-Robots-Tag header of this page.", "Remove it, or set a later date, if the page should stay visible.", "Run the audit again."],
+      satz: "An unavailable_after date in the past was found.", schritt: "Remove or update the date if the page should stay visible.", umfang: "policy" },
+    /* Quellen: Google robots meta tag: nosnippet gilt auch fuer "AI Overviews, AI Mode" und verhindert die Nutzung "as a direct
+       input"; max-snippet:0 = nosnippet; data-nosnippet fuer Teile; Google AI features: "eligible to be shown in Google Search
+       with a snippet". */
+    "directives.nosnippet": { titel: "Text previews are disabled", kurz: "Google is asked not to show any text from this page, also in AI Overviews and AI Mode.",
+      warum: "The nosnippet rule, or max-snippet:0, tells Google not to show a text snippet for this page. Google applies this to AI Overviews and AI Mode as well, and only links pages there that it may show with a snippet.",
+      schritte: ["Find nosnippet or max-snippet:0 in the robots meta tag or the X-Robots-Tag header.", "Remove it if text from this page should be shown. To hide only some passages, mark them with data-nosnippet instead.", "Run the audit again."],
+      satz: "nosnippet or max-snippet:0 keeps Google from showing text from this page, also in AI features.", schritt: "Remove the directive if text from this page should be shown.", umfang: "policy" },
+    /* Quellen: Bing Webmaster Guidelines 10: "DATA-NOSNIPPET and NOSNIPPET prevent Bing from displaying captions and may limit
+       Copilot citation quality"; Bing-Blog 15.10.2025 (data-nosnippet): max-snippet "Limit the size or duration of preview
+       content". Eine Wirkung von max-snippet auf Copilot dokumentiert Bing nicht, darum steht keine da. */
+    "directives.bing_preview_restriction": { titel: "Bing previews are limited", kurz: "Bing is asked to show less or no text from this page.",
+      warum: "The nosnippet rule keeps Bing from showing text from this page in its results, and max-snippet limits how much it shows. Bing says nosnippet may also lower the quality of Copilot citations.",
+      schritte: ["Find nosnippet or max-snippet in the robots meta tag or the X-Robots-Tag header.", "Remove the rule or raise the limit if Bing should show more text. To hide only some passages, use data-nosnippet instead.", "Run the audit again."],
+      satz: "nosnippet or a max-snippet limit restricts Bing's text previews.", schritt: "Review the directive if you want fuller previews in Bing.", umfang: "policy" },
+    /* Quellen: Google robots meta tag: max-snippet "Use a maximum of [number] characters", gilt auch fuer AI Overviews und AI Mode
+       und "will also limit how much of the content may be used as a direct input". */
+    "directives.snippet_cap": { titel: "Preview length is limited", kurz: "Google may show only a short excerpt of this page, also in AI Overviews and AI Mode.",
+      warum: "The max-snippet rule sets how many characters Google may show as a text snippet. Google applies the limit to AI Overviews and AI Mode too, including how much of the content they may use directly.",
+      schritte: ["Find max-snippet in the robots meta tag or the X-Robots-Tag header and check the number.", "Raise or remove the limit if longer excerpts should be shown. Keep it if the limit is intended.", "Run the audit again."],
+      satz: "A max-snippet limit allows only a short excerpt. This is a limit, not an exclusion.", schritt: "Review the limit if longer excerpts should be shown.", umfang: "policy" },
+    /* Quellen: Bing Webmaster Guidelines 10: "NOARCHIVE prevents content from being used in Copilot responses and grounding
+       results"; Bing-Blog 22.09.2023 (Bing Chat): Inhalte mit NOCACHE oder NOARCHIVE "will still appear in our search results",
+       NOCACHE: nur URL, Titel, Snippet. */
+    "directives.bing_noarchive": { titel: "noarchive limits Copilot", kurz: "Bing is asked not to use this page in Copilot answers.",
+      warum: "With noarchive, Bing leaves the content out of Copilot responses and grounding results. The page itself can still appear in Bing search.",
+      schritte: ["Find noarchive in the robots meta tag or the X-Robots-Tag header.", "Remove it if this page should be used in Copilot answers. With nocache instead, Copilot may use only the URL, title and snippet.", "Run the audit again."],
+      satz: "Bing documents that noarchive keeps content out of Copilot and grounding answers.", schritt: "Remove noarchive if this page should be used in Copilot answers.", umfang: "policy" },
+    /* Quellen: Bing Webmaster Guidelines 10: "NOCACHE limits Copilot to using only the URL, title, and snippet, reducing citation
+       depth and answer quality"; Bing-Blog 22.09.2023: beide Tags -> "we will treat it as NOCACHE". Der Schritt nennt noarchive
+       mit, weil nach dem Entfernen von nocache sonst noarchive allein gilt. */
+    "directives.bing_nocache": { titel: "nocache limits Copilot", kurz: "Copilot may use only the URL, title and snippet of this page.",
+      warum: "Bing says this reduces how fully Copilot can cite the page and answer from it. If noarchive is set as well, Bing treats the page as nocache.",
+      schritte: ["Find nocache in the robots meta tag or the X-Robots-Tag header.", "Remove it, and noarchive too if it's set, if Copilot should be able to use the full content.", "Run the audit again."],
+      satz: "Bing documents that nocache limits how the content is used in Copilot answers.", schritt: "Review nocache if this page should be fully used in Copilot answers.", umfang: "policy" },
+    /* Quellen: Google JavaScript SEO basics: "When Google encounters the noindex tag, it may skip rendering and JavaScript
+       execution", "using JavaScript to change or remove the robots meta tag from noindex may not work as expected", "not all
+       bots can run JavaScript". */
+    "directives.dynamic_conflict": { titel: "Directives change after rendering", kurz: "JavaScript changes the page's robots rules after it loads.",
+      warum: "Crawlers that don't run JavaScript only see the rules in the initial HTML. Google may skip rendering when it finds noindex there, so changing or removing it with JavaScript may not work as expected.",
+      schritte: ["Compare the robots meta tag in View Source with the one in your browser's developer tools.", "Put the rules you want into the HTML your server sends, and don't change them with JavaScript.", "Run the audit again."],
+      satz: "The robots directives in the initial HTML differ from those after JavaScript ran.", schritt: "Serve the intended directives in the initial HTML.", umfang: "content" },
     /* Die drei JS-Familien nach den Formulierungsgrenzen des Berichts (UMSETZUNGSPLAN 14, verbindlich):
        nur was unser Browser gemessen hat, Zaehler und Nenner statt Prozent, keine Aussage ueber das, was
        eine Plattform "sieht", und keine ueber Zitierungen. Der Satz mit Zahlen entsteht in jsSatz. */
-    "content.raw_main_empty": { titel: "No main text in the initial HTML", satz: "The main content area of the initial HTML is empty. Systems that read only the initial HTML do not receive main text from this page.", schritt: "Make the main text available in the initial HTML (server-side rendering, static generation or pre-rendering), then run the audit again.", umfang: "content" },
+    /* Quellen: MDN main ("represents the dominant content of the body"); Google JavaScript SEO basics ("not all bots can run
+       JavaScript"). Vorsichtiger als vorher: der Befund kommt auch, wenn der Text nach dem Rendern ausserhalb des markierten
+       Bereichs steht (bewertung.ts, D2 bestanden bei leerem main), darum sagt kein Satz mehr, die Seite habe keinen Haupttext. */
+    "content.raw_main_empty": { titel: "No main text in the initial HTML", kurz: "Systems that read only this HTML find no text where the main content should be.",
+      warum: "Pages mark their main content, for example with a main element, so software can find it. In the initial HTML this area is empty, and Google notes that not all bots can run JavaScript.",
+      schritte: ["Check with View Source in your browser what this area contains before any script runs.", "Put the main text into it in the HTML your server sends, with server-side rendering, static generation or pre-rendering if it comes from JavaScript.", "Run the audit again."],
+      satz: "The area marked as main content (main, role=main or article) is empty in the initial HTML.", schritt: "Make the main text available in the initial HTML (server-side rendering, static generation or pre-rendering), then run the audit again.", umfang: "content" },
     "content.raw_empty_rendered_present": { titel: "The main text only appears after JavaScript", kurz: "Systems that read only this HTML get a page without its main text.",
       warum: "Several AI platforms have been seen fetching pages without running JavaScript when they answer a question. For them, this page has no main text. The list below shows which platforms and how sure that is.",
       schritte: ["Send the main text in the HTML from your server, with server-side rendering, static generation or pre-rendering.", "Check it with View Source in your browser: the text should be there before any script runs.", "Run the audit again."], satz: "The main content area is empty in the initial HTML. Our browser filled it after running JavaScript (Chromium, up to 10 seconds, no interaction). Systems that read only the initial HTML do not receive this text.", schritt: "Make the main text available in the initial HTML (server-side rendering, static generation or pre-rendering), then run the audit again.", umfang: "content" },
     "content.rendered_text_difference": { titel: "Some of the page text is added by JavaScript", kurz: "Systems that read only this HTML get less text than your visitors.",
       warum: "Several AI platforms have been seen fetching pages without running JavaScript when they answer a question. For them, this page is shorter than what your visitors read. The list below shows which platforms and how sure that is.",
       schritte: ["Send the main text in the HTML from your server, with server-side rendering, static generation or pre-rendering.", "Check it with View Source in your browser: the text should be there before any script runs.", "Run the audit again."], satz: "Part of the text is missing from the initial HTML. Our browser added it after running JavaScript (Chromium, up to 10 seconds, no interaction). Systems that read only the initial HTML do not receive this text.", schritt: "Make the main text available in the initial HTML (server-side rendering, static generation or pre-rendering), then run the audit again.", umfang: "content" },
-    "interaction.suspected_gate": { titel: "Possible overlay or paywall", satz: "An overlay or paywall may hide the main content when the page is opened without interaction.", schritt: "Open the page without cookies and check what is visible without clicking.", umfang: "heuristic" },
-    "canonical.conflicting": { titel: "Conflicting canonical tags", satz: "The page declares more than one canonical address.", schritt: "Declare one canonical address.", umfang: "request" },
-    "canonical.invalid": { titel: "Invalid canonical tag", satz: "The declared canonical address can't be resolved.", schritt: "Fix the canonical URL.", umfang: "request" },
-    "language.declaration_conflict": { titel: "Conflicting language signals", satz: "The declared languages (lang, Content-Language, hreflang) contradict each other.", schritt: "Align the language declarations.", umfang: "request" }
+    /* Quellen: Google, Fix lazy-loaded content ("Google Search does not interact with your page"); Google Search Essentials,
+       technical requirements ("requiring a log-in ... Googlebot will not crawl it"). Titel und satz um die Anmeldung ergaenzt:
+       der Worker meldet heute genau Passwortfeld ohne gerenderten Haupttext (bewertung.ts, D3). */
+    "interaction.suspected_gate": { titel: "Possible sign-in, overlay or paywall", kurz: "Without clicking, our browser found no main text, and something may be in the way.",
+      warum: "Google says its Search doesn't interact with pages, for example by clicking, and that Googlebot doesn't crawl pages that need a sign-in. Text that only appears after such a step isn't there for a crawler that doesn't take it.",
+      schritte: ["Open the page in a private browser window and check what covers the main text before you click.", "If the text should be public, show it without a sign-in, click or overlay. Keep the gate if it's intended.", "Run the audit again."],
+      satz: "A sign-in form, overlay or paywall may hide the main content when the page is opened without interaction.", schritt: "Open the page without cookies and check what is visible without clicking.", umfang: "heuristic" },
+    /* Quellen: Google, How to specify a canonical: "Don't specify different URLs as canonical for the same page"; Google,
+       Fix canonicalization issues: CMS oder Plugins "can make incorrect use of canonicalization techniques". Was Google bei
+       mehreren Angaben tut ("ignore all"), steht nur in einem Blogbeitrag von 2013 -- darum nicht im Text. */
+    "canonical.conflicting": { titel: "Conflicting canonical tags", kurz: "It's unclear which address this page prefers.",
+      warum: "A canonical tells search engines which address you prefer for this content. This page names different ones, in the HTML, the HTTP header or after JavaScript, and Google advises against naming different canonical URLs for the same page.",
+      schritte: ["Find every canonical of this page: link tags in the HTML, a Link HTTP header and tags added by JavaScript.", "Keep one and remove the others. Check your CMS and its plugins too, as they can add canonical tags.", "Run the audit again."],
+      satz: "The page declares more than one canonical address.", schritt: "Declare one canonical address.", umfang: "request" },
+    /* Quellen: Google, How to specify a canonical: "Use absolute paths rather than relative paths with the rel="canonical" link
+       element". Ausloeser im Worker: eine Angabe, die sich nicht als http(s)-Adresse aufloesen laesst (bewertung.ts, E1). */
+    "canonical.invalid": { titel: "Invalid canonical tag", kurz: "A canonical on this page doesn't name a valid web address.",
+      warum: "A canonical tells search engines which address you prefer for this content. This one can't be read as an http or https address, so it names no page. Google recommends full, absolute addresses in canonical tags.",
+      schritte: ["Find the canonical in the HTML or the Link HTTP header of this page.", "Change it to the full address of the preferred page, starting with https://.", "Run the audit again."],
+      satz: "The declared canonical address can't be resolved.", schritt: "Fix the canonical URL.", umfang: "request" },
+    /* Quellen: MDN Content-Language (Publikum, nicht die Sprache des Texts; "use the lang attribute instead"); W3C, Declaring
+       language in HTML ("the in-page language declaration always overrides the HTTP information"); Google, Managing
+       multi-regional sites ("We don't use any code-level language information such as lang attributes"). satz korrigiert:
+       der Worker vergleicht nur lang und Content-Language, hreflang nicht (bewertung.ts, F1). */
+    "language.declaration_conflict": { titel: "Conflicting language signals", kurz: "The page declares two different languages.",
+      warum: "The lang attribute says which language the text is written in, the Content-Language header which audience the page is meant for. They can differ on purpose, for example on a language course. Google determines the language from the visible text and doesn't use the lang attribute.",
+      schritte: ["Check which language the text of this page is written in.", "Set the lang attribute of the html element to it, and change Content-Language unless the different audience is intended.", "Run the audit again."],
+      satz: "The lang attribute of the page and its Content-Language header name different languages.", schritt: "Align the language declarations.", umfang: "request" }
   };
   /* Platzhalter aus details: nur einfache Texte bis 200 Zeichen, nie Objekte -- und nie ein
      Platzhalter, der stehen bleibt. Fehlt ein Wert, nimmt der Text seine Fassung ohne. */
