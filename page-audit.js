@@ -1740,7 +1740,7 @@
         return l.length ? '<div class="upa-gruppe" role="row"><span class="up-blockhead">' + esc(t(a[0])) + '</span></div>' + l.map(abrufZeile).join("") : '';
       }).join("");
       var mess = messwerteHtml(d).replace(/^<section class="upa-sek">[\s\S]*?<\/div><\/div>(<div class="up-box)/, "$1").replace(/<\/section>$/, "");
-      return '<section class="upa-sek">' + sekKopf("Without and with JavaScript", "What your server sends, next to what our browser shows after running scripts.") + vergleich + '</section>' +
+      return '<section class="upa-sek">' + sekKopf("Without and with JavaScript", "What your server sends, next to what our browser shows after running scripts.", qtKnopfHtml(s)) + vergleich + '</section>' +
         '<section class="upa-sek">' + sekKopf("Test conditions") + '<dl class="up-box upa-kasten upa-kv upa-kv-lauf">' + bed.map(function (p) {
           return '<dt>' + esc(t(p[0])) + '</dt><dd' + (p[2] ? ' class="upa-mono"' : '') + '>' + esc(p[1]) + '</dd>'; }).join("") + '</dl></section>' +
         '<section class="upa-sek">' + sekKopf("Requests", "Every request of this run. Results are kept, raw captures for 90 days.") +
@@ -1847,6 +1847,7 @@
       if (e.target.closest("[data-upa-nochmal]")) { nochmal(); return; }
       if (e.target.closest(".upa-mehrlaeufe")) { state.alleLaeufe = true; detailZeichnen(); return; }
       if (e.target.closest("[data-upa-roh]")) { rohdatenLaden(e.target.closest("[data-upa-roh]")); return; }
+      if (e.target.closest("[data-upa-html]")) { htmlOeffnen(e.target.closest("[data-upa-html]")); return; }
       var kp = e.target.closest("[data-upa-kopie]");
       if (kp) {
         /* Ins Ticket kopierbar (Recherche: Sitebulb, Screaming Frog "How To Fix" im Export, Semrush "Send to", Lumar). */
@@ -1941,6 +1942,14 @@
         knopf.disabled = false;
         UC.toast(t("Check your connection and try again."), { kind: "error" });
       });
+    }
+    /* "View initial HTML": der Drawer bekommt alles, was die Route der Rohdaten braucht, als Stand fuer genau dieses
+       Oeffnen mit (UC.drawerOeffnen, kontext) -- die Kennung in der Adresse ist nur die Beobachtung. */
+    function htmlOeffnen(knopf) {
+      var d = dasDetail(), s = d && d.selected, b = qtBasis(s);
+      if (!b || b.id !== knopf.getAttribute("data-upa-html")) return;
+      UC.drawerOeffnen(QT_ART, b.id, "page-audit", { team: team(), pageId: d.page.id, runId: s.run.id,
+        url: d.page.fetchUrl || d.page.url, zustand: b.artifact ? b.artifact.state : "", bytes: b.bytes });
     }
 
     /* ---- Aktionen ------------------------------------------------------------------------------- */
@@ -2187,6 +2196,431 @@
     if (team()) ersterLaden();
     return ctrl;
   }
+
+  /* ============================================================================================
+     DAS ERSTE HTML ANSEHEN (22.10., Variante A von Lukas: "View initial HTML")
+     Die Seite spricht ueberall vom "initial HTML", dem HTML, das der Server schickt, bevor ein Skript
+     laeuft. Zu sehen war es bisher nur als JSON der Rohdaten. Der Knopf im Abschnitt "Without and with
+     JavaScript" oeffnet es zum Lesen: Zeilennummern und Suche, sonst nichts.
+     WO: im Drawer aus core (KERN_DRAWER "initialhtml"), der grossen Leseansicht der App wie bei Response
+     Detail. Ein Popup aus core ist hoechstens 560 breit, fuer Quelltext zu schmal.
+     DATEN: die Beobachtung slot "baseline", Datei basis.f<n>.json = {"html": "..."}. Die Adresse kommt nur
+     ueber die Route der App (/api/page-audit/rohdaten: Mitgliedschaft mit dem Token des Nutzers), dieselbe
+     wie fuer den Download. Sie ist mit download signiert; das setzt nur Content-Disposition, und fetch liest
+     den Inhalt trotzdem. Supabase Storage antwortet mit access-control-allow-origin * (gemessen 22.10.),
+     und sein Ursprung steht schon in connect-src der App. Die Route bleibt, wie sie ist.
+     SICHERHEIT (UMSETZUNGSPLAN 17): das HTML ist fremder Text. Es steht nur escaped als Text im DOM (esc),
+     nie als HTML, kein iframe, keine Vorschau, kein Link daraus.
+     GROSSE DATEIEN: der Worker liest hoechstens 5 MiB (acquisition_config document_decompressed_bytes). Nie
+     alles auf einmal ins DOM: der Text steht in Bloecken zu hoechstens 12.000 Zeichen bzw. 250 Zeilen, und
+     gefuellt sind nur die Bloecke im Bild und 1.600 px darueber und darunter. Die uebrigen sind leere
+     Platzhalter mit gemessener oder geschaetzter Hoehe (Monospace: Zeichen je Zeile aus der Zeichenbreite).
+     Grenzen: hoechstens 6 Mi Zeichen und 1 Mio. Zeilen werden gezeigt (darueber abgeschnitten, mit Satz -- vom
+     Worker kommt das nicht), eine Datei ueber 32 MiB wird beim Lesen abgebrochen (qtLesen); die Suche zaehlt bis
+     10.000 Treffer.
+     ============================================================================================ */
+  var QT_ART = "initialhtml";
+  var QT_GRENZE = 6 * 1024 * 1024, QT_GRENZE_BYTES = 32 * 1024 * 1024, QT_WORKER = 5 * 1024 * 1024;
+  var QT_BLOCK_Z = 12000, QT_BLOCK_L = 250, QT_RAND = 1600, QT_MAX = 10000, QT_ZEILEN = 1000000;
+  var QT = { ctx: null, el: null, d: null, k: null, id: "", lauf: 0, io: null, ro: null, uhr: null,
+             bl: [], voll: {}, mass: null, q: "", ql: 0, treffer: [], mehr: false, aktiv: -1 };
+
+  if (UC.addMessages) UC.addMessages("de", {
+    "View initial HTML": "Erstes HTML ansehen",
+    "Initial HTML": "Erstes HTML",
+    "Search HTML": "HTML durchsuchen",
+    "Previous match": "Vorheriger Treffer",
+    "Next match": "Nächster Treffer",
+    "{n} lines": "{n} Zeilen",
+    "1 line": "1 Zeile",
+    "The initial HTML couldn't be loaded": "Das erste HTML konnte nicht geladen werden",
+    "The initial HTML couldn't be read": "Das erste HTML konnte nicht gelesen werden",
+    "You don't have access to this audit.": "Du hast keinen Zugriff auf dieses Audit.",
+    "This HTML is no longer stored": "Dieses HTML ist nicht mehr gespeichert",
+    "Raw captures are kept for 90 days. Run the audit again to capture the page anew.": "Rohdaten werden 90 Tage aufbewahrt. Prüfe die Seite erneut, um sie neu zu erfassen.",
+    "The server sent no HTML": "Der Server hat kein HTML geschickt",
+    "The response to this request was empty.": "Die Antwort auf diesen Abruf war leer.",
+    "This HTML is too large to show here": "Dieses HTML ist zu groß für die Ansicht",
+    "Download the raw data under Requests instead.": "Lade stattdessen die Rohdaten unter Abrufe herunter.",
+    "The page is larger than 5 MiB. The audit read the first 5 MiB, so the end is missing here.": "Die Seite ist größer als 5 MiB. Das Audit hat die ersten 5 MiB gelesen, das Ende fehlt hier.",
+    "Only the first {n} characters are shown.": "Gezeigt werden nur die ersten {n} Zeichen.",
+    "Only the first {n} lines are shown.": "Gezeigt werden nur die ersten {n} Zeilen."
+  });
+
+  function qtBasis(s) { return s && s.observations ? s.observations.filter(function (b) { return b.slot === "baseline"; })[0] || null : null; }
+  /* Der Knopf nur, wo er auch aufgeht: Beobachtung mit Rohdaten (verfuegbar oder nach 90 Tagen weg -- das zeigt der
+     Drawer selbst), ein core mit diesem Drawer und eine Host-App mit openDrawer. */
+  function qtKnopfHtml(s) {
+    var b = qtBasis(s);
+    if (!b || !b.artifact || !/^(available|expired)$/.test(b.artifact.state) || !D.uuidOk(b.id)) return "";
+    if (!(UC.kernDrawerAktiv && UC.kernDrawerAktiv(QT_ART) && UC.drawerOeffnen && typeof window.openDrawer === "function")) return "";
+    return '<button type="button" class="up-btn-sec upa-htmlknopf" data-upa-html="' + esc(b.id) + '">' + UC.icon("sourceCode", 2) +
+      '<span>' + esc(t("View initial HTML")) + '</span></button>';
+  }
+
+  /* ---- Laden: Route der App, dann die signierte Adresse ---- */
+  function qtHolen(id, k) {
+    var holen = UC.sitzungsToken ? UC.sitzungsToken() : Promise.resolve("");
+    return holen.then(function (token) {
+      return fetch("/api/page-audit/rohdaten", {
+        method: "POST", credentials: "omit", cache: "no-store",
+        headers: { "content-type": "application/json", "authorization": "Bearer " + (token || "") },
+        body: JSON.stringify({ team_id: k.team, page_id: k.pageId, run_id: k.runId, observation_id: id })
+      });
+    }).then(function (r) {
+      if (r.status === 410) throw { art: "weg" };
+      if (r.status === 401 || r.status === 403) throw { art: "zugang" };
+      if (r.status !== 200) throw { art: "laden" };
+      return r.json().catch(function () { return {}; });
+    }).then(function (j) {
+      var url = str(j && j.url);
+      /* Nur https oder ein Pfad der App (wie beim Bildschirmfoto) -- nie eine andere Form. */
+      if (!/^https:\/\//i.test(url) && !/^\/(?!\/)[a-z0-9_\-\/.]+(\?[a-z0-9_\-.=&%]*)?$/i.test(url)) throw { art: "laden" };
+      return fetch(url, { method: "GET", credentials: "omit", cache: "no-store", referrerPolicy: "no-referrer" });
+    }).then(function (r) {
+      if (!r.ok) throw { art: "laden" };
+      var n = num(r.headers.get("content-length"));
+      if (n != null && n > QT_GRENZE_BYTES) throw { art: "gross" };
+      return qtLesen(r);
+    }).then(function (txt) {
+      if (txt.length > QT_GRENZE_BYTES) throw { art: "gross" };
+      var o = null;
+      try { o = JSON.parse(txt); } catch (e) { o = null; }
+      if (!o || typeof o !== "object" || typeof o.html !== "string") throw { art: "unlesbar" };
+      return o.html;
+    }).then(null, function (f) { throw f && f.art ? f : { art: "laden" }; });
+  }
+
+  /* Der Koerper als Strom, nach 32 MiB abgebrochen (Sicherheitspruefung 22.10., niedrig): Content-Length fehlt mal oder zaehlt
+     bei gepackter Antwort nur die gepackten Bytes -- dann haette r.text() alles eingelesen. Gezaehlt wird hier entpackt. */
+  function qtLesen(r) {
+    if (!r.body || typeof r.body.getReader !== "function" || typeof TextDecoder !== "function") return r.text();
+    var leser = r.body.getReader(), dec = new TextDecoder("utf-8"), teile = [], n = 0;
+    function weiter() {
+      return leser.read().then(function (x) {
+        if (x.done) { teile.push(dec.decode()); return teile.join(""); }
+        n += x.value.byteLength;
+        if (n > QT_GRENZE_BYTES) { try { leser.cancel(); } catch (e) {} throw { art: "gross" }; }
+        teile.push(dec.decode(x.value, { stream: true }));
+        return weiter();
+      });
+    }
+    return weiter();
+  }
+
+  /* ---- Aufbereiten: Zeilenanfaenge und Bloecke (einmal je Datei) ---- */
+  function qtAufbereiten(id, roh) {
+    var gekappt = roh.length > QT_GRENZE;
+    var text = (gekappt ? roh.slice(0, QT_GRENZE) : roh).replace(/\r\n?/g, "\n");
+    /* Ein Umbruch am Ende ist keine eigene Zeile (wie view-source). */
+    var ende = text.length && text.charCodeAt(text.length - 1) === 10 ? text.length - 1 : text.length;
+    var anf = [0], i = text.indexOf("\n");
+    while (i !== -1 && i < ende) { anf.push(i + 1); i = text.indexOf("\n", i + 1); }
+    /* Hoechstens eine Million Zeilen: 20 px je Zeile sind dann 20 Mio. px, und Chrome begrenzt die Hoehe eines Elements bei
+       rund 33,5 Mio. px -- dahinter waere der Rest nicht mehr zu erreichen. Echtes HTML von 5 MiB hat weit weniger (gemessen:
+       380.000 Zeilen zu je 13 Zeichen sind schon 5 MiB). */
+    var zeilenGekappt = anf.length > QT_ZEILEN;
+    if (zeilenGekappt) { ende = anf[QT_ZEILEN] - 1; anf.length = QT_ZEILEN; text = text.slice(0, ende); }
+    var bl = [], B = null, n = anf.length;
+    for (var z = 0; z < n; z++) {
+      var e = z + 1 < n ? anf[z + 1] - 1 : ende, pos = anf[z];
+      for (;;) {
+        if (!B || B.zeichen >= QT_BLOCK_Z || B.zeilen >= QT_BLOCK_L) { B = { s0: pos, s1: pos, l0: z, l1: z, zeichen: 0, zeilen: 0 }; bl.push(B); }
+        var platz = QT_BLOCK_Z - B.zeichen;
+        if (e - pos <= platz) { B.zeichen += e - pos; B.zeilen++; B.l1 = z; B.s1 = e; break; }
+        /* Eine lange Zeile (minifiziertes HTML: auf upstreem.ai 123.815 Zeichen in Zeile 27) geht ueber mehrere
+           Bloecke; nie mitten in einem Ersatzpaar trennen. */
+        var cut = pos + platz, c = text.charCodeAt(cut - 1);
+        if (c >= 0xD800 && c <= 0xDBFF && cut - 1 > pos) cut--;
+        B.zeichen = QT_BLOCK_Z; B.zeilen++; B.l1 = z; B.s1 = cut; pos = cut;
+      }
+    }
+    return { id: id, text: text, anf: anf, ende: ende, bl: bl, gekappt: zeilenGekappt ? "zeilen" : gekappt ? "zeichen" : "" };
+  }
+  function qtEnde(d, z) { return z + 1 < d.anf.length ? d.anf[z + 1] - 1 : d.ende; }
+
+  /* ---- Zeichnen ---- */
+  function qtGroesse(v) {
+    return v >= 1048576 ? UC.fmtNum(v / 1048576, 1) + " MB" : (v >= 1024 ? UC.fmtNum(v / 1024, 1) + " KB" : fmtInt(v) + " B");
+  }
+  function qtLeisteHtml(d) {
+    var n = d ? d.anf.length : 0;
+    return '<div class="upa-q-leiste">' +
+      '<div class="up-search is-open upa-q-suche">' +
+        '<span class="up-iconbtn up-search-btn" aria-hidden="true">' + UC.icon("search", 2) + '</span>' +
+        '<div class="up-search-box">' +
+          '<input class="up-search-input" type="text" autocomplete="off" spellcheck="false" placeholder="' + esc(t("Search HTML")) + '" aria-label="' + esc(t("Search HTML")) + '"' + (d ? '' : ' disabled') + '>' +
+          '<button class="up-search-clear" type="button" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2) + '</button>' +
+        '</div></div>' +
+      '<span class="upa-q-zahl" aria-live="polite"></span>' +
+      '<button type="button" class="up-iconbtn upa-q-schritt" data-upa-q-schritt="-1" aria-label="' + esc(t("Previous match")) + '" data-tip="' + esc(t("Previous match")) + '" disabled>' + UC.icon("chevronUp", 2) + '</button>' +
+      '<button type="button" class="up-iconbtn upa-q-schritt" data-upa-q-schritt="1" aria-label="' + esc(t("Next match")) + '" data-tip="' + esc(t("Next match")) + '" disabled>' + UC.icon("chevronDown", 2) + '</button>' +
+      (d ? '<span class="upa-q-meta"><span>' + esc(n === 1 ? t("1 line") : t("{n} lines").replace("{n}", fmtInt(n))) + '</span>' +
+        '<span>' + esc(qtGroesse(QT.k && QT.k.bytes != null ? QT.k.bytes : d.text.length)) + '</span></span>' : '') +
+    '</div>';
+  }
+  function qtSkelettHtml() {
+    return qtLeisteHtml(null) + '<div class="up-box upa-q-code" aria-busy="true">' + [62, 88, 40, 74, 96, 55, 81, 33, 70, 92, 47, 66, 85, 58].map(function (w) {
+      return '<div class="upa-q-z"><span class="upa-q-t upa-q-sk"><span class="up-tsk-bar" style="width:' + w + '%"></span></span></div>';
+    }).join("") + '</div>';
+  }
+  function qtZustand(art) {
+    if (!QT.el) return;
+    qtLos();
+    var o = art === "weg" ? { icon: "clock", titel: "This HTML is no longer stored", text: "Raw captures are kept for 90 days. Run the audit again to capture the page anew." }
+          : art === "leer" ? { icon: "sourceCode", titel: "The server sent no HTML", text: "The response to this request was empty." }
+          : art === "gross" ? { icon: "info", titel: "This HTML is too large to show here", text: "Download the raw data under Requests instead." }
+          : art === "zugang" ? { icon: "lock", titel: "The initial HTML couldn't be loaded", text: "You don't have access to this audit." }
+          : art === "unlesbar" ? { icon: "info", titel: "The initial HTML couldn't be read", text: "Please try again.", knopf: "Try again", knopfAttr: "data-upa-q-nochmal" }
+          : { icon: "info", titel: "The initial HTML couldn't be loaded", text: "Please try again.", knopf: "Try again", knopfAttr: "data-upa-q-nochmal" };
+    QT.el.innerHTML = UC.leerHtml(o);
+  }
+  /* Die Zeilen eines Blocks; ein Treffer ist .up-hl wie in jeder Suche der App, mit Nummer fuer vor und zurueck. */
+  function qtText(a, e) {
+    var tr = QT.treffer, ql = QT.ql, text = QT.d.text;
+    if (!tr.length) return esc(text.slice(a, e));
+    var lo = 0, hi = tr.length;
+    while (lo < hi) { var m = (lo + hi) >> 1; if (tr[m] + ql <= a) lo = m + 1; else hi = m; }
+    var h = "", pos = a;
+    for (var k = lo; k < tr.length && tr[k] < e; k++) {
+      var s = Math.max(tr[k], a), f = Math.min(tr[k] + ql, e);
+      if (s > pos) h += esc(text.slice(pos, s));
+      h += '<mark class="up-hl' + (k === QT.aktiv ? ' is-aktiv' : '') + '" data-m="' + k + '">' + esc(text.slice(s, f)) + '</mark>';
+      pos = f;
+    }
+    return pos < e ? h + esc(text.slice(pos, e)) : h;
+  }
+  function qtBlockHtml(B) {
+    var d = QT.d, h = "";
+    for (var z = B.l0; z <= B.l1; z++) {
+      var a = Math.max(d.anf[z], B.s0), e = Math.min(qtEnde(d, z), B.s1), fort = a > d.anf[z];
+      /* Die Nummer als data-n und ::before: nicht markierbar, also beim Kopieren nicht im Text. */
+      h += '<div class="upa-q-z"' + (fort ? '' : ' data-n="' + (z + 1) + '"') + '><span class="upa-q-t">' + qtText(a, e) + '</span></div>';
+    }
+    return h;
+  }
+  function qtFuellen(i) {
+    if (QT.voll[i] || !QT.bl[i]) return;
+    QT.bl[i].innerHTML = qtBlockHtml(QT.d.bl[i]);
+    QT.bl[i].style.height = "";
+    QT.voll[i] = true;
+  }
+  /* Leeren mit der gemessenen Hoehe: der Platzhalter ist genau so hoch wie eben der Inhalt, nichts verschiebt sich. */
+  function qtLeeren(i) {
+    if (!QT.voll[i]) return;
+    var el = QT.bl[i], B = QT.d.bl[i], h = el.offsetHeight;
+    el.style.height = h + "px"; el.innerHTML = "";
+    delete QT.voll[i];
+    B.hMess = h; B.hBreite = QT.mass ? QT.mass.breite : 0;
+  }
+  /* Zeichen je Zeile aus der Probe (64 Nullen in der Schrift des Codes) und der Breite der Textspalte. */
+  function qtMessen() {
+    var p = QT.el && QT.el.querySelector(".upa-q-probe .upa-q-t");
+    if (!p || !p.firstChild) return false;
+    var zw = p.firstChild.getBoundingClientRect().width / 64, tw = p.getBoundingClientRect().width;
+    if (!(zw > 0) || !(tw > 0)) return false;
+    QT.mass = { cpr: Math.max(1, Math.floor((tw + 0.01) / zw)), zh: parseFloat(getComputedStyle(p).lineHeight) || 20, breite: Math.round(tw) };
+    return true;
+  }
+  function qtHoehe(B) {
+    var m = QT.mass, d = QT.d;
+    if (B.hMess && B.hBreite === m.breite) return B.hMess;
+    if (B.hCpr === m.cpr) return B.hS;
+    var reihen = 0;
+    for (var z = B.l0; z <= B.l1; z++) reihen += Math.max(1, Math.ceil((Math.min(qtEnde(d, z), B.s1) - Math.max(d.anf[z], B.s0)) / m.cpr));
+    B.hCpr = m.cpr; B.hS = reihen * m.zh;
+    return B.hS;
+  }
+  function qtHoehenSetzen() {
+    if (!QT.mass) return;
+    for (var i = 0; i < QT.bl.length; i++) if (!QT.voll[i]) QT.bl[i].style.height = qtHoehe(QT.d.bl[i]) + "px";
+  }
+  function qtLos() {
+    if (QT.io) { QT.io.disconnect(); QT.io = null; }
+    if (QT.ro) { QT.ro.disconnect(); QT.ro = null; }
+    QT.bl = []; QT.voll = {};
+  }
+  function qtZeichnen() {
+    var d = QT.d, el = QT.el;
+    if (!d || !el) return;
+    qtLos();
+    QT.q = ""; QT.ql = 0; QT.treffer = []; QT.mehr = false; QT.aktiv = -1;
+    var hinweis = QT.k && QT.k.bytes >= QT_WORKER ? t("The page is larger than 5 MiB. The audit read the first 5 MiB, so the end is missing here.")
+                : d.gekappt === "zeilen" ? t("Only the first {n} lines are shown.").replace("{n}", fmtInt(QT_ZEILEN))
+                : d.gekappt ? t("Only the first {n} characters are shown.").replace("{n}", fmtInt(QT_GRENZE)) : "";
+    el.innerHTML = qtLeisteHtml(d) + (hinweis ? '<p class="upa-q-hinweis">' + esc(hinweis) + '</p>' : '') +
+      '<div class="up-box upa-q-code" role="region" aria-label="' + esc(t("Initial HTML")) + '" style="--upa-q-ziffern:' + String(d.anf.length).length + '">' +
+        '<div class="upa-q-z upa-q-probe" aria-hidden="true"><span class="upa-q-t"><span>' + new Array(65).join("0") + '</span></span></div>' +
+        d.bl.map(function (B, i) { return '<div class="upa-q-b" data-b="' + i + '"></div>'; }).join("") +
+      '</div>';
+    QT.bl = [].slice.call(el.querySelectorAll(".upa-q-b"));
+    qtSucheAnlegen();
+    /* Ohne Mass (die Probe hatte keine Breite) mit 100 Zeichen je Zeile schaetzen: Platzhalter der Hoehe 0 laegen alle
+       zugleich im Bild, und der Beobachter fuellte die ganze Datei auf einmal. */
+    if (!qtMessen()) QT.mass = { cpr: 100, zh: 20, breite: -1 };
+    qtHoehenSetzen();
+    /* Was beim Oeffnen im Bild steht, sofort -- sonst stuende bis zum ersten Rueckruf des Beobachters ein leerer Kasten da. */
+    var sc = QT.ctx.koerper, bis = (sc.clientHeight || 900) + QT_RAND, y = 0;
+    for (var i = 0; i < QT.bl.length && y < bis; i++) { qtFuellen(i); y += QT.bl[i].offsetHeight; }
+    if (typeof IntersectionObserver === "function") {
+      QT.io = new IntersectionObserver(function (ein) {
+        ein.forEach(function (x) { var j = +x.target.getAttribute("data-b"); if (x.isIntersecting) qtFuellen(j); else qtLeeren(j); });
+      }, { root: sc, rootMargin: QT_RAND + "px 0px" });
+      QT.bl.forEach(function (b) { QT.io.observe(b); });
+    }
+    if (typeof ResizeObserver === "function") {
+      QT.ro = new ResizeObserver(function () { var alt = QT.mass && QT.mass.breite; if (qtMessen() && QT.mass.breite !== alt) qtHoehenSetzen(); });
+      QT.ro.observe(el.querySelector(".upa-q-code"));
+    }
+  }
+
+  /* ---- Suche: das Feld aus core (UC.makeSearch, Kern-Vorgaben 2 Zeichen und 400 ms), Treffer ohne Gross und Klein wie
+     UC.highlight; Enter springt zum naechsten, Umschalt+Enter zum vorigen. ---- */
+  function qtSucheAnlegen() {
+    var box = QT.el.querySelector(".upa-q-suche"), input = box && box.querySelector(".up-search-input");
+    if (!input || !UC.makeSearch) return;
+    var st = { query: "", page: 1, loading: false };
+    var kit = UC.makeSearch({ root: QT.el, box: box, input: input, state: st, mobileMax: 0, prefix: "upaq",
+      onRender: function () {}, onFire: function () { st.loading = false; qtSuchen(st.query); } });
+    box.addEventListener("click", function (e) {
+      if (!e.target.closest(".up-search-clear")) return;
+      input.value = ""; st.query = ""; box.classList.remove("has-text");
+      kit.cancel(); kit.run();
+      try { input.focus(); } catch (x) {}
+    });
+    input.addEventListener("input", function () { kit.onInput(); });
+    input.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" || e.isComposing) return;
+      e.preventDefault();
+      /* Enter vor Ablauf der 400 ms: gleich suchen statt einen Schritt in der alten Trefferliste. */
+      if (st.query !== QT.q && (st.query.length >= 2 || !st.query)) { kit.cancel(); kit.run(); return; }
+      qtSchritt(e.shiftKey ? -1 : 1);
+    });
+  }
+  function qtSuchen(q) {
+    var d = QT.d;
+    if (!d) return;
+    q = str(q).trim();
+    QT.q = q; QT.ql = q.length; QT.treffer = []; QT.mehr = false; QT.aktiv = -1;
+    if (q) {
+      var re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig"), m;
+      while ((m = re.exec(d.text))) {
+        if (QT.treffer.length >= QT_MAX) { QT.mehr = true; break; }
+        QT.treffer.push(m.index);
+      }
+    }
+    /* Der erste Treffer ab der Stelle, die gerade oben im Bild steht -- nicht zurueck an den Anfang. */
+    if (QT.treffer.length) {
+      var ab = qtBildAnfang(), lo = 0, hi = QT.treffer.length;
+      while (lo < hi) { var mi = (lo + hi) >> 1; if (QT.treffer[mi] < ab) lo = mi + 1; else hi = mi; }
+      QT.aktiv = lo < QT.treffer.length ? lo : 0;
+    }
+    Object.keys(QT.voll).forEach(function (i) { QT.bl[i].innerHTML = qtBlockHtml(d.bl[i]); });
+    qtZaehler();
+    if (QT.aktiv >= 0) qtHin(QT.aktiv);
+  }
+  function qtBildAnfang() {
+    var sc = QT.ctx && QT.ctx.koerper, l = QT.el.querySelector(".upa-q-leiste");
+    if (!sc || !QT.bl.length) return 0;
+    var oben = l ? l.getBoundingClientRect().bottom : sc.getBoundingClientRect().top, lo = 0, hi = QT.bl.length - 1;
+    while (lo < hi) { var m = (lo + hi) >> 1; if (QT.bl[m].getBoundingClientRect().bottom <= oben) lo = m + 1; else hi = m; }
+    return QT.d.bl[lo].s0;
+  }
+  function qtBlockVon(pos) {
+    var bl = QT.d.bl, lo = 0, hi = bl.length - 1;
+    while (lo < hi) { var m = (lo + hi + 1) >> 1; if (bl[m].s0 <= pos) lo = m; else hi = m - 1; }
+    return lo;
+  }
+  function qtZaehler() {
+    var z = QT.el && QT.el.querySelector(".upa-q-zahl"), n = QT.treffer.length;
+    if (z) z.textContent = !QT.q ? "" : !n ? t("No matches")
+      : t("{x} of {n}").replace("{x}", fmtInt(QT.aktiv + 1)).replace("{n}", fmtInt(n) + (QT.mehr ? "+" : ""));
+    [].forEach.call(QT.el.querySelectorAll("[data-upa-q-schritt]"), function (b) { b.disabled = !n; });
+  }
+  function qtSchritt(r) {
+    var n = QT.treffer.length;
+    if (!n) return;
+    var k = ((QT.aktiv < 0 ? (r > 0 ? -1 : 0) : QT.aktiv) + r + n) % n;
+    [].forEach.call(QT.el.querySelectorAll(".up-hl.is-aktiv"), function (x) { x.classList.remove("is-aktiv"); });
+    QT.aktiv = k;
+    [].forEach.call(QT.el.querySelectorAll('.up-hl[data-m="' + k + '"]'), function (x) { x.classList.add("is-aktiv"); });
+    qtZaehler();
+    qtHin(k);
+  }
+  /* Zum Treffer: steht er schon zwischen Leiste und unterem Rand, bleibt alles stehen; sonst ein Drittel unter die Leiste. */
+  function qtHin(k) {
+    var bi = qtBlockVon(QT.treffer[k]), sc = QT.ctx && QT.ctx.koerper;
+    if (!sc) return;
+    qtFuellen(bi);
+    var m = QT.bl[bi] && QT.bl[bi].querySelector('.up-hl[data-m="' + k + '"]');
+    if (!m) return;
+    var l = QT.el.querySelector(".upa-q-leiste"), rs = sc.getBoundingClientRect(), r = m.getBoundingClientRect();
+    var oben = (l ? l.getBoundingClientRect().bottom : rs.top) + 8, unten = rs.bottom - 16;
+    if (r.top >= oben && r.bottom <= unten) return;
+    sc.scrollTop += r.top - (oben + (unten - oben) / 3);
+  }
+
+  /* ---- Der Drawer ---- */
+  function qtZeigen(id, k) {
+    if (!QT.el) return;
+    var nr = ++QT.lauf;
+    clearTimeout(QT.uhr);
+    if (k) QT.k = k;
+    else if (!(QT.d && QT.d.id === id)) QT.k = null;
+    QT.id = id;
+    QT.ctx.name(QT.k ? kurz(QT.k.url) : "");
+    if (QT.d && QT.d.id === id) { qtZeichnen(); return; }
+    /* Ohne den Stand aus dem Knopf (Lauf, Seite, Team) gibt es nichts zu fragen. */
+    if (!QT.k || !D.uuidOk(id)) { qtZustand("laden"); return; }
+    if (QT.k.zustand === "expired") { qtZustand("weg"); return; }
+    qtLos();
+    QT.el.innerHTML = qtSkelettHtml();
+    var k0 = QT.k;
+    qtHolen(id, k0).then(function (roh) {
+      if (nr !== QT.lauf) return;
+      if (!roh.length) { qtZustand("leer"); return; }
+      QT.d = qtAufbereiten(id, roh);
+      qtZeichnen();
+    }, function (f) {
+      if (nr !== QT.lauf) return;
+      qtZustand(f && f.art);
+    });
+  }
+  function qtZu() {
+    QT.lauf++;
+    qtLos();
+    /* Nach dem Hinausfahren (200 ms) die Knoten weg; das aufbereitete HTML bleibt fuer ein erneutes Oeffnen. */
+    clearTimeout(QT.uhr);
+    QT.uhr = setTimeout(function () { if (QT.el && !(QT.ctx && QT.ctx.offen())) QT.el.innerHTML = ""; }, 400);
+  }
+  function qtAnmelden() {
+    if (!UC.kernDrawer) return;
+    UC.kernDrawer(QT_ART, {
+      aufbauen: function (ctx) {
+        QT.ctx = ctx;
+        /* Eine eigene .up-root wie jeder Drawer-Inhalt: core stempelt das Thema daran, und die Regeln fuer Kaesten im
+           Drawer (Rand im Geist-Dunkel) suchen eine .up-root IN der Huelle. */
+        ctx.slot.innerHTML = '<div class="up-root upa-q"></div>';
+        QT.el = ctx.slot.firstChild;
+        QT.el.addEventListener("click", function (e) {
+          var s = e.target.closest("[data-upa-q-schritt]");
+          if (s) { qtSchritt(+s.getAttribute("data-upa-q-schritt")); return; }
+          if (e.target.closest("[data-upa-q-nochmal]")) { QT.d = null; qtZeigen(QT.id, QT.k); }
+        });
+        /* Cmd/Strg+F sucht im HTML: die Suche des Browsers faende nur die Bloecke, die gerade gefuellt sind. */
+        document.addEventListener("keydown", function (e) {
+          if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || String(e.key).toLowerCase() !== "f" || !QT.ctx || !QT.ctx.offen()) return;
+          var f = QT.el.querySelector(".upa-q-suche .up-search-input");
+          if (!f || f.disabled) return;
+          e.preventDefault();
+          try { f.focus(); f.select(); } catch (x) {}
+        }, true);
+      },
+      zeigen: qtZeigen,
+      zu: qtZu
+    });
+  }
+  qtAnmelden();
 
   function alle() { return [].slice.call(document.querySelectorAll(".upa-root")); }
   function einrichten() {

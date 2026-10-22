@@ -765,6 +765,12 @@
       --vc-syntax-auszeichnung: #7c3aed;
       --vc-syntax-attribut: #b45309;
       --vc-syntax-zeichenkette: #15803d;
+      /* Der aktuelle Treffer einer Suche mit Schritten (.up-hl.is-aktiv, 22.10., Page Audit "View initial
+         HTML"): Geist Amber 700 (der Ton von --vt-warn-flaeche) mit dunkler Schrift, in BEIDEN Themen --
+         die uebrigen Treffer bleiben das Gelb von .up-hl, wie in der Suche des Browsers. Schrift auf
+         Flaeche 10,4:1. */
+      --vc-treffer-aktiv: #ffb224;
+      --vc-treffer-aktiv-ink: #1f1f1b;
       /* Der Schleier hinter dem Fenster von Create with AI. */
       --vc-ki-schleier: var(--up-schleier);
       /* Fehler im Feld (Add Brand): Fokusring und Flaeche der Meldung. */
@@ -5218,6 +5224,9 @@
     .up-name { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
     .up-hl { background: rgba(255, 214, 10, 0.38); color: inherit; border-radius: 3px; padding: 0 1px; }
     .up-root[data-theme="dark"] .up-hl { background: rgba(255, 214, 10, 0.26); }
+    /* Der aktuelle Treffer, wenn eine Suche Schritte hat (vorheriger/naechster, 22.10. Page Audit "View initial
+       HTML"): dieselbe Marke, kraeftiger. Die dunkle Zeile mit, weil die Regel darueber (0,3,0) wiegt. */
+    .up-root .up-hl.is-aktiv, .up-root[data-theme="dark"] .up-hl.is-aktiv { background: var(--vc-treffer-aktiv); color: var(--vc-treffer-aktiv-ink); }
     /* Reddit fallback title (UC.redditTitleHtml) — the r/sub prefix and its separator read as a
        muted breadcrumb, same tone as everywhere else this app uses --vc-third for "secondary,
        not the point" text; the parsed slug after it stays the row's own normal text colour. */

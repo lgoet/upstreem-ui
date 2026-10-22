@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261186;
+  var BUILD = 20261187;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -23383,7 +23383,14 @@
     /* Der Marken-Editor (Bubble-Name companysettings, dritte Ebene): ein Formular, kein Bericht --
        schmal wie ein Einstellungsfenster, damit Zeilen und Felder nicht ueber die halbe Seite
        laufen. Er liegt ueber dem Brand-Drawer, der links davon sichtbar bleibt. */
-    companysettings: { label: "Brand Editor", breite: "min(720px, 60vw)" }
+    companysettings: { label: "Brand Editor", breite: "min(720px, 60vw)" },
+    /* Das erste HTML einer Seite (22.10., Page Audit, "View initial HTML"): Quelltext zum Lesen.
+       Breit wie der URL-Drawer (80vw) und nicht wie die Antwort: Quelltext bricht in Zeichen um, nicht
+       in Woertern, jede Spalte mehr ist eine Zeile weniger. Keine Ebene im Kopf-Skript (DRAWER_LEVELS
+       kennt ihn nicht, also Ebene 1): er geht nur von der Seite Page Audit aus auf, nie ueber einem
+       anderen Drawer, und kommt nach dem Neuladen nicht wieder -- ohne Lauf und Seite gaebe es dann
+       ohnehin nichts zu zeigen. Den Inhalt baut page-audit.js (UC.kernDrawer). */
+    initialhtml: { label: "Initial HTML", breite: "80vw" }
   };
   var KD = {};
   function kdFremd(art){
@@ -27176,6 +27183,11 @@
        uebernommen -- nicht nachgezeichnet. Bei palette sind die Farbpunkte ohne Fuellung (Regel:
        keine gefuellten Icons); als Strich mit 2px Breite stehen sie trotzdem als Punkte da. */
     appWindow: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/>',
+    /* Hugeicons SourceCodeIcon (22.10.): Quelltext -- der Knopf "View initial HTML" im Page Audit. Woertlich aus
+       @hugeicons/core-free-icons@4.3.5 (dist/esm/SourceCodeIcon.js), nicht nachgezeichnet. */
+    sourceCode: '<path d="M17 8L18.8398 9.85008C19.6133 10.6279 20 11.0168 20 11.5C20 11.9832 19.6133 12.3721 18.8398 13.1499L17 15"/>' +
+                '<path d="M7 8L5.16019 9.85008C4.38673 10.6279 4 11.0168 4 11.5C4 11.9832 4.38673 12.3721 5.16019 13.1499L7 15"/>' +
+                '<path d="M14.5 4L9.5 20"/>',
     /* Hugeicons TicketsIcon -- das Zeichen der Events in der Seitenleiste, im Seitenkopf und im
        Leerzustand. Woertlich aus @hugeicons/core-free-icons@4.3.5 (dist/esm/TicketsIcon.js), in
        der Familie der Seitenleiste; am 03.10. stand hier kurz Lucide tickets -- gemeint war

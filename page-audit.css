@@ -458,3 +458,34 @@ a.upa-ident-url:hover span { text-decoration: underline; }
 .upa-kk-w .up-num { font-size: inherit; font-weight: inherit; }
 .upa-kk-w .up-trend { font-size: var(--up-fs-m); }
 .upa-root.is-narrow .upa-kopfzone.is-k, .upa-root.is-narrow .upa-kopfzone.is-lauf { grid-template-columns: minmax(0, 1fr); }
+
+/* ---------- Das erste HTML (Drawer "initialhtml" aus core, 22.10.) ----------
+   Der Drawer haengt am <body>, darum ohne .upa-root davor. Aus core: Drawer, Kasten (.up-box), Suchfeld
+   (.up-search mit Esc-Schild), Treffer (.up-hl, der aktuelle .is-aktiv), Knoepfe (.up-iconbtn), Skelett
+   (.up-tsk-bar), Leer- und Fehlerzustand. Hier nur der Quelltext: Monospace wie .upa-mono, 12 auf 20,
+   umgebrochen in Zeichen (break-spaces, break-all) -- nur so ist die Hoehe eines leeren Blocks aus der
+   Zeichenbreite vorherzusagen (page-audit.js, qtHoehe). */
+/* Der Knopf "View initial HTML" rechts im Abschnittskopf: einzeilig; wird es eng (375: 93 breit, drei Zeilen), rutscht er
+   unter Titel und Unterzeile statt sie zu quetschen. */
+.upa-htmlknopf { flex: 0 0 auto; white-space: nowrap; }
+.upa-sec-head:has(> .upa-htmlknopf) { flex-wrap: wrap; }
+.upa-q { display: flex; flex-direction: column; min-width: 0; }
+/* Die Leiste klebt unter dem Glaskopf. Sie beginnt schon in Ruhe direkt unter ihm (die 16 der Spalte als eigenes
+   Polster), damit sie beim Ankleben nicht springt. Deckend, der Quelltext laeuft darunter durch. top 0 und nicht die
+   Kopfhoehe: sticky rechnet ab dem Polster des Rollbereichs, und das IST schon die Kopfhoehe (.up-kdr-koerper
+   padding-top) -- mit 56 stand die Leiste bei 112 und deckte die ersten Zeilen zu (gemessen 22.10.). */
+.upa-q-leiste { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  margin-top: -16px; padding: 16px 0 12px; background: var(--up-surface, var(--vc-bg)); }
+.upa-q-zahl { font-size: var(--up-fs-m); color: var(--vc-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.upa-q-zahl:empty { display: none; }
+.upa-q-meta { display: inline-flex; gap: 12px; margin-left: auto; font-size: var(--up-fs-m); color: var(--vc-third); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.upa-q-hinweis { margin: 0 0 12px; font-size: var(--up-fs-m); line-height: 1.5; color: var(--vc-muted); }
+.upa-q-code { position: relative; padding: 8px 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: var(--up-fs-s); line-height: 20px; color: var(--vc-text); }
+/* Nummernspalte so breit wie die groesste Zeilennummer (--upa-q-ziffern aus page-audit.js) plus 16 links und rechts. */
+.upa-q-z { display: grid; grid-template-columns: calc(var(--upa-q-ziffern, 2) * 1ch + 32px) minmax(0, 1fr); min-height: 20px; padding-right: 16px; }
+.upa-q-z::before { content: attr(data-n); padding: 0 16px; text-align: right; color: var(--vc-third); -webkit-user-select: none; user-select: none; }
+.upa-q-t { min-width: 0; white-space: break-spaces; word-break: break-all; overflow-wrap: anywhere; tab-size: 4; }
+.upa-q-probe { position: absolute; top: 0; left: 0; right: 0; visibility: hidden; pointer-events: none; }
+.upa-q-probe .upa-q-t > span { display: inline-block; white-space: pre; }
+.upa-q-sk { display: flex; align-items: center; }
