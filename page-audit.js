@@ -785,6 +785,9 @@
     function kontingentHtml() {
       var q = quota();
       if (!q) return "";
+      /* Tarif ohne Page Audits: kein "0 of 0 audits this week". */
+      if (q.allowance === 0) return '<span class="upa-kontingent is-voll" tabindex="0" data-tip="' + esc(t("Choose a plan with page audits to run one.")) + '">' +
+        esc(t("Not included in your plan")) + '</span>';
       var k = kapazitaet();
       var tip = (q.resetsAt ? t("Resets on {date}.").replace("{date}", UC.fmtDate(q.resetsAt)) : "") +
         (k ? " " + t("Recurring audits: {used} of {n} weekly slots in use.").replace("{used}", D.fmtZahl(k.used)).replace("{n}", D.fmtZahl(k.capacity)) : "") +
@@ -904,17 +907,16 @@
     function quotaSatz() {
       var q = quota();
       if (!q) return "";
+      /* Tarif ohne Page Audits: derselbe Satz wie die Fehlermeldung aus core, ohne Rueckstelldatum. */
+      if (q.allowance === 0) return t("Page audits aren't included in your plan.") + " " + t("Choose a plan with page audits to run one.");
       var s = q.remaining <= 0
         ? t("You've used all {n} audits for this week.").replace("{n}", fmtInt(q.allowance))
         : t("{used} of {n} audits used this week.").replace("{used}", fmtInt(q.used)).replace("{n}", fmtInt(q.allowance));
       if (q.resetsAt) s += " " + t("Resets on {date}.").replace("{date}", UC.fmtDate(q.resetsAt));
       return s;
     }
-    /* ZEITPLAN SCHON BEIM ANLEGEN (21.10., nach der Recherche: Semrush, Sitebulb und Lumar legen ihn im
-       Anlege-Ablauf fest, geaendert wird er spaeter im Kopf). core .up-seg.is-lg (32 hoch), darunter der Satz
-       zur Grenze wie im Zeitplan-Menue. Was die Grenze sprengen wuerde, ist gesperrt -- gerechnet wie
-       _page_audit_capacity_v1: weekly 1, monthly 1/4, Platz bis capacity. create_page_audit_v1 kennt keinen
-       Zeitplan: nach dem Anlegen setzt set_page_audit_schedule_v1 ihn (Vertragswunsch: p_schedule). */
+    /* Zeitplan nur noch im fertigen Audit (Lukas, v2: nicht im Anlegen). Was die Grenze sprengen wuerde, ist im Menue
+       gesperrt -- gerechnet wie _page_audit_capacity_v1: weekly 1, monthly 1/4, Platz bis capacity. */
     var PLAN_KOSTEN = { weekly: 1, monthly: 0.25 };
     function planFrei(plan) {
       var k = kapazitaet();

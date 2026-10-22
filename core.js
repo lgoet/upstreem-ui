@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261185;
+  var BUILD = 20261186;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -20162,6 +20162,9 @@
     "This address isn't public. Only public websites can be audited.": "Diese Adresse ist nicht öffentlich. Prüfen lassen sich nur öffentliche Websites.",
     "This URL contains a token or password. Remove it and try again.": "Diese URL enthält ein Token oder Passwort. Entfern es und versuch es noch einmal.",
     "You've used all {n} audits for this week.": "Du hast alle {n} Audits dieser Woche verbraucht.",
+    "Page audits aren't included in your plan.": "Page Audits sind in deinem Tarif nicht enthalten.",
+    "Choose a plan with page audits to run one.": "Wähl einen Tarif mit Page Audits, um eins zu starten.",
+    "Not included in your plan": "Nicht in deinem Tarif",
     "You've used all audits for this week.": "Du hast alle Audits dieser Woche verbraucht.",
     "Your quota resets on {date}.": "Dein Kontingent wird am {date} zurückgesetzt.",
     "Your quota resets next Monday.": "Dein Kontingent wird nächsten Montag zurückgesetzt.",
@@ -20207,6 +20210,9 @@
     }
     if (m === "page_audit_quota_exhausted"){
       var q = paDetailJson(f), allow = paZahl(q.allowance), wann = String(q.resets_at || "");
+      /* Tarif ohne Page Audits (allowance 0, 22.10. gemeldet aus Impact): kein "alle 0 Audits verbraucht" und kein
+         Rueckstelldatum -- die Woche aendert daran nichts. */
+      if (allow === 0) return { satz: tt("Page audits aren't included in your plan.") + " " + tt("Choose a plan with page audits to run one.") };
       return { satz: (allow != null ? tt("You've used all {n} audits for this week.").replace("{n}", String(allow)) : tt("You've used all audits for this week.")) +
         " " + (wann && o.datum ? tt("Your quota resets on {date}.").replace("{date}", o.datum(wann)) : tt("Your quota resets next Monday.")) };
     }
