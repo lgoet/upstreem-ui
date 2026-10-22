@@ -2884,12 +2884,16 @@
       if (feld === "rank") return '<span class="up-rank-group">' + HASH + UC.zaehlHtml(v, "num1") + '</span>';
       return UC.zaehlHtml(v, "pct1");
     }
+    /* Das Skelett der Reihe (22.10.): je Kennzahl aus METRIKEN eine Kachel wie unten, nicht eine feste
+       Zahl. Die Fusszeile hat zwei Zeilen wie die fertige Kachel mit der Analyse v4: der Vergleich mit
+       der Vergleichsgruppe (kpiTeile) und darunter die Fallzahl (fallzahlHtml, eigene Zeile). Vorher
+       stand ein Skelett von 76 vor einer Reihe von 100 (1440 breit gemessen). */
     function renderKpis() {
       var el = elMain.querySelector('[data-sek="kpis"]'), a = dieAnalyse();
       if (!a) {
         el.innerHTML = state.analyseFehler && !state.analyseLaden
           ? '<div class="uev-kpifehler">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("the analysis") : "") + '</div>'
-          : [0, 1, 2].map(function () { return UC.kpiKarteSkelett("uev-kpi"); }).join("");
+          : METRIKEN.map(function () { return UC.kpiKarteSkelett("uev-kpi", { fuss: 2 }); }).join("");
         return;
       }
       var leer = !(a.cohort && kohorteN(a.cohort, false) > 0);
@@ -3400,6 +3404,15 @@
       host_all: "Every page on this domain and its subdomains, including pages added later."
     };
     var ART_ZEICHEN = { url: "link", path: "folder", host: "globe", host_all: "globe" };
+    /* DIE KACHELN EINES ZIELS JE ART (22.10., Nutzer: "ein vierter Skelett-Lader, der in der Zeile
+       umbricht"): EINE Liste fuer die fertige Reihe, ihr Skelett und die Spalten des Bandes. Vorher
+       zeichnete das Skelett fest vier Kacheln, auch beim Citation Tracking mit drei -- in drei Spalten
+       brach die vierte unter die ersten drei um (1440 breit gemessen: zwei Zeilen, 152 hoch, fertig 82).
+       Citation Tracking: der Share vorn (die relative Zahl), die Zahl der Zitate danach, keine "New URLs". */
+    var ZIEL_KACHELN = { watch: ["urls", "share", "zitate"], event: ["urls", "zitate", "share", "neu"] };
+    function zielKacheln(wz) { return ZIEL_KACHELN[wz ? "watch" : "event"]; }
+    /* Spalten aus core (.up-kpiband.is-4) bzw. events.css (.uev-zielkpis.is-3); andere Zahlen kennt das Band nicht. */
+    function zielBandKlasse(n) { return n === 3 ? "is-3" : "is-4"; }
     /* DAS FAVICON EINES ZIELS (16.10., Nutzer: "Wenn man neue URLs hinzufuegt, die es noch nicht
        gibt, soll er bitte das Favicon mit Google S2 holen. Aktuell zeigt er nur ein Globe-Icon").
        Aus core: UC.faviconUrl (Google S2, Host ohne www, die Unterdomain bleibt -- und immer ueber
@@ -3489,8 +3502,9 @@
           '<button type="button" class="up-btn-sec uev-zielweg" data-ziel-id="' + esc(zt.id) + '">' + UC.icon("trash", 2) + '<span>' + esc(t("Remove")) + '</span></button>' +
         '</div>' +
         '<div class="uev-ziel-block">' +
-          /* is-4 aus core: vier Kennzahlen in einer Reihe, schmal zwei mal zwei. Beim Citation Tracking drei (is-3, ohne "New URLs"). */
-          '<div class="up-kpiband is-offen ' + (istWatch(dieDetail() || listeEvent(state.eventId)) ? "is-3" : "is-4") + ' uev-zielkpis"></div>' +
+          /* is-4 aus core: vier Kennzahlen in einer Reihe, schmal zwei mal zwei. Beim Citation Tracking drei (is-3, ohne "New URLs").
+             Welche, sagt zielKacheln -- dieselbe Liste wie fuer die fertige Reihe und ihr Skelett. */
+          '<div class="up-kpiband is-offen ' + zielBandKlasse(zielKacheln(istWatch(dieDetail() || listeEvent(state.eventId))).length) + ' uev-zielkpis"></div>' +
           '<div class="up-box uev-chartbox uev-zielchart">' +
             /* Citation Tracking (19.10.): der Share ist die Hauptzahl, die Zahl der Zitate die Option -- bei mehr Prompts steigt sie, ohne dass die Seite besser wird. */
             (istWatch(dieDetail() || listeEvent(state.eventId))
@@ -3618,11 +3632,14 @@
       /* Die Zitate dieser Regel nach URL, fuer die Zahl rechts an den zitierten Seiten im Abschnitt Sitemap. */
       sek.__zitate = {};
       leerZeigen("");
+      var kacheln = zielKacheln(wz), bandKlasse = zielBandKlasse(kacheln.length);
+      kpis.classList.toggle("is-3", bandKlasse === "is-3"); kpis.classList.toggle("is-4", bandKlasse === "is-4");
       if (!a) {
         /* Die Analyse laeuft noch (oder ist gescheitert -- das sagen Kennzahlen und Diagramm oben
-           schon, hier also leer statt ein drittes Mal). */
+           schon, hier also leer statt ein drittes Mal). Je Kachel der fertigen Reihe ein Skelett, jede
+           mit einer Zeile im Fuss wie unten. */
         var fehler = state.analyseFehler && !state.analyseLaden;
-        kpis.innerHTML = fehler ? "" : [0, 1, 2, 3].map(function () { return UC.kpiKarteSkelett("uev-kpi"); }).join("");
+        kpis.innerHTML = fehler ? "" : kacheln.map(function () { return UC.kpiKarteSkelett("uev-kpi", { fuss: 1 }); }).join("");
         if (linie2) { if (fehler) linie2.meldung(t("This event could not be loaded.")); else linie2.skeleton(); }
         platz.innerHTML = fehler ? "" : '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
           (UC.skeletonRows ? UC.skeletonRows({ count: 3, rowClass: "up-row up-vrow", cellClass: "up-td",
@@ -3651,27 +3668,31 @@
          einschraenkt (EV-10). */
       function neuFuss(html) { return analyseGefiltert() ? '<span data-tip="' + esc(t("Not affected by your filters")) + '">' + html + '</span>' : html; }
       var sb = num(z.share_of_citations_before), sa = num(z.share_of_citations_after);
-      kpis.classList.toggle("is-3", wz); kpis.classList.toggle("is-4", !wz);
       var fensterFuss = esc(ersetze(t("Previous and last {n} days"), { n: wtage }));
-      /* Citation Tracking (19.10.): drei Kennzahlen, der Share vorn (die relative Zahl), die Zahl der Zitate danach, keine "New URLs". */
-      if (wz) kpis.innerHTML = [
-        UC.kpiKarte({ label: "Cited URLs", wertHtml: zahlWert(z.matched_url_count != null ? z.matched_url_count : zt.matched_url_count), fussHtml: esc(t("In the whole period")), klasse: "uev-kpi" }),
-        UC.kpiKarte({ label: "Share of all citations", vorherHtml: wertHtml("visibility", sb), wertHtml: wertHtml("visibility", sa),
-          trendHtml: sb != null && sa != null ? trendHtml("visibility", sa - sb) : "", fussHtml: fensterFuss, klasse: "uev-kpi" }),
-        UC.kpiKarte({ label: "Citation count", vorherHtml: zahlWert(z.citations_before), wertHtml: zahlWert(z.citations_after), fussHtml: fensterFuss, klasse: "uev-kpi" })
-      ].join("");
-      else kpis.innerHTML = [
-        UC.kpiKarte({ label: "Cited URLs", wertHtml: zahlWert(z.matched_url_count != null ? z.matched_url_count : zt.matched_url_count), fussHtml: esc(t("In the whole period")), klasse: "uev-kpi" }),
-        UC.kpiKarte({ label: "Citation count", vorherHtml: zahlWert(z.citations_before), wertHtml: zahlWert(z.citations_after), fussHtml: esc(t("Before and after the event")), klasse: "uev-kpi" }),
-        UC.kpiKarte({ label: "Share of all citations", vorherHtml: wertHtml("visibility", sb), wertHtml: wertHtml("visibility", sa),
-          trendHtml: sb != null && sa != null ? trendHtml("visibility", sa - sb) : "",
-          fussHtml: fallzahlHtml(fallZiel(z, "share_of_citations"), "share_of_citations"), klasse: "uev-kpi" }),
+      /* Je Schluessel aus zielKacheln eine Kachel; Reihenfolge und Zahl kommen nur aus der Liste.
+         Citation Tracking (19.10.): kein "nachher", beide Zahlen im Fenster (fensterFuss). */
+      var KACHEL = {
+        urls: function () {
+          return UC.kpiKarte({ label: "Cited URLs", wertHtml: zahlWert(z.matched_url_count != null ? z.matched_url_count : zt.matched_url_count), fussHtml: esc(t("In the whole period")), klasse: "uev-kpi" });
+        },
+        zitate: function () {
+          return UC.kpiKarte({ label: "Citation count", vorherHtml: zahlWert(z.citations_before), wertHtml: zahlWert(z.citations_after),
+            fussHtml: wz ? fensterFuss : esc(t("Before and after the event")), klasse: "uev-kpi" });
+        },
+        share: function () {
+          return UC.kpiKarte({ label: "Share of all citations", vorherHtml: wertHtml("visibility", sb), wertHtml: wertHtml("visibility", sa),
+            trendHtml: sb != null && sa != null ? trendHtml("visibility", sa - sb) : "",
+            fussHtml: wz ? fensterFuss : fallzahlHtml(fallZiel(z, "share_of_citations"), "share_of_citations"), klasse: "uev-kpi" });
+        },
         /* new_urls_before (15.10.): wie die Zitate vorher und nachher -- so sieht man, ob nach dem
            Event mehr neue Seiten zitiert wurden als davor. Ohne das Feld wie bisher nur nachher. */
-        num(z.new_urls_before) != null
-          ? UC.kpiKarte({ label: "New URLs", vorherHtml: zahlWert(z.new_urls_before), wertHtml: zahlWert(z.new_urls_after), fussHtml: neuFuss(esc(t("First cited, before and after the event"))), klasse: "uev-kpi" })
-          : UC.kpiKarte({ label: "New URLs", wertHtml: zahlWert(z.new_urls_after), fussHtml: neuFuss(esc(t("First cited after the event"))), klasse: "uev-kpi" })
-      ].join("");
+        neu: function () {
+          return num(z.new_urls_before) != null
+            ? UC.kpiKarte({ label: "New URLs", vorherHtml: zahlWert(z.new_urls_before), wertHtml: zahlWert(z.new_urls_after), fussHtml: neuFuss(esc(t("First cited, before and after the event"))), klasse: "uev-kpi" })
+            : UC.kpiKarte({ label: "New URLs", wertHtml: zahlWert(z.new_urls_after), fussHtml: neuFuss(esc(t("First cited after the event"))), klasse: "uev-kpi" });
+        }
+      };
+      kpis.innerHTML = kacheln.map(function (k) { return KACHEL[k](); }).join("");
       var tage = isArr(z.daily) ? z.daily : [];
       /* Citation Tracking (20.10.): die DB liefert die Tage beider Fenster (vorher und letzte, bei 30 Tagen 61), die Kennzahlen und die Tabelle
          vergleichen sie. Die Linie zeigt nur das gewaehlte Fenster: unter "30 days" stehen 30 Tage auf der Achse, nicht 60. Der Beginn

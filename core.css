@@ -7970,11 +7970,19 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
 .up-kpi-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; }
 .up-kpi-foot .up-trend { font-size: inherit; }
 .up-kpi-foot .up-trend svg { width: 14px; height: 14px; }
-.up-kpi.is-sk { gap: 10px; }
+.up-kpi.is-sk:not(.is-faecher) { gap: 10px; }
 /* Seit dem 15.10. mit dem Geist-Schimmer: vorher stand die Kachel als einziges Skelett der Seite
    still neben pulsierenden Tabellenzeilen. */
 .up-kpi-sk { display: block; height: 12px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 .up-kpi-sk-l { width: 40%; } .up-kpi-sk-v { width: 70%; height: 24px; } .up-kpi-sk-f { width: 55%; }
+/* Das Skelett in den Faechern der Kachel (UC.kpiKarteSkelett mit opts.fuss, 22.10.): Abstand, Mindesthoehe
+   der Zahlenzeile und Luecke im Fuss kommen aus den Regeln der Kachel oben. In Beschriftung und Fuss steht
+   der Balken IN einer Textzeile (inline-block), damit die Zeile so hoch wird wie mit Text: ein Balken als
+   Block brachte 12 statt 17 bzw. 14. Oben an der Zeile (top), nicht mittig: mittig ragte der 12er-Balken
+   in der 11er-Fusszeile 0.08 unter die Schrift und machte die Zeile 14.08 hoch. Jede Fusszeile ist eine
+   eigene Zeile wie die Fallzahl (.uev-konf). */
+.up-kpi.is-faecher .up-kpi-label > .up-kpi-sk, .up-kpi.is-faecher .up-kpi-sk-zeile > .up-kpi-sk { display: inline-block; vertical-align: top; }
+.up-kpi.is-faecher .up-kpi-sk-zeile { flex: 1 0 100%; }
 
 /* ======================================================================
    Page Header Kit — shared by every page-headers/* component (first user:

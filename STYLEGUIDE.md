@@ -1846,6 +1846,13 @@ Grundfarbe bleibt `--vc-sk` (`#eeedef` / `#28282c`) und wird am Element aufgelö
 var(--up-sk-bewegung);`. Tabellenbalken `.up-tsk-bar` (12 hoch, Radius 5), Logo `.up-tsk-logo`
 (24, Radius 6). Skelette in geparkten Ansichten und geschlossenen Drawern stehen still.
 
+**Kennzahl-Kachel (22.10.):** `UC.kpiKarteSkelett(klasse, { fuss: n })` setzt die Balken in die Fächer
+der fertigen Kachel (`.up-kpi-label`, `.up-kpi-row`, `.up-kpi-foot`, `n` Fußzeilen) und ist damit so
+hoch wie sie. Die Zahl der Skelette kommt aus derselben Liste wie die fertige Reihe, nie als feste
+Zahl (Impact: das Citation Tracking hat drei Kacheln, das Skelett zeichnete vier, die vierte brach
+um). Ohne `opts` die alte Form mit eigenen Abständen (68 hoch), noch in Shopping, Ads, Prompt- und
+Performance-Detail.
+
 - Zwei unabhängige Processing-Flags pro Element (`data-processing` + `data-processing2`): Skeleton zeigt sich, sobald **einer** von beiden `"yes"` ist. So lassen sich Chart- und Tabellen-Ladezustand getrennt an unterschiedliche Bubble-States binden.
 
 ---

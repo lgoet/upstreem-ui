@@ -6078,7 +6078,24 @@
       zahlZaehlen(w[i], v, ZAEHL_FMT[w[i].getAttribute("data-up-zaehl")] || ZAEHL_FMT["int"]);
     }
   }
-  function kpiKarteSkelett(klasse){
+  /* DAS SKELETT DER KACHEL. Ohne opts die alte Form: drei Balken mit eigenen Abstaenden, 68 hoch ohne
+     Polster -- die fertige Kachel mit einer Fusszeile ist 74, ohne 50 (Shopping, Ads, Prompt- und
+     Performance-Detail nutzen sie weiter, dort nicht nachgemessen).
+     opts.fuss (22.10., Impact: "ein vierter Skelett-Lader, der in der Zeile umbricht"): die Balken
+     stehen in den Faechern der fertigen Kachel (.up-kpi-label, .up-kpi-row, .up-kpi-foot) und nehmen
+     deren Zeilenhoehen, Abstaende und Mindesthoehe -- das Skelett ist so hoch wie die Kachel, aus
+     denselben Regeln statt aus eigenen Zahlen. fuss = Zeilen der Fusszeile, wie die Kachel sie traegt
+     (0: keine Fusszeile; Events oben: der Vergleich und darunter die Fallzahl, also 2). */
+  function kpiKarteSkelett(klasse, opts){
+    if (opts && opts.fuss != null){
+      var zeilen = Math.max(0, Math.round(Number(opts.fuss) || 0)), fuss = "";
+      for (var i = 0; i < zeilen; i++) fuss += '<span class="up-kpi-sk-zeile"><span class="up-kpi-sk up-kpi-sk-f"></span></span>';
+      return '<div class="up-kpi is-sk is-faecher' + (klasse ? " " + klasse : "") + '">' +
+        '<span class="up-kpi-label"><span class="up-kpi-sk up-kpi-sk-l"></span></span>' +
+        '<span class="up-kpi-row"><span class="up-kpi-sk up-kpi-sk-v"></span></span>' +
+        (zeilen ? '<span class="up-kpi-foot">' + fuss + '</span>' : '') +
+      '</div>';
+    }
     return '<div class="up-kpi is-sk' + (klasse ? " " + klasse : "") + '"><span class="up-kpi-sk up-kpi-sk-l"></span><span class="up-kpi-sk up-kpi-sk-v"></span><span class="up-kpi-sk up-kpi-sk-f"></span></div>';
   }
 
