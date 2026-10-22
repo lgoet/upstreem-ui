@@ -369,6 +369,14 @@
       'You already have a research running': 'Bei dir läuft schon eine Recherche',
       'You already have a research running.': 'Bei dir läuft schon eine Recherche.',
       'A research is already running': 'Es läuft schon eine Recherche',
+      'Delete Research': 'Recherche löschen',
+      'Delete Prompts': 'Prompts löschen',
+      'This deletes the research "{name}" with its open prompts. Prompts you already track stay. This can\'t be undone.':
+        'Damit wird die Recherche „{name}“ mit ihren offenen Prompts gelöscht. Prompts, die du schon trackst, bleiben. Das lässt sich nicht rückgängig machen.',
+      'This removes the 1 open prompt of this research. Prompts you already track stay. This can\'t be undone.':
+        'Damit wird der offene Prompt dieser Recherche entfernt. Prompts, die du schon trackst, bleiben. Das lässt sich nicht rückgängig machen.',
+      'This removes all {n} open prompts of this research. Prompts you already track stay. This can\'t be undone.':
+        'Damit werden alle {n} offenen Prompts dieser Recherche entfernt. Prompts, die du schon trackst, bleiben. Das lässt sich nicht rückgängig machen.',
       'This research has no open prompts left': 'Diese Recherche hat keine offenen Prompts mehr'
     });
   }
@@ -581,6 +589,12 @@
     return (UC.landName ? UC.landName(a2, it.market_name) : it.market_name) || it.market_name || a2;
   }
   function intentNamen(it){ return (it.intents || []).map(function(k){ return ipName(k); }).filter(Boolean); }
+  function intentArten(it){ return (it.intents || []).map(function(k){ return UC.intentArt ? UC.intentArt(k) : null; }).filter(Boolean); }
+  /* Was die Zelle zeigt -- dieselbe Zeichenkette fuer Zelle und Sortierung. */
+  function intentText(it){
+    var n = intentArten(it).length;
+    return !n ? tt('Any intent') : n === 1 ? intentNamen(it)[0] : tt('{n} intents').replace('{n}', String(n));
+  }
   function modellText(it){ return it.business_model ? (MODELL[String(it.business_model).toLowerCase()] || String(it.business_model)) : ''; }
   function personaZeile(it){ return it.persona ? tt(personaLabelVon(it.persona)) : ''; }
   function zielgruppe(it){ return [modellText(it), personaZeile(it)].filter(Boolean).join(', '); }
@@ -594,7 +608,9 @@
       research: function(it){ return begriffeText(it).toLowerCase(); },
       prompts: function(it){ return laeuftNoch(it) ? -1 : Number(it.prompt_count) || 0; },
       market: function(it){ return marktName(it).toLowerCase(); },
-      intent: function(it){ return intentNamen(it).join(', ').toLowerCase(); },
+      /* Nach dem SICHTBAREN Text (Lukas 22.10.: "2 intents" sortiert als "2 intents", nicht nach den Namen
+         dahinter). "Any intent" ist kein Wert und steht wie jede leere Zelle in beiden Richtungen hinten. */
+      intent: function(it){ return intentArten(it).length ? intentText(it).toLowerCase() : ''; },
       audience: function(it){ return zielgruppe(it).toLowerCase(); },
       branded: function(it){ return it.branded === 'all' ? 2 : it.branded === 'non_branded' ? 1 : 0; },
       created: function(it){ var d = new Date(it.created_at || 0).getTime(); return isFinite(d) ? d : 0; }
@@ -627,12 +643,11 @@
       return '<span class="upr-liste-wert"><span class="upr-market-flag">' + flagHtml(getFlagUrlForMarket(it.market), name) + '</span><span class="upr-liste-txt">' + esc(name) + '</span></span>';
     }
     if (key === 'intent'){
-      var arten = (it.intents || []).map(function(k){ return UC.intentArt ? UC.intentArt(k) : null; }).filter(Boolean);
-      if (!arten.length) return '<span class="upr-liste-leise">' + esc(tt('Any intent')) + '</span>';
-      var namen = intentNamen(it);
-      return '<span class="upr-liste-wert"' + (arten.length > 1 ? ' data-tip="' + esc(namen.join(', ')) + '"' : '') + '>' +
+      var arten = intentArten(it);
+      if (!arten.length) return '<span class="upr-liste-leise">' + esc(intentText(it)) + '</span>';
+      return '<span class="upr-liste-wert"' + (arten.length > 1 ? ' data-tip="' + esc(intentNamen(it).join(', ')) + '"' : '') + '>' +
         '<span class="upr-liste-zeichen">' + arten.map(function(a){ return UC.icon(a.icon, 2); }).join('') + '</span>' +
-        '<span class="upr-liste-txt">' + esc(arten.length === 1 ? namen[0] : tt('{n} intents').replace('{n}', String(arten.length))) + '</span></span>';
+        '<span class="upr-liste-txt">' + esc(intentText(it)) + '</span></span>';
     }
     if (key === 'audience'){ var z = zielgruppe(it); return z ? '<span class="upr-liste-txt" data-tip="' + esc(z) + '">' + esc(z) + '</span>' : leer(); }
     if (key === 'branded'){
@@ -723,7 +738,12 @@
       e.stopPropagation();
       var dItem = sichtbar[Number(weg.getAttribute('data-upr-weg'))];
       if (!dItem) return;
-      senden('bubble_fn_deletePromptResearch', 'upstreem:delete-prompt-research', { job_id: dItem.job_id, keywords: dItem.keywords || [], market: dItem.market || null });
+      /* Erst fragen (Lukas 22.10.): das Loeschen ist in der DB endgueltig (prompt_research_delete_v1). */
+      gefahrFragen({
+        titel: 'Delete Research', knopf: 'Delete Research',
+        satz: tt('This deletes the research "{name}" with its open prompts. Prompts you already track stay. This can\'t be undone.').replace('{name}', begriffeText(dItem)),
+        los: function(){ senden('bubble_fn_deletePromptResearch', 'upstreem:delete-prompt-research', { job_id: dItem.job_id, keywords: dItem.keywords || [], market: dItem.market || null }); }
+      });
       return;
     }
     var z = e.target.closest('.up-row.upr-zeile[data-index]');
@@ -1735,11 +1755,41 @@
       }
     });
     neuPopup.karte.classList.add('upr-neu-karte');
+    /* Tooltips im Popup: makeModal haengt am <body>, die Tooltips dieser Seite sind an der Wurzel verdrahtet
+       (makeTooltips(root)). Ohne eigene Verdrahtung blieben im Popup alle stumm -- der Branded-Schalter, der
+       Papierkorb im Feld und das Kuerzel am Start-Knopf (Klickroute 22.10., gemessen: kein .up-tip.is-on beim
+       Ueberfahren). Wie die Popups in core (makeTooltips(modalBackdrop)) und events.js. */
+    if (UC.makeTooltips && neuPopup.el) UC.makeTooltips(neuPopup.el, isDark);
+    /* Das Kuerzel steht im Tooltip des Hauptknopfs, wie "⌘K" an Quick Actions (dort "Ctrl K" ausserhalb des Mac). */
+    var okKnopf = neuPopup.knopf ? neuPopup.knopf('ok') : null;
+    if (okKnopf){
+      var mac = true;
+      try { mac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || ''); } catch(e){}
+      okKnopf.setAttribute('data-tip', mac ? '\u2318 Enter' : 'Ctrl Enter');
+    }
     neuPopup.body.appendChild(neuEl);
     /* Die Einstellungen stehen im Popup immer offen da (der Regler, der sie auf- und zuklappte, ist
        dort ausgeblendet): jeder Wert ist vor dem Start zu sehen. */
     if (settingsPanel) settingsPanel.classList.add('is-open', 'is-steht');
     einstellungenLage();
+  }
+  /* EINE GEFAHRAKTION FRAGT VORHER (Lukas 22.10.: "wie eine Geist-Gefahraktion"): Popup aus core, Cancel hat den Fokus
+     (makeModal mit art "gefahr"), der Hauptknopf traegt das Verb. Enter loest ihn NIE aus, auch wenn er per Tab den
+     Fokus bekam -- core haelt nur den ersten Fokus auf Cancel, darum hier die Taste am Knopf selbst. Klick und
+     Leertaste bleiben. */
+  function gefahrFragen(o){
+    if (!UC.makeModal){ o.los(); return; }
+    var m = UC.makeModal({
+      titel: o.titel, isDark: isDark,
+      inhaltHtml: '<div class="up-modal-saetze"><p class="up-modal-hinweis">' + esc(o.satz) + '</p></div>',
+      knoepfe: [
+        { id: 'ab', text: 'Cancel', art: 'sec' },
+        { id: 'weg', text: o.knopf, art: 'gefahr', aktion: function(){ o.los(); } }
+      ]
+    });
+    var w = m && m.knopf ? m.knopf('weg') : null;
+    if (w) w.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); e.stopPropagation(); } });
+    return m;
   }
   function popupZu(){
     if (!neuPopup) return;
@@ -1805,7 +1855,17 @@
   });
   if (deleteAllButton) deleteAllButton.addEventListener('click', function(){
     tableMenuPop.close();
-    emitPromptAction('delete_all', { count: currentSuggestedPrompts.length, suggested_prompt_ids: currentSuggestedPrompts.map(function(p){ return p.id; }).filter(Boolean) });
+    var n = currentSuggestedPrompts.length;
+    if (!n) return;
+    /* Erst fragen (Lukas 22.10.): verworfene Vorschlaege holt die Seite nicht zurueck. */
+    gefahrFragen({
+      titel: 'Delete Prompts', knopf: 'Delete Prompts',
+      satz: n === 1 ? tt('This removes the 1 open prompt of this research. Prompts you already track stay. This can\'t be undone.')
+        : tt('This removes all {n} open prompts of this research. Prompts you already track stay. This can\'t be undone.').replace('{n}', String(n)),
+      los: function(){
+        emitPromptAction('delete_all', { count: currentSuggestedPrompts.length, suggested_prompt_ids: currentSuggestedPrompts.map(function(p){ return p.id; }).filter(Boolean) });
+      }
+    });
   });
 
   /* ---------- wheel bridge for the results table ----------
@@ -2081,6 +2141,12 @@
     }
     editor.addEventListener('input', updateState);
     editor.addEventListener('keydown', function(e){
+      /* Cmd/Ctrl+Enter startet (Lukas 22.10.); Enter allein bleibt der Zeilenumbruch. */
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)){
+        e.preventDefault();
+        if (neuPopup) startAusPopup(neuPopup);
+        return;
+      }
       if (e.key === 'Enter'){
         e.preventDefault();
         try {
