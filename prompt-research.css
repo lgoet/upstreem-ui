@@ -843,6 +843,12 @@
 .upr-sk-fuss { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 4px; }
 .upr-sk-los { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
 .upr-sk-los svg { width: 14px; height: 14px; }
+/* Gesperrt (eine Recherche je Nutzer, 22.10.): aria-disabled statt disabled, damit der Tooltip mit dem Grund kommt.
+   Dieselben Werte wie .up-btn-pri:disabled in core (Deckkraft .4, kein Zeiger, Hover aendert nichts); core kennt
+   aria-disabled bisher nur am Export (.up-export), der Kopfknopf ist einer und braucht darum nichts. Vier Klassen
+   gegen .up-btn-pri:not(:disabled):hover (0,3,0). */
+.upr-sk-los.up-btn-pri[aria-disabled="true"],
+.upr-sk-los.up-btn-pri[aria-disabled="true"]:hover { opacity: .4; cursor: default; }
 /* NEU (nicht in core): die Grafik (Lukas 22.10., Canvas G3) -- Fragen als Sprechblasen, abwechselnd
    links und rechts, eine hervorgehoben; rechts ueber beide Zeilen wie die Grafik auf Page Audit. Eine Blase
    bricht nie um. Abends (Lukas: "mehr Padding", "statisch", "einige 16 bis 32 weiter rein"): Polster 40 oben und

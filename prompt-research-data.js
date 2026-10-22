@@ -83,7 +83,12 @@
     var rows = o.rows.filter(obj);
     var laufend = null;
     rows.forEach(function (r) { if (!laufend && istLauf(r.status)) laufend = r; });
-    return { rows: rows, laufend: laufend };
+    /* eigen (22.10., einer_je_nutzer_v1.sql): der eigene laufende Job, auch in einem anderen Team, oder null.
+       eigenBekannt: die DB liefert das Feld schon -- vorher weiss die Seite nicht, wessen Lauf es ist. */
+    var m = obj(o.meta) || {};
+    var eigen = obj(m.own_running);
+    return { rows: rows, laufend: laufend, eigen: eigen && str(eigen.job_id) ? eigen : null,
+             eigenBekannt: Object.prototype.hasOwnProperty.call(m, "own_running") };
   }
   /* { rows, meta, status, fehlerCode } -- rows sind die offenen Vorschlaege, so wie die Tabelle
      sie liest (id, prompt_text, market, estimated_volume, tags). */
@@ -115,6 +120,9 @@
        Mitgliedschaft. Bis befunde_db_v1.sql P0403 = HTTP 500 (ueber den Code bei "rechte"),
        danach PT402 = 402 (ohne diese Zeile "sonst"). start-job reicht beides durch. */
     if (/^team_access_/.test(m) || c === "PT402" || s === 402) return "zugang";
+    /* Vor "limit": auch PT409. Der Nutzer hat schon eine Recherche laufen, in einem anderen Team
+       (einer_je_nutzer_v1.sql, 22.10.; im selben Team antwortet der Start mit reused). */
+    if (m === "prompt_research_user_busy") return "besetzt";
     if (m === "prompt_research_limit_reached" || (c === "PT409" && /limit/.test(m))) return "limit";
     if (m === "prompt_research_not_found" || c === "PT404" || (s === 404 && /not_found/.test(m))) return "weg";
     if (m === "edge_not_configured" || m === "edge_not_implemented" || s === 503 || s === 501) return "nichtDa";

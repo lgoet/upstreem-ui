@@ -28,7 +28,7 @@
      Bubble calls these by name as soon as its own workflows run, which is regularly before
      core.js has finished loading. Queue everything and replay it in call order once the real
      implementations exist (STYLEGUIDE §25 step 2). */
-  var API_NAMES = ["setRunning", "setIdle", "setError", "setComplete", "setPrompts", "setResearchReady",
+  var API_NAMES = ["setRunning", "setIdle", "setError", "setComplete", "setPrompts", "setResearchReady", "setStartBlocked",
                    "setResearchMeta", "setPreviousResearches", "openHistory", "closeHistory",
                    "setTags", "setActionLoading", "setBusy", "setTheme", "setMarkets",
                    "setMarket", "setBusinessModel", "setPersona"];
@@ -364,7 +364,12 @@
       'Audience': 'Zielgruppe',
       'View Research': 'Recherche ansehen',
       '1 prompt ready to review': '1 Prompt zum Durchsehen',
-      '{n} prompts ready to review': '{n} Prompts zum Durchsehen'
+      '{n} prompts ready to review': '{n} Prompts zum Durchsehen',
+      /* Eine Recherche je Nutzer (22.10.): Tooltip am gesperrten Knopf und Meldungen der Seite. */
+      'You already have a research running': 'Bei dir läuft schon eine Recherche',
+      'You already have a research running.': 'Bei dir läuft schon eine Recherche.',
+      'A research is already running': 'Es läuft schon eine Recherche',
+      'This research has no open prompts left': 'Diese Recherche hat keine offenen Prompts mehr'
     });
   }
   var START = {
@@ -751,8 +756,22 @@
   /* Start einer neuen Recherche: Knopf im Kopf und Knopf der Startkarte, beide ueber denselben Weg. */
   root.addEventListener('click', function(e){
     var neu = e.target.closest && e.target.closest('[data-upr-neu]');
-    if (neu && root.contains(neu) && !neu.disabled) neueRecherche();
+    if (neu && root.contains(neu) && !neu.disabled && neu.getAttribute('aria-disabled') !== 'true') neueRecherche();
   });
+  /* GESPERRT: eine Recherche je Nutzer (Lukas 22.10.). Gesperrt, solange im Team eine laeuft (is-running) oder die
+     Seite einen Grund meldet (setStartBlocked: der eigene Lauf in einem anderen Team). aria-disabled statt
+     disabled, wie der gesperrte Export in core (.up-export[aria-disabled]): ein disabled-Knopf bekommt kein
+     mouseover, und der Grund steht im Tooltip. Der Knopf bleibt fokussierbar, Enter tut nichts (Klickweg oben). */
+  var startSperre = (vorrat && typeof vorrat.startSperre === 'string') ? vorrat.startSperre : null;
+  function startKnoepfeSetzen(){
+    var laeuft = root.classList.contains('is-running');
+    var grund = startSperre || (laeuft ? tt('A research is already running') : '');
+    root.querySelectorAll('[data-upr-neu]').forEach(function(b){
+      b.disabled = false;
+      if (grund){ b.setAttribute('aria-disabled', 'true'); b.setAttribute('data-tip', grund); }
+      else { b.removeAttribute('aria-disabled'); b.removeAttribute('data-tip'); }
+    });
+  }
 
   /* ---------- state (unchanged from the standalone) ---------- */
   var fallbackMarkets = [
@@ -825,7 +844,7 @@
       mitTags: acceptWithTags,
       aktion: root.classList.contains('is-action-loading'),
       eingabe: eingabe.stand(),
-      fehler: fehlerText, listeFehler: listeFehler, streifen: streifen,
+      fehler: fehlerText, listeFehler: listeFehler, streifen: streifen, startSperre: startSperre,
       liste: L
     };
   }
@@ -1003,7 +1022,8 @@
       startButton.innerHTML = (isRunning ? ICON.search : ICON.send) + '<span>' + (isRunning ? 'Researching' : 'Start Research') + '</span>';
       startButton.classList.toggle('is-running', isRunning);
     }
-    root.querySelectorAll('.upr-chip, .upr-dd-trigger, .upr-dd-option, .upr-dd-clear, .upr-dd-search, [data-upr-neu]').forEach(function(el){ if ('disabled' in el) el.disabled = isRunning; });
+    root.querySelectorAll('.upr-chip, .upr-dd-trigger, .upr-dd-option, .upr-dd-clear, .upr-dd-search').forEach(function(el){ if ('disabled' in el) el.disabled = isRunning; });
+    startKnoepfeSetzen();
     if (isRunning && settingsPanel){ settingsPanel.classList.remove('is-open', 'is-steht'); if (settingsToggle){ settingsToggle.setAttribute('aria-expanded', 'false'); settingsToggle.classList.remove('is-active'); } }
     if (tableMenu && !isResults) tableMenuPop.close();
     /* Seit dem 22.10. (Lukas, R3) laeuft eine Recherche im Streifen ueber der Liste; das Ladebild bleibt
@@ -1382,6 +1402,9 @@
     if (trigger) trigger.addEventListener('click', function(e){
       e.stopPropagation();
       dd.__pop.toggle();
+      /* Jedes Oeffnen mit leerer Suche (Klickroute 22.10.: nach "alb" und einer Wahl zeigte das Menue beim naechsten
+         Oeffnen nur noch Albanien, die uebrigen Maerkte waren ohne erkennbaren Grund weg). */
+      if (search && search.value && dd.__pop.isOpen()){ search.value = ''; search.dispatchEvent(new Event('input', { bubbles: true })); }
       if (dd.__pop.isOpen()) seiteWaehlen(dd, menu);
       syncDropdownOpenState();
       /* preventScroll (14.10., gemeldet: "beim Oeffnen scrollt die ganze Komponente nach oben"): der
@@ -1923,6 +1946,9 @@
       composerEl.classList.toggle('has-value', !empty);
       var val = getValue();
       if (textarea.value !== val) textarea.value = val;
+      /* Die Fehlerzeile gilt dem letzten Start: sobald das Feld wieder etwas enthaelt, ist sie ueberholt
+         (Klickroute 22.10.: "Enter at least one keyword" blieb stehen, obwohl schon ein Keyword drin war). */
+      if (!empty && fehlerText) fehlerZeigen('');
       try { editor.dispatchEvent(new CustomEvent('upr-tags-geaendert')); } catch(e){}
       merke();
     }
@@ -2103,6 +2129,9 @@
   api.setError    = function(msg){
     if (startWartet && neuPopup){
       startWartet = false;
+      /* Die Antwort ist da: die Sperre gegen Doppelklicks (1,2 s ab dem Klick) hat ihren Zweck erfuellt. Sonst
+         verpuffte ein sofortiger zweiter Versuch nach einer schnellen Ablehnung still (Klickroute 22.10.). */
+      root.__uprStartLocked = false;
       neuPopup.busy('ok', false);
       if (typeof msg === 'string') fehlerZeigen(msg);
       merke();
@@ -2142,6 +2171,12 @@
   /* Die Recherche ist fertig (22.10., R3): der Streifen wird gruen und bietet "View Research"; die Seite
      springt nicht mehr von selbst in die Vorschlaege. job = die Zeile aus prompt_research_jobs_v1 bzw.
      dem Realtime-Ereignis (job_id, keywords, prompt_count ...). */
+  /* setStartBlocked(text | null): der Grund, warum "Start Research" gesperrt ist, oder frei. */
+  api.setStartBlocked = function(text){
+    startSperre = typeof text === 'string' && text.trim() ? text.trim() : null;
+    startKnoepfeSetzen();
+    merke();
+  };
   api.setResearchReady = function(job){
     if (typeof job === 'string'){ try { job = JSON.parse(job); } catch(e){ job = null; } }
     if (!job || typeof job !== 'object' || !(job.job_id || job.id)) return;
@@ -2296,6 +2331,7 @@
   }
   /* Ein fertiger Streifen aus dem Vorrat (ein laufender kam schon ueber setResearchState zurueck). */
   streifenZeichnen();
+  startKnoepfeSetzen();
   aufbau = false;
   merke();
 

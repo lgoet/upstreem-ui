@@ -155,8 +155,40 @@
         /* Ein Job, den diese Seite noch nicht beobachtet (Neuladen waehrend des Laufs, anderer
            Tab, ein Start, den die DB als "reused" beantwortet hat): Ladebild und Kanal. */
         if (j.laufend && (!gem.lauf || gem.lauf.id !== str(j.laufend.job_id))) beobachten(j.laufend, tm);
+        sperreSetzen(j, tm);
         return j;
       });
+    }
+    /* EINE RECHERCHE JE NUTZER (Lukas 22.10.: "in der UI UND auf dem Server"). "Start Research" ist gesperrt,
+       solange im Team eine laeuft (das setzt die Komponente selbst mit dem Lauf) ODER der eigene Lauf in einem
+       anderen Team steht (own_running aus prompt_research_jobs_v1, einer_je_nutzer_v1.sql). Der Grund steht im
+       Tooltip des Knopfs. Ohne das Feld (DB noch nicht eingespielt) weiss die Seite nicht, wessen Lauf es ist,
+       und sagt es neutral. */
+    function sperreSetzen(j, tm) {
+      var eigen = j.eigen, grund = null;
+      if (j.laufend) {
+        grund = eigen && str(eigen.job_id) === str(j.laufend.job_id) ? "You already have a research running"
+              : j.eigenBekannt ? "A research is already running for this team" : "A research is already running";
+      } else if (eigen) grund = "You already have a research running";
+      pr("setStartBlocked", grund ? t(grund) : null);
+      fremdBeobachten(eigen && str(eigen.team_id) !== tm ? eigen : null);
+    }
+    /* Der eigene Lauf in einem ANDEREN Team: nur auf seinen Kanal hoeren, um die Sperre aufzuheben, sobald er
+       endet (fertig, gescheitert, vom Aufraeumer beendet). Kein Streifen, kein Ergebnis -- die gehoeren zu
+       dem anderen Team. Notfrist wie beim eigenen Lauf, falls jede Meldung ausbleibt. */
+    function fremdBeobachten(job) {
+      var id = job ? str(job.job_id) : "";
+      if (gem.fremd && gem.fremd.id === id) return;
+      if (gem.fremd) { if (gem.fremd.kanal) gem.fremd.kanal.stop(); clearTimeout(gem.fremd.uhr); gem.fremd = null; }
+      if (!id || !UC.kanal) return;
+      var f = gem.fremd = { id: id, kanal: null, uhr: null };
+      f.kanal = UC.kanal("prompt_research_job:" + id, {
+        on: { prompt_research_status: function (p) {
+          if (gem.fremd !== f || str(p.job_id) !== id || D.istLauf(p.status)) return;
+          jobsLaden(true);
+        } }
+      });
+      f.uhr = setTimeout(function () { if (gem.fremd === f) jobsLaden(true); }, NOTFRIST);
     }
     /* Ein Realtime-Ereignis bringt die ganze Zeile: sie ersetzt die alte direkt. Waehrend eine
        Aenderung geschrieben wird, nur im Stand -- die Liste kommt danach ohnehin frisch. */
@@ -268,6 +300,10 @@
       lader.laden("ergebnis", D.ergebnis(tm, jobId), { frisch: true }).then(function (erg) {
         if (erg.ueberholt || tm !== team() || gem.offen !== jobId) return;
         var z = erg.ok ? D.zuErgebnis(erg.daten) : null;
+        /* Geoeffnet, aber nichts mehr offen (ein anderes Mitglied hat die Vorschlaege schon entschieden, ein
+           zweiter Tab): die Komponente geht zurueck zum Start, und ohne Satz saehe der Klick verschluckt aus
+           (Klickroute 22.10.). Die Liste kommt frisch -- dort steht die Recherche dann nicht mehr. */
+        if (z && !z.rows.length) { ergebnisZeigen(jobId, z, false); satz("This research has no open prompts left", "neutral"); jobsLaden(true); return; }
         if (z) { ergebnisZeigen(jobId, z, false); return; }
         gem.offen = null;
         var art = D.fehlerArt(erg);
@@ -300,6 +336,9 @@
           /* hint der Tagesgrenze (missbrauch_14_10): "team" = 30 Recherchen je Team und Tag,
              "user" = 60 je Nutzer ueber alle Teams. Gezaehlt wird je Berliner Tag. */
           var wer = erg.fehler ? str(erg.fehler.hint).trim() : "";
+          /* Der Server lehnt ab, weil der eigene Lauf in einem anderen Team steht: der Satz im Popup, und die
+             Liste holt own_running, damit der Knopf gesperrt ist. */
+          if (art === "besetzt") { pr("setError", t("You already have a research running.")); jobsLaden(true); return; }
           pr("setError", art === "limit"
             ? (frei ? t("Only {n} prompt slots are left in your plan.").replace("{n}", frei) : t("There are no prompt slots left in your plan."))
             : art === "tag" ? t(wer === "user" ? "You have reached today's limit for researches. You can start new ones tomorrow."
@@ -321,8 +360,14 @@
            Begriffen, nicht den eben getippten. Die Liste bringt sie mit, jobsLaden zeigt sie. */
         if (d2.reused === true) {
           laufEnde();
-          satz("A research is already running for this team", "neutral");
-          jobsLaden(true);
+          /* Das Popup hoert auf zu warten, ohne Satz und ohne das Feld zu leeren -- die Recherche des Nutzers
+             ist ja nicht gestartet. Die Liste bringt den laufenden Job (beobachten schliesst das Popup) und
+             sagt, ob es der eigene ist (own_running); start-job reicht dafuer kein Feld durch. */
+          pr("setError");
+          jobsLaden(true).then(function (j) {
+            var eigen = j && j.eigen && str(j.eigen.job_id) === str(d2.job_id);
+            satz(eigen ? "You already have a research running" : "A research is already running for this team", "neutral");
+          });
           return;
         }
         /* Angenommen: das Popup geht zu, das Ladebild kommt (vorher setzte die Komponente das schon
