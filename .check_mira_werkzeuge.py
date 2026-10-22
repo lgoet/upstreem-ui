@@ -38,7 +38,9 @@ AUSSER_ORDNER = {"bubble", "testdaten", "framer", "landing-bilder", "vendor", "n
 KLASSEN = {"lesen", "frei", "bestaetigen"}   # Q2: lesen frei, umkehrbar direkt, Kontingent/Geld per Karte
 NAME = re.compile(r"^[a-z][a-z0-9_]{2,40}$")
 FN = re.compile(r"^[a-z_][a-z0-9_]*$")
+EDGE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 VERSION = re.compile(r"^(.+)_v(\d+)$")
+LOESCHT = re.compile(r"(^|[_-])(delete|remove|purge|drop|destroy|clear|undo|loeschen)([_-]|$)", re.I)
 
 fehler = []
 def f(text):
@@ -133,7 +135,27 @@ for w in werkzeuge:
         r = filter_def.get(x, {}).get("rpc")
         if r in ziele:
             f(wo + ": Filter %s und Parameter %s gehen beide an %s" % (x, ziele[r], r))
+    # Aktionen (P3, Plan Q2): Loeschen ist fuer den Agenten tabu; Klasse frei (direkt) nur mit Rueckweg fuer
+    # das Fenster, Klasse bestaetigen nur mit einer Startfunktion (rolle start bzw. anlegen). Dieselben Regeln
+    # setzt upstreem-app lib/mira/aktionen.ts beim Bau der Werkzeuge durch; hier fallen sie schon im Manifest auf.
+    if w.get("klasse") in ("frei", "bestaetigen"):
+        for a in aufrufe:
+            if LOESCHT.search(str(a.get("fn") or a.get("edge") or "")):
+                f(wo + ": Aktion ruft eine loeschende Funktion (%s) -- Loeschen ist fuer den Agenten tabu" % (a.get("fn") or a.get("edge")))
+        rw = w.get("rueckweg")
+        if w.get("klasse") == "frei" and not (isinstance(rw, dict) and FN.match(str(rw.get("fn", "")))):
+            f(wo + ": Klasse frei braucht rueckweg.fn (Rueckgaengig im Fenster)")
+        if w.get("klasse") == "bestaetigen" and not any(a.get("rolle") in ("start", "anlegen") for a in aufrufe):
+            f(wo + ": Klasse bestaetigen braucht einen Aufruf mit rolle start bzw. anlegen")
     for a in aufrufe:
+        # Edge Function statt RPC (P3: start-job fuer Prompt Research), sonst dieselbe Pruefung: die UI ruft sie.
+        if a.get("edge"):
+            e = str(a["edge"])
+            if not EDGE.match(e) or a.get("fn"):
+                f(wo + ": edge ungueltig oder zusammen mit fn: " + e)
+            elif not zitiert(e):
+                f(wo + ": Edge Function %s steht nicht im UI-Code" % e)
+            continue
         fn = str(a.get("fn", ""))
         if not FN.match(fn):
             f(wo + ": Funktionsname ungueltig: " + fn)
@@ -170,7 +192,7 @@ for w in werkzeuge:
 
 if "--liste" in sys.argv:
     for w in werkzeuge:
-        fns = ", ".join(a.get("fn", "") for a in w.get("aufrufe", [])) or "(Wissen)"
+        fns = ", ".join(a.get("fn") or ("edge " + str(a.get("edge", ""))) for a in w.get("aufrufe", [])) or "(Wissen)"
         print("  %-24s %-12s %s" % (w.get("name"), w.get("klasse"), fns))
 
 if fehler:
