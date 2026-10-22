@@ -725,7 +725,7 @@ Ein Token für alle Drawer: `--vc-drawer-schleier` = **`rgba(0,0,0,.2)`, hell un
 Wert**, dazu `blur(1.5px)` nur im offenen Zustand, Deckkraft 160 ms hinaus und 200 ms herein (beides
 setzt das Kopf-Skript an `[id^="backdrop-"]` mit `!important`; die Schleier aus core tragen dieselben
 Werte für Seiten ohne Kopf-Skript). Es gilt für die Kern-Drawer (`.up-kdr-scrim`: Brand, Prompt,
-Domain, URL, Response, Brand Editor), den Seiten-Drawer (`.up-sdrawer-scrim`, Ad-Detail), den
+Domain, URL, Response, Brand Editor, seit 22.10. Initial HTML), den Seiten-Drawer (`.up-sdrawer-scrim`, Ad-Detail), den
 Opportunity-Drawer (`.uo-scrim`) und die Liste früherer Recherchen (`.upr-side-scrim`).
 
 Schwarz wie die Floating Groups der Bubble-Zeit. Vom 11. bis 16.10. stand hier 18 % der Schrift
@@ -2788,6 +2788,15 @@ Bis 15.10. war das offene Feld randlos und transparent (Notion-Stil), Text 14/50
   Die 16px-Regel muss die 14px-Aktiv-Regel überstimmen (gleiche Spezifität → im `@media`
   denselben Selektor `.<pfx>-search.is-open .<pfx>-search-input` nutzen, damit sie später
   greift).
+- **Suche mit Schritten (seit 22.10., Page Audit „View initial HTML“):** Sucht ein Feld in
+  EINEM langen Text statt in einer Liste, bleibt alles wie oben (`UC.makeSearch`, 2 Zeichen,
+  400 ms, Esc-Schild); dazu kommen der Zähler „x of n“ (`{x} of {n}`, „No matches“, ab 10.000
+  „10,000+“), zwei `.up-iconbtn` (`chevronUp`/`chevronDown`, „Previous match“/„Next match“) und
+  Enter bzw. Umschalt+Enter. Jeder Treffer ist `.up-hl` wie überall, der aktuelle zusätzlich
+  `.is-aktiv` (`--vc-treffer-aktiv` #ffb224, Schrift `--vc-treffer-aktiv-ink`, in beiden
+  Themen). Der erste Treffer ist der erste ab der Stelle, die gerade oben im Bild steht; steht
+  ein Treffer schon im Bild, wird nicht gerollt. Cmd/Strg+F führt in dieses Feld, solange die
+  Ansicht offen ist (die Suche des Browsers fände nur, was gerade im DOM steht).
 
 ## 17. Brand-Logo-Stack in Zeilen: Logoplatten, keine Avatare
 
