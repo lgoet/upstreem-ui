@@ -2826,6 +2826,20 @@
            '</div>' + opp;
   }
 
+  /* Link auf einen fertigen Job (Zusammenfassung nach Q22, P3): Zeichen der Art, die Beschriftung, rechts der
+     Weg in die App. Nur Wege der App (/?view=...), nie eine fremde Adresse. */
+  function blkJob(b){
+    var L2 = BL(), k = window.UpstreemCore, art = blkStr(b.kind);
+    var href = /^\/(?!\/)/.test(blkStr(b.href)) ? blkStr(b.href) : '';
+    var zeichen = k && k.icon ? k.icon(BLK_ART_ZEICHEN[art] || 'fileText', 1.7) : '';
+    return '<div class="am-akt am-job">' +
+             '<div class="am-akt-kopf"><span class="am-akt-ic" aria-hidden="true">' + zeichen + '</span>' +
+               '<span class="am-akt-titel">' + esc(blkStr(b.label)) + '</span>' +
+               (href ? '<a class="am-akt-knopf up-btn-sec" href="' + escAttr(href) + '" data-act="aktion-link">' + esc(L2.oeffnen[art] || L2.ergebnis) + '</a>' : '') +
+             '</div>' +
+           '</div>';
+  }
+
   /* Bloecke -> HTML. refs: die Bezuege (aus dem refs-Block bzw. waehrend des Laufs aus dem Stream). */
   function blkHtml(blocks, m, refs){
     var amid = m && m.id;
@@ -2837,6 +2851,7 @@
         case 'card': return blkKarte(b, refs);
         case 'chart': return blkChartPlatz(b, amid, refs);
         case 'action': return blkAktion(b, m);
+        case 'job': return blkJob(b);
         case 'opportunity': return b.opportunity_id ? '<div><span data-mira-opportunity="' + escAttr(b.opportunity_id) + '"></span></div>' : '';
         default: return '';
       }
@@ -8479,6 +8494,16 @@
     }
     if (getauscht) renderMessages();
     return getauscht;
+  };
+  /* Fuer die Seite (Zusammenfassung fertiger Jobs, P3 /api/mira/jobs): laufen im offenen Chat Jobs aus
+     Aktionskarten? Dann fragt sie in Abstaenden nach, sonst nicht. */
+  window.askMiraLaufendeJobs = function(){
+    var n = 0;
+    (S.messages || []).forEach(function(m){
+      if (!m || !Array.isArray(m.blocks)) return;
+      m.blocks.forEach(function(b){ if (b && b.type === 'action' && b.status === 'running' && b.job) n++; });
+    });
+    return n;
   };
   window.askMiraActionFailed = function(amid, actionId, satz){
     var sel = '[data-act^="aktion-"][data-akt-id="' + cssEsc(actionId) + '"][data-akt-msg="' + cssEsc(amid) + '"]';

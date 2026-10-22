@@ -4066,6 +4066,8 @@
 #ask-mira .am-akt-knoepfe { display: inline-flex; gap: 8px; }
 #ask-mira .am-akt-lauf { display: inline-flex; align-items: center; }
 #ask-mira .am-akt-knopf { text-decoration: none; }
+/* Link auf einen fertigen Job (Zusammenfassung, P3): eine Zeile, der Knopf rechts im Kopf. */
+#ask-mira .am-job .am-akt-kopf .am-akt-knopf { flex: 0 0 auto; }
 #ask-mira .am-akt-knopf[aria-disabled="true"] { opacity: .5; pointer-events: none; }
 
 /* Der laufende Text (askMiraStreamText): dieselbe Blase wie die Antwort, unter dem Arbeitsprotokoll. */

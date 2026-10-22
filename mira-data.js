@@ -366,6 +366,17 @@
     }, function () { return { ok: false, status: 0, fehler: { code: "", message: "network", hint: "", details: "" } }; });
   }
 
+  /* Fertige Jobs zusammenfassen lassen (P3, Q22/Q33 = c: das Fenster stoesst es mit frischem Token an):
+     POST /api/mira/jobs { team_id } -> { ok, summarized, waiting }. Fehler zaehlen hier nicht -- es ist ein
+     Nachfassen, und eine App ohne die Route (vor P3) antwortet 404. */
+  function jobs(token, team) {
+    return fetch(API + "/jobs", {
+      method: "POST", credentials: "same-origin",
+      headers: { "content-type": "application/json", authorization: "Bearer " + str(token) },
+      body: JSON.stringify({ team_id: str(team) })
+    }).then(function (r) { return r.ok ? r.json().catch(function () { return null; }) : null; }, function () { return null; });
+  }
+
   /* Die Fehler des neuen Wegs, zusaetzlich zu fehlerArt: Kontingent und Tagesgrenze (Q11), ein zweiter
      laufender Chat (mira_user_busy), eine schon laufende gleiche Frage (mira_duplicate), Anmeldung. */
   function fehlerArtNeu(erg) {
@@ -390,6 +401,6 @@
     fehlerArt: fehlerArt,
     weg: weg, nachrichtenNeu: nachrichtenNeu, sendeBodyNeu: sendeBodyNeu, streamLesen: streamLesen,
     sendenNeu: senden, wiederanhaengen: wiederanhaengen, fehlerArtNeu: fehlerArtNeu, kennung: kennung, aktion: aktion,
-    wavAus: wavAus, transkribieren: transkribieren, pdf: pdf
+    wavAus: wavAus, transkribieren: transkribieren, pdf: pdf, jobs: jobs
   };
 })();

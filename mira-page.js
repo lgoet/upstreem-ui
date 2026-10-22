@@ -243,7 +243,7 @@
           return null;
         }
         cacheSetzen(chat, n.rows);
-        if (zeigen || offenerChat() === chat) am("askMiraSetMessages", n.rows.slice(), chat);
+        if (zeigen || offenerChat() === chat) { am("askMiraSetMessages", n.rows.slice(), chat); jobUhrStellen(false); }
         /* Laeuft die letzte Antwort noch (Neuladen, zweiter Tab), haengt sich das Fenster an ihren
            Stream (Q13); geht das nicht, kommt sie wie bisher ueber Realtime. */
         var letzte = n.rows[n.rows.length - 1];
@@ -623,7 +623,7 @@
       UC.sitzungsToken().then(function (token) { return D.aktion(token, body); }).then(function (erg) {
         var j = erg.daten || {};
         if (j.card) am("askMiraActionCard", amid, j.card, j.opportunity || null);
-        if (erg.ok) return;
+        if (erg.ok) { jobUhrStellen(false); return; }
         am("askMiraActionFailed", amid, aid, t("Couldn't start this action") + ". " + aktionSatz(erg));
       });
     }
@@ -691,12 +691,34 @@
       }
     }
 
+    /* ---- Fertige Jobs (P3, Q22): beim Oeffnen von Mira und, solange im offenen Chat ein Job einer
+       Aktionskarte laeuft, jede Minute. Die Zusammenfassung kommt danach wie jede Antwort ueber Realtime. ---- */
+    var JOB_TAKT = 60000;
+    function jobsAnstossen() {
+      var tm = team();
+      if (!tm || !UC.sitzungsToken) return;
+      D.weg().then(function (w) {
+        if (w !== "neu") return null;
+        return UC.sitzungsToken().then(function (token) { return token ? D.jobs(token, tm) : null; });
+      }).then(function (j) {
+        if (j && Number(j.waiting) > 0) jobUhrStellen(true);
+      });
+    }
+    function jobUhrStellen(sofort) {
+      if (gem.jobUhr) return;
+      if (!sofort && !(am("askMiraLaufendeJobs") > 0)) return;
+      gem.jobUhr = setTimeout(function () {
+        gem.jobUhr = null;
+        if (am("askMiraLaufendeJobs") > 0 || sofort) { jobsAnstossen(); jobUhrStellen(false); }
+      }, JOB_TAKT);
+    }
+
     /* ---- Laden, Teamwechsel ---------------------------------------------------------------- */
     function laden(frisch) {
       var el = innen();
       if (!sichtbarTest(el)) { beiSicht(el, "laden", function () { laden(frisch); }, sichtbarTest); return; }
       kanalAuf();
-      if (frisch || gem.listeFuer !== team()) listeLaden(!!frisch);
+      if (frisch || gem.listeFuer !== team()) { listeLaden(!!frisch); jobsAnstossen(); }
       if (!gem.einstellungen) { gem.einstellungen = true; einstellungenLaden(); }
     }
     if (UC.onTeamChange) UC.onTeamChange(function () {
