@@ -697,7 +697,7 @@
   /* Kampagnen (17.10.). "Date", "Date range", "Running", "Save", "Edit event" und "Tracking"
      stehen schon in core bzw. oben -- nicht noch einmal (Katalog-Kollision). */
   if (UC.addMessages) UC.addMessages("de", {
-    "Planned": "Geplant", "Completed": "Abgeschlossen", "Running, day {n} of {m}": "Läuft, Tag {n} von {m}", "Day {n}": "Tag {n}",
+    "Planned": "Geplant", "Running, day {n} of {m}": "Läuft, Tag {n} von {m}", "Day {n}": "Tag {n}",
     "Start date": "Startdatum", "End date": "Enddatum", "Since event": "Seit Event",
     "Planned events can be fully edited until they start.": "Geplante Events kannst du bis zum Start komplett ändern.",
     "We compare the campaign with the same number of days before it, and show what happens after it ends.":
@@ -889,7 +889,7 @@
     "Event created": "Event angelegt", "URL added": "URL hinzugefügt", "Event updated": "Event aktualisiert",
     "Observations are counted from the event date, also for URLs you add now.":
       "Beobachtungen zählen ab dem Event-Datum, auch für URLs, die du jetzt hinzufügst.",
-    "{n} days": "{n} Tage", "Preview": "Vorschau", "Untitled event": "Unbenanntes Event",
+    "Preview": "Vorschau", "Untitled event": "Unbenanntes Event",
     "{n} of {total} selected": "{n} von {total} ausgewählt",
     "Prompts in any of the selected topics": "Prompts in mindestens einem der gewählten Topics",
     "Only prompts in all of these topics": "Nur Prompts, die in allen diesen Topics stehen",
@@ -1193,43 +1193,19 @@
     "{n} prompt was measured on different models before and after the event. It is not part of the before and after numbers.": "{n} Prompt wurde vor und nach dem Event mit verschiedenen Modellen gemessen. Er zählt nicht in die Zahlen vorher und nachher.",
     "{n} prompts were measured on different models before and after the event. They are not part of the before and after numbers.": "{n} Prompts wurden vor und nach dem Event mit verschiedenen Modellen gemessen. Sie zählen nicht in die Zahlen vorher und nachher."
   });
-  /* Page Audit aus Impact (21.10.). "View" steht in core als Substantiv ("Ansicht") -- darum heisst die Aktion im Toast
-     "View audit" wie "View events" in core, nicht "View" (Katalog-Kollision). */
+  /* Page Audit aus Impact (21.10.). Status-Woerter, "Reachable", "{x} of {n}" und die Saetze zu den Fehlern beim Anlegen stehen seit
+     dem 22.10. in core (UC.pageAuditStatus, UC.pageAuditFehlerSatz) samt Katalog -- hier nur, was es nur in Impact gibt. "View" steht
+     in core als Substantiv ("Ansicht"), darum heisst die Aktion im Toast "View audit" wie "View events" in core. */
   if (UC.addMessages) UC.addMessages("de", {
     "Run audit": "Audit starten",
     "Audit started": "Audit gestartet",
     "Audit already running": "Audit läuft schon",
     "View audit": "Audit ansehen",
-    "Reachable {n} of {m}": "Erreichbar {n} von {m}",
-    "Reachable for {n} of {m} AI platforms in the last audit": "Beim letzten Audit für {n} von {m} KI-Plattformen erreichbar",
-    "Audit queued": "Audit wartet",
-    "Audit running": "Audit läuft",
-    "Audit failed": "Audit fehlgeschlagen",
-    "Audit cancelled": "Audit abgebrochen",
     "The audit couldn't be started": "Das Audit ließ sich nicht starten",
-    "Page audits aren't included in your plan": "Page Audits sind in deinem Tarif nicht enthalten",
-    "Choose a plan with page audits to run one.": "Wähl einen Tarif mit Page Audits, um eins zu starten.",
-    "Your team has used all {n} audits for this week": "Dein Team hat alle {n} Audits dieser Woche verbraucht",
-    "Your team has used all audits for this week": "Dein Team hat alle Audits dieser Woche verbraucht",
-    "New audits are available on {date}.": "Neue Audits gibt es ab {date}.",
-    "Your team has started {n} audits in the last hour": "Dein Team hat in der letzten Stunde {n} Audits gestartet",
-    "You can start the next one at {time}.": "Das nächste kannst du ab {time} starten.",
-    "{n} audits are already waiting to run": "{n} Audits warten schon auf ihren Lauf",
-    "You can start more once some of them have finished.": "Sobald einige fertig sind, kannst du weitere starten.",
-    "This website has been audited too often in the last hour": "Diese Website wurde in der letzten Stunde zu oft geprüft",
-    "You can audit {host} again at {time}.": "Ab {time} kannst du {host} wieder prüfen.",
-    "You're starting audits too quickly": "Du startest Audits zu schnell hintereinander",
-    "This page can't be audited": "Diese Seite lässt sich nicht prüfen",
-    "The address isn't valid.": "Die Adresse ist ungültig.",
-    "The address is too long.": "Die Adresse ist zu lang.",
-    "Only http and https addresses can be audited.": "Prüfen lassen sich nur Adressen mit http oder https.",
-    "Addresses with a # part can't be audited.": "Adressen mit einem #-Teil lassen sich nicht prüfen.",
-    "Addresses with a username or password can't be audited.": "Adressen mit Nutzername oder Passwort lassen sich nicht prüfen.",
-    "Addresses with a custom port can't be audited.": "Adressen mit eigener Portnummer lassen sich nicht prüfen.",
-    "Only public websites can be audited.": "Prüfen lassen sich nur öffentliche Websites.",
-    "Addresses that contain an access token can't be audited.": "Adressen mit einem Zugangsschlüssel lassen sich nicht prüfen.",
     "You don't have access to this team.": "Du hast keinen Zugang zu diesem Team.",
-    "This team no longer exists.": "Dieses Team gibt es nicht mehr."
+    "This team no longer exists.": "Dieses Team gibt es nicht mehr.",
+    "Page audits aren't included in your plan": "Page Audits sind in deinem Tarif nicht enthalten",
+    "Choose a plan with page audits to run one.": "Wähl einen Tarif mit Page Audits, um eins zu starten."
   });
 
   /* Spaltenzahl der Karten: nach dem PLATZ (wie response-detail.spalten -- dieselben Schwellen,
@@ -3983,7 +3959,7 @@
        Gefragt wird je gezeichneter SICHTBARER Liste einmal (get_page_audit_urls_v1, hoechstens PA_MAX URLs, die Grenze der DB), und nur nach URLs
        ohne frischen Stand; die Antwort setzt die Angaben an Ort und Stelle (paZeilen), die Liste wird nicht neu gezeichnet. PA.je: Stand je Team
        und URL ({ t, z }, z die Zeile der DB oder null = kein Audit), PA.fragt: URLs, nach denen gerade gefragt wird, PA.start: laufende Starts. */
-    var PA = { stand: null, je: {}, fragt: {}, start: {} }, PA_MAX = 500, PA_ZEICHEN = null;
+    var PA = { stand: null, je: {}, fragt: {}, start: {}, schluessel: {} }, PA_MAX = 500, PA_ZEICHEN = null;
     /* Wie lange ein Stand gilt: ein wartendes oder laufendes Audit aendert sich bald (ein Lauf dauert hoechstens 180 s), ein fertiges selten.
        Ein Lesefehler wird erst nach einer Minute wieder gefragt -- die Liste zeichnet sich bei jeder Minute der Sperr-Uhr neu. */
     var PA_AKTIV_MS = 30000, PA_RUHE_MS = 300000, PA_FEHLER_MS = 60000;
@@ -4025,22 +4001,32 @@
       return h.slice(0, 8) + "-" + h.slice(8, 12) + "-" + h.slice(12, 16) + "-" + h.slice(16, 20) + "-" + h.slice(20);
     }
     /* Die leise Angabe: laeuft ein Audit, sagt sie das (die neueste Nachricht); sonst die Hauptzahl des letzten brauchbaren Laufs
-       (last_reachable_count/last_profile_count, completed oder partial); ohne einen solchen der Ausgang des letzten Laufs. Kein Urteil in Farbe:
-       Page Audit hat keinen Score (Plan Abschnitt 2), nur das Laufende steht in der Akzent-Tinte wie der laufende Status eines Events. */
+       (last_reachable_count/last_profile_count, completed oder partial) als "Reachable 5 of 7" wie die Spalte "Reachable" der Seite Page Audit;
+       ohne Zahl der Status des letzten Laufs. Woerter, Zeichen und Ton kommen aus core (UC.pageAuditStatus, dieselben wie auf der Seite):
+       das Zeichen in der Farbe der Bedeutung, der Text leise, laufend dreht das Zeichen. Kein Urteil ueber die Seite in Farbe (kein Score).
+       Die Zahl erklaert die Erklaerkarte aus core (pa_reachable) wie auf der Seite, kein Tooltip-Satz (CLAUDE.md, Page Audit v2). */
     function paAngabe(url) {
       var c = paAn() ? PA.je[paSchluessel(url)] : null, z = c && c.z;
       if (!z || z.page_id == null || z.page_id === "") return { sig: "", html: '<span class="uev-pa-angabe" data-pa-sig="" hidden></span>' };
-      var st = String(z.last_status || ""), n = num(z.last_reachable_count), m = num(z.last_profile_count), text, tip = "", laeuft = paAktiv(z);
-      if (laeuft) text = t(st === "queued" ? "Audit queued" : "Audit running");
-      else if (n != null && m > 0) { text = ersetze(t("Reachable {n} of {m}"), { n: zahl(n), m: zahl(m) }); tip = ersetze(t("Reachable for {n} of {m} AI platforms in the last audit"), { n: zahl(n), m: zahl(m) }); }
-      else if (st === "failed") text = t("Audit failed");
-      else if (st === "cancelled") text = t("Audit cancelled");
-      else text = t("View audit");
-      var sig = String(z.page_id) + "|" + text + "|" + (laeuft ? 1 : 0);
-      return { sig: sig, html: '<a class="uev-pa-angabe' + (laeuft ? " is-laeuft" : "") + '" href="' + esc(paHref(z.page_id)) + '" data-pa-oeffnen="' + esc(z.page_id) + '" data-pa-sig="' + esc(sig) + '"' +
-        (tip ? ' data-tip="' + esc(tip) + '"' : '') + '>' + paZeichen() + '<span>' + esc(text) + '</span></a>' };
+      var st = String(z.last_status || ""), n = num(z.last_reachable_count), m = num(z.last_profile_count), laeuft = paAktiv(z);
+      var s0 = (UC.pageAuditStatus || {})[st] || null, mitZahl = !laeuft && n != null && m > 0, text, zeichen, ton = "leise", dreht = false;
+      if (mitZahl) { text = t("Reachable") + " " + ersetze(t("{x} of {n}"), { x: zahl(n), n: zahl(m) }); zeichen = paZeichen(); }
+      else if (s0) { text = t(s0.text); zeichen = s0.zeichen && UC.icon ? UC.icon(s0.zeichen, 2) : ""; ton = String(s0.ton || "leise"); dreht = !!s0.dreht; }
+      else { text = t("View audit"); zeichen = paZeichen(); }
+      var sig = String(z.page_id) + "|" + text + "|" + ton + "|" + (dreht ? 1 : 0);
+      return { sig: sig, html: '<a class="uev-pa-angabe is-' + esc(ton) + (dreht ? " is-dreht" : "") + '" href="' + esc(paHref(z.page_id)) + '" data-pa-oeffnen="' + esc(z.page_id) + '" data-pa-sig="' + esc(sig) + '"' +
+        (mitZahl ? ' data-explain="pa_reachable" data-wert="' + esc(ersetze(t("{x} of {n}"), { x: zahl(n), n: zahl(m) })) + '"' : '') + '>' + (zeichen ? '<span class="uev-pa-ic" aria-hidden="true">' + zeichen + '</span>' : '') + '<span class="uev-pa-t">' + esc(text) + '</span></a>' };
     }
     function paAngabeHtml(url) { return paAngabe(url).html; }
+    /* Die Erklaerkarte der Zahl (Memory "Erklaerkarten-Format"): helle Platte mit dem Wert, Titel = Etikett "Reachable", Satz aus core
+       (EXPLAIN_TEXT pa_reachable) -- dieselbe Karte wie an der Kachel der Seite Page Audit; Ausloeser ist die Angabe selbst. */
+    if (UC.makeExplain && UC.explainCopy) UC.makeExplain({ root: root, triggerSel: ".uev-pa-angabe[data-explain]", getIsDark: isDark,
+      html: function (key, el) {
+        var e = UC.explainCopy(key, {}), w = el && el.getAttribute("data-wert");
+        if (!e) return "";
+        return (w ? '<div class="up-explain-vis"><span class="up-explain-row">' + esc(w) + '</span></div>' : '') +
+          '<div class="up-explain-h">' + esc(e.h) + '</div><div class="up-explain-t">' + esc(e.t) + '</div>';
+      } });
     /* Der Zeilenknopf: .up-btn-sec.up-rowbtn aus core wie "Remove"; beim Starten der Standard-Spinner der App im Knopf (.up-btn-spin), gesperrt. */
     function paKnopfHtml() {
       if (!paAn()) return "";
@@ -4104,53 +4090,43 @@
         if (root.isConnected !== false) paZeilen(root);
       });
     }
-    /* Ein Zeitpunkt aus "Sekunden bis wieder Platz ist" (hint der Grenzen), als Uhrzeit wie bei der Sitemap (heute nur die Zeit). */
-    function paUm(hint) { var s = num(hint); return s != null && s > 0 ? abdUm(Date.now() + s * 1000) : ""; }
-    function paDetail(f) { try { var d = JSON.parse(String(f && f.details || "")); return d && typeof d === "object" ? d : {}; } catch (e) { return {}; } }
-    /* Der Tag, an dem das Kontingent neu beginnt (resets_at), als Kalendertag des Browsers. */
+    /* Der Tag, an dem das Kontingent neu beginnt (resets_at), als Kalendertag des Browsers -- fuer den Satz aus core. */
     function paTag(iso) {
       var ms = Date.parse(String(iso || ""));
       if (!isFinite(ms)) return "";
       var d = new Date(ms);
       return datum(d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"));
     }
-    /* Jeder Fehler des Anlegens als Satz fuer Nutzer, ohne Code und ohne interne Namen: Titel ohne Punkt, darunter der naechste Schritt.
-       Codes und hints aus 02_rpcs_v1.sql (Kopf) und den Zugangsbausteinen (_set_require_v1, _app_gate_v1, _pi_rate_limit_v1). */
-    var PA_URL_GRUND = { empty: "The address isn't valid.", invalid: "The address isn't valid.", too_long: "The address is too long.",
-      scheme: "Only http and https addresses can be audited.", fragment: "Addresses with a # part can't be audited.",
-      credentials: "Addresses with a username or password can't be audited.", port: "Addresses with a custom port can't be audited.",
-      host: "Only public websites can be audited.", ip_literal: "Only public websites can be audited.", local_host: "Only public websites can be audited.",
-      credentialed_query: "Addresses that contain an access token can't be audited." };
+    /* Jeder Fehler des Anlegens: Titel "The audit couldn't be started", darunter der Satz aus core (UC.pageAuditFehlerSatz -- dieselben Saetze
+       wie im Dialog der Seite Page Audit: Kontingent, Grenzen, jede URL-Begruendung, Zeit, Netz). Vorher nur, was die Zugangsbausteine werfen
+       (_set_require_v1, _app_gate_v1) und core nicht kennt: dort sagte der allgemeine Satz "on our side", und das stimmt nicht. */
     function paFehler(erg, url) {
-      var f = (erg && erg.fehler) || {}, c = String(f.message || ""), h = String(f.hint || "").trim(), d = paDetail(f), um = paUm(h);
-      var nicht = t("The audit couldn't be started");
-      if (!erg || erg.status === 0) return { titel: nicht, desc: t("Check your connection and try again.") };
-      if (c === "page_audit_invalid_url") return { titel: t("This page can't be audited"), desc: t(PA_URL_GRUND[h] || PA_URL_GRUND.invalid) };
-      if (c === "page_audit_quota_exhausted") {
-        if (num(d.allowance) === 0) return { titel: t("Page audits aren't included in your plan"), desc: t("Choose a plan with page audits to run one.") };
-        var tag = paTag(d.resets_at) || (num(h) > 0 ? paTag(new Date(Date.now() + num(h) * 1000).toISOString()) : "");
-        return { titel: num(d.allowance) > 0 ? ersetze(t("Your team has used all {n} audits for this week"), { n: zahl(d.allowance) }) : t("Your team has used all audits for this week"),
-          desc: tag ? ersetze(t("New audits are available on {date}."), { date: tag }) : "" };
-      }
-      if (c === "page_audit_hourly_limit") return { titel: ersetze(t("Your team has started {n} audits in the last hour"), { n: zahl(num(d.limit) || 10) }),
-        desc: um ? ersetze(t("You can start the next one at {time}."), { time: um }) : t("Please wait a moment and try again.") };
-      if (c === "page_audit_pending_limit") return { titel: ersetze(t("{n} audits are already waiting to run"), { n: zahl(num(d.limit) || 10) }), desc: t("You can start more once some of them have finished.") };
-      if (c === "page_audit_domain_rate_limited") return { titel: t("This website has been audited too often in the last hour"),
-        desc: um ? ersetze(t("You can audit {host} again at {time}."), { host: String(d.host || hostPfad(url).host), time: um }) : t("Please wait a moment and try again.") };
-      if (/_rate_limited$/.test(c)) return { titel: t("You're starting audits too quickly"), desc: t("Please wait a moment and try again.") };
+      var f = (erg && erg.fehler) || {}, c = String(f.message || ""), h = String(f.hint || "").trim(), nicht = t("The audit couldn't be started");
       if (/^team_access_/.test(c)) return { titel: nicht, desc: fehlerText(c, h) };
-      if (erg.status === 401 || c === "settings_not_authenticated") return { titel: nicht, desc: t("Please sign in again.") };
+      if ((erg && erg.status === 401) || c === "settings_not_authenticated") return { titel: nicht, desc: t("Please sign in again.") };
       if (c === "team_forbidden" || c === "forbidden") return { titel: nicht, desc: t("You don't have access to this team.") };
       if (c === "team_deleted") return { titel: nicht, desc: t("This team no longer exists.") };
-      return { titel: nicht, desc: t("Please try again.") };
+      /* Ein Tarif ohne Audits (audits_per_week leer, allowance 0): core saegte "You've used all 0 audits for this week" (gemessen 22.10.,
+         BUILD 20261185) -- gehoert nach core, bis dahin hier. */
+      if (c === "page_audit_quota_exhausted") {
+        var q = {};
+        try { q = JSON.parse(String(f.details || "")) || {}; } catch (e) { q = {}; }
+        if (num(q.allowance) === 0) return { titel: t("Page audits aren't included in your plan"), desc: t("Choose a plan with page audits to run one.") };
+      }
+      var fs = UC.pageAuditFehlerSatz ? UC.pageAuditFehlerSatz(erg, { t: t, eingabe: url, datum: paTag }) : null;
+      return { titel: nicht, desc: fs && fs.satz ? fs.satz : t("Please try again.") };
     }
     function paStarten(knopf) {
       var zeile = knopf.closest("[data-pa-url]"), url = zeile ? zeile.getAttribute("data-pa-url") : "", k = paSchluessel(url);
       if (!url || PA.start[k] || !paAn()) return;
       PA.start[k] = 1;
       paZeilen(root);
-      abdRpc("create_page_audit_v1", { p_url: url, p_idempotency_key: paUuid() }).then(function (erg) {
+      /* Der Schluessel bleibt nach Zeitablauf oder Netzfehler fuer den naechsten Klick derselben URL stehen: das Schreiben kann trotzdem
+         angekommen sein, und derselbe Schluessel bekommt dann dieselbe Quittung statt eines zweiten Laufs (core, pageAuditFehlerSatz). */
+      var schl = PA.schluessel[k] || (PA.schluessel[k] = paUuid());
+      abdRpc("create_page_audit_v1", { p_url: url, p_idempotency_key: schl }).then(function (erg) {
         delete PA.start[k];
+        if (!erg || erg.status !== 0) delete PA.schluessel[k];
         if (fehltFn(erg)) { paAus(); return; }
         var d = erg.ok && erg.daten && typeof erg.daten === "object" ? erg.daten : null, run = d && d.run && typeof d.run === "object" ? d.run : null;
         var hp = hostPfad(url), wo = hp.host + (hp.start ? "" : hp.pfad);
@@ -8446,12 +8422,10 @@
       }
       /* Zwei Karten nebeneinander (19.10., Vorlage des Nutzers): Bau der Karten von Vercel (Template-Karten): Text oben, darunter eine grosse Tafel, die bei 15 % von links und 55 % von oben beginnt und rechts und unten
          abgeschnitten wird, mit einer breiten Karte darin, die zu zwei Dritteln sichtbar ist. Links Event Tracking in den Farben des anderen Themas, rechts Citation Tracking. Ein Klick waehlt und geht weiter -- kein "Continue". */
-      var karten = '<div class="uev-wk-raster" role="group" aria-label="' + esc(t("What do you want to create?")) + '">' + KIND_WAHL.map(function (a) {
-        return '<button type="button" class="uev-wk' + (a.invers ? " is-invers" : "") + '" data-kind="' + a.k + '">' +
-          '<span class="uev-wk-kopf"><span class="uev-wk-t">' + esc(t(a.titel)) + '</span><span class="uev-wk-pfeil" aria-hidden="true">' + UC.icon("arrowUpRight", 2) + '</span></span>' +
-          '<span class="uev-wk-s">' + esc(t(a.satz)) + '</span>' +
-          '<span class="uev-wk-tafel" aria-hidden="true"><span class="uev-wk-feld">' + UC.icon(a.ic, 1.8) + '</span></span>' +
-        '</button>';
+      /* Die Karte ist seit dem 22.10. der Baustein aus core (UC.wkKarteHtml, .up-wk): dieselben Masse, dieselbe Bewegung, auch auf der
+         Seite Page Audit ("Run Page Audit"). */
+      var karten = '<div class="up-wk-raster" role="group" aria-label="' + esc(t("What do you want to create?")) + '">' + KIND_WAHL.map(function (a) {
+        return UC.wkKarteHtml({ titel: a.titel, satz: a.satz, icon: a.ic, invers: !!a.invers, daten: { kind: a.k } });
       }).join("") + '</div>';
       var api = UC.makeModal({
         titel: "Create", unter: t("What do you want to create?"), isDark: isDark,
@@ -8980,6 +8954,10 @@
       if (!f) return;
       function setz(st, v) { if (typeof v === "boolean" && (st.stand == null || v === false)) st.stand = v; }
       setz(ZIELE_DA, f.targets); setz(SITEMAP_DA, f.sitemap); setz(KAMPAGNE_DA, f.campaigns); setz(ABD_DA, f.coverage);
+      /* Page Audit (22.10., features.page_audit): true -- der Knopf steht gleich, ohne auf die erste Antwort zu warten; false -- weder
+         Knopf noch Angabe, und es wird nicht gefragt. Fehlt der Wert, entscheidet wie bisher die erste Antwort (PGRST202). */
+      if (f.page_audit === false) paAus();
+      else if (f.page_audit === true && PA.stand == null) paDa();
     }
     /* Was eine Probe festgestellt hat, gilt fuer die Sitzung des Tabs (sessionStorage, je Team): ein
        Neuladen fragt nicht noch einmal. Nur eindeutige Antworten (true/false), nie "unbekannt" --
@@ -9102,7 +9080,7 @@
         weiter: function () { popupArt(); } },
       /* Die Wahl der Art (19.10.): beide Arten in einer Karte. Danach geht die Anleitung mit Event Tracking weiter, der Art mit
          den vier Schritten; Citation Tracking hat drei einfache und braucht keine Fuehrung. */
-      anlSchritt({ id: "art", ziel: function () { return im(".uev-wk-raster"); },
+      anlSchritt({ id: "art", ziel: function () { return im(".up-wk-raster"); },
         titel: "Two ways to track",
         text: "Track an Event: Measure the impact of Campaigns, Product Launches or other assets. Track Citations: Keep an eye on pages and domains with realtime updates. The tour continues with Track an Event.",
         vis: function () { return anlZeile("cells", t("Track an Event")) + anlZeile("globe", t("Track Citations")); } },
