@@ -105,9 +105,9 @@
      Terminal ist eine Senke (Sicherheitspruefung 22.10.). Client IDs von Supabase sind UUIDs. */
   var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var SERVER_URL = /^(https:\/\/[A-Za-z0-9.-]+(:\d{2,5})?|http:\/\/(localhost|127\.0\.0\.1)(:\d{2,5})?)\/api\/mcp$/;
-  /* Beispielfragen je Weg (Canvas): allgemein, nie aus Teamdaten. */
+  /* Beispielfragen je Weg (Canvas): allgemein, nie aus Teamdaten. Je zwei (Lukas 23.10.: die dritte zu Opportunities raus). */
   var FRAGEN = {
-    web:  ["Which sources get cited most for our brand?", "Where do competitors show up and we don't?", "Which Opportunities should we tackle first?"],
+    web:  ["Which sources get cited most for our brand?", "Where do competitors show up and we don't?"],
     code: ["Summarize our AI visibility for this week.", "Which pages should we update for the prompts we lose?"]
   };
 

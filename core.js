@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261196;
+  var BUILD = 20261197;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -723,7 +723,6 @@
     "Ask, for example:": "Frag zum Beispiel:",
     "Which sources get cited most for our brand?": "Welche Quellen werden für unsere Brand am häufigsten zitiert?",
     "Where do competitors show up and we don't?": "Wo tauchen Wettbewerber auf und wir nicht?",
-    "Which Opportunities should we tackle first?": "Welche Opportunities sollten wir zuerst angehen?",
     "Summarize our AI visibility for this week.": "Fass unsere AI Visibility für diese Woche zusammen.",
     "Which pages should we update for the prompts we lose?": "Welche Seiten sollten wir für die Prompts überarbeiten, bei denen wir verlieren?",
     /* Fehlermeldungen der Prompt-Research-Seite (Audit 14.10.: standen nur englisch da). */
