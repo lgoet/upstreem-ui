@@ -2150,6 +2150,32 @@ nachgetragenen Schritte sieht. Ein Schritt, den der Server nicht gemeldet hat, s
 nie eigene Zahlen. `prefers-reduced-motion`: kein Auftritt, kein Glanz, kein Drehen, harte Wechsel;
 die Reihenfolge und die Mindestzeit bleiben (Inhalt, keine Bewegung).
 
+### Mira seit dem 22.10. abends: Runden, Sätze, Glanz aus core
+
+Gewählt im Canvas „Mira Chat Redesign“ (S1 mit T1, C1, F1). Grundsatz: **senkrecht ist Zeit,
+waagerecht ist gleichzeitig.**
+
+| Teil | Regel | Wo |
+|---|---|---|
+| Runde | Eine Zeile je Modellaufruf (`.am-run-step`) auf einer Schiene: Punkt hohl, solange etwas läuft, voll, wenn alle Aufrufe fertig sind; die Linie verbindet die Punkte (`is-letzte` beendet sie). Die Mindeststandzeit gilt **je Runde**, Aufrufe derselben Runde kommen sofort dazu | `runAnwenden`, `runLinie` |
+| Aufruf | Ein kurzer Satz (`.am-run-schritt`), keine Karte, keine Filter. Laufend Ring (`UC.ringHtml(14)`) und Glanz (`.up-glanz`), fertig das Zeichen der Ansicht (Seitenleiste: Brands, Prompt Insights, Citations, Responses, Opportunities). Je Werkzeug zwei bis drei Sätze, einer wird beim Start gezogen und steht fest; in einer Antwort kommt keiner zweimal | `_SCHRITT` in ask-mira.js |
+| Denken | Läuft kein Aufruf, hängt unten „Thinking“ mit Ring und Glanz an der Schiene | `.am-run-denken` |
+| Fehler (F1) | Warnzeichen in `--vt-down`, Satz grau ohne Glanz, Tooltip „This step failed“ (`data-tip`, core) | `is-fehler` |
+| Schreiben (T1) | Beim ersten Wort klappt der Körper zu; die Kopfzeile trägt Ring, Uhr und „Writing the answer“, nach dem Text „Checking the numbers“ | `is-zu`, `RUN.phase` |
+| Fertig (C1) | Eine Zeile „Worked for 13s“ mit Pfeil (Knopf, `aria-expanded`); ein Klick klappt das Protokoll auf. Der Pfeil wechselt sein Zeichen, er dreht sich nicht. Ohne Protokoll (Neuladen) bleibt die Zeile ohne Pfeil | `.am-run-auf`, `is-offen` |
+| Abstand | Kopfzeile bis Text 16, laufend wie fertig | `.am-run` |
+| Antwort (G1) | Titel 20/26/600 (`--up-fs-modaltitel`), Abschnitt 16/24/600 (`--up-ueb-abschnitt-*`, 24 davor), Text 16/26, Fett 600 in Textgröße; Bezugs-Chips 22 hoch, Radius 4, 13/500 ohne Mono; Tabelle im Kasten (Radius 12, Kopf 13/500 ohne Fläche); Frage 14/22, ihre Knöpfe links daneben; 24 zwischen Frage und Antwort | ask-mira.css |
+
+Zwei Eingänge: `askMiraSetTool(name)` wie bisher (n8n bis zum Umstieg: eine Runde je Art, dieselbe
+Art bleibt ein Schritt) und `askMiraRunEvent(teil)` für den Stream von `/api/mira` (P2): je Teil ein
+Aufruf, so wie er kommt (`start-step`, `tool-input-available`, `tool-output-available`,
+`tool-output-error`, `text-start`, `text-end`; alles andere wird übergangen).
+
+**Der Glanz ist ein Baustein in core:** `.up-glanz` auf den Text, der gerade arbeitet (Farbe
+`--vc-glanz`, Dauer `--up-lauf-glanz`). Mira und der Intent-Chip („Classifying“) nehmen ihn von dort;
+nie eine eigene Kopie. Page Audit trägt noch seine (`.upa-run-step.is-laeuft .upa-run-txt`) und zieht
+nach, wenn die Seite ohnehin drankommt.
+
 ---
 
 ## 10. Layout-Verhalten (Responsive)

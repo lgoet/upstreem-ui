@@ -616,7 +616,10 @@
       --vc-mira-thema-rueckfall: #6b7280;
       --vc-mira-logo-rueckfall: #9ca3af;
       --vc-mira-auf-farbe: #fff;
-      --vc-mira-lauf-glanz: rgba(255,255,255,0.85);
+      /* Der Streifen des Glanzes (.up-glanz). Seit dem 22.10. abends ein Token fuer alle; der Name von Mira
+         bleibt fuer Page Audit (page-audit.css liest ihn noch). */
+      --vc-glanz: rgba(255,255,255,0.85);
+      --vc-mira-lauf-glanz: var(--vc-glanz);
       --vc-mira-signal: #2f6df6;
       --vc-mira-signal-hover: #2b63dd;
       --vc-mira-signal-schein: rgba(47,109,246,0.30);
@@ -3864,17 +3867,26 @@
        zur Maske, ein heller Streifen laeuft darueber -- Werte von dort uebernommen (100 Grad,
        30/50/70 Prozent, 1.56s, rueckwaerts). Nur der Text, nicht das Zeichen: die Uhr bleibt
        ruhig. Ohne Bewegungswunsch: still, in der leisen Farbe. */
-    .up-intent.is-pending .up-intent-lbl {
-      background-image: linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0) 70%);
+    /* DER GLANZ ALS BAUSTEIN (22.10. abends, Lukas: "dieser shimmer sollte auch im core sein"). Bis dahin stand
+       er dreimal: hier am Intent, in ask-mira.css am laufenden Schritt und in page-audit.css. Jetzt EINE Regel:
+       .up-glanz auf den Text, der gerade arbeitet (Mira: der laufende Satz, die Denk- und die Schreibzeile).
+       Der Text wird zur Maske, ein heller Streifen (--vc-glanz) laeuft darueber; die Schriftfarbe bleibt die
+       des Elements (background-color: currentColor). Werte unveraendert: 100 Grad, 30/50/70 Prozent, ein
+       Durchlauf --up-lauf-glanz (1,56 s), rueckwaerts. Ohne Bewegungswunsch still in der eigenen Farbe.
+       Der Intent nimmt dieselbe Regel; seinen Versatz gegen das Neuzeichnen setzt core.js (glanzVerzug). */
+    .up-glanz, .up-intent.is-pending .up-intent-lbl {
+      background-image: linear-gradient(100deg, transparent 30%, var(--vc-glanz) 50%, transparent 70%);
       background-color: currentColor;
       background-size: 200% 100%; background-repeat: no-repeat; background-position: -120% 0;
       -webkit-background-clip: text; background-clip: text;
       -webkit-text-fill-color: transparent;
-      animation: upIntentGlanz 1.56s linear infinite reverse;
+      animation: upGlanz var(--up-lauf-glanz) linear infinite reverse;
     }
+    @keyframes upGlanz { from { background-position: -120% 0; } to { background-position: 220% 0; } }
+    /* Der alte Name der Keyframes (Vertrag); dieselbe Bewegung. */
     @keyframes upIntentGlanz { from { background-position: -120% 0; } to { background-position: 220% 0; } }
     @media (prefers-reduced-motion: reduce){
-      .up-intent.is-pending .up-intent-lbl { background: none; animation: none; -webkit-text-fill-color: currentColor; }
+      .up-glanz, .up-intent.is-pending .up-intent-lbl { background: none; animation: none; -webkit-text-fill-color: currentColor; }
     }
     /* Vom Nutzer gesetzt (14.10.: UserCog in einem kleinen Chip mit Grund, statt des Stifts): 12px
        Zeichen, 2px Polster -- ein 16er Kaestchen, Radius --up-r-xs. Der Grund ist eine Mischung

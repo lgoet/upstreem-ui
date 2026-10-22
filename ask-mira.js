@@ -725,6 +725,7 @@
       sendFailed: 'The message could not be sent. Please try again.',
       turnFailed: 'Mira couldn\u2019t finish this answer. Please try again.',
       runNow: 'Working for', runDone: 'Worked for', thoughtMoment: 'Thought for a moment',
+      runThinking: 'Thinking', runWriting: 'Writing the answer', runChecking: 'Checking the numbers', runFailed: 'This step failed',
       galleryBack: 'All categories',
       gallery: [
         { name: 'Optimization & Growth', subs: [
@@ -849,6 +850,7 @@
       sendFailed: 'Die Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.',
       turnFailed: 'Mira konnte diese Antwort nicht abschliessen. Bitte erneut versuchen.',
       runNow: 'Arbeitet seit', runDone: 'Gearbeitet', thoughtMoment: 'Kurz nachgedacht',
+      runThinking: 'Denkt nach', runWriting: 'Schreibt die Antwort', runChecking: 'Prüft die Zahlen', runFailed: 'Dieser Schritt ist fehlgeschlagen',
       galleryBack: 'Alle Kategorien',
       gallery: [
         { name: 'Optimierung & Wachstum', subs: [
@@ -933,16 +935,13 @@
     if (s < 60) return s + 's';
     return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
   }
-  function formatThought(ms){
-    return (lang === 'de' ? 'Nachgedacht ' : 'Thought for ') + runDauer(ms);
-  }
   function thoughtHtml(m, role, isLast){
     if (role !== 'assistant' || !isLast) return '';
     /* Gibt es aus DIESER Sitzung ein fertiges Arbeitsprotokoll, steht es statt der einzelnen Zeile
        ueber der Antwort. Nur wenn der Lauf vorbei ist -- solange er laeuft, gehoert der Block in die
        Ladezeile darunter, sonst stuende er zweimal im Verlauf. Der Platzhalter wird nach dem
        innerHTML gefuellt: die Logos brauchen echte Elemente (Fehlerbehandlung am Bild). */
-    if (!RUN.live && RUN.valid && RUN.steps.length){ _runEmitted = true; return '<div class="am-run"></div>'; }
+    if (!RUN.live && RUN.valid && RUN.runden.length){ _runEmitted = true; return '<div class="am-run"></div>'; }
     var raw = m.latency_ms;
     if (raw == null && m.metadata && typeof m.metadata === 'object') raw = m.metadata.latency_ms;
     var ms = (typeof raw === 'number') ? raw : parseFloat(String(raw == null ? '' : raw).replace(',', '.').replace(/[^0-9.]/g, ''));
@@ -2683,7 +2682,7 @@
       /* Der Lauf ist fertig, die Antwort aber noch nicht da: Bubble schickt sie manchmal NACH dem
          Ende des Ladens. Dann steht das Protokoll allein am Ende -- sonst blitzt die ganze Liste
          fuer einen Moment weg und kaeme mit der Antwort neu. */
-      if (!_runEmitted && RUN.valid && RUN.steps.length){
+      if (!_runEmitted && RUN.valid && RUN.runden.length){
         elMessages.insertAdjacentHTML('beforeend',
           '<div class="am-msg is-assistant am-msg-run has-run"><div class="am-msg-main">'+
           '<div class="am-run"></div></div></div>');
@@ -3445,86 +3444,89 @@
     if (loadTimer){ clearInterval(loadTimer); loadTimer = null; }
   }
 
-  /* ---------------- Tool loading states (graphic + typewriter) ---------------- */
-  var _TOOL_STATE = {
+  /* ---------------- Arbeitsprotokoll: Uhr, Runden, Saetze ----------------
+     NEU AM 22.10. ABENDS (Canvas "Mira Chat Redesign", Lukas gewaehlt: S1 mit T1, C1, F1). Vorher stand
+     je Werkzeug-ART eine Zeile mit Logos dahinter; parallele Aufrufe einer Runde gingen darin unter, und
+     fuer die 24 Werkzeuge des neuen Agenten gab es gar keine Zuordnung. Jetzt:
+       - Eine Zeile je RUNDE (ein Modellaufruf), auf einer Schiene mit Punkt: senkrecht ist Zeit,
+         waagerecht ist gleichzeitig. Die Aufrufe einer Runde stehen als kurze Saetze nebeneinander.
+       - Laufend: Ring aus core (UC.ringHtml) und der Glanz aus core (.up-glanz) auf dem Satz. Fertig: das
+         Zeichen der Ansicht. Gescheitert (F1): Warnzeichen in --vt-down, Tooltip "This step failed".
+       - Keine Karten, keine Filter (Lukas: "die Karten um die Chips weg, und die Filter"): der Satz sagt,
+         was Mira tut, nicht mit welchen Parametern.
+       - Solange kein Aufruf laeuft, haengt unten "Thinking" an der Schiene: zwischen den Runden liegen in
+         echten Laeufen 1,4 bis 4,6 s ohne Aufruf (Zeitlauf 22.10.).
+       - T1: beim ersten Wort der Antwort klappt das Protokoll in die Kopfzeile (Ring, Uhr, "Writing the
+         answer", danach "Checking the numbers"). Der Text beginnt oben und springt nicht mehr.
+       - C1: fertig eine Zeile "Worked for 13s" mit Pfeil; ein Klick klappt das Protokoll auf und zu.
+     Zwei Eingaenge: askMiraSetTool(Name) wie bisher (n8n, eine Runde je Art) und askMiraRunEvent(Teil) mit
+     den Teilen des Streams von /api/mira (start-step, tool-input-available, tool-output-available,
+     tool-output-error, text-start, text-end; Format in upstreem-app lib/mira/stream.ts).
+     Die Liste lebt NUR in dieser Sitzung und gehoert immer zur LETZTEN Antwort -- nach einem Neuladen steht
+     die einzelne Zeile aus latency_ms da, wie vorher. */
+  var RUN = { valid:false, live:false, startTs:0, endTs:0, runden:[], phase:'', neueRunde:true, gefaltet:false };
+  var _runClock = null;        // Intervall der Uhr
+  var _runQ = [];              // wartende Ereignisse, in der Reihenfolge, in der sie kamen
+  var _runQT = null;           // Timer, der die naechste Runde freigibt
+  var _runRundeTs = 0;         // seit wann die letzte Runde steht -- Grundlage der Mindeststandzeit
+  var _runEmitted = false;     // wurde der Block in diesem Render schon ueber eine Antwort gesetzt?
+  var _runOffen = false;       // C1: ist das fertige Protokoll aufgeklappt?
+  var _runAlt = { art:'', id:'', n:0 };   // alter Weg (askMiraSetTool mit Namen): laufender Schritt und seine Art
+  /* Takt und Bewegung aus core (UC.LAUF_TAKT, --up-lauf-*), dieselben Werte wie Page Audit. Die
+     Mindeststandzeit (schritt, 1500) gilt seit dem 22.10. abends je RUNDE: Aufrufe derselben Runde kommen
+     sofort dazu, erst eine neue Runde wartet. Je Aufruf gerechnet, erschienen parallele Aufrufe nacheinander. */
+  var _KERN = window.UpstreemCore || {}, _TAKT = _KERN.LAUF_TAKT || {};
+  if (!_KERN.LAUF_TAKT && window.console) console.error('[ask-mira] core.js ist aelter als ask-mira.js: LAUF_TAKT fehlt');
+
+  /* Je Werkzeug das Zeichen der Ansicht (die Zeichen der Seitenleiste: Brands, Prompt Insights, Citations,
+     Responses, Opportunities) und zwei bis drei kurze Saetze. Ein Satz wird beim Start des Schritts gezogen
+     und steht danach fest; in einer Antwort kommt keiner zweimal, solange die Auswahl reicht. Die Saetze der
+     Werkzeuge von n8n (Namen links unten) sind die von vorher. */
+  var _SCHRITT = {
+    search_entities:         ['search',      ['Looking up names in your workspace', 'Matching names to your data']],
+    brands_overview:         ['squareStack', ['Comparing brand visibility', 'Sizing up your competitors', 'Ranking the brands you track']],
+    brands_visibility_trend: ['chartSpline', ['Tracing visibility over time', 'Checking how visibility moved']],
+    explain_change:          ['activity',    ['Explaining the change in visibility', 'Finding what moved your visibility', 'Tracing the drivers of the change']],
+    brand_detail:            ['squareStack', ['Opening the brand profile', 'Reading the brand details']],
+    brand_name_variations:   ['squareStack', ['Catching every spelling of your name', 'Gathering all your brand variations']],
+    brands_tracked:          ['squareStack', ['Identifying your brand and competitors', 'Pinning down the brands to track', 'Listing your tracked brands']],
+    prompts:                 ['zap',         ['Digging into prompt-level performance', 'Seeing which prompts mention you', 'Reading prompt performance']],
+    prompt_groups:           ['zap',         ['Grouping prompts by theme', 'Comparing your topics', 'Sorting prompts into topics']],
+    prompts_meta:            ['zap',         ['Reading your prompt setup', 'Checking topics and markets']],
+    prompts_catalog:         ['zap',         ['Pulling the prompts into view', 'Listing your prompts']],
+    prompt_detail:           ['zap',         ['Opening the prompt', 'Reading the prompt details']],
+    sources_domains:         ['globe',       ['Scanning the sources AI cites', 'Mapping which domains get referenced', 'Checking which domains get cited']],
+    sources_urls:            ['link',        ['Checking which pages get cited', 'Finding the pages AI relies on', 'Scanning the cited pages']],
+    sources_domain_urls:     ['link',        ['Opening the pages of that domain', 'Checking which of its pages get cited']],
+    sources_trend:           ['chartSpline', ['Tracing citations over time', 'Following the citation curve']],
+    sources_brands:          ['squareStack', ['Seeing who gets mentioned where', 'Following mentions across the web']],
+    url_summaries:           ['fileText',    ['Reading page summaries', 'Skimming the cited pages']],
+    domain_detail:           ['globe',       ['Opening the domain profile', 'Reading the domain details']],
+    url_detail:              ['link',        ['Reading what this page actually says', 'Inspecting that URL up close']],
+    responses:               ['response',    ['Reading how AI answers describe you', 'Scanning the actual AI replies']],
+    response_detail:         ['response',    ['Reading the full answer text', 'Looking at what the answers actually say']],
+    opportunities:           ['listTodo',    ['Spotting sources worth pursuing', 'Checking your Opportunities']],
+    get_knowledge:           ['bookOpen',    ['Grounding the answer in the basics', 'Pulling up the relevant concepts']],
+    /* n8n (bis zum Umstieg P6) */
+    company_lookup:          ['squareStack', ['Identifying your brand and competitors', 'Mapping out the companies in play', 'Pinning down the brands to track']],
+    brand_overview:          ['squareStack', ["Reading your brand's visibility data", 'Checking how often you show up', 'Sizing up your overall presence']],
+    brand_variations:        ['squareStack', ['Catching every spelling of your name', 'Gathering all your brand variations']],
+    tag_lookup:              ['zap',         ['Sorting prompts into topics', 'Grouping prompts by theme', 'Organizing prompts by category']],
+    prompt_insights:         ['zap',         ['Digging into prompt-level performance', 'Seeing which prompts mention you', 'Tracing visibility across prompts']],
+    prompt_lookup:           ['zap',         ['Finding the right prompts to inspect', 'Pulling the prompts into view']],
+    citation_overview:       ['globe',       ['Scanning the sources AI cites', 'Mapping which domains get referenced']],
+    source_mentions_overview:['globe',       ['Seeing who gets mentioned where', 'Following mentions across the web']],
+    source_recommendations:  ['globe',       ['Spotting sources worth pursuing', 'Hunting for citation opportunities']],
+    response_mentions:       ['response',    ['Reading how AI answers describe you', 'Scanning the actual AI replies']]
+  };
+  /* Der alte Weg kennt nur Arten: zweimal dieselbe Art hintereinander bleibt EIN Schritt (brand_overview nach
+     brand_variations bleibt "Brand"), wie vorher. */
+  var _ALT_ART = {
     company_lookup:'brand', brand_overview:'brand', brand_variations:'brand',
     tag_lookup:'prompts', prompt_insights:'prompts', prompt_lookup:'prompts', get_knowledge:'prompts',
     citation_overview:'sources', source_mentions_overview:'sources', url_detail:'sources', source_recommendations:'sources',
     response_mentions:'responses', response_detail:'responses'
   };
-  var _TOOL_TEXT = {
-    company_lookup:['Identifying your brand and competitors','Mapping out the companies in play','Pinning down the brands to track'],
-    brand_overview:["Reading your brand's visibility data",'Checking how often you show up','Sizing up your overall presence'],
-    brand_variations:['Catching every spelling of your name','Gathering all your brand variations'],
-    tag_lookup:['Sorting prompts into topics','Grouping prompts by theme','Organizing prompts by category'],
-    prompt_insights:['Digging into prompt-level performance','Seeing which prompts mention you','Tracing visibility across prompts'],
-    prompt_lookup:['Finding the right prompts to inspect','Pulling the prompts into view'],
-    get_knowledge:['Grounding the answer in the basics','Pulling up the relevant concepts'],
-    citation_overview:['Scanning the sources AI cites','Mapping which domains get referenced'],
-    source_mentions_overview:['Seeing who gets mentioned where','Following mentions across the web'],
-    url_detail:['Reading what this page actually says','Inspecting that URL up close'],
-    source_recommendations:['Spotting sources worth pursuing','Hunting for citation opportunities'],
-    response_mentions:['Reading how AI answers describe you','Scanning the actual AI replies'],
-    /* Nicht "eine einzelne Antwort": Mira liest hier den vollen Wortlaut der Antworten, statt nur
-       ihre Kennzahlen -- "one reply" beschrieb den Schritt falsch. */
-    response_detail:['Reading the full answer text','Looking at what the answers actually say']
-  };
-  var _STATE_TEXT = {
-    brand:['Reading your brand data'],
-    prompts:['Working through your prompts'],
-    sources:['Scanning the sources'],
-    responses:['Reading the AI responses']
-  };
-  function _tlBrandList(){ return (S.brandLogos || []).slice(0, 20); }   // [{src,fb_src,label,color}]
-  function _tlFaviconList(){ return (S.favicons || []).slice(0, 20); }   // [{src,label}]
-  function _tlModelList(){
-    var out = [], k, m;
-    for (k in S.models){ if (!Object.prototype.hasOwnProperty.call(S.models, k)) continue; m = S.models[k];
-      /* Die Lauf-Chips tragen in beiden Themen eine helle Platte: immer das schwarze OpenAI-Logo. */
-      if (m && m.logo_url) out.push({ src: (window.UpstreemCore && window.UpstreemCore.modelLogoUrl) ? window.UpstreemCore.modelLogoUrl(m.key || k, m.logo_url, false, m.provider) : m.logo_url, label: m.display_name || m.key || k }); }
-    return out.slice(0, 20);
-  }
-  function _tlTopicList(){
-    return (S.topics || []).slice(0, 20).map(function(t){ return { name: t.name || '', color: (t.hex_light || t.hex_dark || 'var(--vc-mira-thema-rueckfall)') }; });
-  }
-  function _tlChip(cls, src, fbSrc, label, color){
-    var w = document.createElement('span'); w.className = cls;
-    if (src){
-      var im = document.createElement('img'); im.alt = ''; im.referrerPolicy = 'no-referrer';
-      var triedFb = false;
-      im.onerror = function(){
-        if (fbSrc && !triedFb){ triedFb = true; im.src = fbSrc; return; }   // try the favicon fallback first
-        w.classList.add('is-fb'); w.style.setProperty('--fb', color || 'var(--vc-mira-logo-rueckfall)'); w.textContent = String(label || '?').charAt(0).toUpperCase();
-      };
-      im.src = src; w.appendChild(im);
-    } else { w.style.background = 'var(--am-soft)'; }   // placeholder chip when no asset
-    return w;
-  }
-  function _tlShuffle(a){ a = a.slice(); for (var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
-  /* ---------------- Arbeitsprotokoll: Uhr + Liste der Arbeitsschritte ----------------
-     Vorher zeigte der Ladezustand immer nur den EINEN Schritt, an dem Mira gerade arbeitet -- was
-     davor lief, war weg, und wie lange sie schon sucht, stand nirgends. Jetzt fuehrt die Komponente
-     Protokoll: oben die laufende Uhr, darunter je Arbeitsschritt eine Zeile. Die laufende Zeile
-     traegt einen Spinner und steht in der zweiten Textfarbe; beim Abschluss geht der Spinner weich
-     weg und der Text wechselt in die erste. So waechst waehrend der Antwort eine Liste.
-
-     Die Liste lebt NUR in dieser Sitzung und gehoert immer zur LETZTEN Antwort -- nach einem
-     Neuladen steht wieder die einzelne "Thought for"-Zeile aus latency_ms da, wie vorher. */
-  var RUN = { valid:false, live:false, startTs:0, endTs:0, steps:[] };
-  var _runClock = null;        // Intervall der Uhr
-  var _runQ = [];              // wartende Zustaende, in der Reihenfolge, in der sie kamen
-  var _runQT = null;           // Timer, der den naechsten Schritt freigibt
-  var _runStepTs = 0;          // Beginn des laufenden Schritts -- Grundlage der Mindeststandzeit
-  var _runEmitted = false;     // wurde der Block in diesem Render schon ueber eine Antwort gesetzt?
-  /* Mindeststandzeit je Schritt. Vorher waren es 5s, und wer waehrend der Sperre kam, wurde
-     VERSCHLUCKT: gemerkt wurde nur der jeweils letzte Wunsch. Jetzt wartet eine Schlange, statt zu
-     vergessen -- also darf die Zeit kurz sein, und trotzdem faellt kein Schritt aus der Liste.
-     Seit dem 22.10. stehen dieser Takt und die uebrigen Zeiten des Protokolls (frisch, haken, kalt,
-     auftritt, logo, uhr) in core als UC.LAUF_TAKT, mit denselben Werten wie vorher hier (1500, 520,
-     30, 480, 20, 70, 1000): Page Audit zeigt dasselbe Protokoll und nimmt sie von dort. */
-  var _KERN = window.UpstreemCore || {}, _TAKT = _KERN.LAUF_TAKT || {};
-  if (!_KERN.LAUF_TAKT && window.console) console.error('[ask-mira] core.js ist aelter als ask-mira.js: LAUF_TAKT fehlt');
-  var _RUN_MOMENT = 10000;     // kuerzer gedacht -> "a moment" statt einer Zahl
 
   function runClockText(){
     /* Ohne Startzeit stuende hier fuer immer "0s". Das darf im laufenden Zustand nicht vorkommen
@@ -3533,10 +3535,8 @@
     var ms = RUN.startTs ? ((RUN.endTs || Date.now()) - RUN.startTs) : 0;
     return (RUN.live ? L().runNow : L().runDone) + ' ' + runDauer(ms);
   }
-  /* Der laufende Block, nicht der erste im Chat. root.querySelector('.am-run') traf ab der ZWEITEN
-     Frage die Uhr der schon fertigen Antwort weiter oben (.am-run.is-bare traegt dieselbe Klasse) --
-     die Uhr des Ladeblocks wurde nie angefasst und stand fuer immer auf "0s". Beim ersten Mal fiel
-     es nicht auf, weil oben noch nichts stand. */
+  /* Der laufende Block, nicht der erste im Chat: .am-run.is-bare ueber einer alten Antwort traegt dieselbe
+     Klasse, und ab der zweiten Frage traf root.querySelector('.am-run') deren Uhr. */
   function runBox(){
     return elMessages.querySelector('.am-msg-loading .am-run') ||
            elMessages.querySelector('.am-run:not(.is-bare)');
@@ -3545,122 +3545,128 @@
     var box = runBox(); if (!box) return;
     var el = box.querySelector('.am-run-clock'); if (el) el.textContent = runClockText();
   }
-  /* Der Text eines Schritts wird EINMAL beim Anlegen gezogen und aendert sich nie wieder: die Zeile
-     steht spaeter als Protokoll da, und ein Protokoll, das sich nachtraeglich umschreibt, ist keins.
-     Schon benutzte Texte kommen nicht zweimal vor, solange die Auswahl reicht. */
-  function runStepText(kind, key){
-    var pool = (_TOOL_TEXT[key] && _TOOL_TEXT[key].length) ? _TOOL_TEXT[key] : (_STATE_TEXT[kind] || ['Working on it']);
-    var used = {}, i;
-    for (i = 0; i < RUN.steps.length; i++){ if (RUN.steps[i].text) used[RUN.steps[i].text] = 1; }
+  function runIcon(name){
+    try { return (_KERN.icon) ? _KERN.icon(name, 2) : ''; } catch(e){ return ''; }
+  }
+  function runRing(){
+    try { return (_KERN.ringHtml) ? _KERN.ringHtml(14) : ''; } catch(e){ return ''; }
+  }
+  function runSatz(name){
+    var pool = (_SCHRITT[name] && _SCHRITT[name][1]) || ['Working on it'];
+    var used = {};
+    RUN.runden.forEach(function(r){ r.schritte.forEach(function(s){ used[s.text] = 1; }); });
     var frei = pool.filter(function(t){ return !used[t]; });
     var arr = frei.length ? frei : pool;
     return arr[Math.floor(Math.random() * arr.length)];
   }
-  /* Die Logos vorn: eine zufaellige Auswahl, EINMAL gezogen und dann fest -- sie rotieren nicht.
-     Die Modelle bleiben in ihrer Reihenfolge, die ist eine Rangliste und keine Auswahl. */
-  /* Wie viele Chips die Zeile traegt: 3 bis 5, je Schritt neu gezogen. Eine feste Zahl liess jede
-     Zeile gleich aussehen; mehr als 5 schiebt den Text auf schmalen Breiten weg. */
-  function runLogoZahl(){ return 3 + Math.floor(Math.random() * 3); }
-  function runLogos(kind){
-    var n = runLogoZahl();
-    if (kind === 'brand')     return _tlShuffle(_tlBrandList()).slice(0, n);
-    if (kind === 'sources')   return _tlShuffle(_tlFaviconList()).slice(0, n);
-    if (kind === 'responses') return _tlModelList().slice(0, n);
-    /* Prompts tragen KEINE Chips: ein Thema hat kein Logo, und drei Farbflecken haben nichts
-       gesagt ausser "hier waeren Chips". Das Zeichen vor dem Text sagt den Schritt. */
-    return [];
-  }
-  /* Das Zeichen vor dem Text -- dasselbe, das der Punkt in der Seitenleiste traegt (Brands,
-     Prompt Insights, Citations); Responses nimmt das des Prompts-Seitenkopfs. Kein Kasten
-     darum, zweite Textfarbe: es beschriftet die Zeile, es ist kein Chip.
-     Responses traegt seit dem 30.09. 'response' (Chat01) statt 'scan'. Der Seitenkopf hat am
-     22.09. auf Chat01 gewechselt, diese Zeile war beim Wechsel uebersehen worden -- gemeldet
-     aus der Landingpage, dieselbe Datei laeuft in der App. */
-  var _RUN_IC = { brand:'squareStack', prompts:'zap', sources:'globe', responses:'response' };
-  function runZeichen(st){
-    var kern = window.UpstreemCore;
-    var el = document.createElement('span');
-    if (st.kind === 'thought'){
-      /* Die Denkzeile ist Mira selbst: der Kasten in der ersten Textfarbe, das Zeichen darin in
-         der ersten Textfarbe des ANDEREN Themas -- also immer der kraeftigste Gegensatz, den das
-         Thema hat, und in beiden Themen derselbe Eindruck. */
-      el.className = 'am-run-ic is-mira';
-      el.innerHTML = (kern && kern.icon) ? kern.icon('blend', 2) : '';
-      return el;
+  function runFinde(id){
+    for (var i = 0; i < RUN.runden.length; i++){
+      for (var j = 0; j < RUN.runden[i].schritte.length; j++){
+        if (RUN.runden[i].schritte[j].id === id) return { r: RUN.runden[i], s: RUN.runden[i].schritte[j] };
+      }
     }
-    el.className = 'am-run-ic';
-    el.innerHTML = (kern && kern.icon) ? kern.icon(_RUN_IC[st.kind] || 'zap', 2) : '';
-    return el;
+    return null;
   }
-  function runLead(lead, st){
-    lead.innerHTML = '';
-    var l = st.logos || [];
-    if (!l.length) return;                             /* keine Logos -> keine leeren Kaesten */
-    l.forEach(function(it, i){
-      var c = (st.kind === 'responses')
-        ? _tlChip('am-tload-ai', it.src, '', it.label, 'var(--vc-mira-logo-rueckfall)')
-        : _tlChip('am-tload-logo', it.src, it.fb_src, it.label, it.color);
-      c.style.transitionDelay = (i * _TAKT.logo) + 'ms';   /* die drei Logos kommen nacheinander */
-      lead.appendChild(c);
-    });
-  }
-  function runThoughtLabel(st){
-    var ms = (st.endTs || Date.now()) - st.ts;
-    return (ms < _RUN_MOMENT) ? L().thoughtMoment : formatThought(ms);
+  function runLaeuftEtwas(){
+    var r = RUN.runden[RUN.runden.length - 1];
+    return !!r && r.schritte.some(function(s){ return !s.endTs; });
   }
 
-  /* ---- Eine Zeile bauen ----
-     "frisch" heisst: dieser Schritt ist gerade abgeschlossen worden. Dann wird die Zeile NICHT
-     schon fertig gebaut, sondern laufend -- und der Abgang gleich danach neu angestossen. Sonst
-     verschluckt der naechste Renderdurchgang (die Antwort kommt an) genau die Bewegung, die man
-     sehen soll: Spinner weg, Text von der zweiten in die erste Farbe. */
-  function runRow(st){
-    var frisch = !!st.endTs && (Date.now() - st.endTs) < _TAKT.frisch;
+  /* ---- Ein Schritt: Zeichenfeld (Ring, Zeichen, Warnzeichen uebereinander) und Satz ----
+     Alle drei Zeichen stehen von Anfang an im Feld, die Klasse waehlt das sichtbare: so blendet der Ring
+     in das Zeichen ueber, statt dass das Feld neu gebaut wird (Zeilen werden nie neu gebaut, nur ihre Klasse
+     wechselt). "frisch" wie vorher: ist der Schritt gerade erst fertig geworden, wird er laufend gebaut und
+     gleich danach abgehakt -- sonst verschluckt ein Neuaufbau genau die Bewegung, die man sehen soll. */
+  function runSchrittEl(s){
+    var frisch = !!s.endTs && (Date.now() - s.endTs) < _TAKT.frisch;
+    var fertig = !!s.endTs && !frisch;
+    var el = document.createElement('span');
+    el.className = 'am-run-schritt' + (fertig ? (s.fehler ? ' is-fehler' : ' is-done') : '');
+    var ic = document.createElement('span'); ic.className = 'am-run-ic'; ic.setAttribute('aria-hidden', 'true');
+    ic.innerHTML = '<span class="am-run-spin">' + runRing() + '</span>' +
+                   '<span class="am-run-zeichen">' + runIcon((_SCHRITT[s.name] && _SCHRITT[s.name][0]) || 'zap') + '</span>' +
+                   '<span class="am-run-warn">' + runIcon('alertCircle') + '</span>';
+    el.appendChild(ic);
+    var txt = document.createElement('span');
+    txt.className = 'am-run-txt' + (fertig ? '' : ' up-glanz');
+    txt.textContent = s.text;
+    el.appendChild(txt);
+    if (fertig && s.fehler) el.setAttribute('data-tip', L().runFailed);
+    s.el = el;
+    if (frisch) setTimeout(function(){ runSchrittFertig(s); }, _TAKT.haken);
+    return el;
+  }
+  function runSchrittFertig(s){
+    var el = s.el; if (!el) return;
+    var txt = el.querySelector('.am-run-txt'); if (txt) txt.classList.remove('up-glanz');
+    if (s.fehler) el.setAttribute('data-tip', L().runFailed);
+    /* is-cold nach LAUF_TAKT.kalt: der unsichtbare Ring hoert auf zu drehen (core laufAbhaken). */
+    _KERN.laufAbhaken(el, s.fehler ? 'is-fehler' : 'is-done', function(){ return s.el === el; });
+  }
+  /* Eine Runde: Zeile mit Punkt auf der Schiene, darin die Saetze nebeneinander. Sie waechst auf
+     (grid-template-rows 0fr -> 1fr, core laufAuftritt), ihre Saetze kommen nacheinander (LAUF_TAKT.logo). */
+  function runRundeEl(r){
     var row = document.createElement('div');
-    row.className = 'am-run-step' + (st.endTs && !frisch ? ' is-done is-cold' : '');
-    var inner = document.createElement('div'); inner.className = 'am-run-inner'; row.appendChild(inner);
-    /* Der Abstand nach oben sitzt eine Ebene TIEFER als der Klipper: haengt er am Klipper selbst,
-       bleibt die zugefaltete Zeile 11px hoch und die Liste springt beim Auftritt. */
-    var line = document.createElement('div'); line.className = 'am-run-line'; inner.appendChild(line);
-    var sp = document.createElement('span'); sp.className = 'am-run-spin'; sp.setAttribute('aria-hidden', 'true');
-    sp.innerHTML = '<i></i>';                          /* innen dreht es, aussen blendet es -- sonst kaempfen Animation und Uebergang um transform */
-    line.appendChild(sp);
-    line.appendChild(runZeichen(st));
-    var txt = document.createElement('span'); txt.className = 'am-run-txt';
-    if (st.kind === 'thought'){
-      /* Die Denkzeile benutzt die Lauf-Mechanik, die es schon gibt (am-think-loop/-text): der Text
-         wechselt waehrend des Denkens und am Ende auf "Thought for ..." -- mit derselben Auf-/Ab-
-         Bewegung wie vorher, statt hart umzuspringen. */
-      txt.classList.add('am-think-loop');
-      txt.innerHTML = '<span class="am-think-text"></span>';
-      txt.querySelector('.am-think-text').textContent = st.endTs ? st.text : (st.text || currentThinkText());
-    } else {
-      txt.textContent = st.text;
-    }
-    line.appendChild(txt);
-    /* Die Logos stehen HINTER dem Text: vorne sagt das Zeichen, worum es geht, hinten zeigen die
-       Chips, an welchen Daten gerade gearbeitet wird. */
-    var lead = document.createElement('span'); lead.className = 'am-run-lead'; line.appendChild(lead);
-    runLead(lead, st);
-    st.el = row;
-    if (frisch) setTimeout(function(){ runMarkDone(st, false); }, _TAKT.haken);
+    row.className = 'am-run-step' + (r.schritte.length && r.schritte.every(function(s){ return s.endTs; }) ? ' is-done' : '');
+    row.innerHTML = '<div class="am-run-inner"><div class="am-run-line"><span class="am-run-dot" aria-hidden="true"></span>' +
+                    '<span class="am-run-saetze"></span></div></div>';
+    var saetze = row.querySelector('.am-run-saetze');
+    r.schritte.forEach(function(s, i){
+      var el = runSchrittEl(s);
+      saetze.appendChild(el);
+      if (s.shown) el.classList.add('is-in'); else runSchrittAuftritt(s, i);
+    });
+    r.el = row;
     return row;
   }
-  function runMarkDone(st, umblenden){
-    var el = st.el; if (!el) return;
-    /* Wenn der Spinner unsichtbar ist, hoert er auch auf zu drehen -- eine unsichtbare
-       Dauer-Animation je Zeile kostet in einer langen Liste sonst dauerhaft Rechenzeit (is-cold
-       nach LAUF_TAKT.kalt, core laufAbhaken). */
-    _KERN.laufAbhaken(el, 'is-done', function(){ return st.el === el; });
-    if (st.kind === 'thought' && umblenden) setThinkText(st.text);
+  function runSchrittAuftritt(s, i){
+    s.shown = true;
+    var el = s.el; if (!el) return;
+    void el.offsetWidth;
+    setTimeout(function(){ el.classList.add('is-in'); }, _TAKT.auftritt + (i || 0) * _TAKT.logo);
   }
-  function runReveal(st, verzug){
-    st.shown = true;
-    /* Lage erzwingen, dann is-in per setTimeout und nicht requestAnimationFrame: in einem verdeckten
-       Tab feuert rAF nie, und dann stuende die Zeile fuer immer auf 0fr -- also unsichtbar (core
-       laufAuftritt). Wird die Zeile in der Zwischenzeit neu gebaut, traegt die neue is-in schon
-       (runFill: st.shown). */
-    if (st.el) _KERN.laufAuftritt(st.el, verzug);
+  function runReveal(r){
+    r.shown = true;
+    if (r.el) _KERN.laufAuftritt(r.el);
+  }
+  /* Die Denkzeile am Ende der Schiene: steht da, solange Mira arbeitet und kein Aufruf laeuft. */
+  function runDenkenEl(){
+    var row = document.createElement('div');
+    row.className = 'am-run-step am-run-denken';
+    row.innerHTML = '<div class="am-run-inner"><div class="am-run-line"><span class="am-run-dot is-ring" aria-hidden="true">' + runRing() + '</span>' +
+                    '<span class="am-run-txt up-glanz"></span></div></div>';
+    row.querySelector('.am-run-txt').textContent = L().runThinking;
+    return row;
+  }
+  function runDenkenSetzen(box){
+    box = box || runBox(); if (!box) return;
+    var d = box.querySelector('.am-run-denken'); if (!d) return;
+    var an = RUN.live && !RUN.phase && !runLaeuftEtwas();
+    RUN.denkenAn = an;
+    if (an && !d.classList.contains('is-in')) _KERN.laufAuftritt(d);
+    else if (!an) d.classList.remove('is-in');
+    runLinie(box, an);
+  }
+  /* Die Schiene endet am Punkt der letzten sichtbaren Zeile (is-letzte). Die Denkzeile zaehlt mit,
+     solange sie steht -- ihr Einklappen dauert, also wird nach dem Ziel gerechnet, nicht nach is-in. */
+  function runLinie(box, denkenAn){
+    var rows = box.querySelectorAll('.am-run-steps > .am-run-step');
+    var letzte = null;
+    for (var i = 0; i < rows.length; i++){
+      rows[i].classList.remove('is-letzte');
+      if (rows[i].classList.contains('am-run-denken') && !denkenAn) continue;
+      letzte = rows[i];
+    }
+    if (letzte) letzte.classList.add('is-letzte');
+  }
+  function runPhaseZeigen(box){
+    box = box || runBox(); if (!box) return;
+    var zu = RUN.phase === 'schreiben' || RUN.phase === 'pruefen';
+    box.classList.toggle('is-zu', zu);
+    if (zu) RUN.gefaltet = true;
+    var p = box.querySelector('.am-run-phase');
+    if (p) p.textContent = (RUN.phase === 'pruefen') ? L().runChecking : (RUN.phase === 'schreiben' ? L().runWriting : '');
+    runDenkenSetzen(box);
   }
   /* Die Liste waechst nach unten. Wenn ihr Ende aus dem Blick rutscht, wird genau um den fehlenden
      Betrag nachgescrollt -- nicht ans Ende des Verlaufs, denn beim Senden wird darunter Platz
@@ -3677,18 +3683,45 @@
   /* ---- Block aufbauen ---- */
   function runFill(box){
     box.innerHTML = '';
-    box.classList.toggle('is-live', !!RUN.live);
-    var head = document.createElement('div'); head.className = 'am-run-head';
-    var clock = document.createElement('span'); clock.className = 'am-run-clock';
-    clock.textContent = runClockText();
-    head.appendChild(clock); box.appendChild(head);
-    var steps = document.createElement('div'); steps.className = 'am-run-steps'; box.appendChild(steps);
-    RUN.steps.forEach(function(st){
-      var row = runRow(st);
-      if (st.shown) row.classList.add('is-in');         /* war schon da -> ohne Auftritt, sonst laeuft er bei jedem Render neu */
+    var fertig = !RUN.live;
+    /* Fertig zugeklappt (C1). Kam die Antwort OHNE Schreibphase (n8n: sie kommt als Ganzes), stand das
+       Protokoll bis eben offen -- dann klappt es sichtbar zu, statt zu springen. */
+    var zuklappen = fertig && !_runOffen && !RUN.gefaltet && RUN.endTs && (Date.now() - RUN.endTs) < _TAKT.frisch;
+    box.className = 'am-run' + (RUN.live ? ' is-live' : ' is-fertig') + ((fertig && (_runOffen || zuklappen)) ? ' is-offen' : '');
+    var head;
+    if (fertig){
+      head = document.createElement('button'); head.type = 'button';
+      head.className = 'am-run-head am-run-auf';
+      head.setAttribute('aria-expanded', _runOffen ? 'true' : 'false');
+      head.innerHTML = '<span class="am-run-clock"></span><span class="am-run-chev" aria-hidden="true"></span>';
+      head.querySelector('.am-run-chev').innerHTML = runIcon(_runOffen ? 'chevronUp' : 'chevronDown');
+    } else {
+      head = document.createElement('div'); head.className = 'am-run-head';
+      head.innerHTML = '<span class="am-run-kring" aria-hidden="true">' + runRing() + '</span><span class="am-run-clock"></span>' +
+                       '<span class="am-run-phase up-glanz"></span>';
+    }
+    head.querySelector('.am-run-clock').textContent = runClockText();
+    box.appendChild(head);
+    var body = document.createElement('div'); body.className = 'am-run-body';
+    var steps = document.createElement('div'); steps.className = 'am-run-steps';
+    body.appendChild(steps); box.appendChild(body);
+    RUN.runden.forEach(function(r){
+      var row = runRundeEl(r);
+      if (r.shown) row.classList.add('is-in');
       steps.appendChild(row);
-      if (!st.shown) runReveal(st);
+      if (!r.shown) runReveal(r);
     });
+    if (RUN.live){
+      var d = runDenkenEl();
+      /* Stand sie vor dem Neuaufbau schon, kommt sie ohne Auftritt zurueck -- renderMessages baut den
+         Block bei jedem Durchgang neu, und sie fuehre sonst jedes Mal von 0 auf. */
+      if (RUN.denkenAn) d.classList.add('is-in');
+      steps.appendChild(d);
+      runPhaseZeigen(box);
+    } else {
+      runLinie(box, false);
+      if (zuklappen){ void box.offsetHeight; setTimeout(function(){ if (!_runOffen) box.classList.remove('is-offen'); }, _TAKT.auftritt); }
+    }
   }
   function runMount(){
     /* :not(.is-bare) -- die nackte Uhr ueber einer GELADENEN Antwort ist fertiges Markup und kein
@@ -3697,6 +3730,17 @@
     var box = elMessages.querySelector('.am-run:not(.is-bare)');
     if (box) runFill(box);
   }
+  /* C1: die Zeile klappt das fertige Protokoll auf und zu. Der Pfeil wechselt sein Zeichen, er dreht sich
+     nicht (Regel der App). */
+  elMessages.addEventListener('click', function(e){
+    var k = e.target && e.target.closest ? e.target.closest('.am-run-auf') : null;
+    if (!k) return;
+    var box = k.closest('.am-run'); if (!box) return;
+    _runOffen = !box.classList.contains('is-offen');
+    box.classList.toggle('is-offen', _runOffen);
+    k.setAttribute('aria-expanded', _runOffen ? 'true' : 'false');
+    var ch = k.querySelector('.am-run-chev'); if (ch) ch.innerHTML = runIcon(_runOffen ? 'chevronUp' : 'chevronDown');
+  });
 
   /* ---- Ablauf ---- */
   function runReset(){
@@ -3706,106 +3750,110 @@
   }
   function runDrop(){
     runReset();
-    RUN = { valid:false, live:false, startTs:0, endTs:0, steps:[] };
+    RUN = { valid:false, live:false, startTs:0, endTs:0, runden:[], phase:'', neueRunde:true, gefaltet:false };
+    _runOffen = false; _runAlt = { art:'', id:'', n:0 };
   }
   function runStart(){
     runReset();
     /* Die Uhr laeuft ab dem Absenden und nicht ab diesem Aufruf: dazwischen liegt der Weg durch
        Bubble, und der gehoert zur Wartezeit, die der Nutzer erlebt. */
     var start = _sendStartTs || Date.now();
-    /* DIESELBE Frage setzt die Uhr NICHT zurueck. setLoading(true) kommt fuer eine Antwort
-       mehrfach, und dazwischen kann ein setLoading(false) stehen: askMiraSetMessages ruft
-       setLoading(letzte Nachricht laeuft noch), und solange die laufende Antwort in einem
-       Durchlauf fehlt, kippt der Wert kurz auf false. Ohne diese Weiche begann RUN dann von vorn
-       -- die Uhr sprang bei jedem Durchlauf auf 0 zurueck und stand damit dauerhaft auf "0s",
-       waehrend die Schritte weiterliefen. Genau das Bild ab der zweiten Frage.
-       Der Anker ist _sendStartTs: er wird je Frage einmal gesetzt (send()), also heisst gleicher
-       Zeitstempel "gleiche Frage". */
-    /* Zweiter Anker fuer den Fall, dass die Frage NICHT ueber das Eingabefeld kam (die App setzt
-       den Zustand auch von aussen, dann gibt es kein _sendStartTs): ein Lauf, der weniger als vier
-       Sekunden nach dem Ende des vorigen beginnt, ist die Fortsetzung desselben und kein neuer.
-       Eine echte neue Frage bringt einen frischen _sendStartTs mit -- und der schlaegt diese
-       Regel, sonst wuerde eine schnell gestellte zweite Frage die Uhr der ersten weiterzaehlen. */
+    /* DIESELBE Frage setzt die Uhr NICHT zurueck. setLoading(true) kommt fuer eine Antwort mehrfach,
+       und dazwischen kann ein setLoading(false) stehen (askMiraSetMessages mit laufender Antwort). Ohne
+       diese Weiche begann RUN dann von vorn und die Uhr stand dauerhaft auf "0s". Anker ist _sendStartTs
+       (je Frage einmal gesetzt); kam die Frage nicht ueber das Eingabefeld, gilt ein Lauf, der weniger als
+       vier Sekunden nach dem Ende des vorigen beginnt, als Fortsetzung. */
     var neueFrage = _sendStartTs && _sendStartTs !== RUN.startTs;
-    var kurzNachEnde = RUN.valid && RUN.steps.length && RUN.endTs && (Date.now() - RUN.endTs < 4000);
-    if (!neueFrage && RUN.valid && RUN.steps.length && (RUN.startTs === start || kurzNachEnde)){
+    var kurzNachEnde = RUN.valid && RUN.endTs && (Date.now() - RUN.endTs < 4000);
+    if (!neueFrage && RUN.valid && (RUN.startTs === start || kurzNachEnde)){
       RUN.live = true; RUN.endTs = 0;
     } else {
-      RUN = { valid:true, live:true, startTs:start, endTs:0, steps:[] };
-      runPush('thought', '');
+      RUN = { valid:true, live:true, startTs:start, endTs:0, runden:[], phase:'', neueRunde:true, gefaltet:false };
+      _runOffen = false; _runAlt = { art:'', id:'', n:0 };
     }
     _runClock = setInterval(runClockTick, _TAKT.uhr);
   }
-  function runPush(kind, key){
-    var vor = RUN.steps[RUN.steps.length - 1];
-    if (vor && !vor.endTs) runClose(vor);
-    var st = { kind: kind, tool: key || '', ts: Date.now(), endTs: 0, shown: false,
-               text: (kind === 'thought') ? '' : runStepText(kind, key),
-               logos: (kind === 'thought') ? [] : runLogos(kind), el: null };
-    RUN.steps.push(st);
-    _runStepTs = st.ts;
-    var steps = elMessages.querySelector('.am-msg-loading .am-run-steps');
-    if (steps){ steps.appendChild(runRow(st)); runReveal(st); setTimeout(runFollow, 460); }
-    return st;
+  function runEreignis(e){
+    if (!RUN.live) return;
+    /* EIN VENTIL GEGEN DIE FLUT (23.09. im Audit gemessen): jede wartende Runde braucht 1,5 s. Ein Fehler im
+       sendenden Ablauf reicht fuer hunderte Meldungen; jenseits von 24 wartenden Starts ist nichts mehr zu
+       erzaehlen, und die spaeteren fallen weg, statt die Oberflaeche zu blockieren. */
+    if (e.typ === 'start' && _runQ.filter(function(x){ return x.typ === 'start'; }).length >= 24) return;
+    _runQ.push(e);
+    runDrain();
   }
-  function runClose(st){
-    if (!st || st.endTs) return;
-    st.endTs = Date.now();
-    if (st.kind === 'thought'){
-      /* Die Denkphase ist vorbei: der wandernde Text und der Deep-Hinweis hoeren auf. Ohne das
-         schreibt die Rotation nach 7,5s ihren naechsten Satz in die fertige Zeile. */
-      loadStop();
-      st.text = runThoughtLabel(st);
+  function runDrain(sofort){
+    if (_runQT && !sofort) return;
+    while (_runQ.length && RUN.live){
+      var e = _runQ[0];
+      if (!sofort && e.typ === 'start' && (RUN.neueRunde || !RUN.runden.length) && RUN.runden.length){
+        var warte = _KERN.laufWarten(_runRundeTs);
+        if (warte > 0){
+          _runQT = setTimeout(function(){ _runQT = null; runDrain(); }, warte);
+          return;
+        }
+      }
+      _runQ.shift();
+      runAnwenden(e);
     }
-    runMarkDone(st, true);
+  }
+  function runAnwenden(e){
+    var box = runBox();
+    var steps = box && box.querySelector('.am-run-steps');
+    if (e.typ === 'runde'){ RUN.neueRunde = true; return; }
+    if (e.typ === 'text' || e.typ === 'pruefen'){
+      RUN.phase = (e.typ === 'text') ? 'schreiben' : 'pruefen';
+      runPhaseZeigen(box);
+      return;
+    }
+    if (e.typ === 'start'){
+      /* Text vor einem Werkzeug (das Modell schreibt kurz und ruft dann doch noch etwas): das Protokoll
+         geht wieder auf, die Schreibzeile gilt nicht mehr. */
+      if (RUN.phase){ RUN.phase = ''; runPhaseZeigen(box); }
+      var r = RUN.runden[RUN.runden.length - 1];
+      if (RUN.neueRunde || !r){
+        r = { schritte: [], shown: false, el: null };
+        RUN.runden.push(r);
+        RUN.neueRunde = false;
+        _runRundeTs = Date.now();
+        if (steps){
+          steps.insertBefore(runRundeEl(r), steps.querySelector('.am-run-denken'));
+          runReveal(r);
+        }
+      }
+      var s = { id: e.id, name: e.name, text: runSatz(e.name), endTs: 0, fehler: false, el: null, shown: false };
+      r.schritte.push(s);
+      if (r.el){
+        r.el.classList.remove('is-done');
+        r.el.querySelector('.am-run-saetze').appendChild(runSchrittEl(s));
+        runSchrittAuftritt(s, 0);
+      }
+      runDenkenSetzen(box);
+      setTimeout(runFollow, 460);
+      return;
+    }
+    if (e.typ === 'ende' || e.typ === 'fehler'){
+      var f = runFinde(e.id);
+      if (!f || f.s.endTs) return;
+      f.s.endTs = Date.now();
+      f.s.fehler = (e.typ === 'fehler');
+      runSchrittFertig(f.s);
+      if (f.r.el && f.r.schritte.every(function(x){ return x.endTs; })) f.r.el.classList.add('is-done');
+      runDenkenSetzen(box);
+    }
   }
   function runFinish(){
     if (!RUN.live) return;
     /* Was noch in der Schlange steht, wird nachgetragen statt weggeworfen -- sonst fehlten in der
        fertigen Liste genau die Schritte, die kurz vor der Antwort noch kamen. */
-    while (_runQ.length){
-      var nx = _runQ.shift();
-      runClose(runPush(nx.st, nx.key));
-    }
-    var letzt = RUN.steps[RUN.steps.length - 1];
-    if (letzt) runClose(letzt);
-    RUN.live = false; RUN.endTs = Date.now();
+    if (_runQT){ clearTimeout(_runQT); _runQT = null; }
+    runDrain(true);
+    var jetzt = Date.now();
+    RUN.runden.forEach(function(r){ r.schritte.forEach(function(s){ if (!s.endTs){ s.endTs = jetzt; runSchrittFertig(s); } }); });
+    RUN.live = false; RUN.endTs = jetzt; RUN.phase = '';
     runReset();
-    var box = runBox(); if (box) box.classList.remove('is-live');
     runClockTick();
   }
-  /* Der Typ, der zuletzt gezeigt wurde ODER schon in der Schlange steht. Kommt derselbe noch
-     einmal, aendert sich nichts: EIN Typ ergibt EINE Zeile, egal wie viele Werkzeuge dahinter
-     laufen (brand_overview nach brand_variations bleibt eine Zeile "Brand"). */
-  function runTail(){
-    if (_runQ.length) return _runQ[_runQ.length - 1].st;
-    var last = RUN.steps[RUN.steps.length - 1];
-    if (!last) return '';
-    return (last.kind === 'thought') ? '' : last.kind;
-  }
-  function runDrain(){
-    if (_runQT || !_runQ.length || !RUN.live) return;
-    var warte = _KERN.laufWarten(_runStepTs);
-    _runQT = setTimeout(function(){
-      _runQT = null;
-      if (!RUN.live) return;
-      var nx = _runQ.shift();
-      if (nx) runPush(nx.st, nx.key);
-      runDrain();
-    }, warte);
-  }
-  /* Kommen die Logos erst NACH dem Beginn des Schritts an (askMiraSetBrandLogos/-Favicons nach
-     askMiraSetTool), traegt die laufende Zeile sie nach -- vorher stand da der Rueckfall. */
-  function runRefreshLogos(kind){
-    var st = RUN.steps[RUN.steps.length - 1];
-    if (!st || st.endTs || st.kind !== kind) return;
-    if (st.logos && st.logos.length) return;
-    st.logos = runLogos(kind);
-    if (!st.logos.length || !st.el) return;
-    var lead = st.el.querySelector('.am-run-lead');
-    if (lead) runLead(lead, st);
-  }
-
   /* Nur die Ladezeile tauschen -- nie den ganzen Verlauf neu zeichnen
      (das erzeugte das sichtbare "Neuladen" / Nochmal-Tippen der letzten Antwort). */
   function _updateLoadingUI(){
@@ -7714,7 +7762,6 @@
     if (typeof input === 'string'){ var p = looseJsonParse(input); arr = (p == null) ? [] : p; }
     if (arr && !Array.isArray(arr)) arr = arr.domains || arr.favicons || arr.sources || [];
     S.favicons = (Array.isArray(arr) ? arr : []).map(_normFavicon).filter(Boolean).slice(0, 20);
-    if (S.isLoading) runRefreshLogos('sources');
   };
   // brand-logos pool (brand loader). Accepts an array / JSON string. Each item may be a
   // plain domain string, or { logo_url|logo|icon_url|src|url, domain, name|label, color }.
@@ -7737,29 +7784,41 @@
     if (typeof input === 'string'){ var p = looseJsonParse(input); arr = (p == null) ? [] : p; }
     if (arr && !Array.isArray(arr)) arr = arr.companies || arr.brands || arr.brandLogos || [];
     S.brandLogos = (Array.isArray(arr) ? arr : []).map(_normBrandLogo).filter(Boolean).slice(0, 20);
-    if (S.isLoading) runRefreshLogos('brand');
   };
   window.askMiraSetCompanies = window.askMiraSetBrandLogos;   // alias for the "companies" payload
-  /* Der gerade laufende Werkzeugschritt -> einer von vier Zustaenden -> eine Zeile im Protokoll.
-     Zweimal derselbe Zustand hintereinander bleibt EINE Zeile: die laufende bleibt unveraendert
-     stehen, samt ihrem Text und ihren Logos. Erst ein anderer Zustand macht eine neue auf. */
+  /* DER ALTE WEG (n8n, bis zum Umstieg P6): der Name des gerade laufenden Werkzeugs. Eine neue Art beendet
+     den laufenden Schritt und beginnt eine neue Runde; dieselbe Art hintereinander bleibt EIN Schritt, wie
+     vorher (brand_overview nach brand_variations bleibt einer). Ein Name des neuen Agenten (_SCHRITT) ist
+     seine eigene Art. Unbekannte Namen aendern nichts. */
   window.askMiraSetTool = function(tool){
     var key = String(tool == null ? '' : tool).trim().toLowerCase();
-    var st = _TOOL_STATE[key] || '';
-    if (!S.isLoading){ S.currentTool = key; S.toolState = st; return; }
-    if (!st) return;                       // unbekannter Name: die Liste bleibt, wie sie ist
+    var art = _ALT_ART[key] || (_SCHRITT[key] ? key : '');
+    if (!S.isLoading){ S.currentTool = key; S.toolState = art; return; }
+    if (!art) return;
     S.currentTool = key;
-    if (st === runTail()) return;          // derselbe Typ -> nichts aendert sich
-    /* EIN VENTIL GEGEN DIE FLUT (23.09. im Audit gemessen). Jeder wartende Schritt braucht
-       LAUF_TAKT.schritt (core), also 1,5 Sekunden, bis er erscheint. 500 wechselnde Werkzeugmeldungen -- ein
-       Fehler im sendenden Ablauf reicht dafuer -- ergaeben zwoelf Minuten Warteschlange, und
-       runFinish zeichnet sie beim Eintreffen der Antwort ALLE auf einmal. Ein echter Turn hat
-       eine Handvoll Schritte; jenseits von 24 ist nichts mehr zu erzaehlen, und die spaeteren
-       fallen weg, statt die Oberflaeche zu blockieren. */
-    if (_runQ.length >= 24) return;
-    S.toolState = st;
-    _runQ.push({ st: st, key: key });
-    runDrain();
+    if (art === _runAlt.art) return;
+    S.toolState = art;
+    _runAlt.art = art;
+    if (_runAlt.id) runEreignis({ typ: 'ende', id: _runAlt.id });
+    _runAlt.id = 'alt' + (++_runAlt.n);
+    runEreignis({ typ: 'runde' });
+    runEreignis({ typ: 'start', id: _runAlt.id, name: key });
+  };
+  /* DER NEUE WEG (22.10., fuer P2): je Teil des Streams von /api/mira genau ein Aufruf, unveraendert so,
+     wie er ankommt (Objekt oder JSON-Text). Gelesen werden start-step (neue Runde), tool-input-available
+     (ein Aufruf beginnt: toolCallId, toolName), tool-output-available und tool-output-error (er endet),
+     text-start (T1: das Protokoll klappt in die Kopfzeile) und text-end (Pruefung). Alles andere wird
+     uebergangen. Waehrend keine Antwort laeuft (setLoading), aendert sich nichts. */
+  window.askMiraRunEvent = function(teil){
+    if (typeof teil === 'string'){ var p = looseJsonParse(teil); teil = p; }
+    if (!teil || typeof teil !== 'object' || !S.isLoading) return;
+    var t = String(teil.type || ''), id = String(teil.toolCallId || '');
+    if (t === 'start-step') runEreignis({ typ: 'runde' });
+    else if (t === 'tool-input-available' && id) runEreignis({ typ: 'start', id: id, name: String(teil.toolName || '').toLowerCase() });
+    else if (t === 'tool-output-available' && id) runEreignis({ typ: 'ende', id: id });
+    else if ((t === 'tool-output-error' || t === 'tool-input-error') && id) runEreignis({ typ: 'fehler', id: id });
+    else if (t === 'text-start') runEreignis({ typ: 'text' });
+    else if (t === 'text-end') runEreignis({ typ: 'pruefen' });
   };
   window.askMiraSetFaviconsFromEl   = function(sel){ var r = _amReadEl(sel); if (r != null) window.askMiraSetFavicons(r); };
   window.askMiraSetBrandLogosFromEl = function(sel){ var r = _amReadEl(sel); if (r != null) window.askMiraSetBrandLogos(r); };
