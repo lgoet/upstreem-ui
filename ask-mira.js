@@ -9451,12 +9451,14 @@
          Schriftzug "mira". Nicht ein anderes Zeichen in kleiner -- die Klassen sind die des
          Kopfes, die Leiste setzt nur die Groessen herunter. Ein zweites Logo waere ein zweites
          Logo, auch wenn es aehnlich aussieht. */
-      /* NUR der Schriftzug, ohne Zeichen: in einer 250px-Leiste neben einem Umschalter ist das
-         Zeichen ein zweites Signal fuer dieselbe Sache. Die Klasse bleibt die des Kopfes
-         (.am-wordmark), die Leiste setzt nur die Groesse. */
+      /* ZEICHEN UND "Agent" IN DER UEBERSCHRIFTENSCHRIFT (23.10. spaet, Lukas: "statt dem 'agent'-Font: 'Agent' + das Icon
+         davor ... in normaler Heading-Font, nicht in der altmodischen Font"): das Zeichen der Seitenleiste (circlePile) und
+         das Wort in der Stufe "Abschnitt" aus core (.up-heading), keine eigene Groesse. Eingeklappt steht nur das Zeichen
+         (.am-mini-logo). */
       var logo = document.createElement('span');
-      logo.className = 'am-brand am-side-logo';
-      logo.innerHTML = '<span class="am-wordmark">agent</span>';
+      logo.className = 'am-side-logo';
+      logo.innerHTML = '<span class="am-side-zeichen" aria-hidden="true">' + ((kern && kern.icon) ? kern.icon('circlePile', 2) : '') + '</span>' +
+        '<span class="up-heading">Agent</span>';
       kopf.appendChild(um); kopf.appendChild(logo);
 
       /* ---- DIE EINGEKLAPPTE LEISTE (21.09. angefordert) --------------------------------------

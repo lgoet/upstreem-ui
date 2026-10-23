@@ -3092,8 +3092,12 @@
   /* Nur der Schriftzug, und der ist die Klasse des Kopfes (.am-wordmark). Hier steht nur die
      Groesse: 22px gegen 34px oben -- gross genug, um in einem 52px hohen Kopfbereich als Marke
      zu lesen, klein genug, um neben dem Umschalter nicht zu drueckend zu werden. */
-  .am-side-logo { flex: 0 0 auto; }
-  .am-side-logo .am-wordmark { font-size: 22px; letter-spacing: -0.01em; }
+  /* Zeichen und Wort (23.10. spaet): die Schrift ist .up-heading aus core (Abschnitt 16/600/-0.32, Zeile 24), hier nur
+     die Reihe. Das Zeichen 18 wie der Umschalter daneben, 8 zum Wort, beide mittig zueinander; in der Textfarbe wie die
+     Ueberschrift. */
+  .am-side-logo { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; color: var(--am-text); }
+  .am-side-zeichen { display: inline-flex; flex: 0 0 auto; }
+  .am-side-zeichen svg { width: 18px; height: 18px; display: block; }
   .am-prev-title { margin: 0; font-size: 14px; font-weight: 600; }
   .am-icon-btn {
     width: 34px; height: 34px; border: 1px solid transparent; border-radius: var(--up-r-m);
