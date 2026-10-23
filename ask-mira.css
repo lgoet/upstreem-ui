@@ -162,7 +162,7 @@
     /* 16px on left/top/right, so the logo block and the "All Chats" button keep the same inset
        from the component edge that the rest of the app's chrome has. Bottom stays larger: that is
        breathing room before the chat/composer below, unrelated to the side inset. */
-    padding: 16px 16px 28px;
+    padding: 16px 16px 28px 32px;
   }
   .am-hero-inner {
     display: flex; align-items: center; gap: 16px;
@@ -316,8 +316,9 @@
     width: 100%; max-width: min(100%, 782px); color: var(--am-text);
   }
   .am-msg.is-user .am-bubble {
-    /* Die Frage in Tabellengroesse (G1): 14/22, Polster 9/14 -- sie ist Kontext, die Antwort ist der Inhalt. */
-    font-size: var(--up-fs-l); line-height: 22px; padding: 9px 14px;
+    /* Die Frage je eine Stufe groesser und kraeftiger als in G1 (14/400; Lukas 23.10.: "zu klein und zu duenn"):
+       16/500 auf 24 wie Geists copy-16, das Polster mit dem Faktor 16/14 auf 10/16. */
+    font-size: var(--up-fs-xl); font-weight: var(--up-fw-m); line-height: 24px; padding: 10px 16px;
     background: var(--am-user-bg); color: var(--am-user-text);
     border-top-right-radius: var(--up-r-xs);
   }
@@ -610,7 +611,10 @@
     background: var(--am-soft-2); border-color: var(--am-border); object-fit: initial;
   }
 
-  .am-table-scroll { display: block; width: 100%; max-width: 100%; overflow-x: auto; margin: 24px 0 22px; border-radius: var(--up-r-l); border: 1px solid var(--am-border); -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+  /* Der Kasten traegt Rand, Radius und Grund der Tabelle (23.10., gemeldet: "gefuehlt ein 2. Border mit leicht anderer
+     Corner-Roundness"): vorher hatten Kasten (8) und Tabelle (12) je einen Rand. Radius 12 nach Rolle (Tabelle,
+     CLAUDE.md 1c); overflow schneidet den Inhalt an der Rundung, die Tabelle selbst braucht keinen. */
+  .am-table-scroll { display: block; width: 100%; max-width: 100%; overflow-x: auto; margin: 24px 0 22px; border-radius: var(--up-r-2xl); border: 1px solid var(--am-border); background: var(--up-feld-bg); -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
   /* URL choice popover (Visit vs. Open Detail Page) — styled like the tooltip */
   .am-url-pop {
     position: absolute; z-index: 60; min-width: 168px; max-width: 280px;
@@ -711,6 +715,7 @@
     background: transparent; padding: 9px 12px; white-space: normal; overflow-wrap: break-word;
     border-bottom: 1px solid var(--am-border);
   }
+  .am-bubble .am-table-scroll > table { border: 0; border-radius: 0; }
   .am-bubble tbody td { padding: 9px 12px; border-bottom: 1px solid var(--am-border); vertical-align: top; white-space: normal; overflow-wrap: break-word; }
   .am-bubble tbody tr:last-child td { border-bottom: 0; }
   .am-bubble tbody tr:nth-child(even) td { background: var(--vc-mira-tabelle-streifen); }
@@ -1033,6 +1038,9 @@
   .am-run-schritt.is-cold .am-run-spin .up-ring { animation: none; }
   .am-run-txt { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); line-height: 20px; color: var(--am-muted); min-width: 0; transition: color var(--up-lauf-farbe) ease; }
   .am-run-schritt.is-done .am-run-txt { color: var(--am-text); }
+  /* Die Zahl gleicher Aufrufe ("×8", runZahlSetzen): leise hinter dem Satz, ohne eigenen Abstand zum Text. */
+  .am-run-n { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 20px; color: var(--am-muted-2); margin-left: -4px; font-variant-numeric: tabular-nums; }
+  .am-run-n:empty { display: none; }
   /* Stillgelegt seit dem 22.10. abends: die Saetze tragen keine Logos mehr (Vertrag). */
   .am-run-lead { display: none; }
   @media (prefers-reduced-motion: reduce){
@@ -1397,20 +1405,21 @@
     position: relative; overflow: hidden;
     display: flex; align-items: center; gap: 13px; width: 100%; text-align: left;
     border-radius: var(--up-r-2xl);
-    /* wie bei den Kategoriekarten: kein Grund, ein halber Rahmen */
-    border: 1px solid color-mix(in srgb, var(--vc-border) 50%, transparent);
-    background: transparent;
+    /* 23.10. (Lukas: "weisser Hintergrund und Rand wie die Karten auf der Hauptseite"): der Rahmen und Grund der
+       Kategoriekarten seit dem 20.10. (--vc-border, --am-card); hier war noch die Fassung davor stehen geblieben,
+       ein halber Rahmen ohne Grund. */
+    border: 1px solid var(--vc-border);
+    background: var(--am-card);
     padding: 12px 13px 12px 76px; cursor: pointer; font-family: inherit;
     transition: background 200ms ease;
   }
-  #ask-mira[data-theme="dark"] .am-rep-card { background: transparent; }
   /* Der Hover: hell die naechste Sprosse, dunkel derselbe Ton VOLL statt halb -- wie bei den
      Kategoriekarten. */
   /* Derselbe geteilte Hover wie bei den Kategoriekarten, samt der dunklen Fassung -- die
      Begruendung fuer den Mix steht dort. Die beiden Kartenfamilien muessen gleich reagieren. */
   .am-rep-card:hover { background: var(--vc-heading-bg); }
   #ask-mira[data-theme="dark"] .am-rep-card:hover {
-    background: color-mix(in srgb, var(--vc-heading-bg) 40%, transparent);
+    background: color-mix(in srgb, var(--vc-heading-bg) 40%, var(--am-card));
   }
   /* leading element = a left-tilted little "document" card; larger than the row so it bleeds past the
      bottom edge and is clipped by the card (absolute so it never changes the card height) */
@@ -1583,7 +1592,12 @@
     box-shadow: var(--up-e-2);
     opacity: 0; pointer-events: none;
     transform: translateY(-50%) translateX(6px);
-    transition: opacity 120ms ease, transform 120ms ease;
+    /* top und height fuer das Gleiten von Strich zu Strich (vorschauZeigen); opacity und transform muessen die
+       ersten zwei bleiben, beim ersten Aufgehen schaltet das Skript nur diese zwei an. overflow, damit der Inhalt
+       beim Schrumpfen nicht ueber den Kasten steht. (.check_reinvention.py haelt das fuer eine Slide-out-Suche wie
+       .up-search: es ist die Vorschaukarte der Sprungleiste, kein Feld.) */
+    transition: opacity 120ms ease, transform 120ms ease, top var(--up-t-2) var(--up-ease), height var(--up-t-2) var(--up-ease);
+    box-sizing: border-box; overflow: hidden;
   }
   .am-msgnav.is-vorschau .am-msgnav-vor { opacity: 1; transform: translateY(-50%) translateX(0); }
   /* EINE Zeile Frage, bis zu DREI Zeilen Antwort -- so angefordert. line-clamp statt fester
@@ -3792,7 +3806,9 @@
        der Linie, um die es oben geht. Mit 48 und 8/8 ist der Inhaltskasten wieder 8 bis 40,
        Mitte 24 -- dieselbe Linie, nur eine Zeile, die acht Pixel mehr Luft hat. */
     height: 48px; min-height: 48px;
-    padding: 8px 16px;   /* same 16px side inset as the idle hero, so the bar does not shift sideways on the transition */
+    /* Links 32 (Lukas 23.10.: "Topbar: links 32px Polster"), rechts 16; dieselben Werte wie der Kopf ohne Chat,
+       damit die Leiste beim Wechsel nicht seitlich springt. Kompakt und am Telefon bleibt es bei 16 (unten). */
+    padding: 8px 16px 8px 32px;
     display: flex; align-items: center;
   }
   #ask-mira.has-messages .am-hero-inner { max-width: none; gap: 12px; flex-wrap: nowrap; }
@@ -4070,6 +4086,20 @@
 /* Link auf einen fertigen Job (Zusammenfassung, P3): eine Zeile, der Knopf rechts im Kopf. */
 #ask-mira .am-job .am-akt-kopf .am-akt-knopf { flex: 0 0 auto; }
 #ask-mira .am-akt-knopf[aria-disabled="true"] { opacity: .5; pointer-events: none; }
+/* Laufstreifen (blkStreifen, ab dem Start): Werte 1:1 aus dem Lauf-Kasten von Page Audit (.upa-lb-box: 48 hoch,
+   Polster 7/8/7/16, Abstand 12, Punkt 8 in den Flaechentoenen aus core, Ring 14 aus core, Titel 14/500/20, Satz 13/20). */
+#ask-mira .am-bubble .am-akt.am-akt-streifen { flex-direction: row; align-items: center; gap: 12px; min-height: 48px; padding: 7px 8px 7px 16px; }
+#ask-mira .am-akt-punkt { flex: 0 0 auto; width: 8px; height: 8px; border-radius: var(--up-r-voll); background: var(--vc-third); }
+#ask-mira .am-akt-punkt.is-warn { background: var(--vt-warn-flaeche); }
+#ask-mira .am-akt-punkt.is-pos { background: var(--vt-up-flaeche); }
+#ask-mira .am-akt-punkt.is-neg { background: var(--vt-down-flaeche); }
+#ask-mira .am-akt-ring { flex: 0 0 auto; display: flex; align-items: center; width: 14px; }
+#ask-mira .am-akt-stext { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; row-gap: 2px; padding: 4px 0; }
+#ask-mira .am-akt-stitel { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); line-height: 20px; color: var(--am-text); white-space: nowrap; }
+#ask-mira .am-akt-ssatz { min-width: 0; max-width: 100%; font-size: var(--up-fs-m); line-height: 20px; color: var(--am-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#ask-mira .am-akt-ssatz.is-adresse { color: var(--am-muted-2); }
+#ask-mira .am-akt-ssatz.is-fehler { color: var(--vt-down); white-space: normal; }
+#ask-mira .am-akt-streifen .am-akt-knoepfe { flex: 0 0 auto; align-items: center; }
 
 /* Der laufende Text (askMiraStreamText): dieselbe Blase wie die Antwort, unter dem Arbeitsprotokoll. */
 #ask-mira .am-msg-loading .am-bubble.am-live { margin-top: 16px; }

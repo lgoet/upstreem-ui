@@ -712,7 +712,14 @@
         if (w !== "neu") return null;
         return UC.sitzungsToken().then(function (token) { return token ? D.jobs(token, tm) : null; });
       }).then(function (j) {
-        if (j && Number(j.waiting) > 0) jobUhrStellen(true);
+        if (!j) return;
+        if (Number(j.waiting) > 0) jobUhrStellen(true);
+        /* Die Route setzt die Karte des Jobs (running -> done/failed) erst NACH der Zusammenfassung; deren Realtime-
+           Ereignis holt den Chat also noch mit der laufenden Karte (gemeldet 23.10.: "Ist der Job fertig, bleibt die
+           Karte im Spinner"). Steht eine Zusammenfassung im offenen Chat, ihn danach noch einmal holen. */
+        var offen = offenerChat();
+        var hier = (Array.isArray(j.summarized) ? j.summarized : []).some(function (x) { return x && str(x.session_id) === offen; });
+        if (offen && hier) nachrichtenLaden(offen, false);
       });
     }
     function jobUhrStellen(sofort) {
