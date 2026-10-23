@@ -4678,6 +4678,17 @@ html[data-up-pagetheme="dark"] :is(.ulh-nav-logo img, .ulh-mcp-logo) { filter: i
    Kartenabschnitt, es ist dasselbe Bauteil. */
 .ulh-root .ulh-cards-box { padding: 8px; border-radius: calc(var(--up-r-2xl) + 9px); }
 .ulh-root .ulh-cards, .ulh-root .ulh-cards-row { gap: 8px; }
+/* 24.10.: "die hinterste Card ohne bg color, die inneren Cards mit etwas Schatten, halte dich beim
+   Schatten ans Design System". Der Kasten bleibt nur Rand auf dem Grund der Seite, seinen eigenen
+   Schatten gibt er ab (sonst hoben sich beide Ebenen gleich). Die Karten liegen auf der Flaeche: Tiefe
+   e-1 nach Rolle (core, im Dunkeln Geists 16 %), statt der eigenen Werte aus der hellen Zeit. */
+.ulh-root .ulh-cards-box { background: none; box-shadow: none; }
+.ulh-root .ulh-cards-box .ulh-card { box-shadow: var(--up-e-1); }
+/* Die Karten stehen in keiner Wurzel mit data-theme="dark" (die Seite ist dunkel ueber
+   html[data-up-pagetheme], core fuehrt die dunklen Tiefen nur an [data-theme="dark"]) -- ohne diese
+   Zeile kaeme die helle e-1 an (gemessen: .04 statt .16). Wert wie core.css, Block "Die Tiefen im
+   dunklen Thema"; aendert sich e-1 dort, zieht er hier mit. */
+html[data-up-pagetheme="dark"] .ulh-root .ulh-cards-box { --up-e-1: 0 1px 2px rgba(0,0,0,.16); }
 
 /* ---------- PLATTFORM: DIE VORSCHAUEN GROESSER (23.10.) -----------------------------------------
    "skalier die Sachen etwas groesser": gemessen stand die Schrift in der Prompt- und der
