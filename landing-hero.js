@@ -200,9 +200,9 @@
     "Visibility by intent": "Visibility nach Intent",
     "Getting to know the topic": "Will das Thema verstehen", "Comparing options": "Vergleicht Anbieter",
     "Ready to buy or sign up": "Will kaufen oder abschließen",
-    "Branded prompts, kept apart": "Branded Prompts, getrennt ausgewertet",
-    "Questions that name you or a competitor stay out of your score. Switch them on to see what buyers hear at the last step.":
-      "Fragen, in denen deine Brand oder ein Wettbewerber vorkommt, verzerren deinen Score nicht. Schalte sie dazu und sieh, wie die KI kurz vor dem Kauf über dich spricht.",
+    "Know what AI says when buyers ask for you by name": "Erfahre, was die KI sagt, wenn Käufer gezielt nach dir fragen",
+    "See how AI rates you in comparisons, reviews and price questions like “Acme or Tesla?” or “Is the Acme EV worth it?”, right before buyers decide.":
+      "Sieh, wie die KI dich bei Vergleichen, Erfahrungen und Preisfragen bewertet, etwa bei „Acme oder Tesla?“ oder „Lohnt sich der Acme EV?“, kurz bevor Käufer sich entscheiden.",
     "Branded prompts": "Branded Prompts", "Left out of your metrics": "Nicht in den Kennzahlen",
     "Counted in your metrics": "In den Kennzahlen enthalten",
     /* Shopping & Ads */
@@ -219,7 +219,8 @@
     "Product Movement": "Produktbewegung",
     "Largest Visibility changes vs. previous 30 days": "Größte Veränderungen gegenüber den letzten 30 Tagen",
     "Rising": "Steigend", "Declining": "Fallend",
-    "Acme EV range": "Acme EV Reichweite", "BMW iX price": "BMW iX Preis", "Audi Q4 review": "Audi Q4 Test",
+    "Acme or Tesla?": "Acme oder Tesla?", "BMW iX reviews": "BMW iX Erfahrungen", "Audi Q4 price": "Audi Q4 Preis",
+    "Acme Charger reviews": "Acme Charger Erfahrungen", "Is the Acme EV worth it?": "Lohnt sich der Acme EV?",
     "Find out who buys your prompts": "Wer Anzeigen auf deine Prompts schaltet",
     "Every advertiser showing ads on your tracked prompts, ranked by share of placements.":
       "Alle Werbetreibenden auf deinen Prompts, sortiert nach Anteil der Platzierungen.",
@@ -4180,8 +4181,12 @@
       p: "Prompts are classified automatically. See where buyers meet you, and where a competitor takes over." },
     /* Ohne Linienmuster seit der Orbit-Grafik (24.10.): die Bahnen sind selbst das Muster. */
     { breit: 40, vis: "branded",
-      h: "Branded prompts, kept apart",
-      p: "Questions that name you or a competitor stay out of your score. Switch them on to see what buyers hear at the last step." }
+      /* NUTZEN STATT MECHANIK (24.10., Lukas: "so klingt es, als waere das Feature, dass man gebrandete Prompts
+         separat betrachten kann -- das ist, was auf technischer Ebene passiert. Das Feature fuer den Nutzer ist,
+         dass man gezielte Anfragen zu Vergleichen, Erfahrungen und Co. auswerten kann"). Dass Branded Prompts
+         nicht in den Score zaehlen, ist Mechanik und steht nicht mehr hier. */
+      h: "Know what AI says when buyers ask for you by name",
+      p: "See how AI rates you in comparisons, reviews and price questions like “Acme or Tesla?” or “Is the Acme EV worth it?”, right before buyers decide." }
   ];
   /* Die Zahlen erzaehlen EINE Geschichte: Acme fuehrt, solange gelernt wird, und verliert, sobald
      verglichen wird -- dort zieht BMW vorbei. d ist die Veraenderung zum Vorzeitraum (Punkte). */
@@ -4302,11 +4307,13 @@
   var BR_ORBIT = { s: 720, r: [55, 90, 153, 243, 360], chips: [
     /* klein: Lage unter 560 Breite (die Karte ist dort rund 290 breit, zwei Chips passen nicht nebeneinander):
        nur diese zwei, auf der Bahn 90 fast senkrecht ueber und unter der Mitte. */
-    { t: "Acme EV range",     m: "ac", r: 153, w: 213, klein: { r: 90, w: 250 } },
-    { t: "vs Tesla Model Y",  m: "te", r: 153, w: -33, klein: { r: 90, w: 70 } },
-    { t: "BMW iX price",      m: "bm", r: 90,  w: 128 },
-    { t: "Audi Q4 review",    m: "au", r: 153, w: 38 },
-    { t: "Acme Home Charger", m: "ac", r: 153, w: 266 }
+    /* Die Chips sind die Fragen, um die es der Karte geht: Vergleich, Erfahrung, Preis (24.10.). Die laengste
+       oben, wo die Karte am breitesten Platz laesst. */
+    { t: "Acme or Tesla?",           m: "te", r: 153, w: 213, klein: { r: 90, w: 250 } },
+    { t: "BMW iX reviews",           m: "bm", r: 153, w: -33, klein: { r: 90, w: 70 } },
+    { t: "Audi Q4 price",            m: "au", r: 90,  w: 128 },
+    { t: "Acme Charger reviews",     m: "ac", r: 153, w: 45 },
+    { t: "Is the Acme EV worth it?", m: "ac", r: 153, w: 266 }
   ] };
   function visBranded(){
     var o = BR_ORBIT, c = o.s / 2, marke = {};
@@ -4331,7 +4338,8 @@
     return '<div class="ulh-bro" aria-hidden="true"><div class="ulh-bro-feld">' +
       '<svg class="ulh-bro-svg" viewBox="0 0 ' + o.s + ' ' + o.s + '" fill="none"><defs>' + defs + '</defs>' + kreise + boegen +
         '<circle cx="' + c + '" cy="' + c + '" r="38" class="ulh-bro-mitte"/></svg>' +
-      '<img class="ulh-bro-marke" src="' + logo("ac") + '" alt=""/>' + chips +
+      /* In der Mitte ein Zeichen statt des Acme-Logos (24.10., Lukas: LayersLogoIcon). */
+      '<span class="ulh-bro-marke">' + (window.UpstreemCore ? window.UpstreemCore.icon("layersLogo", 1.5) : "") + '</span>' + chips +
     '</div></div>';
   }
   function visBrandedAlt(){

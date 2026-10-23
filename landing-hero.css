@@ -4683,6 +4683,9 @@ html[data-up-pagetheme="dark"] :is(.ulh-nav-logo img, .ulh-mcp-logo) { filter: i
    Schatten gibt er ab (sonst hoben sich beide Ebenen gleich). Die Karten liegen auf der Flaeche: Tiefe
    e-1 nach Rolle (core, im Dunkeln Geists 16 %), statt der eigenen Werte aus der hellen Zeit. */
 .ulh-root .ulh-cards-box { background: none; box-shadow: none; }
+/* Kurz danach: "faerb die hinteren Cards auch ein, aber einfach in etwas weniger Opacity als die Farbe der
+   inneren Cards" -- dieselbe Flaeche (--ulh-grund) zur Haelfte deckend, also zwischen Seite und Karte. */
+.ulh-root .ulh-cards-box { background: color-mix(in srgb, var(--ulh-grund) 50%, transparent); }
 .ulh-root .ulh-cards-box .ulh-card { box-shadow: var(--up-e-1); }
 /* Die Karten stehen in keiner Wurzel mit data-theme="dark" (die Seite ist dunkel ueber
    html[data-up-pagetheme], core fuehrt die dunklen Tiefen nur an [data-theme="dark"]) -- ohne diese
@@ -4813,7 +4816,8 @@ html[data-up-pagetheme="dark"] .ulh-root .ulh-btn-sec:hover { background: var(--
 .ulh-bro-s1 { stop-color: color-mix(in srgb, var(--vc-text) 16%, transparent); }
 .ulh-bro-s2 { stop-color: color-mix(in srgb, var(--vc-text) 48%, transparent); }
 .ulh-bro-mitte { fill: var(--vc-bg); stroke: color-mix(in srgb, var(--vc-text) 28%, transparent); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.ulh-bro-marke { position: absolute; left: -12px; top: -12px; width: 24px; height: 24px; border-radius: var(--up-r-m); z-index: 1; }
+.ulh-bro-marke { position: absolute; left: -12px; top: -12px; width: 24px; height: 24px; z-index: 1; display: flex; color: var(--vc-text); }
+.ulh-bro-marke svg { width: 24px; height: 24px; }
 .ulh-bro-chip { position: absolute; z-index: 1; left: var(--x); top: var(--y); transform: translate(-50%, -50%); display: inline-flex; align-items: center; gap: 6px;
   height: 32px; padding: 0 12px; white-space: nowrap; border-radius: var(--up-r-m); background: var(--vc-bg);
   font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); isolation: isolate; }
