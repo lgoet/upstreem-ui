@@ -4669,3 +4669,30 @@ html[data-up-pagetheme="dark"] :is(.ulh-nav-logo img, .ulh-mcp-logo) { filter: i
 .ulh-root .ulh-fen-urls .up-donut-sk.is-collapsed .up-sk-chart { width: min(60%, 176px); }
 /* Antwortkarte: ohne Datum ("das 'vor 3 Stunden' weg"). */
 .ulh-fen-antwort .urt-card-date { display: none; }
+
+/* ---------- DIE KARTEN DIREKT AUF DER SEITE (23.10.) ------------------------------------------
+   "guck, dass die ganze Cards-Sektion mit gleichem Gap zum Webseitengrund ist wie die Cards darin":
+   der Kasten um die Karten hatte im Dunkeln dieselbe Flaeche wie die Karten (#0f0f0f), dazu einen
+   eigenen Rand -- zwischen den Karten lag also Kartenflaeche, und es standen drei Linien ineinander
+   (Schiene, Kasten, Karte). Jetzt traegt der Kasten nichts mehr, die Karten stehen auf dem Grund der
+   Seite, rundum 8 vom Gitter und 8 untereinander. Gilt fuer jeden Kartenabschnitt, es ist dasselbe
+   Bauteil. */
+.ulh-root .ulh-cards-box { padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
+.ulh-root .ulh-cards, .ulh-root .ulh-cards-row { gap: 8px; }
+
+/* ---------- PLATTFORM: DIE VORSCHAUEN GROESSER (23.10.) -----------------------------------------
+   "skalier die Sachen etwas groesser": gemessen stand die Schrift in der Prompt- und der
+   Domain-Tabelle bei 6.5 bis 10 px, in den Chancen bei 9 bis 11.5. Prompts und Domains von 0.66 auf
+   0.84, Chancen von 0.82 auf 0.92 (nur hier, die Produkttabelle im Handel-Block baut dieselbe Form).
+   Die 68 px Polster stammten von der gehobenen Zeile, die es nicht mehr gibt: 24 reichen. */
+.ulh-root #overview .ulh-vis[data-ulh-vis="zeilen"], .ulh-root #overview .ulh-vis[data-ulh-vis="domains"] { --ulh-vs: 0.84; }
+.ulh-root #overview .ulh-vis[data-ulh-vis="chancen"] { --ulh-vs: 0.92; }
+.ulh-root #overview .ulh-vis-zeilen .ulh-vis-in { padding: 0 24px; }
+/* Chancen: jeder Titel war abgeschnitten (gemessen 218 px Platz fuer 224 bis 341 px Text). Das
+   Themenkaertchen rechts geht -- "ranked by priority" sagen die Balken daneben --, und der Titel
+   darf in eine zweite Zeile, statt mit "..." zu enden. */
+.ulh-root #overview .ulh-vis-chancen .uo-row-tags { display: none; }
+.ulh-root #overview .ulh-vis-chancen .uo-row-title {
+  white-space: normal; overflow: hidden; text-overflow: clip;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+}

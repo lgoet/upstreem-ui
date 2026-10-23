@@ -2770,7 +2770,9 @@
        auf einen Blick, zwei Zahlen daneben nicht.
        Die Beschriftung ist die der App: "Brand Mentions" (prompts-table.js, COLS) und nicht die
        Worte aus der Anfrage -- hier steht die echte Tabelle, und die heisst dort so. */
-    var kopf = ["Prompt", "Visibility", "Brand Mentions", "Topics", "Market"];
+    /* OHNE MARKET (23.10. angefordert: "streich bei Prompts z.B. den Markt"): die 104 px gehen an die
+       Prompt-Spalte, die einzige, die man liest. */
+    var kopf = ["Prompt", "Visibility", "Brand Mentions", "Topics"];
     /* Die Spalten stehen als --up-cols am Kasten: .up-row ist ein Raster und liest sie von dort.
        Ohne diese Angabe erbt die Zeile die Spalten der zuletzt definierten Tabelle. */
     /* Topics 260: zwei Chips brauchen zusammen bis zu 215px, dazu 28 Polster der Zelle. Bei 200
@@ -2815,7 +2817,7 @@
           EXPORT_KNOPF +
         '</div>' +
       '</div>' +
-      '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 120px 196px 150px 104px;">' +
+      '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 120px 196px 150px;">' +
       /* Die Spaltenkoepfe sind .up-th wie in der App (12px, 400, --vc-muted aus core) und nicht
          mehr .up-td mit eigener Groesse und eigenem Schnitt. Das Kaestchen vor "Prompt" ist das
          "alle waehlen" der App. */
@@ -2863,7 +2865,6 @@
         '<div class="up-td">' + sicht + '</div>' +
         '<div class="up-td">' + marken + '</div>' +
         '<div class="up-td"><span class="ulh-vis-themen">' + themen + '</span></div>' +
-        '<div class="up-td">' + (kern ? kern.marketChip(z.markt) : z.markt) + '</div>' +
       '</div>';
     }).join("");
     return html + '</div>';
@@ -3846,9 +3847,7 @@
           '<div class="ulh-cards">' +
             '<div class="ulh-cards-row">' + merkmalKarte(MERKMALE[0], 0) + merkmalKarte(MERKMALE[1], 1) + '</div>' +
             '<div class="ulh-cards-row is-unten">' + merkmalKarte(MERKMALE[2], 0) + merkmalKarte(MERKMALE[3], 1) + '</div>' +
-            /* Die dritte Reihe teilt sich 50/50 -- deshalb steht der Anteil an der Karte und nicht
-               an der Reihe (--ulh-w, siehe merkmalKarte). */
-            '<div class="ulh-cards-row">' + merkmalKarte(MERKMALE[4], 0) + merkmalKarte(MERKMALE[5], 1) + '</div>' +
+            /* Die dritte Reihe (Maerkte und Modelle) ist am 23.10. weg: "die ersten 4 reichen". */
           '</div>' +
         '</div>' +
       '</div>' +
