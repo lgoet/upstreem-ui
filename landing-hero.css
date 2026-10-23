@@ -4831,3 +4831,19 @@ html[data-up-pagetheme="dark"] .ulh-root .ulh-btn-sec:hover { background: var(--
   .ulh-bro-chip { left: var(--xs); top: var(--ys); }
   .ulh-bro-chip.is-gross, .ulh-bro-bogen { display: none; }
 }
+
+/* ---------- PROMPT-KARTE: DIE BRAND-MENTION-CHIPS (24.10.) ---------------------------------------
+   "die Chips: zwei unterschiedliche Borders/Rundungen, immer noch ein Hover-Effekt, etwas zu gross".
+   Rundungen: Acme steht jetzt ohne eigene Kachel auf der Platte (ACME_ZEICHEN in landing-hero.js).
+   Groesse: 24 statt 28 im Massstab der Karte (auf dem Schirm 20 statt 23.5), Ueberlappung und Ring im
+   selben Verhaeltnis (4 -> 3); der Radius bleibt der aus "DIE RADIEN IN DEN VORSCHAUEN" (Schirm 4, unter
+   24 hoch nach Rolle). Hover: das Auffaechern aus core (.up-stack-item:hover) steht in keiner Vorschau
+   mehr -- dieselben Zustaende, die core fuer .up-stack.is-still schreibt, an jedem Stapel einer Vorschau. */
+.ulh-root .ulh-vis[data-ulh-vis="zeilen"] .up-stack { --up-stack-gr: 24px; --up-stack-ueber: 3px; --up-stack-ring-w: 3px; }
+.ulh-root .ulh-vis .up-stack-item:hover { z-index: auto; }
+.ulh-root .ulh-vis .up-stack-vis { transition: none; }
+.ulh-root .ulh-vis .up-stack-item:hover .up-stack-vis,
+.ulh-root .ulh-vis .up-stack-item:first-child:hover .up-stack-vis,
+.ulh-root .ulh-vis .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
+.ulh-root .ulh-vis .up-stack-item:hover ~ .up-stack-more,
+.ulh-root .ulh-vis .up-stack-item:hover ~ .up-stack-tail { transform: none; }

@@ -495,6 +495,16 @@
     'M32 25.4 28.9 34.4H35.1Z" fill="#fff" fill-rule="evenodd"/>' +
     '</svg>');
 
+  /* DASSELBE A OHNE EIGENE KACHEL, fuer die Logoplatte (24.10., gemeldet an den Brand-Mention-Chips der
+     Prompt-Karte: "zwei unterschiedliche Borders und Rundungen"). Auf der hellen Platte von .up-stack-vis
+     stand die dunkle Kachel mit Radius 15/64 in einem Ausschnitt mit Radius 1.5 -- zwei Kanten. Die
+     Favicons der Wettbewerber sind dunkle Zeichen auf durchsichtigem Grund; so jetzt auch Acme. */
+  var ACME_ZEICHEN = "data:image/svg+xml," + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+    '<path d="M29 15.5 16.2 48.5H23.1L25.3 41.9H38.7L40.9 48.5H47.8L35 15.5Z' +
+    'M32 25.4 28.9 34.4H35.1Z" fill="#0b0d10" fill-rule="evenodd"/>' +
+    '</svg>');
+
   /* Die eigene Marke traegt ihr Zeichen, die Wettbewerber ihres. Ein Buchstabenkaestchen gibt es
      nicht mehr: es war der Rueckfall fuer erfundene Marken, und erfunden ist nur noch Acme. */
   MARKEN.forEach(function(m){ m.logo = (m.id === "ac") ? ACME_LOGO : quellzeichen(m.domain); });
@@ -2738,17 +2748,19 @@
        die Prompt-Spalte bietet bei 1280 248px, bei 1440 393px, ab 1680 510px. Die kurzen bleiben
        unter 393 (ab 1440 einzeilig), der lange liegt mit 570 ueber 510 und bricht ueberall um.
        Bei 1280 brechen zwei weitere um, auch dort hoechstens zweizeilig. */
+    /* Porsche statt Volvo in den Stapeln (24.10.): Volvos Favicon ist selbst eine schwarze Kachel und stand auf
+       der hellen Platte mit zweiter Kante -- derselbe Fehler, der an Acme gemeldet war. */
     { prompt: "Best premium EV for a family of five", vis: 38.9, marken: ["ac", "bm", "au", "te"], nennungen: 6, themen: [2, 1], markt: "US" },
     /* Der Leerzustand steht in der dritten Zeile -- auch in einer Vorschau gehoert dazu, dass man
        nicht ueberall genannt wird. */
-    { prompt: "Premium SUV lease or buy in 2026", vis: 21.4, marken: ["ac", "bm", "au", "vo"], nennungen: 5, themen: [0],    markt: "US" },
+    { prompt: "Premium SUV lease or buy in 2026", vis: 21.4, marken: ["ac", "bm", "au", "po"], nennungen: 5, themen: [0],    markt: "US" },
     { prompt: "Alternativen zum BMW iX",       vis: null, marken: [],                       nennungen: 0, themen: [1, 2], markt: "DE" },
-    { prompt: "Which electric estate has the longest real-world range in winter, with a roof box?", vis: 18.2, marken: ["ac", "te", "vo"],       nennungen: 3, themen: [2],    markt: "GB" },   /* ISO-Code: mit "UK" fand marketChip keine Flagge */
+    { prompt: "Which electric estate has the longest real-world range in winter, with a roof box?", vis: 18.2, marken: ["ac", "te", "po"],       nennungen: 3, themen: [2],    markt: "GB" },   /* ISO-Code: mit "UK" fand marketChip keine Flagge */
     { prompt: "Which EV charges fastest on a long road trip", vis: null, marken: [],                       nennungen: 0, themen: [3, 2], markt: "US" },
     /* Zwei Zeilen mehr (07.10.): die Karte ist hoeher geworden, und eine Tabelle, die nach fuenf
        Zeilen in Weiss endet, sieht leer aus statt angeschnitten. */
     { prompt: "Most reliable luxury EV brand", vis: 27.6, marken: ["bm", "ac", "au"],       nennungen: 4, themen: [0],    markt: "US" },
-    { prompt: "Bestes Elektro-SUV für Familien", vis: 12.3, marken: ["vo", "ac"],           nennungen: 2, themen: [1],    markt: "DE" }
+    { prompt: "Bestes Elektro-SUV für Familien", vis: 12.3, marken: ["po", "ac"],           nennungen: 2, themen: [1],    markt: "DE" }
   ];
   /* Die Zahl neben "Prompts" im Kopf der Vorschau -- ein Konto mit einer gut gefuellten Liste. */
   var VIS_ZEILEN_ZAHL = 248;
@@ -2843,7 +2855,7 @@
          einen Hinweis (dieselbe Regel wie ohneTipps). */
       var nennungen = (z.marken || []).map(function(id){
         var m = MARKEN.filter(function(x){ return x.id === id; })[0];
-        return m ? { name: m.name, favicon: m.logo } : null;
+        return m ? { name: m.name, favicon: m.id === "ac" ? ACME_ZEICHEN : m.logo } : null;
       }).filter(Boolean);
       var marken = kern && kern.brandStack
         ? kern.brandStack(nennungen, z.nennungen).replace(/ data-brandtip="[^"]*"/g, "")
