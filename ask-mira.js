@@ -2598,8 +2598,24 @@
       return !!rh && (h === rh || h.slice(-(rh.length + 1)) === '.' + rh);
     });
   }
+  /* Kaputte Hervorhebung (Lukas 23.10.: "{−Marketing … +}" stand roh im Text): Minus- und Gedankenstrich als Oeffner
+     gelten als "-", ein abweichendes Ende als das des Oeffners, ein Zeichen ohne Gegenstueck faellt weg. Rohe Marker
+     stehen nie im Text. Dieselbe Regel auf dem Server (upstreem-app lib/mira/bloecke.ts hervorhebungenOrdnen), hier
+     fuer gespeicherte Antworten von vorher und den Live-Text. Code in Backticks bleibt, wie er ist. */
+  function blkHlOrdnen(s){
+    if (!/[{}]/.test(s)) return s;
+    return s.split(/(`[^`\n]+`)/).map(function(teil, i){
+      if (i % 2) return teil;
+      var z = teil.replace(/\{[\u2212\u2013\u2014]/g, '{-').replace(/[\u2212\u2013\u2014]\}/g, '-}')
+        .replace(/\{([+\-~?])([^{}\n]{1,600}?)([+\-~?])\}/g, function(_m, a, innen){ return '{' + a + innen + a + '}'; });
+      var paare = [];
+      z = z.replace(/\{([+\-~?])([^{}\n]{1,600}?)\1\}/g, function(m){ paare.push(m); return '\u0000' + (paare.length - 1) + '\u0000'; });
+      z = z.replace(/\{[+\-~?]|[+\-~?]\}/g, '');
+      return z.replace(/\u0000(\d+)\u0000/g, function(_m, n){ return paare[Number(n)]; });
+    }).join('');
+  }
   function blkInline(s, refs){
-    s = String(s == null ? '' : s).replace(BLK_ALT, function(_m, art, innen){ var z = BLK_ALT_ZEICHEN[art]; return '{' + z + innen + z + '}'; });
+    s = blkHlOrdnen(String(s == null ? '' : s).replace(BLK_ALT, function(_m, art, innen){ var z = BLK_ALT_ZEICHEN[art]; return '{' + z + innen + z + '}'; }));
     var re = /\[([^\]\n]{1,300})\]\(ref:([a-z]\d{1,5})\)|\[([^\]\n]{1,300})\]\((https?:\/\/[^\s)]{1,2000})\)|\*\*([^*\n]+?)\*\*|__([^_\n]+?)__|\*([^*\s][^*\n]*?)\*|`([^`\n]+)`|\{([+\-~?])([^{}\n]{1,600}?)\9\}/g;
     var aus = '', i = 0, m;
     while ((m = re.exec(s))){
@@ -2773,6 +2789,48 @@
     var d = Number(b.decimals) >= 0 ? Number(b.decimals) : 0;
     return Number(v).toFixed(d) + (b.unit === '%' ? '%' : '');
   }
+  /* FESTE FARBEN IN CHARTS (Lukas 23.10.: "Citation Types, URL Types, Modelle, Marken in denselben Tokens wie die
+     App, unabhaengig vom Akzent"). Gehoeren ALLE Beschriftungen eines Charts (ohne "Other") einer Familie an,
+     kommt jede aus core: Citation- und URL-Typen mit ihrer Typfarbe (typeColor, dieselbe wie Ring und Chips)
+     und dem Namen aus typLabel; Marken und Modelle mit ihrem Logo wie in den Balkenlisten der App. Eine eigene
+     Farbe haben Marken und Modelle in der App nicht (der Store traegt keine, Modelle stehen nach Rang in der
+     Rampe, domain-detail.js modelItems), dort bleibt die Farbe nach Rang. Sonst null: der Chart bleibt, wie er war. */
+  /* "Misc" schickt sources_trend als eigenen Typ (gemessen 23.10.); er zaehlt wie "Other" und wird grau. */
+  var BLK_REST = /^(other|others|misc|miscellaneous|uncategori[sz]ed|sonstige|andere)$/i;
+  function blkFamilie(namen, dunkel){
+    var k = window.UpstreemCore;
+    if (!k) return null;
+    var echt = namen.filter(function(n){ return !BLK_REST.test(n.trim()); });
+    if (!echt.length) return null;
+    /* URL-Typen kommen als Schluessel ("product_service") oder als Name ("Product / Service"). */
+    var urlKey = function(n){ return n.trim().toLowerCase().replace(/[\s\/-]+/g, '_'); };
+    /* Der Rest heisst wie in der App: "uncategorized" wird "Uncategorized" (typLabel mit leerem Wert). */
+    var restName = function(n){ return /^uncategori/i.test(n.trim()) && k.typLabel ? k.typLabel('', 'url') : n.trim().charAt(0).toUpperCase() + n.trim().slice(1); };
+    if (k.typeColor){
+      var grauC = k.typeColor('\u0000', 'citation', dunkel), grauU = k.typeColor('\u0000', 'url', dunkel);
+      if (echt.every(function(n){ return k.typeColor(n, 'citation', dunkel) !== grauC; }))
+        return namen.map(function(n){ return { farbe: k.typeColor(n, 'citation', dunkel), name: BLK_REST.test(n.trim()) ? restName(n) : k.typLabel ? k.typLabel(n, 'citation') : n }; });
+      if (echt.every(function(n){ return k.typeColor(urlKey(n), 'url', dunkel) !== grauU; }))
+        return namen.map(function(n){ return { farbe: k.typeColor(urlKey(n), 'url', dunkel), name: BLK_REST.test(n.trim()) ? restName(n) : k.typLabel ? k.typLabel(urlKey(n), 'url') : n }; });
+    }
+    var marken = {}, modelle = {};
+    try { (k.getBrands ? k.getBrands() : []).forEach(function(b){ if (b && b.name) marken[String(b.name).trim().toLowerCase()] = b; }); } catch(e){}
+    try { (k.getModels ? k.getModels() : []).forEach(function(m){
+      if (!m) return;
+      [m.key, m.model, m.display_name].forEach(function(x){ if (x) modelle[String(x).trim().toLowerCase()] = m; });
+    }); } catch(e){}
+    var von = function(tab){ return function(n){ return tab[n.trim().toLowerCase()]; }; };
+    if (echt.every(von(marken))) return namen.map(function(n){
+      var b = von(marken)(n);
+      return { name: n, logo: b ? blkLogo({ type: 'brand', company_id: b.company_id, domain: b.domain }) : '' };
+    });
+    if (echt.every(von(modelle))) return namen.map(function(n){
+      var m = von(modelle)(n), schl = m ? blkStr(m.key || m.model) : '';
+      return { name: m ? blkStr(m.display_name || schl) : n, modell: true,
+        logo: m && k.modelLogoUrl ? k.modelLogoUrl(schl, m.logo_url, dunkel, m.provider) : (m ? blkStr(m.logo_url) : '') };
+    });
+    return null;
+  }
   function blkChartBauen(key){
     var e = _blkCharts[key], b = e && e.daten, k = window.UpstreemCore;
     var el = document.createElement('div');
@@ -2787,11 +2845,12 @@
       if (b.kind === 'line' && k.makeLine && k.buildLineDatasets){
         flaeche.innerHTML = '<div class="am-chart-linie"><canvas></canvas></div><div class="up-legend am-chart-legende"></div>';
         var zeilen = [], firmen = [];
+        var famL = blkFamilie(reihen.map(function(r){ return blkStr(r.name); }), dunkel());
         reihen.forEach(function(r, i){
-          var id = blkStr(r.ref) || ('s' + i), marke = null;
+          var id = blkStr(r.ref) || ('s' + i), marke = null, f = famL && famL[i];
           var ref = r.ref && e.refs && e.refs[r.ref];
           if (ref && (ref.type === 'brand' || ref.type === 'competitor')) marke = blkMarke(ref.company_id || ref.entity_id);
-          firmen.push({ company_id: id, name: blkStr(r.name), color: marke && marke.color ? marke.color : null, favicon_url: ref ? blkLogo(ref) : '' });
+          firmen.push({ company_id: id, name: f ? f.name : blkStr(r.name), color: marke && marke.color ? marke.color : (f && f.farbe) || null, favicon_url: ref ? blkLogo(ref) : (f && f.logo) || '' });
           labels.forEach(function(l, j){ zeilen.push({ company_id: id, day: l, visibility_pct: blkArr(r.values)[j] }); });
         });
         var gebaut = k.buildLineDatasets(zeilen, firmen);
@@ -2806,9 +2865,11 @@
         /* Erst zeichnen, wenn der Kasten im Dokument steht und Breite hat (makeLine misst selbst). */
         e.zeichnen = function(){ try { linie.render(gebaut); } catch(err){} };
       } else if (b.kind === 'doughnut' && k.makeTypeChart){
-        var r0 = reihen[0], werte = blkArr(r0.values);
+        var r0 = reihen[0], werte = blkArr(r0.values), famR = blkFamilie(labels, dunkel());
         var stuecke = labels.map(function(l, j){
-          return { key: l, name: l, share: Number(werte[j]) || 0, color: k.balkenGrau ? k.balkenGrau(j, dunkel()) : '' };
+          var f = famR && famR[j];
+          return { key: l, name: f ? f.name : l, share: Number(werte[j]) || 0, logo: f && f.logo || '', modell: !!(f && f.modell),
+            color: f && f.farbe ? f.farbe : (k.balkenGrau ? k.balkenGrau(j, dunkel()) : '') };
         }).filter(function(x){ return x.share > 0; });
         var ring = k.makeTypeChart({ body: flaeche, isDark: dunkel, decimals: Number(b.decimals) || 0,
           total: function(){ return stuecke.length; }, centerLabel: '' });
@@ -2827,11 +2888,12 @@
         });
         e.zeichnen = function(){
           listen.forEach(function(x){
-            var werte2 = blkArr(x.r.values);
+            var werte2 = blkArr(x.r.values), famB = blkFamilie(labels, dunkel());
             var eintraege = labels.map(function(l, j){
-              var v = werte2[j];
+              var v = werte2[j], f = famB && famB[j];
               if (v == null || !isFinite(v)) return null;
-              return { key: l, name: l, share: max ? Math.abs(v) / max * 100 : 0, wert: blkZahl(v, b), color: k.balkenGrau ? k.balkenGrau(j, dunkel()) : '' };
+              return { key: l, name: f ? f.name : l, share: max ? Math.abs(v) / max * 100 : 0, wert: blkZahl(v, b), logo: f && f.logo || '', modell: !!(f && f.modell),
+                color: f && f.farbe ? f.farbe : (k.balkenGrau ? k.balkenGrau(j, dunkel()) : '') };
             }).filter(Boolean);
             try { x.liste.render(eintraege); } catch(err){}
           });
@@ -8660,10 +8722,14 @@
       if (fz >= 0 && (fn < 0 || fz < fn)) s = z.slice(0, fz + 2); else return s.slice(0, zl + 1 + zeile.lastIndexOf('**'));
       zl = s.lastIndexOf('\n'); zeile = s.slice(zl + 1);
     }
-    var h = /\{([+\-~?])[^{}\n]*$/.exec(zeile);
-    if (h && zeile.indexOf(h[1] + '}', h.index + 2) < 0){
-      var hz = z.indexOf(h[1] + '}', s.length), hn = z.indexOf('\n', s.length);
-      if (hz >= 0 && (hn < 0 || hz < hn)) s = z.slice(0, hz + 2); else return s.slice(0, zl + 1 + h.index);
+    /* Jedes Ende gilt, auch ein abweichendes ("{−… +}", 23.10.: das Tippen blieb sonst bis zum Abschluss davor
+       stehen), und gewartet wird nur, solange die Zeile noch nicht fertig ist: ein Oeffner ohne Ende faellt im
+       Renderer weg (blkHlOrdnen). */
+    var h = /\{([+\-~?\u2212\u2013\u2014])[^{}\n]*$/.exec(zeile);
+    if (h && !/[+\-~?\u2212\u2013\u2014]\}/.test(zeile.slice(h.index + 2))){
+      var nach = z.slice(s.length), hm = /[+\-~?\u2212\u2013\u2014]\}/.exec(nach), hn = nach.indexOf('\n');
+      if (hm && (hn < 0 || hm.index < hn)) s = z.slice(0, s.length + hm.index + 2);
+      else if (hn < 0) return s.slice(0, zl + 1 + h.index);
     }
     return s;
   }
