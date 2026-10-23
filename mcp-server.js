@@ -89,14 +89,22 @@
     widerrufFehler: "We could not revoke access. Please try again.",
     ersatzName:  "An app"
   };
-  /* Die Daten, die der Server liest -- dieselben fuenf wie auf der Zustimmungsseite (oauth-consent.js "can"),
-     mit den Zeichen der Seitenleiste (sidebar.js BLOECKE), damit jedes Ding an beiden Stellen gleich aussieht. */
+  /* Die Daten, die der Server liest -- dieselben wie auf der Zustimmungsseite (oauth-consent.js "can"), in der
+     Reihenfolge und mit den Zeichen der Seitenleiste (sidebar.js BLOECKE), damit jedes Ding an beiden Stellen gleich
+     aussieht. Seit 23.10. mit den Lesewerkzeugen aus P4 (Shopping, Ads, Performance, Impact, Page Audit, Prompt
+     Research; app.mcp_rpc_erlaubt), Lukas: "in der Liste Claude can read fehlt das dann". */
   var DATEN = [
-    { name: "Brands",        icon: "squareStack" },
-    { name: "Prompts",       icon: "zap" },
-    { name: "Sources",       icon: "globe" },
-    { name: "AI responses",  icon: "response" },
-    { name: "Opportunities", icon: "listTodo" }
+    { name: "Brands",          icon: "squareStack" },
+    { name: "Prompts",         icon: "zap" },
+    { name: "Sources",         icon: "globe" },
+    { name: "AI responses",    icon: "response" },
+    { name: "Shopping",        icon: "shoppingBag" },
+    { name: "Ads",             icon: "marketing" },
+    { name: "Performance",     icon: "chartColumnUp" },
+    { name: "Opportunities",   icon: "listTodo" },
+    { name: "Impact",          icon: "cells" },
+    { name: "Page Audits",     icon: "dna01" },
+    { name: "Prompt Research", icon: "telescope" }
   ];
   /* Logos der KI-Apps: dieselben Dateien wie in Create with AI (create-with-ai.js LOGO). Ein Logo kommt nur
      ueber den Schluessel, den die App fuer einen von ihr eingetragenen Client setzt (known), nie aus der

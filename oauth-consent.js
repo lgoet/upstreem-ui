@@ -57,7 +57,7 @@
     eyebrow:     "Authorize access",
     unverified:  "Unverified app",
     wants:       "wants to access your upstreem account",
-    can:         "Read your brands, prompts, sources, AI responses and Opportunities in all teams you belong to",
+    can:         "Read your brands, prompts, sources, AI responses, Shopping, Ads, Performance, Opportunities, Impact, Page Audits and Prompt Research in all teams you belong to",
     cannot:      "Create, change or delete anything",
     weiter:      "After you allow access, you will be sent to",
     lokal:       "an app on this computer",

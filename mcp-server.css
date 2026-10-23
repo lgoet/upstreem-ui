@@ -114,6 +114,12 @@
 .umc-block-titel svg { width: 16px; height: 16px; display: block; flex: 0 0 auto; }
 .umc-gruppe { margin: 4px 0 0; font-size: var(--up-ueb-gruppe-gr); font-weight: var(--up-ueb-gruppe-gew); line-height: var(--up-ueb-gruppe-zeile); color: var(--vc-muted); }
 .umc-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+/* Elf Bereiche seit 23.10. (P4): untereinander wurde die Karte 579 hoch neben 346 der Verbinden-Karte und schob
+   "Connected apps" um 233 nach unten. Zwei Spalten halten sie nahe an der Nachbarin; die Reihenfolge laeuft
+   zeilenweise wie die Seitenleiste. Eine Zeile bleibt 32. Zwei Spalten nur, wo jede 160 bekommt (der laengste Name,
+   "Prompt Recherche", braucht mit Zeichen 146): bei 1024 ist die Karte 242 breit, dort kuerzten feste zwei Spalten
+   fuenf der elf Namen. Kein container-type an der Karte: der nahm ihr am Telefon die Breite (34 statt 343). */
+.umc-zugriff .umc-liste:not(.is-nein) { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); column-gap: 12px; }
 .umc-liste li { display: flex; align-items: center; gap: 10px; min-height: 32px; font-size: var(--up-fs-l); line-height: 20px; color: var(--vc-text); }
 .umc-liste svg { width: 16px; height: 16px; display: block; flex: 0 0 auto; color: var(--vc-muted); }
 .umc-liste.is-nein li { color: var(--vc-muted); }
