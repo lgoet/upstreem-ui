@@ -6440,6 +6440,10 @@
 .up-colscroll .up-thead > .up-th:first-child, .up-colscroll .up-row > .up-td:first-child {
   position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--vc-border); }
 .up-colscroll .up-thead > .up-th:first-child { background: var(--vt-head-bg); }
+/* Flache Tabelle: ihr Kopf traegt die Seitenfarbe (data-flach oben), also auch die stehende erste Kopfzelle --
+   sonst stand sie als grauer Fleck im weissen Kopf (Impact-Liste, gemeldet 23.10.: "die oberen linken
+   heading zellen grau eingefaerbt"). */
+.up-root.up-root[data-flach="yes"] .up-colscroll .up-thead > .up-th:first-child { background: var(--up-surface); }
 .up-colscroll .up-row > .up-td:first-child { background: var(--vc-bg); }
 .up-colscroll .up-row:hover > .up-td:first-child { background: var(--vt-row-hover); }
 /* KOPF UND GESAMTZEILE DES SCROLLKASTENS KLEBEN AN DER SEITE (20.10., UC.colscrollTeilen): sie stehen in eigenen Haltern vor und hinter dem
