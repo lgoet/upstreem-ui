@@ -736,7 +736,10 @@
           '<a class="ulh-chip ulh-chip-link" href="' + startUrl("mcp") + '">' +
             '<span class="ulh-chip-in">' +
               '<span class="ulh-chip-neu">' + HERO.neu + '</span>' +
-              '<span class="ulh-chip-t">' + HERO.chip + '</span>' +
+              /* Zeichen und Wort als ein Paar (23.10.: "das MCP-Icon vor den Text"), enger zueinander als
+                 zu "New" und zum Pfeil -- dieselbe Ordnung wie Zeichen und Etikett in jedem Knopf. */
+              '<span class="ulh-chip-paar"><span class="ulh-chip-ic" data-ic="mcpServer" data-ic-w="1.75" aria-hidden="true"></span>' +
+              '<span class="ulh-chip-t">' + HERO.chip + '</span></span>' +
               '<span class="ulh-chip-ic ulh-chip-pfeil" data-ic="arrowRight" data-ic-w="2" aria-hidden="true"></span>' +
             '</span>' +
           '</a>' +

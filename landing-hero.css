@@ -379,7 +379,16 @@
    Rueckmeldung wie beim zweiten Knopf. */
 .ulh-chip-link { text-decoration: none; cursor: pointer; transition: background 160ms ease; }
 .ulh-chip-link:hover { --ulh-chip-ring: #c9ccd2; }
-.ulh-chip-link .ulh-chip-in { gap: 8px; padding: 0 12px 0 4px; }
+.ulh-chip-link .ulh-chip-in { gap: 8px; padding: 0 7px 0 4px; }
+/* DIE ABSTAENDE NACH DEM BILD, NICHT NACH DEM KASTEN (23.10.): "New" steht 4 vom Rand (wie oben und
+   unten), dann 8 bis zum Paar aus Zeichen und Wort, darin 6. Der Pfeil zeichnet in seinem 13er-Kasten
+   erst ab 4.9px und endet 4.9px vor dem Rand -- darum -7 an ihm (sichtbar 6 zum Wort) und rechts nur
+   7 Polster (sichtbar knapp 13). */
+/* Das MCP-Zeichen zeichnet 2px innerhalb seines Kastens: darum 4 statt 6 und -2 vor ihm. Gemessen
+   sichtbar: Rand 5 (Ring 1 + 4), New 8 Zeichen 6 Wort 6 Pfeil 12.9 Rand. */
+.ulh-chip-paar { display: inline-flex; align-items: center; gap: 4px; }
+.ulh-chip-paar .ulh-chip-ic { margin-left: -2px; }
+.ulh-chip-link .ulh-chip-pfeil { margin-left: -7px; }
 /* EIN NORMALER RAND (14.10. abends: "ganz normale Border"). Der Ring stand auf #f3f4f6, halb so
    kraeftig wie jeder andere Rahmen der Seite, und war auf dem hellen Grund kaum zu sehen -- der
    Chip wirkte wie eine weisse Flaeche ohne Kante. Jetzt dieselbe Rahmenfarbe wie Karten und
