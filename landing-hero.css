@@ -2238,7 +2238,7 @@
    macht aus einer Tabelle ein Bild von einer Tabelle -- man liest sie nicht mehr, man sieht sie
    nur. Ohne Neigung bleibt sie lesbar, und das ist hier der Zweck. */
 .ulh-vis-tab, .ulh-vis-dom {
-  border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl);
+  border: 1px solid var(--ulh-border); border-radius: calc(var(--up-r-2xl) / var(--ulh-vs, 1));
   background: var(--vc-bg);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 8px 20px rgba(11, 13, 24, .05);
 }
@@ -2435,8 +2435,9 @@
    gut 10px, so breit wie in der Vorlage (bei 12px waren es 8 und der Rand kaum zu sehen).
    Konzentrisch: aussen 30 = innen 14 + 16. */
 .ulh-rahmen {
-  /* 23.10.: innen 12 (Fenster = Karte), aussen konzentrisch 12 + 16 Polster + 1 Rand. */
-  padding: 16px; border-radius: calc(var(--up-r-2xl) + 17px);
+  /* 23.10.: innen 12 auf dem Schirm (Fenster = Karte, durch den Massstab geteilt, siehe "DIE RADIEN IN
+     DEN VORSCHAUEN"), aussen konzentrisch dazu: plus 16 Polster und 1 Rand. */
+  padding: 16px; border-radius: calc(var(--up-r-2xl) / var(--ulh-vs, 1) + 17px);
   background: rgba(236, 237, 241, .78); border: 1px solid rgba(11, 13, 24, .06);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 22px 50px rgba(11, 13, 24, .08);
 }
@@ -2444,7 +2445,7 @@
    Tabelle verliert ihren eigenen Kasten (Rahmen, Radius, Schatten), sonst stuenden zwei Kanten
    ineinander. */
 .ulh-rahmen-in {
-  background: var(--vc-bg); border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl); overflow: hidden;
+  background: var(--vc-bg); border: 1px solid var(--ulh-border); border-radius: calc(var(--up-r-2xl) / var(--ulh-vs, 1)); overflow: hidden;
 }
 .ulh-rahmen-in > .up-head {
   height: auto; margin: 0; padding: 12px 12px 12px 16px; border-bottom: 1px solid var(--ulh-border);
@@ -2474,7 +2475,7 @@
 /* Die gehobene Zeile bekommt KEINEN eigenen Radius. Sie nimmt den, den ihr Bauteil ohnehin hat:
    die Chancenzeile hat 12px von sich aus, die Zeile der Tabelle hat keinen -- ihr Rahmen ist der
    der Tabelle, und deren 12px stehen hier. */
-.ulh-card:hover .ulh-vis-tab .up-row.is-mitte { border-radius: var(--up-r-2xl); }
+.ulh-card:hover .ulh-vis-tab .up-row.is-mitte { border-radius: calc(var(--up-r-2xl) / var(--ulh-vs, 1)); }
 /* Der Grund der gehobenen Zeile: WEISS als Zahl. Vorher stand hier var(--vc-bg) -- die Farbe der
    App, aber sie haengt an .up-root, und diese Vorschau steht darueber: die Angabe war ungueltig,
    die Zeile blieb durchsichtig, und man sah ihre Nachbarn hindurch. Dieselbe Falle wie beim Kasten
@@ -2500,7 +2501,7 @@
    die runden Ecken der Tabelle deckt ihre Kopfzeile mit demselben Radius ab.
    .ulh-vis-dom behaelt die Sperre -- dort liegt ein aufgeklappter Drilldown mit Fuellung darin. */
 .ulh-vis-dom { overflow: hidden; }
-.ulh-vis-tab .up-thead { border-radius: calc(var(--up-r-2xl) - 1px) calc(var(--up-r-2xl) - 1px) 0 0; }
+.ulh-vis-tab .up-thead { border-radius: calc(var(--up-r-2xl) / var(--ulh-vs, 1) - 1px) calc(var(--up-r-2xl) / var(--ulh-vs, 1) - 1px) 0 0; }
 /* DIE EIGENE EBENE STEHT SCHON IN RUHE (24.09. gemeldet: "auf Windows kommen im gehoverten
    Zustand an den Ecken so komische Zacken und Striche, an allen vier Rahmen dieser Opportunity
    Card").
@@ -3881,13 +3882,13 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
   /* Titel oben ueber beide Spalten, darunter Domain links und Wert rechts, beide auf einer Linie.
      display: contents an den zwei Zwischenkaesten, damit ihre Kinder Zellen DIESES Rasters werden
      -- ohne das Markup anzufassen, das dieselbe Zeile in der App baut. */
-  .ulh-vis-chancen .uo-row { row-gap: 6px; column-gap: 12px; padding: 10px 12px; border-radius: var(--up-r-2xl); }
+  .ulh-vis-chancen .uo-row { row-gap: 6px; column-gap: 12px; padding: 10px 12px; border-radius: calc(var(--up-r-2xl) / var(--ulh-vs, 1)); }
   .ulh-vis-chancen .uo-row-main, .ulh-vis-chancen .uo-row-right { display: contents; }
   .ulh-vis-chancen .uo-row-title { grid-column: 1 / -1; font-size: 12.5px; }
   .ulh-vis-chancen .uo-row-sub { grid-column: 1; }
   .ulh-vis-chancen .uo-row-domain { font-size: 11px; }
-  .ulh-vis-chancen .uo-row-sub .up-logo-box { width: 16px; height: 16px; border-radius: var(--up-r-xs); }
-  .ulh-vis-chancen .uo-row-sub .up-logo-box img { width: 14px; height: 14px; border-radius: calc(var(--up-r-xs) - 1px); }
+  .ulh-vis-chancen .uo-row-sub .up-logo-box { width: 16px; height: 16px; border-radius: calc(var(--up-r-xs) / var(--ulh-vs, 1)); }
+  .ulh-vis-chancen .uo-row-sub .up-logo-box img { width: 14px; height: 14px; border-radius: calc((var(--up-r-xs) - 1px) / var(--ulh-vs, 1)); }
   .ulh-vis-chancen .uo-pot { grid-column: 2; justify-self: end; align-self: center; }
   /* Die Themenchips fallen weg. Sie sind der vierte Teil der Zeile, und zu dritt auf einer
      332px-Karte bliebe fuer Domain und Wert nichts uebrig -- gefragt war die Zeile mit genau
@@ -4307,3 +4308,25 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
    dieser Hoehe lag der erste Balken ~100px unter der Ueberschrift und ausserhalb des Fensters. */
 .ulh-app .tcd-root .up-donut-body > .up-bars { margin: 0; flex: 1 1 auto; }
 .ulh-app .tcd-root .up-donut-body > .up-bars > .up-bar-row { flex: 0 0 24px; }
+
+/* ---- DIE RADIEN IN DEN VORSCHAUEN (23.10.) ----
+   Gemeldet: "alle Radien in den Platform-Karten muessen dem System entsprechen". Die Vorschauen sind
+   verkleinert (--ulh-vs, 0.66 bis 0.86), und mit ihnen jeder Radius darin: die Tabelle mit 12 stand
+   auf dem Schirm mit 8, ein Topic-Chip mit 4 bei 2.6. Hier steht jeder Radius der Bauteile darin
+   durch den Massstab geteilt -- auf dem Schirm also genau der Wert, den dasselbe Bauteil in der App
+   traegt (Rolle aus core: Knopf und Feld 32 hoch 6, Chip und Zaehler 4, Logoplatte 6 mit Bild 3,
+   Fahne 3). Doppelt ueber .ulh-root .ulh-vis, damit die Regeln der Komponenten (eine oder zwei
+   Klassen) nicht vorgehen. Ausserhalb einer Vorschau gibt es --ulh-vs nicht: dann teilt calc durch 1. */
+.ulh-root .ulh-vis :is(.up-iconbtn, .up-export, .udt-sub-search, .up-filter-btn) { border-radius: calc(var(--up-r-m) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis :is(.up-head-count, .upt-check, .up-topicchip, .up-pages, .uo-pot-bar) { border-radius: calc(var(--up-r-xs) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis .up-stack-vis { border-radius: calc(var(--up-r-m) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis .up-stack-vis img { border-radius: calc((var(--up-r-m) - 3px) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis .udt-logo-box { border-radius: calc(var(--up-r-m) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis .udt-logo-box img { border-radius: calc((var(--up-r-m) - 1px) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis :is(.udt-sub-logo, .uo-row-sub .up-logo-box) { border-radius: calc(var(--up-r-xs) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis :is(.udt-sub-logo, .uo-row-sub .up-logo-box) img { border-radius: calc((var(--up-r-xs) - 1px) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis .uo-row { border-radius: calc(var(--up-r-2xl) / var(--ulh-vs, 1)); }
+/* Umschalter: Schiene, gleitender Streifen und Knopf lesen in core alle --up-sw-r (24 hoch: 4). */
+.ulh-root .ulh-vis .udt-sub-dispseg.udt-sub-dispseg { --up-sw-r: calc(var(--up-r-s) / var(--ulh-vs, 1)); }
+/* Fahnen: 3 wie in der App (Haarlinie unter 4, ohne Token). */
+.ulh-root .ulh-vis .up-flag { border-radius: calc(3px / var(--ulh-vs, 1)); }
