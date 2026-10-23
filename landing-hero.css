@@ -2827,6 +2827,9 @@
 /* Die Hero-Sektion ist der Bezugsrahmen ihres Hintergrundbildes. Ohne diese Zeile bezieht sich
    dessen inset: 0 auf die Wurzel und laeuft ueber die ganze Seite. */
 .ulh-hero { position: relative; }
+/* Die Linie unter dem Hero ueber die ganze Breite (23.10. angefordert): sie schliesst den Hero ab wie
+   die waagerechten Linien die anderen Abschnitte. */
+.ulh-hero { border-bottom: 1px solid var(--ulh-border); }
 /* Der Inhalt jeder Sektion steht in derselben Spur wie die Schienen. */
 .ulh-spur { width: var(--ulh-spur); margin: 0 auto; }
 
@@ -4410,15 +4413,20 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
   letter-spacing: -0.05em; color: var(--ulh-text);
 }
 .ulh-mcp-h span { display: block; }
-.ulh-mcp-buehne { position: relative; height: 640px; margin-top: 56px; }
+/* overflow: clip -- die Karten sind hoeher als die Buehne und laufen unten aus; ueber die Kante des
+   Abschnitts darf nichts ragen (23.10. gemeldet). clip statt hidden: keine Scrollflaeche. */
+.ulh-mcp-buehne { position: relative; height: 640px; margin-top: 56px; overflow: clip; overflow-clip-margin: 0; }
 .ulh-mcp-buehne::after {
   content: ""; position: absolute; left: -8px; right: -8px; bottom: 0; height: 200px; z-index: 3; pointer-events: none;
   background: linear-gradient(to bottom, rgba(250, 250, 250, 0), var(--ulh-seite));
 }
-.ulh-mcp-dok, .ulh-mcp-auto, .ulh-mcp-code {
+.ulh-mcp-dok, .ulh-mcp-auto {
   position: absolute; box-sizing: border-box; background: #ffffff;
   border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl);
 }
+/* Der Code steht OHNE Karte direkt auf dem Seitengrund (23.10. angefordert) -- er ist die technische
+   Seite, kein weiteres Blatt im Stapel. */
+.ulh-mcp-code { position: absolute; box-sizing: border-box; }
 .ulh-mcp-dok { left: 0.6%; width: 40.1%; top: 104px; height: 640px; box-shadow: 0 2px 2px rgba(0, 0, 0, .04); padding: 124px 56px 0; z-index: 0; }
 .ulh-mcp-kachel {
   position: absolute; left: 56px; top: -48px; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center;
@@ -4445,12 +4453,12 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-mcp-punkt-tx { display: flex; flex-direction: column; gap: 2px; }
 .ulh-mcp-punkt-t { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--ulh-text); }
 .ulh-mcp-punkt-s { font-size: 13px; line-height: 18px; color: #4d4d4d; }
-.ulh-mcp-code { right: 0.6%; width: 29.9%; top: 64px; height: 640px; overflow: hidden; z-index: 1; box-shadow: 0 2px 2px rgba(0, 0, 0, .04); }
-.ulh-mcp-reiter { display: flex; align-items: center; gap: 4px; height: 48px; padding: 0 12px; border-bottom: 1px solid var(--ulh-border); }
+.ulh-mcp-code { right: 0.6%; width: 29.9%; top: 64px; height: 640px; overflow: hidden; z-index: 1; padding-left: 12px; }
+.ulh-mcp-reiter { display: flex; align-items: center; gap: 4px; height: 48px; padding: 0 8px 0 0; border-bottom: 1px solid var(--ulh-border); }
 .ulh-mcp-reiter-b { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: var(--up-r-m); font-size: 13px; font-weight: 500; color: #8f8f8f; }
 .ulh-mcp-reiter-b.is-an { background: rgba(0, 0, 0, .05); color: var(--ulh-text); }
 .ulh-mcp-pre {
-  margin: 0; padding: 20px; white-space: pre; overflow: hidden;
+  margin: 0; padding: 20px 0; white-space: pre; overflow: hidden;
   font-family: ui-monospace, "Geist Mono", SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 20px; color: var(--ulh-text);
 }
 .ulh-mcp-pre .is-k { color: #8f8f8f; }
@@ -4459,7 +4467,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-mcp-pre .is-l { color: #4d4d4d; }
 .ulh-mcp-pre .is-ok { display: inline-flex; align-items: center; gap: 6px; color: #297a3a; }
 .ulh-mcp-ok svg { width: 14px; height: 14px; display: block; }
-.ulh-mcp-marken { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 20px 0; }
+.ulh-mcp-marken { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0 0; }
 .ulh-mcp-marken span {
   display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border: 1px solid var(--ulh-border);
   border-radius: var(--up-r-voll); font-size: 12px; font-weight: 500; color: #4d4d4d;
@@ -4474,6 +4482,6 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
   .ulh-mcp-kachel img { width: 40px; height: 40px; }
   .ulh-mcp-dok-t { font-size: 24px; line-height: 28px; }
   .ulh-mcp-auto { padding: 24px 24px 8px; }
-  .ulh-mcp-code { padding-bottom: 20px; }
+  .ulh-mcp-code { padding: 8px 0 0; overflow: visible; }
   .ulh-mcp-pre { overflow-x: auto; }
 }
