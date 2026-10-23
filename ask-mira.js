@@ -2931,7 +2931,9 @@
     if (st === 'proposed' && b.klasse === 3){
       var kosten = blkKosten(b);
       fuss = (kosten ? '<span class="am-akt-kosten">' + esc(kosten) + '</span>' : '<span></span>') +
-        '<button class="am-akt-knopf up-btn-pri" type="button" data-act="aktion-start"' + daten + '>' + esc(L2.start[art] || 'Start') + '</button>';
+        /* Ohne eigenes Etikett der Art traegt der Knopf den Titel der Karte (P3, 23.10.: opportunity_status als Vorschlag,
+           "Auf Done setzen"/"Move to Done", wenn Fremdtext im Kontext steht). */
+        '<button class="am-akt-knopf up-btn-pri" type="button" data-act="aktion-start"' + daten + '>' + esc(L2.start[art] || blkStr(b.title) || 'Start') + '</button>';
     } else if (st === 'running'){
       fuss = href ? '<a class="am-akt-knopf up-btn-sec" href="' + escAttr(href) + '" data-act="aktion-link">' + esc(L2.oeffnen[art] || L2.ergebnis) + '</a>' : '';
     } else if (st === 'done'){
