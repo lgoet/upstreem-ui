@@ -198,7 +198,7 @@
       return { detail: d, liste: kopie(liste) };
     }
     d = detail(id);
-    if (!d && (name === "uevUpdate" || name === "uevAddUrl" || name === "uevRemoveUrl" || name === "uevDelete")) return { fehler: "impact_event_not_found" };
+    if (!d && (name === "uevUpdate" || name === "uevAddTarget" || name === "uevRemoveUrl" || name === "uevDelete")) return { fehler: "impact_event_not_found" };
     if (name === "uevUpdate") {
       if (b.p_name != null) { if (!String(b.p_name).trim()) return { fehler: "impact_event_name_required" }; d.name = String(b.p_name).trim(); }
       if (b.p_description != null) d.description = b.p_description || null;
@@ -210,15 +210,37 @@
       zeileErneuern(d);
       return { detail: d, liste: kopie(liste) };
     }
-    if (name === "uevAddUrl") {
-      var k2 = urlSchluessel(b.p_url);
-      if (!k2 || !/\.[a-z]{2,}/i.test(k2)) return { fehler: "impact_event_invalid_url" };
-      if ((d.urls || []).some(function (u) { return urlSchluessel(u.url) === k2; })) return { fehler: "impact_event_url_duplicate" };
-      if ((d.urls || []).length >= 100) return { fehler: "impact_event_too_many_urls" };
-      d.urls.push({ id: uuid(), url: mitSchema(b.p_url).replace(/[?#].*$/, ""), url_input: b.p_url, team_kannte_url: false, created_at: new Date().toISOString() });
-      d.affected_url_count = d.urls.length;
-      zeileErneuern(d);
-      return { detail: d, liste: kopie(liste) };
+    /* Ziele hinzufuegen (23.10.): derselbe Kanal wie in der App, beantwortet wie add_impact_event_target_v1 -- bis dahin
+       uevAddUrl (add_impact_event_url_v2, faellt am 01.11. weg). Wie dort: ein Fehler nennt das Ziel im hint
+       ("p_targets[i]: <grund>"), Doppelte werden uebersprungen und gezaehlt (skipped_duplicates), sind alle schon da,
+       impact_event_target_duplicate; hoechstens 50 je Event. Nur url-Ziele: Regeln bietet die Komponente im Dummy nicht an
+       (zieleDa). */
+    if (name === "uevAddTarget") {
+      var zl = Array.isArray(b.p_targets) ? b.p_targets : [], neuZ = [], gegeben = {};
+      if (!zl.length) return { fehler: "impact_event_invalid_target", hint: "p_targets" };
+      for (var zi = 0; zi < zl.length; zi++) {
+        var zo = zl[zi] || {}, k2 = urlSchluessel(zo.input);
+        if (zo.kind !== "url") return { fehler: "impact_event_invalid_target", hint: "p_targets[" + zi + "]: unknown_kind" };
+        if (!k2 || !/\.[a-z]{2,}/i.test(k2)) return { fehler: "impact_event_invalid_target", hint: "p_targets[" + zi + "]: invalid_url" };
+        if (gegeben[k2]) continue;
+        gegeben[k2] = 1;
+        if (!(d.urls || []).some(function (u) { return urlSchluessel(u.url) === k2; })) neuZ.push(zo.input);
+      }
+      if (!neuZ.length) return { fehler: "impact_event_target_duplicate" };
+      if ((d.urls || []).length + neuZ.length > 50) return { fehler: "impact_event_too_many_targets", hint: "50" };
+      /* Ein neues Detail statt d zu aendern: die Komponente haelt d aus uevDetail als dasselbe Objekt und laedt die Analyse nur
+         neu, wenn sich die URL-Liste gegen ihr Detail geaendert hat (setDetail, urlsNeu; in der App nach jeder URL-Aenderung,
+         Vertrag 3.9). Mit d.urls.push sah sie keinen Unterschied und fragte die Analyse nicht nach (gemessen 23.10. mit
+         uevAddUrl: die URL stand in der Tabelle, aber ohne neue Analyse). */
+      var n = kopie(d), jz = new Date().toISOString();
+      n.urls = n.urls || [];
+      neuZ.forEach(function (u) { n.urls.push({ id: uuid(), url: mitSchema(u).replace(/[?#].*$/, ""), url_input: u, team_kannte_url: false, created_at: jz }); });
+      n.affected_url_count = n.urls.length;
+      details[n.id] = n; zeileErneuern(n);
+      /* skipped_duplicates nur in dieser Antwort, nicht im gespeicherten Detail (wie die Datenbank). */
+      var dz = kopie(n);
+      dz.skipped_duplicates = Object.keys(gegeben).length - neuZ.length;
+      return { detail: dz, liste: kopie(liste) };
     }
     if (name === "uevRemoveUrl") {
       var vorher = (d.urls || []).length;

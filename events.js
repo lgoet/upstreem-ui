@@ -37,7 +37,9 @@
      kommen aus impact_event_url, also auch alte Events aus v1/v2). Scheitert v3, zeigt die
      Oberflaeche den Fehlerzustand (CLAUDE.md §2) statt still eine andere Fassung zu fragen.
      delete_impact_event_v2 und preview_impact_event_scope_v2 haben keinen Nachfolger und bleiben.
-     uevAddUrl gibt es nur noch im Klick-Dummy (events-demo.js).
+     Den Kanal uevAddUrl gibt es seit 23.10. nicht mehr: add_impact_event_url_v2 faellt am 01.11.
+     weg, und auch der Klick-Dummy fuegt eine URL ueber uevAddTarget hinzu (events-demo.js
+     beantwortet ihn wie add_impact_event_target_v1), also auf demselben Weg wie die App.
      HART AUF v4/v3/v4 (22.10., Rueckfrage des DB-Chats vor dem Sperren der alten Fassungen):
      Analyse, Anlegen und Bearbeiten fragten die neuen Fassungen nur, wenn KAMPAGNE_DA schon stand,
      sonst die alten. Beim Neuladen direkt auf einem Event-Detail ging die Analyse hinaus, bevor
@@ -1252,9 +1254,6 @@
        einen unbekannten Parameter ab, und die Event-Funktionen bleiben so unberuehrt. Antwort wie beim Event: das Detail. */
     uevCreateWatch:  { fn: "create_impact_watch_v1",          attr: "", ms: 24000, schreibt: true, nurDirekt: true },
     uevUpdate:       { fn: "update_impact_event_v3",          attr: "data-update-fn",    ms: 24000, schreibt: true },
-    /* Nur noch der Klick-Dummy (zielSenden): ausserhalb geht eine URL als url-Ziel an
-       add_impact_event_target_v1. fn bleibt fuer den Rueckweg-Vertrag stehen, gerufen wird sie nie. */
-    uevAddUrl:       { fn: "add_impact_event_url_v2",         attr: "data-addurl-fn",    ms: 24000, schreibt: true },
     /* Eine URL entfernen (17.10.): remove_impact_event_target_v1 loescht auch url-Ziele, die ID
        ist dieselbe wie urls[].id (gelesen 17.10.). Der Kanal bleibt, weil die Bestaetigung und
        ihr Fehlertext der URL gehoeren (wartend.urlWeg). */
@@ -1729,8 +1728,9 @@
           if (root.isConnected === false) return;
           var r = D ? (D.antwort(name, b, { topicName: topicName, storeZeile: listeEvent }) || {}) : { fehler: "" };
           if (KANAL[name]) {
+            /* hint wie die Datenbank (23.10., uevAddTarget: "p_targets[i]: <grund>" nennt das Ziel am Feld). */
             kam(name, r.fehler != null
-              ? { ok: false, status: 400, fehler: { code: "", message: String(r.fehler), hint: "", details: "" } }
+              ? { ok: false, status: 400, fehler: { code: "", message: String(r.fehler), hint: r.hint != null ? String(r.hint) : "", details: "" } }
               : { ok: true, status: 200, daten: r.detail || r.analyse || r.vorschau || r.geloescht || null }, kx || {});
           }
           if (r.responses && window.renderResponsesTable) {
@@ -6211,7 +6211,7 @@
        Dialogs: Etikett, Namensfeld, Aussehen-Knoepfe, Farbraster (.up-topicmodal-*). Ein Event
        anlegen soll sich anfuehlen wie ein Topic anlegen -- dieselbe Huelle, dieselben Masse.
        Hoechstens EIN Popup ist offen (popup). Es wartet hoechstens auf EINE gespeicherte Antwort
-       (popup.warte: "anlegen" | "bearbeiten" | "url"), die Zahl der Prompts im Umfang kommt
+       (popup.warte: "anlegen" | "bearbeiten" | "ziel"), die Zahl der Prompts im Umfang kommt
        daneben ueber popupVorschauKam. Gespeichert wird nur auf den Hauptknopf, nie beim Tippen
        (Vertrag 3.6). */
     var URL_MAX = 100;          /* Vertrag 3.4 und Tabelle 4 */
@@ -9031,32 +9031,20 @@
     }
     /* Der Add-Dialog (15.10.): alle auf einmal ueber add_impact_event_target_v1 (auch eine Auswahl
        aus der Sitemap). Seit 17.10. auch dann, wenn die Regel-Ziele (noch) nicht angeboten werden:
-       eine URL ist dort ein url-Ziel, add_impact_event_url_v2 braucht die App nicht mehr. Nur der
-       Klick-Dummy geht den alten Weg (genau eine URL, uevAddUrl). Was noch im Feld steht, kommt
-       vorher dazu. */
+       eine URL ist dort ein url-Ziel. Seit 23.10. auch im Klick-Dummy -- bis dahin ging er mit genau
+       einer URL ueber uevAddUrl (add_impact_event_url_v2, faellt am 01.11. weg); events-demo.js
+       beantwortet jetzt uevAddTarget. Was noch im Feld steht, kommt vorher dazu. */
     function zielSenden() {
       var p = popup;
       if (!p || p.warte) return;
       if (String(p.e.eingabe || "").trim() && !eingabeUebernehmen(p)) return;
       if (!p.e.ziele.length) return;
       var d = state.detail[p.eventId];
-      if (!demo) {
-        var schon = d && isArr(d.targets) ? d.targets.length : 0;
-        if (schon + p.e.ziele.length > ZIEL_MAX) { feldFehlerZeigen(p, "impact_event_too_many_targets", "", fehlerText("impact_event_too_many_targets")); return; }
-        p.zielFehler = null; p.gesendet = p.e.ziele.slice();
-        warten(p, "ziel");
-        rufen("uevAddTarget", { p_event_id: p.eventId, p_targets: p.e.ziele.map(zielKoerper) }, { popup: p });
-        return;
-      }
-      /* 100 URLs je Event (409 impact_event_too_many_urls) -- das Detail kennt die Zahl schon. */
-      if (d && isArr(d.urls) && d.urls.length >= URL_MAX) {
-        feldFehlerZeigen(p, "impact_event_too_many_urls", "", fehlerText("impact_event_too_many_urls"));
-        return;
-      }
-      var b = { p_event_id: p.eventId, p_url: p.e.ziele[0].input };
-      if (!vorabPruefen(p, b)) return;
-      warten(p, "url");
-      rufen("uevAddUrl", b, { popup: p });
+      var schon = d && isArr(d.targets) ? d.targets.length : 0;
+      if (schon + p.e.ziele.length > ZIEL_MAX) { feldFehlerZeigen(p, "impact_event_too_many_targets", "", fehlerText("impact_event_too_many_targets")); return; }
+      p.zielFehler = null; p.gesendet = p.e.ziele.slice();
+      warten(p, "ziel");
+      rufen("uevAddTarget", { p_event_id: p.eventId, p_targets: p.e.ziele.map(zielKoerper) }, { popup: p });
     }
     /* Nach jeder gelungenen Aenderung: Bubble laedt die Liste neu (upEventsChanged, 04.10.) --
        Uebersicht und Pins zeigen sonst Name, Farbe, Titelbild und URL-Zahl von vorher. Im
@@ -9151,7 +9139,7 @@
         /* add_impact_event_target_v1 ueberspringt, was schon da ist, und sagt wie viele
            (skipped_duplicates, Rueckmeldung Abschnitt 3) -- das steht als zweite Zeile dabei. */
         var sd = art === "ziel" ? num(d.skipped_duplicates) : null;
-        UC.toast(t(art === "url" ? "URL added" : art === "ziel" ? "Added to tracking" : "Event updated"),
+        UC.toast(t(art === "ziel" ? "Added to tracking" : "Event updated"),
           sd > 0 ? { desc: ersetze(t(sd === 1 ? "{n} target was already tracked." : "{n} targets were already tracked."), { n: zahl(sd) }) } : undefined);
       }
     }
