@@ -3882,7 +3882,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
   /* Titel oben ueber beide Spalten, darunter Domain links und Wert rechts, beide auf einer Linie.
      display: contents an den zwei Zwischenkaesten, damit ihre Kinder Zellen DIESES Rasters werden
      -- ohne das Markup anzufassen, das dieselbe Zeile in der App baut. */
-  .ulh-vis-chancen .uo-row { row-gap: 6px; column-gap: 12px; padding: 10px 12px; border-radius: calc(var(--up-r-2xl) / var(--ulh-vs, 1)); }
+  .ulh-vis-chancen .uo-row { row-gap: 6px; column-gap: 12px; padding: 10px 12px; border-radius: calc(var(--up-r-l) / var(--ulh-vs, 1)); }
   .ulh-vis-chancen .uo-row-main, .ulh-vis-chancen .uo-row-right { display: contents; }
   .ulh-vis-chancen .uo-row-title { grid-column: 1 / -1; font-size: 12.5px; }
   .ulh-vis-chancen .uo-row-sub { grid-column: 1; }
@@ -4313,19 +4313,21 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
    Gemeldet: "alle Radien in den Platform-Karten muessen dem System entsprechen". Die Vorschauen sind
    verkleinert (--ulh-vs, 0.66 bis 0.86), und mit ihnen jeder Radius darin: die Tabelle mit 12 stand
    auf dem Schirm mit 8, ein Topic-Chip mit 4 bei 2.6. Hier steht jeder Radius der Bauteile darin
-   durch den Massstab geteilt -- auf dem Schirm also genau der Wert, den dasselbe Bauteil in der App
-   traegt (Rolle aus core: Knopf und Feld 32 hoch 6, Chip und Zaehler 4, Logoplatte 6 mit Bild 3,
-   Fahne 3). Doppelt ueber .ulh-root .ulh-vis, damit die Regeln der Komponenten (eine oder zwei
+   durch den Massstab geteilt, damit auf dem Schirm ein Wert der Skala steht, und zwar nach der
+   Rolle und der Hoehe AUF DEM SCHIRM (core: bis 24 -> 4, 25 bis 36 -> 6, ab 37 -> 8; Tabelle und
+   Fenster 12): die Knoepfe sind verkleinert 21 hoch -> 4, Logoplatten 16 bis 18 -> 4, Chips 4,
+   die Chancen-Zeilen gut 44 -> 8, Fahne 3. Doppelt ueber .ulh-root .ulh-vis, damit die Regeln der Komponenten (eine oder zwei
    Klassen) nicht vorgehen. Ausserhalb einer Vorschau gibt es --ulh-vs nicht: dann teilt calc durch 1. */
-.ulh-root .ulh-vis :is(.up-iconbtn, .up-export, .udt-sub-search, .up-filter-btn) { border-radius: calc(var(--up-r-m) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis :is(.up-iconbtn, .up-export, .udt-sub-search, .up-filter-btn) { border-radius: calc(var(--up-r-xs) / var(--ulh-vs, 1)); }
 .ulh-root .ulh-vis :is(.up-head-count, .upt-check, .up-topicchip, .up-pages, .uo-pot-bar) { border-radius: calc(var(--up-r-xs) / var(--ulh-vs, 1)); }
-.ulh-root .ulh-vis .up-stack-vis { border-radius: calc(var(--up-r-m) / var(--ulh-vs, 1)); }
-.ulh-root .ulh-vis .up-stack-vis img { border-radius: calc((var(--up-r-m) - 3px) / var(--ulh-vs, 1)); }
-.ulh-root .ulh-vis .udt-logo-box { border-radius: calc(var(--up-r-m) / var(--ulh-vs, 1)); }
-.ulh-root .ulh-vis .udt-logo-box img { border-radius: calc((var(--up-r-m) - 1px) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis .up-stack-vis { border-radius: calc(var(--up-r-xs) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis .up-stack-vis img { border-radius: calc(var(--up-r-xs) / var(--ulh-vs, 1) - 3px); }
+.ulh-root .ulh-vis .udt-logo-box { border-radius: calc(var(--up-r-xs) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis .udt-logo-box img { border-radius: calc(var(--up-r-xs) / var(--ulh-vs, 1) - 1px); }
 .ulh-root .ulh-vis :is(.udt-sub-logo, .uo-row-sub .up-logo-box) { border-radius: calc(var(--up-r-xs) / var(--ulh-vs, 1)); }
 .ulh-root .ulh-vis :is(.udt-sub-logo, .uo-row-sub .up-logo-box) img { border-radius: calc((var(--up-r-xs) - 1px) / var(--ulh-vs, 1)); }
-.ulh-root .ulh-vis .uo-row { border-radius: calc(var(--up-r-2xl) / var(--ulh-vs, 1)); }
+/* Die Chancen sind Zeilen, keine Karten: auf dem Schirm gut 44 hoch, also 8. */
+.ulh-root .ulh-vis .uo-row { border-radius: calc(var(--up-r-l) / var(--ulh-vs, 1)); }
 /* Umschalter: Schiene, gleitender Streifen und Knopf lesen in core alle --up-sw-r (24 hoch: 4). */
 .ulh-root .ulh-vis .udt-sub-dispseg.udt-sub-dispseg { --up-sw-r: calc(var(--up-r-s) / var(--ulh-vs, 1)); }
 /* Fahnen: 3 wie in der App (Haarlinie unter 4, ohne Token). */
