@@ -2406,7 +2406,13 @@
        viewBox bleibt 16x16, Radius und Strichstaerke muessen nicht nachgerechnet werden. */
     .up-varring svg { display: block; width: 22.4px; height: 22.4px; }
     .up-varring-track { stroke: var(--vc-heading-bg); }
-    .up-varring-fill { stroke: var(--up-accent); transition: stroke-dasharray 240ms ease; }
+    /* DIE FARBE DES BOGENS IST DIE CHARTFARBE (23.10.), dieselbe Regel wie UC.chartInk: im Modus
+       "Standard + Blau" das ruhige Blau (--up-chart-ink, nur dort gesetzt), sonst die Akzent-Tinte.
+       Vorher --up-accent: der Modus setzt kein data-accent, der Ring stand dort in der Schriftfarbe,
+       waehrend jede Linie daneben blau war (Lukas: "bei Standard / Blau ... sollen sie blau sein").
+       Tinte statt Flaeche: der Ring liegt auf dem Seitengrund wie jede Linie; im Hellen sind beide
+       gleich, im Dunkeln traegt Indigo #7C8AF0 statt #5E6AD2, Azur #3D97F0 statt #0075DE. */
+    .up-varring-fill { stroke: var(--up-chart-ink, var(--up-accent-ink)); transition: stroke-dasharray 240ms ease; }
     /* Zwei Klassen gegen gap 10 von .up-td, das weiter unten steht -- mit einer kam die 6 nie an
        (gemessen 10, 15.10.); entschieden ueber die Spezifitaet, nicht die Reihenfolge. */
     .up-td.up-var-cnt { gap: 6px; }
@@ -2439,7 +2445,7 @@
     .up-root.is-vnarrow .up-var-sov, .up-root.is-vnarrow .up-th-vsov { flex: 0 0 148px; }
     .up-root.is-vnarrow .up-var-cnt, .up-root.is-vnarrow .up-th-vcnt { display: none; }
     .up-root[data-theme="dark"] .up-varring-track { stroke: var(--vc-border); }
-    .up-root[data-theme="dark"] .up-varring-fill { stroke: var(--up-accent); }
+    .up-root[data-theme="dark"] .up-varring-fill { stroke: var(--up-chart-ink, var(--up-accent-ink)); }
 
     .up-th-info, .up-intent-erklaer {
       width: 14px; height: 14px; flex: 0 0 14px; margin-left: auto;
@@ -8008,11 +8014,13 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
 .up-log-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--vc-muted); }
 
 /* DIE SPARKLINE (UC.sparkHtml, 04.10.): 72 x 24 neben dem Wert einer Kachel, Linie 1.5 in der
-   Akzent-Tinte, der letzte Punkt als Marke. Keine Achse, keine Flaeche -- sie sagt nur die
-   Richtung, die Zahl daneben sagt den Wert. */
+   Chartfarbe, der letzte Punkt als Marke. Keine Achse, keine Flaeche -- sie sagt nur die
+   Richtung, die Zahl daneben sagt den Wert.
+   Chartfarbe seit dem 23.10. wie UC.chartInk: --up-chart-ink im Modus "Standard + Blau", sonst die
+   Akzent-Tinte. Vorher nur die Tinte -- im Modus Blau also die Schriftfarbe. */
 .up-spark { display: block; width: 72px; height: 24px; overflow: visible; flex: 0 0 auto; }
-.up-spark-linie { fill: none; stroke: var(--up-accent-ink); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.up-spark-punkt { fill: var(--up-accent-ink); stroke: none; }
+.up-spark-linie { fill: none; stroke: var(--up-chart-ink, var(--up-accent-ink)); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.up-spark-punkt { fill: var(--up-chart-ink, var(--up-accent-ink)); stroke: none; }
 .up-kpi-foot strong { font-weight: var(--up-fw-m); color: var(--vc-muted); }
 /* DIE WERTE IN DER KACHEL SIND DIE DER TABELLENZELLEN (03.10.): .up-num, UC.sentHtml (Balken +
    Zahl) und .up-rank-group mit Raute -- nur groesser gestellt, wie in power-dashboard (.upw-kpi-val)
@@ -8747,7 +8755,8 @@ html[data-usn-modus="hint"] .up-ph-heading.is-knapp > .up-ph-crumb:first-child:n
    nachgerechnet werden. */
 .up-varring svg { display: block; width: 22.4px; height: 22.4px; }
 .up-varring-track { stroke: var(--vc-heading-bg); }
-.up-varring-fill { stroke: var(--up-accent); transition: stroke-dasharray 240ms ease; }
+/* Chartfarbe wie oben (23.10.): --up-chart-ink im Modus "Standard + Blau", sonst die Akzent-Tinte. */
+.up-varring-fill { stroke: var(--up-chart-ink, var(--up-accent-ink)); transition: stroke-dasharray 240ms ease; }
 .up-var-of { font-size: 12px; font-weight: 400; color: var(--vc-fourth); white-space: nowrap; }
 
 /* ══ Custom Groupings ═══════════════════════════════════════════════════════════════════════════
