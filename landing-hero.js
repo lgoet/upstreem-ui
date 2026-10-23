@@ -103,6 +103,13 @@
     "Features": "Funktionen", "Answers backed by evidence": "Antworten mit Belegen",
     "Next steps ranked by impact": "Nächste Schritte nach Wirkung", "Page audits on request": "Page Audits auf Zuruf",
     "Reports ready to share": "Berichte zum Teilen",
+    /* Source Insights (23.10.) -- die Ueberschrift bleibt englisch. */
+    "Which domains the models cite,": "Welche Domains die Modelle zitieren,",
+    "which of their pages carry the answer, and where your brand is named.": "welche ihrer Seiten die Antwort tragen und wo deine Marke genannt wird.",
+    "Citation share per domain": "Citation Share je Domain", "Cited pages and URL types": "Zitierte Seiten und URL-Typen",
+    "Brand mentions per page": "Markennennungen je Seite", "Model breakdown": "Verteilung nach Modell",
+    "Cited pages on forbes.com": "Zitierte Seiten auf forbes.com", "Mention a tracked brand": "Nennen eine getrackte Marke",
+    "Mention Acme": "Nennen Acme", "68.5% of cited pages": "68,5% der zitierten Seiten", "19.0% of cited pages": "19,0% der zitierten Seiten",
     /* h1 und Unterzeile des Hero bleiben auf Deutsch ENGLISCH (14.10. so entschieden: "lass h1 und
        h2 einfach auf englisch" -- "einfach gemacht" klang uebersetzt). Deshalb stehen sie hier nicht. */
     "Book a demo": "Demo vereinbaren", "Tracked daily on": "Täglich gemessen in",
@@ -4568,41 +4575,29 @@
     }
   }
 
+  /* SOURCE INSIGHTS ALS RASTER (23.10., Entwurf "Source Insights C" aus dem Canvas, nach Vercels
+     Feature-Raster): ein weisser Kasten, innen nur Haarlinien. Die Teile des echten Domain Details
+     stehen DIREKT als Zellen darin -- .ulh-quell-app, .udd-root und .udd-row2 tragen
+     display: contents (landing-hero.css, "Source Insights als Raster"), die Komponente rechnet also
+     Verlauf und Balken in ihrer Zellbreite. Oben ueber zwei Spalten Kopf und Verlauf, rechts Satz und
+     Features, unten URL-Typen, Modelle und die Zahlen des Funnels. Der Funnel selbst ist aus. */
+  var QUELL_PUNKTE = ["Citation share per domain", "Cited pages and URL types", "Brand mentions per page", "Model breakdown"];
+  function quellZahl(wert, label, neben){
+    return '<div class="ulh-qr-zahl"><span class="ulh-qr-zahl-w">' + wert + '</span><span class="ulh-qr-zahl-l">' + label + '</span>' +
+      (neben ? '<span class="ulh-qr-zahl-n">' + neben + '</span>' : '') + '</div>';
+  }
   function quellen(){
+    var f = quellHaupt().source_presence_funnel;
+    var pct = function(v){ return (Math.round(v * 10) / 10).toFixed(1) + "%"; };
     return '<section class="ulh-quell" id="sources">' +
       '<div class="ulh-spur">' +
-        '<div class="ulh-quell-kopf">' +
-          /* Derselbe blaue Chip wie ueber der Ueberschrift der Karten (.ulh-feat-chip) -- eine
-             Sektion, ein Chip. Er bringt seinen Abstand nach unten selbst mit (18px). */
-          '<span class="ulh-feat-chip ulh-auf">' + QUELL_CHIP + '</span>' +
-          /* aria-label mit dem ganzen Satz (15.10., SEO-Audit): der sichtbare Text ist Buchstabe fuer
-             Buchstabe in Spans zerlegt (der Farbverlauf beim Scrollen). Vorleser und einfache
-             Text-Extraktoren lesen so den Satz und nicht 140 Einzelteile. */
-          '<h2 class="ulh-quell-h" aria-label="' + (QUELL_H1 + " " + QUELL_H2).replace(/"/g, "&quot;") + '">' + quellWorte() + '</h2>' +
-          /* Derselbe Knopf wie im Hero (.ulh-btn .ulh-btn-sec) -- .ulh-quell-cta traegt nur noch
-             den Abstand nach oben und kein zweites Aussehen. */
-          /* Ziel wie "Start for free" in der Leiste, also auch im neuen Tab (bis 14.10. href="#"). */
-          '<a class="ulh-btn ulh-btn-sec ulh-quell-cta ulh-auf" target="_blank" rel="noopener"' +
-            ' href="https://app.upstreem.ai/signup">' + QUELL_CTA + '</a>' +
-        '</div>' +
-        /* Der Kasten ist unten offen: er wird angeschnitten, und der Inhalt laeuft weiter. Genau
-           das laesst ihn wie eine laufende Seite wirken und nicht wie ein Bildschirmfoto. */
-        '<div class="ulh-quell-box ulh-auf ulh-auf-gross">' +
-        '<div class="ulh-quell-panel">' +
-          /* DER KOPF DES DOMAIN-DRAWERS (14.10.: "auf den Stand wie in der Hauptapp"). Dieselben
-             Bauteile aus core wie in domain-drawer.js: Zeichen, Domain, daneben der Chip des
-             Citation Types, darunter die leise Zeile "Last cited on". Den Chip faerbt
-             quellTypSetzen() zur Laufzeit ueber UC.typeStyle -- die Farben stehen in core und nur
-             dort. Die Domain ist hier keine Ueberschrift: die Sektion hat ihre h2, und "forbes.com"
-             waere fuer einen Crawler ein Thema, das die Seite nicht hat.
-             Die Filter oben rechts (Kalender, Modelle, Maerkte, Topics) fehlen mit Absicht: fuenf
-             weitere Komponenten beim Seitenaufbau, fuer ein Bild, das hier niemand bedient. */
+        '<h2 class="ulh-sek-h ulh-quell-h2 ulh-auf"><span>Every answer has a source.</span> <span>See which ones count.</span></h2>' +
+        '<div class="ulh-qr ulh-auf ulh-auf-gross">' +
           '<div class="up-dk-heldzeile ulh-quell-held">' +
             '<div class="up-dk-held">' +
               '<span class="up-dk-held-bild">' +
                 '<span class="up-logo-box up-dk-logo has-img" data-domain="' + QUELL_DOMAIN + '">' +
                   '<img src="' + quellzeichen(QUELL_DOMAIN) + '" alt="" referrerpolicy="no-referrer"/>' +
-                  /* Nur zu sehen, wenn das Zeichen nicht laedt. */
                   '<span class="up-logo-ltr">' + QUELL_DOMAIN.charAt(0).toUpperCase() + '</span>' +
                 '</span>' +
               '</span>' +
@@ -4615,19 +4610,25 @@
               '</div>' +
             '</div>' +
           '</div>' +
-          /* --ulh-q-trichter: die Trichterfarbe aus QUELL_FARBEN, als Variable an die Wurzel der
-             Sektion, weil der Trichter per CSS gefaerbt wird (landing-hero.css, .udd-fn-band) --
-             so steht die Palette an EINER Stelle, auch fuer den Teil, den die CSS zeichnet. */
           '<div class="ulh-quell-app up-root" data-theme="light" data-isdark="no" data-up-keepclip' +
             ' style="--ulh-q-trichter: ' + QUELL_FARBEN.trichter + '">' +
-            /* Ohne die URL-Tabelle darunter (14.10. abends: "URLs table nicht anzeigen"). */
             demoTeil("udd") +
           '</div>' +
-        '</div>' +
+          '<div class="ulh-qr-text">' +
+            '<p class="ulh-sek-satz">Which domains the models cite, <span>which of their pages carry the answer, and where your brand is named.</span></p>' +
+            '<p class="ulh-sek-feat-t">Features</p>' +
+            '<ul class="ulh-sek-feat">' + QUELL_PUNKTE.map(function(t){ return '<li>' + t + '</li>'; }).join("") + '</ul>' +
+          '</div>' +
+          '<div class="ulh-qr-zahlen">' +
+            quellZahl(String(f.cited_urls_count), "Cited pages on " + QUELL_DOMAIN) +
+            quellZahl(String(f.urls_with_tracked_brands), "Mention a tracked brand", pct(f.tracked_brand_presence_pct) + " of cited pages") +
+            quellZahl(String(f.urls_mentioning_you), "Mention Acme", pct(f.your_url_presence_pct) + " of cited pages") +
+          '</div>' +
         '</div>' +
       '</div>' +
     '</section>';
   }
+
 
   /* ---- Die Domain-Detail-Seite fuellen ----
      Der Modus steht VOR dem ersten Zeichnen: die Komponente liest ihn beim Start aus
