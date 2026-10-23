@@ -143,9 +143,17 @@
     "Watch every page you publish, cited or not": "Beobachte jede Seite, die du veröffentlichst, zitiert oder nicht",
     "Load your sitemap and follow whole folders and pages from the day they go live, before an AI has cited them.":
       "Lade deine Sitemap und verfolge ganze Ordner und Seiten ab dem Tag der Veröffentlichung, noch bevor eine KI sie zitiert.",
-    "Follow a whole domain or subdomain from day one": "Verfolge eine ganze Domain oder Subdomain ab Tag eins",
-    "Track a single URL, everything under a path or a whole (sub)domain, so new pages count from the moment you publish.":
-      "Tracke eine einzelne URL, alles unter einem Pfad oder eine ganze (Sub-)Domain, damit neue Seiten ab der Veröffentlichung zählen.",
+    "See your pages the way AI crawlers do": "Sieh deine Seiten so, wie KI-Crawler sie sehen",
+    "Each audit requests a page like ChatGPT, Perplexity and Google do and shows what stops them: robots.txt rules, blocked access or text that only appears after JavaScript.":
+      "Jeder Audit ruft eine Seite ab wie ChatGPT, Perplexity und Google und zeigt, was sie aufhält: Regeln in der robots.txt, gesperrter Zugang oder Text, der erst nach JavaScript erscheint.",
+    /* Die Plattform-Tabelle der Audit-Karte: dieselben Worte wie der de-Katalog von page-audit.js. */
+    "Access": "Zugang", "Text without JavaScript": "Text ohne JavaScript", "Reachable": "Erreichbar",
+    "Not reachable": "Nicht erreichbar", "Allowed": "Erlaubt", "Blocked": "Gesperrt", "No issue": "Kein Problem",
+    "Documented": "Dokumentiert",
+    /* Ueberschriften der neuen Abschnitte (23.10. gemeldet: "im de setting auf englisch"). */
+    "Every answer has a source.": "Jede Antwort hat eine Quelle.", "See which ones count.": "Sieh, welche zählen.",
+    "that does the work for you": "die für dich arbeitet",
+    "Build workflows and automations": "Workflows und Automationen", "with your data in Claude": "mit deinen Daten in Claude",
     "Refresh": "Aktualisieren", "All (43)": "Alle (43)", "Cited (12)": "Zitiert (12)", "Not cited yet (31)": "Noch nicht zitiert (31)",
     "12 of 43 pages cited. Last checked 5 minutes ago.": "12 von 43 Seiten zitiert. Zuletzt geprüft vor 5 Minuten.",
     "Not cited yet": "Noch nicht zitiert", "Homepage": "Startseite",
@@ -451,6 +459,11 @@
        gemini.google.com ist das allgemeine Google-Zeichen. */
     if (domain === "gemini.google.com")
       return "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/gemini_logo.webp";
+    /* ChatGPT im DUNKLEN Zeichen der App (core OPENAI_LOGO.dunkel, 23.10.): die Seite ist immer
+       dunkel, und das Favicon von openai.com ist ein weisses Quadrat mit schwarzem Zeichen -- im
+       Logo-Ring und in der Modellzeile des Hero stand es als helle Platte. */
+    if (domain === "openai.com")
+      return "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/openai_dark.png";
     /* ABSOLUT (19.10. gemeldet: "Perplexity, Gemini und Google AIO Logos fehlen"). upstreem-web
        schreibt Fremdadressen in dieser Datei auf /fremd/... um (lib/fremd.ts), also relativ -- und
        die Logo-Pruefungen von core (UC.modelLogoUrl, sichereUrl in shopping.js, brandedHtml)
@@ -1827,7 +1840,7 @@
         '<div class="ulh-mcp-kopf ulh-auf">' +
           '<span class="ulh-mcp-chip"><span class="ulh-mcp-chip-ic" data-ic="mcpServer" data-ic-w="1.75" aria-hidden="true"></span>' +
             '<span>MCP Server</span></span>' +
-          '<h2 class="ulh-mcp-h"><span>Build workflows and automate</span> <span>with your data in Claude</span></h2>' +
+          '<h2 class="ulh-mcp-h"><span>Build workflows and automations</span> <span>with your data in Claude</span></h2>' +
         '</div>' +
         '<div class="ulh-mcp-buehne">' +
           '<div class="ulh-mcp-dok ulh-auf" style="--auf:0">' +
@@ -1929,6 +1942,9 @@
         /* 23.10.: ohne die Belegchips unter der Antwort und ohne das Kopierzeichen neben der Frage. */
         '.am-evidence{display:none;}.am-msg.is-user .am-msg-actions{display:none;}' +
         '.am-hint{display:none;}' +
+        /* Der Zurueck-Knopf oben links: in der App kommt der Abstand von der Ansicht (.wirt-ansicht),
+           hier gibt es sie nicht, und er klebte am Rand (23.10.: "32px gap"). */
+        '#ask-mira.has-messages .am-hero,#ask-mira.is-compact.has-messages .am-hero{padding-left:32px;}' +
         /* Der Kopf ist hier eine Signatur und keine Statuszeile: kleiner Schriftzug, kein
            Bereitschaftszeichen, kein Untertitel. In der App sagen die beiden etwas (laeuft gerade
            etwas? worueber rede ich hier?) -- in einer Vorfuehrung sagen sie nichts. */
@@ -2594,7 +2610,9 @@
        Logo, sondern ein leeres schwarzes Kaestchen -- im Bild geprueft, neben den anderen sieben. */
     { bahn: 1, d: "copilot.cloud.microsoft",  n: "Copilot" },
     { bahn: 2, d: "google.com",              n: "Google AI Overviews" },
-    { bahn: 2, d: "x.ai",                    n: "Grok" },
+    /* grok.com statt x.ai (23.10.): das Favicon von x.ai ist ein weisses Quadrat, das von grok.com
+       das helle Zeichen auf durchsichtigem Grund -- auf der dunklen Seite das richtige. */
+    { bahn: 2, d: "grok.com",                n: "Grok" },
     { bahn: 2, d: "mistral.ai",              n: "Mistral" },
     { bahn: 2, d: "deepseek.com",            n: "DeepSeek" }
   ];
@@ -3070,7 +3088,7 @@
     if (art === "anzeigen") return visAnzeigen();
     if (art === "eventkarte") return visEventKarte();
     if (art === "eventabd") return visEventAbd();
-    if (art === "eventziel") return visEventZiel();
+    if (art === "audit") return visAudit();
     if (art === "reise") return visReise();
     if (art === "branded") return visBranded();
     if (art === "eventkurve") return '<div class="ulh-evk" data-ulh-evk><div class="ulh-evk-wrap"><canvas class="up-line-canvas"></canvas></div><div class="up-legend"></div></div>';
@@ -3889,12 +3907,18 @@
     /* DIE UNTERE REIHE (19.10. angefordert: "2 weitere Cards, dass es 2x2 wird; links breiter"): links
        ein Ausschnitt aus einem gefuellten Event-Detail mit der Sitemap, rechts ein Ausschnitt aus
        Schritt 3 des Anlegens. Beide mit den Klassen und Texten von events.js. */
-    { breit: 60, vis: "eventabd",
+    { breit: 50, vis: "eventabd",
       h: "Watch every page you publish, cited or not",
       p: "Load your sitemap and follow whole folders and pages from the day they go live, before an AI has cited them." },
-    { breit: 40, vis: "eventziel",
-      h: "Follow a whole domain or subdomain from day one",
-      p: "Track a single URL, everything under a path or a whole (sub)domain, so new pages count from the moment you publish." }
+    /* PAGE AUDIT STATT "GANZE DOMAIN" (23.10. angefordert: "Mach das Card weg und an der Stelle ein
+       Card ueber die Page Audits ... auf technischer Ebene eigene Assets beurteilen ... schau, wie
+       Wettbewerber das bewerben ... die beiden Cards 50-50"). Wettbewerber werben damit, dass man
+       sieht, ob KI-Crawler eine Seite erreichen und lesen koennen (Scrunch "AI Site Audit": blockierte
+       User Agents, JavaScript, robots.txt). Genau das misst Page Audit -- je Plattform Zugang,
+       robots.txt und Text ohne JavaScript. Vorschau: die Plattform-Tabelle des Audits (visAudit). */
+    { breit: 50, vis: "audit",
+      h: "See your pages the way AI crawlers do",
+      p: "Each audit requests a page like ChatGPT, Perplexity and Google do and shows what stops them: robots.txt rules, blocked access or text that only appears after JavaScript." }
   ];
   var EVENT_TON = "#3b82f6";
   var EVENT_NAME = "acme.com/electric relaunch";
@@ -4002,45 +4026,45 @@
     '</div>';
   }
 
-  /* ---- Karte "Ziele": Schritt 3 des Anlegens (19.10.) ----
-     Die Felder des Schritts, wie zielFelder in events.js sie zeichnet: das Feld mit "Add" (hier
-     blog.acme.com eingegeben), darunter die Wahl der Art, "Whole domain" gewaehlt, "Include all
-     subdomains" aus -- mit dem Satz, den die App dazu zeigt. */
-  function visEventZiel(){
+  /* ---- Karte "Page Audit" (23.10.) ----
+     Die Plattform-Tabelle eines fertigen Audits, mit den Klassen und Texten von page-audit.js
+     (plattformenHtml, zustandHtml, plattformLogo): je Plattform Name und Crawler, Zugang, robots.txt
+     und Text ohne JavaScript. Am Beispiel acme.com/charging, dieselbe Seite wie der laufende Audit im
+     Agent-Abschnitt: Perplexity ist per robots.txt gesperrt, bei Claude fehlt Text ohne JavaScript. */
+  var AUDIT_ZEILEN = [
+    { n: "ChatGPT Search", tok: "OAI-SearchBot", d: "openai.com", zug: "ok", rob: "ok", js: "ok" },
+    { n: "Google AI Overviews", tok: "Googlebot", d: "google.com", zug: "ok", rob: "ok", js: "ok" },
+    { n: "Perplexity", tok: "PerplexityBot", d: "perplexity.ai", zug: "neg", rob: "neg", js: "" },
+    { n: "Claude", tok: "Claude-SearchBot", d: "claude.ai", zug: "ok", rob: "ok", js: "doc" },
+    { n: "Gemini", tok: "Google-Extended", d: "gemini.google.com", zug: "ok", rob: "ok", js: "ok" }
+  ];
+  function visAudit(){
     var kern = window.UpstreemCore;
     var ic = function(n){ return kern ? kern.icon(n, 2) : ""; };
-    function art(titel, zeichen, bsp, an, unter){
-      return '<div class="uev-art-w' + (an ? " is-on" : "") + '">' +
-        '<div class="uev-art' + (an ? " is-on" : "") + '" role="radio" aria-checked="' + an + '">' +
-          '<span class="uev-art-punkt" aria-hidden="true"></span>' +
-          '<span class="uev-art-ic" aria-hidden="true">' + ic(zeichen) + '</span>' +
-          '<span class="uev-art-txt"><span class="uev-art-t">' + titel + '</span>' + bsp + '</span>' +
-        '</div>' + (unter || "") + '</div>';
+    function zustand(text, zeichen, ton){
+      return '<span class="upa-zustand is-' + ton + '"><span class="upa-zustand-ic" aria-hidden="true">' + ic(zeichen) + '</span>' +
+        '<span class="upa-zustand-t">' + text + '</span></span>';
     }
-    function notation(t){ return '<span class="uev-notation is-leise uev-art-bsp">' + t + '</span>'; }
-    var unter = '<div class="uev-klapp uev-unter-klapp is-offen"><div class="uev-klapp-in">' +
-      '<div class="uev-unter"><span class="uev-unter-lbl">Include all subdomains</span><span class="up-switch" role="switch" aria-checked="false"></span></div>' +
-      '<p class="uev-unter-satz">Only blog.acme.com itself. Pages on blog.blog.acme.com are not counted.</p></div></div>';
-    return '<div class="ulh-evziel" aria-hidden="true"><div class="uev-ziel">' +
-      '<div class="up-topicmodal-field uev-ziel-teil uev-eingabe-teil">' +
-        '<div class="uev-zielkopf"><span class="up-topicmodal-label">URLs, paths or domains</span>' +
-          '<span class="uev-sm-knopfzeile"><button type="button" class="up-quietbtn uev-sm-auf" tabindex="-1">' + ic("folderTree") + '<span>Load from sitemap</span></button></span></div>' +
-        '<div class="uev-eingabe-ort"><div class="uev-zieleingabe"><div class="uev-zielzeile">' +
-          '<div class="uev-feldspalte"><div class="uev-urlsuche"><span class="uev-urlsuche-ic">' + ic("globe") + '</span>' +
-            '<textarea class="up-topicmodal-name uev-urlein uev-zielein" rows="1" readonly tabindex="-1">blog.acme.com</textarea></div></div>' +
-          '<button type="button" class="up-btn-sec is-lg uev-zielhinzu" tabindex="-1">Add</button>' +
-        '</div></div></div>' +
-      '</div>' +
-      '<div class="up-topicmodal-field uev-ziel-teil uev-arten-teil">' +
-        '<span class="up-topicmodal-label">What should we track?</span>' +
-        '<div class="uev-arten-ort"><div class="uev-arten" role="radiogroup">' +
-          art("Specific URLs", "link", notation("example.com/blog/launch"), false) +
-          art("Everything under a path", "folder", notation("example.com/blog/*"), false) +
-          art("Whole domain", "globe", notation("example.com/*"), true, unter) +
-          art("Brand metrics only", "chartSpline", '<span class="uev-art-s">Visibility, rank and sentiment</span>', false) +
-        '</div></div>' +
-      '</div>' +
-    '</div></div>';
+    var leer = '<span class="up-num is-empty">–</span>';
+    var zeilen = AUDIT_ZEILEN.map(function(z){
+      return '<div class="up-row upa-statisch" role="row">' +
+        '<div class="up-td upa-td-plattform" role="cell">' +
+          '<span class="up-logo-box upa-plogo is-modell has-img"><img src="' + quellzeichen(z.d) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/>' +
+            '<span class="up-logo-ltr">' + z.n.charAt(0) + '</span></span>' +
+          '<span class="upa-seite"><span class="upa-pname"><span class="up-zeilenname">' + z.n + '</span></span>' +
+          '<span class="upa-url upa-mono">' + z.tok + '</span></span></div>' +
+        '<div class="up-td" role="cell">' + (z.zug === "ok" ? zustand("Reachable", "checkCircle", "pos") : zustand("Not reachable", "ban", "neg")) + '</div>' +
+        '<div class="up-td" role="cell">' + (z.rob === "ok" ? zustand("Allowed", "checkCircle", "pos") : zustand("Blocked", "ban", "neg")) + '</div>' +
+        '<div class="up-td" role="cell">' + (z.js === "ok" ? zustand("No issue", "checkCircle", "pos")
+          : z.js === "doc" ? '<span class="up-marke is-leise upa-marke upa-wirkung">Documented</span>' : leer) + '</div>' +
+      '</div>';
+    }).join("");
+    function kopf(t){ return '<div class="up-th" role="columnheader"><span class="up-th-txt">' + t + '</span></div>'; }
+    return '<div class="ulh-evaudit upa-root" aria-hidden="true">' +
+      '<div class="up-box upa-kasten upa-tab-plattformen"><div class="up-table" role="table">' +
+        '<div class="up-thead" role="row" data-up-colsig="upa">' + kopf("Platform") + kopf("Access") + kopf("robots.txt") + kopf("Text without JavaScript") + '</div>' +
+        '<div class="up-tbody" role="rowgroup">' + zeilen + '</div>' +
+      '</div></div></div>';
   }
 
   /* Die Kurve: 28 Tage, der Relaunch am 15. Die betroffenen Prompts stehen davor bei gut 21

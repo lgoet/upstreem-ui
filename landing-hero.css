@@ -2042,16 +2042,16 @@
 /* Die untere Reihe der Events (19.10.): zwei Ausschnitte aus der App -- der Baum der Sitemap im
    Event-Detail (links, breiter) und Schritt 3 des Anlegens (rechts). Wie die Tabellen: etwas kleiner
    gerechnet, innen mit Luft zum Rand, unten laeuft der Inhalt in den Kartengrund aus. */
-.ulh-vis-eventabd, .ulh-vis-eventziel { --ulh-vs: 0.86; --ulh-vh: 440px; }
-.ulh-vis-eventabd .ulh-vis-in, .ulh-vis-eventziel .ulh-vis-in { padding: 0 40px; box-sizing: border-box; }
-.ulh-vis-eventabd::after, .ulh-vis-eventziel::after {
+.ulh-vis-eventabd, .ulh-vis-audit { --ulh-vs: 0.86; --ulh-vh: 440px; }
+.ulh-vis-eventabd .ulh-vis-in, .ulh-vis-audit .ulh-vis-in { padding: 0 40px; box-sizing: border-box; }
+.ulh-vis-eventabd::after, .ulh-vis-audit::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 19%;
   -webkit-backdrop-filter: blur(1.6px); backdrop-filter: blur(1.6px);
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 90%);
   mask-image: linear-gradient(to bottom, transparent, #000 90%);
   pointer-events: none; z-index: 2;
 }
-.ulh-vis-eventabd::before, .ulh-vis-eventziel::before {
+.ulh-vis-eventabd::before, .ulh-vis-audit::before {
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 18%;
   background: linear-gradient(to bottom, transparent 0%, var(--ulh-grund) 94%);
   pointer-events: none; z-index: 3;
@@ -2064,7 +2064,7 @@
 .ulh-evabd .up-sec-titles { display: flex; flex-direction: column; gap: 8px; }
 .ulh-evabd .uev-abd-kopf .up-sec-head { margin-bottom: 20px; align-items: flex-start; }
 .ulh-evabd .uev-abd-seg { margin-bottom: 20px; }
-.ulh-evabd, .ulh-evziel { pointer-events: none; }
+.ulh-evabd, .ulh-evaudit { pointer-events: none; }
 .ulh-evkarten { position: relative; height: calc(100% - 40px); display: flex; justify-content: center; align-items: flex-start; padding-top: 6px; }
 .ulh-evkarten .uev-karte { width: 340px; flex: 0 0 auto; }
 .ulh-evkarte-links, .ulh-evkarte-rechts {
@@ -2220,10 +2220,8 @@
 /* Mittig unter dem Schild, senkrecht bis auf die Linie. Damit er sie trifft, richtet sich die
    HOEHE des Schildes nach dem Wert der Kurve an dieser Stelle (landing-hero.js) -- nicht nach dem
    Wert seines Datenpunkts. */
-.ulh-krv-chip::after {
-  content: ""; position: absolute; top: 100%; left: 50%; width: 1px; height: 15px;
-  background: var(--ulh-border);
-}
+/* Seit 23.10. ohne Strich ("mach die duennen Striche unter den Logo-Chips weg"); der Abstand zum
+   Punkt (KRV_ABSTAND) bleibt, das Schild steht frei ueber seiner Linie. */
 /* Das Schild der Linie, die gerade NICHT gehoben ist, tritt mit zurueck -- sonst stuende ein
    volles Schild an einer grauen Linie. */
 .ulh-krv-chip.is-aus { opacity: .45; filter: saturate(.2); }
@@ -2814,6 +2812,13 @@
    Auszug 78, Fusszeile 28, dazu Polster und Abstaende), plus 28px Polster des Fensters ergibt
    262. */
 .ulh-fen-antwort { --ulh-fb: 325px; --ulh-fh: 262px; left: calc(100% + 4px - var(--ulh-rein, 0px)); top: 25%; }
+/* 15 PROZENT KLEINER UND WEITER RECHTS (23.10. angefordert: "es nimmt mir einen zu dominanten Platz
+   ein"). Dieselbe Machart wie die URL-Typen: skaliert um die verankerte Ecke (hier links oben, das
+   Fenster haengt mit left/top am Hauptfenster), der Faktor als --ulh-fs, den einpassen() liest. Die
+   kleinere Kachel braucht weniger Einrueckung, also rueckt sie von selbst nach rechts (gemessen
+   bei 1440: --ulh-rein siehe Uebergabe). */
+.ulh-fen.ulh-fen-antwort { --ulh-fs: .85; transform-origin: left top; transform: translate(-90px, 0) scale(calc(.94 * var(--ulh-fs))); }
+.ulh-root.is-klein .ulh-fen.ulh-fen-antwort { transform: scale(var(--ulh-fs)); }
 
 /* Hier stand: "Die Nebenfenster ragen links und rechts aus der Sektion heraus, und genau so ist es
    gedacht". Das gilt seit dem 28.09. nicht mehr -- sie bleiben ganz im Bild, siehe "Lage" oben.
@@ -4653,9 +4658,9 @@ html[data-up-pagetheme="dark"] :is(.ulh-nav-logo img, .ulh-mcp-logo) { filter: i
 .ulh-root .am-run-step:has(.am-run-schritt:not(.is-done):not(.is-fehler)) ~ .am-run-step .am-run-spin { opacity: 0; }
 .ulh-root #ask-mira.is-loading .am-send-spinner { display: none; }
 .ulh-root #ask-mira.is-loading .am-ic-send { display: block; }
-/* Der Zurueck-Knopf oben links klebte an der Kante des Fensters: in der App kommen die 16 links von
+/* 32 seit 23.10. ("32px gap"), vorher 16. Der Zurueck-Knopf oben links klebte an der Kante des Fensters: in der App kommen die 16 links von
    der Ansicht (.wirt-ansicht, ask-mira.css "LINKS KEIN EIGENES POLSTER"), und die gibt es hier nicht. */
-.ulh-root #ask-mira.has-messages .am-hero { padding-left: 16px; }
+.ulh-root #ask-mira.has-messages .am-hero, .ulh-root #ask-mira.is-compact.has-messages .am-hero { padding-left: 32px; }
 
 /* ---------- DIE KOEPFE DER KARTENABSCHNITTE WIE DIE DER NEUEN (23.10.) -----------------------------
    Angefordert: "mach bitte die headings der card komponenten so, wie die headings der neuen
@@ -4677,7 +4682,25 @@ html[data-up-pagetheme="dark"] :is(.ulh-nav-logo img, .ulh-mcp-logo) { filter: i
 @media (max-width: 900px) {
   .ulh-root .ulh-feat > .ulh-spur > .ulh-feat-kopf { padding: 0 24px; }
 }
+/* MITTIG STATT RECHTS (23.10. nachgeschaerft: "statt der rechts zentrierten Heading bitte mittig
+   zentriert, aber auf annaehernd der vollen Breite, mit gutem Padding"): der zweite und vierte Kopf
+   steht mittig, die Ueberschrift ohne 20ch-Grenze ueber die Spur (96 Polster je Seite), die
+   Unterzeile bis 72ch. Im Wechsel also links, mittig, links, mittig. */
 @media (min-width: 901px) {
-  .ulh-root :is(.ulh-reise, .ulh-events) > .ulh-spur > .ulh-feat-kopf { text-align: right; }
-  .ulh-root :is(.ulh-reise, .ulh-events) > .ulh-spur > .ulh-feat-kopf :is(.ulh-feat-h, .ulh-feat-sub) { margin-left: auto; }
+  .ulh-root :is(.ulh-reise, .ulh-events) > .ulh-spur > .ulh-feat-kopf { text-align: center; padding: 0 96px; }
+  .ulh-root :is(.ulh-reise, .ulh-events) > .ulh-spur > .ulh-feat-kopf :is(.ulh-feat-h, .ulh-feat-sub) { margin-left: auto; margin-right: auto; }
+  .ulh-root :is(.ulh-reise, .ulh-events) > .ulh-spur > .ulh-feat-kopf .ulh-feat-h { max-width: none; }
+  .ulh-root :is(.ulh-reise, .ulh-events) > .ulh-spur > .ulh-feat-kopf .ulh-feat-sub { max-width: 72ch; }
 }
+
+/* ---------- DIE AUDIT-KARTE IM IMPACT-ABSCHNITT (23.10.) ----------------------------------------
+   Die Plattform-Tabelle von Page Audit (page-audit.css, von landing-boot.js geladen) in der Vorschau:
+   vier Spalten statt sechs (ohne Coverage und Aufklapp-Zeichen), oben mit derselben Luft wie die
+   Sitemap daneben (.uev-abd-sek 14). */
+.ulh-evaudit { padding-top: 14px; }
+/* Etwas kleiner gerechnet als die Sitemap daneben und mit weniger Luft zum Rand: vier Spalten mit
+   "Not reachable" und "Text without JavaScript" brauchen mehr Breite als der Baum (gemessen bei
+   0.86 und 40 Polster: beide abgeschnitten). */
+.ulh-vis-audit { --ulh-vs: 0.78; }
+.ulh-vis-audit .ulh-vis-in { padding: 0 24px; }
+.ulh-root .ulh-evaudit .upa-tab-plattformen { --up-cols: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, .85fr) minmax(0, 1.35fr); }

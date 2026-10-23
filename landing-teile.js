@@ -294,10 +294,11 @@
          nicht, meldet Cal.com nie etwas -- also hier hinhoeren. */
       var s = document.querySelector('script[src="' + CAL_SKRIPT + '"]');
       if (s) s.addEventListener("error", function(){ calFehler(ns); });
-      /* Hell, auch wenn das System dunkel steht: die Seite ist immer hell, und ein dunkler
-         Kalender darin saehe aus wie ein fremdes Fenster. Im Embed-Code des Nutzers stand kein
-         Thema, Cal.com folgt dann dem System. */
-      w.Cal.ns[ns]("ui", { theme: "light", hideEventTypeDetails: false, layout: "month_view" });
+      /* Dunkel, auch wenn das System hell steht: die Seite ist seit dem 23.10. immer dunkel (vorher
+         immer hell), und ein heller Kalender darin saehe aus wie ein fremdes Fenster. Der Grund wie
+         die Karten der Seite (#0f0f0f), sonst stuende der Kalender auf seinem eigenen Schwarz. */
+      w.Cal.ns[ns]("ui", { theme: "dark", hideEventTypeDetails: false, layout: "month_view",
+                           cssVarsPerTheme: { dark: { "cal-bg": "#0f0f0f" } } });
       w.Cal.ns[ns]("on", { action: "linkReady", callback: function(){
         [].forEach.call(calFelder(ns, ""), function(f){
           if (f.querySelector("iframe")){ f.classList.add("is-da"); f.classList.remove("is-fehler"); }
@@ -307,7 +308,7 @@
     }
     w.Cal.ns[ns]("inline", {
       elementOrSelector: "#" + ziel.id,
-      config: { layout: "month_view", useSlotsViewOnSmallScreen: "true", theme: "light" },
+      config: { layout: "month_view", useSlotsViewOnSmallScreen: "true", theme: "dark" },
       calLink: link
     });
     setTimeout(function(){

@@ -303,6 +303,8 @@
   css("shopping.css");
   /* Der Block "Events": die Event-Karte ist statisches Markup mit den Klassen von events.js. */
   css("events.css");
+  /* Die Plattform-Tabelle der Audit-Karte (Impact, 23.10.) nimmt die Form der Seite Page Audit. */
+  css("page-audit.css");
   css("landing-hero.css");
 
   /* ZWEI STUFEN (19.10., Trace und Meldung: "auf langsamen Systemen laedt alles extrem lange"). Vorher
