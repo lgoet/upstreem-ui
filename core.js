@@ -18606,24 +18606,90 @@
     });
   }
 
-  /* Would white label text be hard to read on this fill? WCAG relative luminance, so it judges by
-     hue too (a light yellow reads bright, a light blue less so). Threshold sits high on purpose:
-     only genuinely light bars flip to dark text, mid-tone citation fills keep white. */
+  /* DIE SCHRIFT IM BALKEN AUS DEM KONTRAST (23.10., Lukas: "Top Topics" im Shopping Product Detail
+     im Hellen "kaum lesbar"). Bis hier entschied eine feste Schwelle (Luminanz ueber 0.4 dunkle
+     Schrift, sonst Weiss) und die Deckkraft stand fest (Name .95/.96, Wert .75/.62). Gerechnet
+     ueber die vier Rampen von balkenGrau (je 9 Stufen, Name und Wert) lagen 34 von 72 Texten
+     unter 4.5:1: Weiss auf #80858e (Stufe 4 der grauen Rampe, hell wie dunkel) 3.52, der Wert
+     darauf 2.83; Weiss auf der App-Palette um L 0.30 3.0; in der blauen Rampe von "Standard +
+     Blau" drei Namen unter 4.5. Mit dieser Regel 0 von 72.
+     Jetzt gilt WCAG AA fuer Text (4.5:1) je Balken, gerechnet an der Farbe, die wirklich gemalt
+     wird: (1) die Haustinte mit dem hoeheren Kontrast -- Weiss oder #1f1f1b, die zwei Tinten von
+     vorher; (2) reicht keine von beiden (Balken um L 0.18 bis 0.24, dort traegt #1f1f1b hoechstens
+     4.06), wird die dunkle Tinte in Zwanzigsteln Richtung Schwarz gezogen, bis das Ziel steht --
+     reines Schwarz oder Weiss erreichen bei jeder Farbe mindestens 4.58; (3) die leisere Deckkraft
+     des Werts bleibt, solange die Mischfarbe das Ziel haelt, sonst steigt sie in Hundertsteln.
+     Ausgegeben wird die Mischfarbe selbst (rgb), nicht Tinte plus Deckkraft: gemessen ist dann,
+     was auf dem Balken steht.
+     ort: ein Element in der Wurzel, um var(--…) und andere Schreibweisen aufzuloesen (die Tokens
+     haengen an .up-root). Ohne lesbare Farbe: null, der Aufrufer bleibt bei der alten Fassung. */
+  var BALKEN_ZIEL = 4.5;
+  var BALKEN_TINTE_HELL = [255, 255, 255], BALKEN_TINTE_DUNKEL = [31, 31, 27];
+  var BALKEN_SCHRIFT_ALT = { dunkel: false, name: "rgba(255,255,255,0.95)", wert: "rgba(255,255,255,0.75)" };
+  /* Nur Literale werden gemerkt: ein aufgeloestes var() haengt am Thema. */
+  var balkenSchriftGemerkt = {};
+  function farbeRgb(col, ort){
+    if (typeof col !== "string") return null;
+    var s = col.trim(), m;
+    if ((m = /^#([0-9a-f]{3,8})$/i.exec(s))){
+      var c = m[1];
+      if (c.length === 3 || c.length === 4) c = c.replace(/./g, "$&$&");
+      if (c.length !== 6 && c.length !== 8) return null;
+      return [parseInt(c.substr(0, 2), 16), parseInt(c.substr(2, 2), 16), parseInt(c.substr(4, 2), 16)];
+    }
+    function lesen(v){
+      var r = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i.exec(v);
+      if (r) return [+r[1], +r[2], +r[3]];
+      /* color-mix() kommt berechnet als color(srgb r g b) mit Anteilen 0..1 zurueck. */
+      r = /^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/i.exec(v);
+      return r ? [Math.round(r[1] * 255), Math.round(r[2] * 255), Math.round(r[3] * 255)] : null;
+    }
+    var direkt = lesen(s);
+    if (direkt || !ort || !ort.appendChild) return direkt;
+    var p = document.createElement("span");
+    p.style.cssText = "position:absolute;visibility:hidden;pointer-events:none";
+    p.style.color = s;
+    if (!p.style.color) return null;
+    ort.appendChild(p);
+    var v = "";
+    try { v = String(getComputedStyle(p).color || ""); } catch(e){}
+    if (p.parentNode) p.parentNode.removeChild(p);
+    return lesen(v);
+  }
+  /* relLum steht weiter oben (readableHex), dieselbe WCAG-Formel. */
+  function kontrastVon(l1, l2){ return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05); }
+  function barSchrift(col, ort){
+    var literal = typeof col === "string" && /^(#|rgb)/i.test(col.trim());
+    if (literal && balkenSchriftGemerkt[col]) return balkenSchriftGemerkt[col];
+    var bg = farbeRgb(col, ort);
+    if (!bg) return null;
+    var lb = relLum(bg);
+    var kh = kontrastVon(1, lb), kd = kontrastVon(relLum(BALKEN_TINTE_DUNKEL), lb);
+    var tinte;
+    if (kh >= kd && kh >= BALKEN_ZIEL) tinte = BALKEN_TINTE_HELL;
+    else if (kd >= BALKEN_ZIEL) tinte = BALKEN_TINTE_DUNKEL;
+    else if (kh >= kontrastVon(0, lb)) tinte = BALKEN_TINTE_HELL;
+    else {
+      tinte = BALKEN_TINTE_DUNKEL;
+      for (var i = 1; i <= 20 && kontrastVon(relLum(tinte), lb) < BALKEN_ZIEL; i++){
+        tinte = BALKEN_TINTE_DUNKEL.map(function(v){ return Math.round(v * (1 - i / 20)); });
+      }
+    }
+    var hell = tinte === BALKEN_TINTE_HELL;
+    function misch(a){ return tinte.map(function(v, k){ return Math.round(v * a + bg[k] * (1 - a)); }); }
+    function satt(a){
+      while (a < 1 && kontrastVon(relLum(misch(a)), lb) < BALKEN_ZIEL) a = Math.min(1, a + 0.01);
+      return "rgb(" + misch(a).join(",") + ")";
+    }
+    var aus = { dunkel: !hell, name: satt(hell ? 0.95 : 0.96), wert: satt(hell ? 0.75 : 0.62) };
+    if (literal) balkenSchriftGemerkt[col] = aus;
+    return aus;
+  }
+  /* Traegt dieser Balken dunkle Schrift? Seit dem 23.10. dieselbe Entscheidung wie barSchrift
+     (Kontrast, nicht mehr die feste Schwelle 0.4) -- die Ausfuhr bleibt fuer den Vertrag. */
   function barIsLight(col){
-    if (typeof col !== "string") return false;
-    var c = col.charAt(0) === "#" ? col.slice(1) : col;
-    if (c.length === 3) c = c.charAt(0)+c.charAt(0)+c.charAt(1)+c.charAt(1)+c.charAt(2)+c.charAt(2);
-    if (!/^[0-9a-fA-F]{6}$/.test(c)) return false;
-    function lin(v){ v /= 255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); }
-    var L = 0.2126*lin(parseInt(c.substr(0,2),16)) + 0.7152*lin(parseInt(c.substr(2,2),16)) + 0.0722*lin(parseInt(c.substr(4,2),16));
-    /* 0.4 statt 0.55. Die Schwelle entscheidet zwischen weisser und dunkler Beschriftung, und bei
-       0.55 bekamen Pastelltoene weissen Text: #8AB4F8 (Googles Dunkelmodus-Blau, L=0.45) traegt
-       Weiss mit Kontrast 2.1 -- unlesbar --, dunkler Text darauf schafft 7.9. Gemeldet am Model
-       Breakdown, betroffen waren auch die hellen Dunkel-Paletten der URL-Typen (#93c5fd, #a5b4fc,
-       #c4b5fd u.a.), also stand in den Balken-Charts im Dunkeln teils Weiss auf Pastell.
-       0.4 laesst die satten Farben unangetastet (die App-Paletten liegen um 0.30) und kippt genau
-       die Pastellfaelle auf dunklen Text. */
-    return L > 0.4;
+    var s = barSchrift(col);
+    return !!(s && s.dunkel);
   }
   /* Intrinsic text width via an off-DOM probe. Deliberately NOT getBoundingClientRect(): the bar
      labels are measured while still opacity:0 inside a 0%-wide flex fill, so their box width is
@@ -19581,9 +19647,9 @@
       /* Traegt irgendein Eintrag ein Logo oder Zeichen, bekommt jeder das Kaestchen (barLogoHtml). */
       var mitLogos = d.some(function(it){ return !!(it.logo || it.zeichen || it.ersatz || it.flagge != null); });
       var html = '<div class="up-bars' + (spalte ? " has-labelcol" : "") + '">' + d.map(function(it){
-        var hell = barIsLight(it.color);
-        var txt = hell ? "rgba(31,31,27,0.96)" : "rgba(255,255,255,0.95)";
-        var txtPct = hell ? "rgba(31,31,27,0.62)" : "rgba(255,255,255,0.75)";
+        /* Name und Wert im Balken aus dem Kontrast gegen seine Farbe (barSchrift, AA 4.5). */
+        var schrift = barSchrift(it.color, mount) || BALKEN_SCHRIFT_ALT;
+        var txt = schrift.name, txtPct = schrift.wert;
         var ausFarbe = isDark() ? "rgba(255,255,255,0.85)" : "var(--vc-text)";
         var ausPct = isDark() ? "rgba(255,255,255,0.55)" : "var(--vc-muted)";
         if (String(it.name || "").length > maxName) maxName = String(it.name).length;
@@ -22264,12 +22330,10 @@
       lastKeys = keysOf(d); lastMode = "bar";
       var mitLogos = d.some(function(it){ return !!(it.logo || it.ersatz || it.flagge != null); });
       body.innerHTML = '<div class="up-bars">' + d.map(function(it){
-        /* Label colour follows the fill's luminance so it stays readable: white on dark/mid fills,
-           dark on genuinely light ones. Bar colours are identical in both themes, so this is
-           per-bar, not per-theme. */
-        var light = barIsLight(it.color);
-        var txt = light ? "rgba(31,31,27,0.96)" : "rgba(255,255,255,0.95)";
-        var txtPct = light ? "rgba(31,31,27,0.62)" : "rgba(255,255,255,0.75)";
+        /* Die Schrift folgt dem Kontrast gegen die Fuellung (barSchrift, AA 4.5 fuer Name und
+           Wert) -- je Balken, nicht je Thema. */
+        var schrift = barSchrift(it.color, body) || BALKEN_SCHRIFT_ALT;
+        var txt = schrift.name, txtPct = schrift.wert;
         var outColor = isDark() ? "rgba(255,255,255,0.85)" : "var(--vc-text)";
         var outPctColor = isDark() ? "rgba(255,255,255,0.55)" : "var(--vc-muted)";
         /* Ein Logo vor dem Namen, wenn der Eintrag eines mitbringt -- dieselbe Regel wie in der
@@ -31315,7 +31379,7 @@
     readableHex: readableHex,
     prepTypeData: prepTypeData,
     applyTypeDim: applyTypeDim,
-    barIsLight: barIsLight,
+    barIsLight: barIsLight, barSchrift: barSchrift,
     measureText: measureText,
     fmtPct: fmtPct, flipReplace: flipReplace,
     capitalize: capitalize,
