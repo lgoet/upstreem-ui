@@ -298,6 +298,9 @@
 }
 .ulh-chip-ic { display: inline-flex; flex: 0 0 auto; color: var(--ulh-text); }
 .ulh-chip-ic svg { width: 14px; height: 14px; display: block; }
+/* Das MCP-Zeichen eine Stufe groesser (23.10.: "etwas zu klein"); es zeichnet diagonal und wirkt
+   bei 14 kleiner als die Schrift daneben. */
+.ulh-chip-paar .ulh-chip-ic svg { width: 16px; height: 16px; }
 /* DER SCHATTEN: EINE LAGE, 1px TIEF (01.10., dritte Fassung -- "sieht richtig schlecht aus, mach
    ihn schoener, noch kleiner"). Nachgesehen, wie es gemacht wird: Vercel und Resend fuehren ihre
    kleinen Pillen mit einem Haarrand und hoechstens einem Schatten, der 1px tief faellt und 2-3px
@@ -573,6 +576,9 @@
    heller (#f4f5f7/#e3e6eb/#d4d9e0 -> #f6f7f8/#e8eaec/#dbdde1). auth-page.css (.uau-panel) traegt
    dieselben Werte -- beide zusammen aendern. */
 .ulh-bg-foto {
+  /* Aus seit 23.10. ("streiche diesen etwas dunkleren Background dahinter"): der Hero steht auf dem
+     Grau der Seite, nur die Linien bleiben. */
+  display: none;
   background: linear-gradient(to bottom,
               rgba(246, 247, 248, 0) 16%, #f6f7f8 34%, #e8eaec 60%, #dbdde1 100%);
 }
@@ -624,8 +630,11 @@
    Die Blende ist die, die frueher auch das Bild trug, und sie bleibt unveraendert: bis 16% nichts,
    dann langsam, ab 66% voll. Zwei Angaben, weil Safari die Kurzform noch mit Praefix braucht. */
 .ulh-bg-grid {
+  /* GRAU STATT WEISS (23.10. angefordert): ohne die dunklere Flaeche dahinter (.ulh-bg-foto ist aus)
+     stuenden weisse Linien auf dem hellen Seitengrund unsichtbar. 6 Prozent Schwarz ergibt auf #fafafa
+     etwa die Rahmenfarbe der App (#ebebeb). */
   background: repeating-linear-gradient(to right,
-              rgba(255, 255, 255, .55) 0, rgba(255, 255, 255, .55) 1px,
+              rgba(0, 0, 0, .06) 0, rgba(0, 0, 0, .06) 1px,
               transparent 1px, transparent 8px);
   -webkit-mask-image: linear-gradient(to bottom, transparent 16%, rgba(0,0,0,.18) 32%,
                       rgba(0,0,0,.62) 50%, #000 66%);
