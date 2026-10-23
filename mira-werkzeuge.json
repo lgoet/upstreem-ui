@@ -645,18 +645,50 @@
       }
     },
     {
-      "_p3": "Aktionen (P3, Plan Q2/Q14): klasse frei = direkt mit Rueckgaengig, bestaetigen = nur Karte, Start per Klick (upstreem-app lib/mira/aktionen.ts, aktion-start.ts). Block der Sitzung P3 am Ende der Datei.",
+      "_p3": "Aktionen (P3, Plan Q2/Q14): klasse frei = direkt mit Rueckgaengig, bestaetigen = nur Karte, Start per Klick (upstreem-app lib/mira/aktionen.ts, aktion-start.ts). Block der Sitzung P3 am Ende der Datei. create_opportunity seit 23.10. bestaetigen (Lukas: Opportunities wie vorher nur nach Bestaetigung anlegen, alte Regeln R390/R394).",
       "name": "create_opportunity",
       "bereich": "aktionen",
-      "klasse": "frei",
-      "beschreibung": "Saves one recommendation as an Opportunity (a Task on the team's board) right away; the user gets an Undo button for 10 minutes. Only when the user's message asks to add, create or save a Task or Opportunity, or confirms your offer to do so. url = the ref of a URL from URL-level data you retrieved (sources_urls, sources_domain_urls, url_detail, a Response's cited pages), exactly as returned; a homepage is fine if that exact URL is the cited source, a Domain is never enough. At most one per URL. The card type (Get Listed, Create Matching Content, Improve Existing Content, Build Presence) follows the page's Citation Type by itself. Result: created true, or already_existed true when an active card for this URL exists (nothing new created). Not for showing saved Opportunities (use opportunities).",
-      "aufrufe": [{ "fn": "opportunities_create_v1", "rolle": "anlegen", "nur_mira": "Die UI legt Opportunities nur aus gespeicherten Mira-Aktionen an (opportunity_from_mira_v1, ask-mira.js); die gibt es erst nach dem Lauf. Direkt im Lauf mit Rueckgaengig (Q2, Klasse 2) braucht es das Anlegen aus einer URL; dieselbe Rechnung (create_mira_source_recommendation_v3, letzte 30 Tage, ohne Filter)." }],
-      "rueckweg": { "fn": "opportunity_undo_from_mira_v1", "wer": "fenster" },
+      "klasse": "bestaetigen",
+      "beschreibung": "Proposes saving one recommendation as an Opportunity (a Task on the team's board): a card right under that recommendation lets the user save it with one click; nothing is saved by this call. Only when the user's message asks to add, create or save a Task or Opportunity, or confirms your offer to do so. url = the ref of a URL from URL-level data you retrieved (sources_urls, sources_domain_urls, url_detail, a Response's cited pages), exactly as returned; a homepage is fine if that exact URL is the cited source, a Domain is never enough. At most one per URL. The card type (Get Listed, Create Matching Content, Improve Existing Content, Build Presence) follows the page's Citation Type by itself. Not for showing saved Opportunities (use opportunities).",
+      "aufrufe": [
+        {
+          "fn": "opportunities_create_v1",
+          "rolle": "anlegen",
+          "nur_mira": "Die UI legt Opportunities nur aus gespeicherten Mira-Aktionen an (opportunity_from_mira_v1, ask-mira.js); die gibt es erst nach dem Lauf. Der Klick auf die Karte (aktion-start.ts) braucht das Anlegen aus einer URL; dieselbe Rechnung (create_mira_source_recommendation_v3, letzte 30 Tage, ohne Filter)."
+        }
+      ],
       "filter": [],
       "parameter": {
-        "url": { "rpc": "p_lead_url", "pflicht": true, "schema": { "type": "string", "minLength": 2, "maxLength": 2000 }, "beschreibung": "Ref of the source URL (e.g. u12) from URL-level results." },
-        "title": { "rpc": "p_title", "pflicht": true, "schema": { "type": "string", "minLength": 3, "maxLength": 300 }, "beschreibung": "Card title: short and specific, about 4 to 8 words, in the user's language." },
-        "reason": { "rpc": "p_reason", "pflicht": true, "schema": { "type": "string", "minLength": 20, "maxLength": 2000 }, "beschreibung": "Why this matters: 2 to 3 full, plain sentences a non-expert understands, without abbreviations, in the user's language." }
+        "url": {
+          "rpc": "p_lead_url",
+          "pflicht": true,
+          "schema": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2000
+          },
+          "beschreibung": "Ref of the source URL (e.g. u12) from URL-level results."
+        },
+        "title": {
+          "rpc": "p_title",
+          "pflicht": true,
+          "schema": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 300
+          },
+          "beschreibung": "Card title: short and specific, about 4 to 8 words, in the user's language."
+        },
+        "reason": {
+          "rpc": "p_reason",
+          "pflicht": true,
+          "schema": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 2000
+          },
+          "beschreibung": "Why this matters: 2 to 3 full, plain sentences a non-expert understands, without abbreviations, in the user's language."
+        }
       }
     },
     {
