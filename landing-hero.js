@@ -97,6 +97,12 @@
     "Answers for the whole team": "Antworten fürs ganze Team",
     "Anyone can ask, nobody needs a dashboard login.": "Jeder kann fragen, niemand braucht einen Dashboard-Login.",
     "Read-only": "Nur lesend", "OAuth sign-in": "OAuth-Anmeldung",
+    /* Agent-Abschnitt (23.10.) -- die Ueberschrift bleibt englisch wie alle h2. */
+    "Ask what to fix this week.": "Frag, was du diese Woche angehen solltest.",
+    "The Agent reads every prompt, answer and source, ranks what matters and audits the pages behind it.": "Der Agent liest jeden Prompt, jede Antwort und jede Quelle, ordnet, was zählt, und prüft die Seiten dahinter.",
+    "Features": "Funktionen", "Answers backed by evidence": "Antworten mit Belegen",
+    "Next steps ranked by impact": "Nächste Schritte nach Wirkung", "Page audits on request": "Page Audits auf Zuruf",
+    "Reports ready to share": "Berichte zum Teilen",
     /* h1 und Unterzeile des Hero bleiben auf Deutsch ENGLISCH (14.10. so entschieden: "lass h1 und
        h2 einfach auf englisch" -- "einfach gemacht" klang uebersetzt). Deshalb stehen sie hier nicht. */
     "Book a demo": "Demo vereinbaren", "Tracked daily on": "Täglich gemessen in",
@@ -1634,6 +1640,18 @@
      Der Report fehlt mit Absicht -- den zeigt das Hero-Fenster oben schon.
      Die Werkzeuge sind die echten Namen aus ask-mira.js (_TOOL_STATE); aus ihnen baut die
      Komponente ihr Arbeitsprotokoll waehrend des Ladens, mit Zeichen und Text je Schritt. */
+  /* Ein laufender Page Audit im Fenster des Agenten (23.10.): genau der Laufstreifen der App
+     (ask-mira.js, blkStreifen: .am-akt-streifen mit gelbem Punkt und dem Ring aus core). Klassen statt
+     Inline-Stil -- das Fenster filtert style-Attribute aus der Antwort. Die Angaben sind Vorfuehrung. */
+  function mscAuditStreifen(titel, ziel, schritt){
+    var kern = window.UpstreemCore;
+    var ring = kern && kern.ringHtml ? '<span class="am-akt-ring" aria-hidden="true">' + kern.ringHtml(14) + '</span>' : '';
+    return '<div class="am-akt am-akt-streifen is-running">' +
+      '<span class="am-akt-punkt is-warn" aria-hidden="true"></span>' + ring +
+      '<span class="am-akt-stext"><span class="am-akt-stitel">' + titel + '</span>' +
+      '<span class="am-akt-ssatz">' + ziel + '</span><span class="am-akt-ssatz is-adresse">' + schritt + '</span></span>' +
+    '</div>';
+  }
   function mscFaelle(){
     if (LANG === "de") return mscFaelleDe();
     return [
@@ -1681,7 +1699,9 @@
           '<li>Answer the charging thread on ' + quelleChip(1) + ' - ' + markeChip("bm") +
           ' is named there, you are not.</li>' +
           '<li>Publish real winter range figures: your weakest topic at <strong>22%</strong>.</li></ul>' +
-          '<p>Estimated lift: <strong>+5 to 8 points</strong> in 30 days.</p>' },
+          '<p>Estimated lift: <strong>+5 to 8 points</strong> in 30 days.</p>' +
+          '<p>I started a Page Audit on your charging page to see what the AI crawlers can read there.</p>' +
+          mscAuditStreifen("Page Audit running", "acme.com/charging", "Requesting the page like the AI crawlers") },
 
       { q: "Which sources decide who gets named?",
         titel: "Sources behind the answers",
@@ -1736,7 +1756,9 @@
           '<li>Antworte im Lade-Thread auf ' + quelleChip(1) + '. Dort wird ' + markeChip("bm") +
           ' genannt, du nicht.</li>' +
           '<li>Veröffentliche echte Winterreichweiten: dein schwächstes Thema mit <strong>22%</strong>.</li></ul>' +
-          '<p>Geschätzter Effekt: <strong>+5 bis 8 Punkte</strong> in 30 Tagen.</p>' },
+          '<p>Geschätzter Effekt: <strong>+5 bis 8 Punkte</strong> in 30 Tagen.</p>' +
+          '<p>Ich habe einen Page Audit für deine Ladeseite gestartet, um zu sehen, was die KI-Crawler dort lesen können.</p>' +
+          mscAuditStreifen("Page Audit läuft", "acme.com/charging", "Die Seite wird wie von den KI-Crawlern abgerufen") },
 
       { q: "Welche Quellen entscheiden, wer genannt wird?",
         titel: "Die Quellen hinter den Antworten",
@@ -1818,33 +1840,23 @@
     '</section>';
   }
 
+  /* DER AGENT-ABSCHNITT (23.10., Entwurf "Agent A" aus dem Canvas, nach dem Muster von vercel.com):
+     Ueberschrift links auf zwei Zeilen, darunter links das echte Fenster des Agenten im flachen
+     Rahmen mit Auslauf, rechts ohne Karte ein Satz in zwei Toenen und eine schlichte Feature-Liste.
+     Die Karten von vorher (MSC_KARTEN) und der mittige Kopf sind weg. */
+  var MSC_PUNKTE = ["Answers backed by evidence", "Next steps ranked by impact", "Page audits on request", "Reports ready to share"];
   function msc(){
     return '<section class="ulh-msc" id="mira">' +
       '<div class="ulh-spur">' +
-        /* Derselbe Kopf wie ueber den Karten -- gleiche Klassen, gleiche Masse, gleiche Farben.
-           Ein zweiter Kopf mit eigenen Werten waere derselbe Kopf, nur ein bisschen anders. */
-        '<div class="ulh-feat-kopf ulh-msc-kopf ulh-auf">' +
-          '<span class="ulh-feat-chip">' + MSC_CHIP + '</span>' +
-          '<h2 class="ulh-feat-h">' + MSC_H + '</h2>' +
-          '<p class="ulh-feat-sub">' + MSC_SUB + '</p>' +
-        '</div>' +
-        /* Derselbe Kasten und dieselben Karten wie im Block darueber -- Bauteile verwenden, nicht
-           nachbauen. Neu ist allein die Aufteilung 20 zu 80. */
-        '<div class="ulh-cards-box ulh-msc-box">' +
-          '<div class="ulh-cards-row ulh-msc-row">' +
-            '<div class="ulh-msc-links">' +
-              MSC_KARTEN.map(function(k, i){
-                return '<div class="ulh-card ulh-msc-karte ulh-auf" style="--auf:' + i + '">' +
-                  '<span class="ulh-msc-ic" data-ic="' + k.ic + '" data-ic-w="1.6"></span>' +
-                  '<span class="ulh-msc-t">' + k.t + '</span> ' +
-                  '<span class="ulh-msc-s">' + k.s + '</span>' +
-                '</div>';
-              }).join("") +
-            '</div>' +
-            '<div class="ulh-card ulh-msc-rechts ulh-auf ulh-auf-gross" style="--auf:1">' +
-              '<iframe class="ulh-msc-rahmen" title="Mira" scrolling="no"' +
-                ' referrerpolicy="no-referrer"></iframe>' +
-            '</div>' +
+        '<h2 class="ulh-sek-h ulh-msc-h ulh-auf"><span>Agentic AEO</span> <span>that does the work for you</span></h2>' +
+        '<div class="ulh-msc-reihe">' +
+          '<div class="ulh-msc-fenster ulh-auf ulh-auf-gross">' +
+            '<iframe class="ulh-msc-rahmen" title="Agent" scrolling="no" referrerpolicy="no-referrer"></iframe>' +
+          '</div>' +
+          '<div class="ulh-msc-text ulh-auf" style="--auf:1">' +
+            '<p class="ulh-sek-satz">Ask what to fix this week. <span>The Agent reads every prompt, answer and source, ranks what matters and audits the pages behind it.</span></p>' +
+            '<p class="ulh-sek-feat-t">Features</p>' +
+            '<ul class="ulh-sek-feat">' + MSC_PUNKTE.map(function(t){ return '<li>' + t + '</li>'; }).join("") + '</ul>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -1879,6 +1891,8 @@
            darunter. Beides gehoert in die App, wo man damit weiterklickt -- hier ist es Text, den
            niemand braucht, und er nimmt die Ruhe aus dem Bild. */
         '#am-suggested{display:none;}' +
+        /* 23.10.: ohne die Belegchips unter der Antwort und ohne das Kopierzeichen neben der Frage. */
+        '.am-evidence{display:none;}.am-msg.is-user .am-msg-actions{display:none;}' +
         '.am-hint{display:none;}' +
         /* Der Kopf ist hier eine Signatur und keine Statuszeile: kleiner Schriftzug, kein
            Bereitschaftszeichen, kein Untertitel. In der App sagen die beiden etwas (laeuft gerade
