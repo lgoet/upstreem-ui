@@ -4706,3 +4706,79 @@ html[data-up-pagetheme="dark"] .ulh-root .ulh-cards-box { --up-e-1: 0 1px 2px rg
   white-space: normal; overflow: hidden; text-overflow: clip;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
 }
+
+/* ---------- SHOPPING UND ADS: DIE TABELLEN GROESSER (24.10.) -----------------------------------
+   "groesser skalieren die Tabellen, streich wenn noetig die unwichtigste Column": wie die Prompt- und die
+   Domain-Karte am 23.10. (0.84). Die Produkte ohne Preis (visProdukte), die Produktbewegung mit zwei
+   steigenden und einem fallenden statt drei und drei (visBewegung) -- sonst schnitte die groessere Liste
+   die letzte Gruppe ab. Drei Klassen gegen die zwei der Grundregeln oben. */
+/* Nur ab 901: darunter stehen die Karten schmal untereinander, und groesser gerechnet kuerzte die
+   Produktbewegung bei 375 jeden Titel (gemessen); dort bleiben die Werte von vorher. */
+@media (min-width: 901px) {
+  .ulh-root .ulh-vis[data-ulh-vis="produkte"] { --ulh-vs: 0.84; }
+  .ulh-root .ulh-vis[data-ulh-vis="produkte"] .ulh-vis-in { padding: 24px 24px 0; }
+  .ulh-root .ulh-vis[data-ulh-vis="bewegung"] { --ulh-vs: 0.86; }
+}
+
+/* ---------- ADS: DIE GRAFIK STATT DER WERBER (24.10.) -------------------------------------------
+   visAdFeld: die Kaskaden aus fensterHtml in page-audit.js, Werte 1:1 von .upa-fenster* in page-audit.css
+   (Kachel 120 x 84, Rahmen --vc-border, Radius 12, Tiefe e-1, Maske 22 bis 78 Prozent in beiden Richtungen,
+   Erscheinen gestaffelt um 18 ms ab Deckkraft .3). Eigene Klassen, weil .upa-fenster an das Raster des
+   Startbereichs gebunden ist (grid-column 2). Die Fahrt beginnt mit der Karte (is-da), nicht beim Aufbau. */
+.ulh-vis-werber .ulh-vis-in { height: 100%; }
+.ulh-adf { position: relative; height: 100%; overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent), linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent), linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  mask-composite: intersect; }
+.ulh-adf-feld { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.ulh-adf-win { position: absolute; display: flex; flex-direction: column; width: 120px; height: 84px; box-sizing: border-box;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); background: var(--vc-bg); box-shadow: var(--up-e-1); }
+.ulh-card.is-da .ulh-adf-win { animation: ulh-adf-ein var(--up-t-3) var(--up-ease-auf) backwards; animation-delay: calc(var(--adf-i) * 18ms + 200ms); }
+/* Eine Antwort: drei Zeilen Text in der leisen Farbe der Fensterpunkte von Page Audit (Schrift zu 14 %). */
+.ulh-adf-zeilen { display: flex; flex-direction: column; gap: 7px; padding: 14px 14px 0; }
+.ulh-adf-zeilen i { display: block; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--vc-text) 14%, transparent); }
+.ulh-adf-zeilen i:nth-child(1) { width: 72%; }
+.ulh-adf-zeilen i:nth-child(2) { width: 88%; }
+.ulh-adf-zeilen i:nth-child(3) { width: 54%; }
+.ulh-adf-win.is-hl { z-index: 1; border-color: color-mix(in srgb, var(--vc-text) 45%, transparent); }
+.ulh-adf-ic { display: flex; flex: 1 1 auto; align-items: center; justify-content: center; color: var(--vc-text); }
+.ulh-adf-ic svg { width: 24px; height: 24px; }
+@keyframes ulh-adf-ein { from { opacity: .3; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ulh-card.is-da .ulh-adf-win { animation: none; } }
+
+/* ---------- EVENTS: DIE UNTERE REIHE GROESSER (24.10.) ------------------------------------------
+   "die unteren auch etwas groesser skalieren, sleeker, moderner": Sitemap auf 0.96 und Audit-Tabelle auf
+   0.92 (vorher 0.86 und 0.78), weniger Luft zum Rand (24 statt 40). Die Tabelle nicht ganz auf 1: dort
+   kuerzte bei 1440 auch mit drei Spalten ein Wert (gemessen per Range, ab 0.92 keiner mehr). Sie reicht
+   nicht bis unten, dort lag die Blende auf leerem Grund -- sie faellt weg, die Sitemap behaelt ihre. */
+@media (min-width: 901px) {
+  .ulh-root .ulh-vis-eventabd { --ulh-vs: 0.96; }
+  .ulh-root .ulh-vis-audit { --ulh-vs: 0.92; }
+  .ulh-root .ulh-vis-eventabd .ulh-vis-in, .ulh-root .ulh-vis-audit .ulh-vis-in { padding: 0 24px; }
+}
+.ulh-root .ulh-vis-audit::before, .ulh-root .ulh-vis-audit::after { content: none; }
+/* Drei Spalten statt vier (visAudit ohne robots.txt), gemessen ohne Kuerzung und ohne Umbruch. */
+.ulh-root .ulh-vis-audit .ulh-evaudit .upa-tab-plattformen { --up-cols: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1.3fr); }
+
+/* ---------- HOVER WIE IN DER APP (24.10.) ---------------------------------------------------------
+   "in der Navigation und bei allen Hoverstates sind die Hover-Farben falsch, mach das so wie in der App".
+   Gemessen: die Punkte der Leiste und die Eintraege im Menue faerbten auf --ulh-kasten (#0a0a0a), also
+   DUNKLER als die Leiste und so gut wie unsichtbar; der Sekundaerknopf zog seinen Rand auf #707070 auf.
+   Jetzt die Werte der App im Dunkeln:
+     Navigation      .usn-item:hover in sidebar.css: --usn-sel (Schrift zu 7 %) zur Haelfte
+     Zeichenknopf    .usn-bar .up-iconbtn:hover: --usn-sel
+     Menuezeile      .up-optrow:hover in core: --up-sel-bg (#242424)
+     Sekundaerknopf  .up-btn-sec:hover: nur die Flaeche (--up-knopf-hover = --vc-heading-bg), der Rand bleibt
+     Primaerknopf    .up-btn-pri:hover: Deckkraft .88 -- hier als Mischung mit dem Grund, weil der Knopf im
+                     Hero Ring und Flaeche getrennt traegt (::after) und eine Deckkraft den Funken mit dimmte. */
+html[data-up-pagetheme="dark"] .ulh-root {
+  --ulh-nav-hover: color-mix(in srgb, var(--vc-text) 3.5%, transparent);
+  --ulh-knopf-hover: color-mix(in srgb, var(--vc-text) 7%, transparent);
+  --ulh-pri-hover: color-mix(in srgb, var(--ulh-text) 88%, var(--ulh-kasten));
+}
+html[data-up-pagetheme="dark"] .ulh-root .ulh-nav-punkt:hover { background: var(--ulh-nav-hover); }
+html[data-up-pagetheme="dark"] .ulh-root :is(.ulh-nav-eintrag, .ulh-nm-eintrag):hover { background: #242424; }
+html[data-up-pagetheme="dark"] .ulh-root .ulh-nm-eintrag:active { background: #242424; }
+html[data-up-pagetheme="dark"] .ulh-root :is(.ulh-nav-menue, .ulh-fuss-ic):hover { background: var(--ulh-knopf-hover); }
+html[data-up-pagetheme="dark"] .ulh-root .ulh-btn-sec:hover { background: var(--vc-heading-bg); border-color: var(--ulh-border); }

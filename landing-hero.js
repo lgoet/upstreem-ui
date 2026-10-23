@@ -3085,7 +3085,8 @@
     if (art === "modelle")  return visModelle();
     if (art === "produkte") return visProdukte();
     if (art === "bewegung") return visBewegung();
-    if (art === "regal" || art === "werber") return '<div class="ulh-balken" data-ulh-balken="' + art + '"></div>';
+    if (art === "regal") return '<div class="ulh-balken" data-ulh-balken="' + art + '"></div>';
+    if (art === "werber") return visAdFeld();
     if (art === "anzeigen") return visAnzeigen();
     if (art === "eventkarte") return visEventKarte();
     if (art === "eventabd") return visEventAbd();
@@ -3321,7 +3322,9 @@
 
   function visProdukte(){
     var kern = window.UpstreemCore;
-    var kopf = ["Product", "Visibility", "Avg. Position", "Price"];
+    /* Ohne Preis (24.10., "groesser skalieren, streich wenn noetig die unwichtigste Column"): die Karte
+       sagt "which products AI puts first" -- dafuer tragen Visibility und Position, der Preis nicht. */
+    var kopf = ["Product", "Visibility", "Avg. Position"];
     var hash = kern && kern.HASH_ICON ? kern.HASH_ICON.replace("<svg ", '<svg class="up-hash" ') : "";
     var oben = ECHTE_PRODUKTE.slice().sort(function(a, b){ return b.vis[0] - a.vis[0]; }).slice(0, 5);
     /* Die Zahlenspalten mit mehr Luft rechts (07.10., wie in der Prompt-Karte): die Tabelle ist
@@ -3341,7 +3344,7 @@
           '<button class="up-iconbtn" type="button" tabindex="-1" aria-hidden="true">' + (kern ? kern.icon("settings", 2) : "") + '</button>' +
         '</div>' +
       '</div>' +
-      '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 104px 128px 140px;">' +
+      '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 104px 128px;">' +
       '<div class="up-row up-thead">' + kopf.map(function(t){
         return '<div class="up-th' + (t === "Product" ? "" : " up-th-zahl") + '"><span class="up-th-txt">' + t + '</span></div>'; }).join("") + '</div>';
     html += oben.map(function(p){
@@ -3349,7 +3352,6 @@
         '<div class="up-td">' + produktZelleHtml(p) + '</div>' +
         '<div class="up-td"><span class="up-num">' + proz(p.vis[0]) + '</span></div>' +
         '<div class="up-td"><span class="up-rank-group">' + hash + '<span class="up-num">' + eine(p.pos[0]) + '</span></span></div>' +
-        '<div class="up-td"><span class="up-num">' + preisText(p) + '</span></div>' +
       '</div>';
     }).join("");
     return html + '</div></div></div>';
@@ -3381,10 +3383,12 @@
     var mv = { auf: [], ab: [] };
     ECHTE_PRODUKTE.map(function(p){ return { id: p.id, d: p.vis[0] - p.vis[1] }; })
       .sort(function(a, b){ return b.d - a.d; })
-      .forEach(function(x){ if (x.d > 0.5 && mv.auf.length < 3) mv.auf.push(x.id); });
+      /* Zwei steigende, ein fallendes (24.10., "Trending 2, Fading 1"): groesser gerechnet passen
+         drei Zeilen und zwei Gruppenkoepfe in die Karte, ohne dass unten etwas wegschneidet. */
+      .forEach(function(x){ if (x.d > 0.5 && mv.auf.length < 2) mv.auf.push(x.id); });
     ECHTE_PRODUKTE.map(function(p){ return { id: p.id, d: p.vis[0] - p.vis[1] }; })
       .sort(function(a, b){ return a.d - b.d; })
-      .forEach(function(x){ if (x.d < -0.5 && mv.ab.length < 3) mv.ab.push(x.id); });
+      .forEach(function(x){ if (x.d < -0.5 && mv.ab.length < 1) mv.ab.push(x.id); });
     /* DER ABSCHNITTSKOPF DER APP (07.10., wie bei den anderen Tabellen): Shopping setzt ueber die
        Produktbewegung ein .up-sec-head mit Titel und Unterzeile (shopping.js, sekKopf). Drei Zeilen
        je Gruppe statt zwei: die Reihe ist hoeher geworden. */
@@ -3394,6 +3398,27 @@
       '</div></div>' +
       '<div class="up-box ush-bewegung" style="--up-cols: minmax(0,1fr) auto">' +
       gruppe("Rising", "arrowUpRight", mv.auf) + gruppe("Declining", "arrowDownRight", mv.ab) + '</div>';
+  }
+  /* DIE WERBER ALS GRAFIK (24.10.): "Find out who buys your prompts: mach das weg, stattdessen eine schoene
+     Grafik dahin, im Stil von Page Audit (Grafik rechts im Startbereich), mit Ads-Bezug". Die Machart von
+     fensterHtml in page-audit.js -- Kaskaden gleicher Kacheln, eine hervorgehoben, die zwei dahinter fehlen,
+     damit sie frei steht, ihre Mitte auf der Mitte der Flaeche, Raender per Maske, gestaffeltes Erscheinen
+     ab .3 --, nur sind die Kacheln hier Antworten einer KI (drei Zeilen Text) und die hervorgehobene ist die
+     Anzeige darin, mit dem Zeichen von Ads aus der Seitenleiste ("marketing"). Ohne Zahl und Wort wie dort.
+     Masse von dort (120 x 84, 16/32 je Schritt, Kaskaden 168), nur 12 Kacheln je Kaskade: die Karte ist
+     288 hoch, mehr sieht hinter der Maske niemand. */
+  function visAdFeld(){
+    var kern = window.UpstreemCore;
+    var f = { w: 120, h: 84, dx: 16, dy: 32, spalte: 168, n: 12, hl: [1, 4], weg: ["1|5", "1|6"] }, h = "";
+    for (var c = 0; c < 3; c++) for (var i = 0; i < f.n; i++){
+      if (f.weg.indexOf(c + "|" + i) >= 0) continue;
+      var hl = c === f.hl[0] && i === f.hl[1];
+      h += '<div class="ulh-adf-win' + (hl ? " is-hl" : "") + '" style="left:' + (c * f.spalte + i * f.dx) + 'px;top:' + (i * f.dy) + 'px;--adf-i:' + i + '">' +
+        (hl ? '<span class="ulh-adf-ic">' + (kern ? kern.icon("marketing", 1.8) : "") + '</span>'
+            : '<span class="ulh-adf-zeilen"><i></i><i></i><i></i></span>') + '</div>';
+    }
+    var mx = f.hl[0] * f.spalte + f.hl[1] * f.dx + f.w / 2, my = f.hl[1] * f.dy + f.h / 2;
+    return '<div class="ulh-adf" aria-hidden="true"><div class="ulh-adf-feld" style="transform:translate(' + (-mx) + 'px,' + (-my) + 'px)">' + h + '</div></div>';
   }
   function visAnzeigen(){
     var kern = window.UpstreemCore;
@@ -4039,6 +4064,9 @@
         '<span class="upa-zustand-t">' + text + '</span></span>';
     }
     var leer = '<span class="up-num is-empty">–</span>';
+    /* Ohne die Spalte robots.txt (24.10.): in voller Groesse ("die unteren etwas groesser skalieren")
+       kuerzten vier Spalten jeden Wert ("Reachab...", "Allow..."). Die Sperre der Zeile Perplexity steht
+       auch in Access, und robots.txt nennt der Satz der Karte. */
     var zeilen = AUDIT_ZEILEN.map(function(z){
       return '<div class="up-row upa-statisch" role="row">' +
         '<div class="up-td upa-td-plattform" role="cell">' +
@@ -4047,7 +4075,6 @@
           '<span class="upa-seite"><span class="upa-pname"><span class="up-zeilenname">' + z.n + '</span></span>' +
           '<span class="upa-url upa-mono">' + z.tok + '</span></span></div>' +
         '<div class="up-td" role="cell">' + (z.zug === "ok" ? zustand("Reachable", "checkCircle", "pos") : zustand("Not reachable", "ban", "neg")) + '</div>' +
-        '<div class="up-td" role="cell">' + (z.rob === "ok" ? zustand("Allowed", "checkCircle", "pos") : zustand("Blocked", "ban", "neg")) + '</div>' +
         '<div class="up-td" role="cell">' + (z.js === "ok" ? zustand("No issue", "checkCircle", "pos")
           : z.js === "doc" ? '<span class="up-marke is-leise upa-marke upa-wirkung">Documented</span>' : leer) + '</div>' +
       '</div>';
@@ -4055,7 +4082,7 @@
     function kopf(t){ return '<div class="up-th" role="columnheader"><span class="up-th-txt">' + t + '</span></div>'; }
     return '<div class="ulh-evaudit upa-root" aria-hidden="true">' +
       '<div class="up-box upa-kasten upa-tab-plattformen"><div class="up-table" role="table">' +
-        '<div class="up-thead" role="row" data-up-colsig="upa">' + kopf("Platform") + kopf("Access") + kopf("robots.txt") + kopf("Text without JavaScript") + '</div>' +
+        '<div class="up-thead" role="row" data-up-colsig="upa">' + kopf("Platform") + kopf("Access") + kopf("Text without JavaScript") + '</div>' +
         '<div class="up-tbody" role="rowgroup">' + zeilen + '</div>' +
       '</div></div></div>';
   }
