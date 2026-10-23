@@ -553,9 +553,13 @@ body > .up-root[data-ufb-geparkt][hidden] { display: none; }
 /* Die Flagge behaelt ihr Seitenverhaeltnis; Rundung und Rand bringt sie aus markets-filter.css mit. */
 .ufb-wert-bild.umk-opt-flag { width: 16px; height: 12px; }
 .ufb-wert-bild svg { color: var(--vc-third); }
-/* Das Logo einer Marke im Wert (zeilenLogo, 23.10.) ist die Logokachel .ufb-bild in 14 wie im
-   Zeichen des Chips -- zwei Klassen gegen die 16 von .ufb-bild, nicht die Reihenfolge. */
-.ufb-chip-wert .ufb-bild { width: 14px; height: 14px; }
+/* Das Logo einer Marke im Wert (zeilenLogo, 23.10.) ist die Logokachel .ufb-bild in der Groesse,
+   in der der Models-Chip seine Logos zeigt: 18, Bild 16 (Lukas: "genau wie der Models-Chip das
+   LLM-Logo"). Gemessen steht das Modell-Logo im Chip auf 18 x 18 und nicht auf den 14 von
+   .ufb-wert-bild -- .umf-opt-logo (models-filter.css) gewinnt dort ueber die Ladereihenfolge.
+   Dieselbe Groesse traegt die Marke in ihrer Menuezeile (.up-ment-logo). Zwei Klassen gegen die
+   16 von .ufb-bild und die 14 von .ufb-wert-bild: Spezifitaet, nicht Reihenfolge. */
+.ufb-chip-wert .ufb-bild { width: 18px; height: 18px; }
 .ufb-wert-mehr { color: var(--vc-third); }
 
 /* "Clear All" in der grossen Form als Chip mit leichtem Grund (15.10. verlangt): Hoehe, Radius und
