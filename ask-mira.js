@@ -741,19 +741,19 @@
         ]},
         { name: 'Visibility & Competitors', subs: [
           { name: 'Brand performance', prompts: [
-            'How visible is my Brand compared to competitors?',
-            'Which competitors improved the most recently?'
+            { label: 'How visible is my Brand compared to competitors?', prompt: 'How visible is my Brand compared to competitors? Make it presentation-ready for the last 30 days: a bar chart of Visibility for us and every tracked competitor, and a line chart of weekly Visibility for us and the top 3, each with a one-sentence takeaway.' },
+            { label: 'Which competitors improved the most recently?', prompt: 'Which competitors improved the most recently? Compare the last 30 days with the period before and show a line chart of weekly Visibility for us and the competitors that gained the most, with a one-sentence takeaway and the numbers behind it.' }
           ]},
           { name: 'Competitive gaps', prompts: [
             'Why are competitors mentioned more often than us?',
             'In which Topics do competitors appear while we are missing?',
-            'Which Topics are strong for us and should be protected?'
+            { label: 'Which Topics are strong for us and should be protected?', prompt: 'Which Topics are strong for us and should be protected? Show a bar chart of our Visibility by Topic for the last 30 days, then say which Topics to protect and why, in a form I can present.' }
           ]}
         ]},
         { name: 'Sources, Citations & URLs', subs: [
           { name: 'Cited sources', prompts: [
-            'Which URLs matter most for our AI Visibility?',
-            'Which sources are most important in our priority Topics?',
+            { label: 'Which URLs matter most for our AI Visibility?', prompt: 'Which URLs matter most for our AI Visibility? Show a bar chart of the 10 most cited URLs by Global Share for the last 30 days with their Citation Type, and a one-sentence takeaway I can put on a slide.' },
+            { label: 'Which sources are most important in our priority Topics?', prompt: 'Which sources are most important in our priority Topics? For the last 30 days, show a doughnut chart of citations by Citation Type and a bar chart of the most cited Domains, each with a one-sentence takeaway, ready to present.' },
             'Which Domains should we try to get listed on?',
             'Which UGC / Community sources should we monitor or improve presence on?'
           ]},
@@ -773,10 +773,10 @@
           ]}
         ]},
         { name: 'Reporting', reporting: true, desc: 'Full reports on your AI visibility', reports: [
-          { icon: 'fileText', label: 'Full Report', desc: 'Visibility, competitors, sources & sentiment in one', prompt: 'Create one comprehensive, presentation-ready AI visibility report for {TIMEFRAME}. Cover our overall visibility and share of voice versus competitors, our strongest and weakest topics, the sources and domains driving our mentions (and where we are missing), a short sentiment read, and our single biggest win and biggest risk. Use clear sections, concrete numbers and a 3-bullet executive takeaway.' },
-          { icon: 'trend', label: 'What Changed', desc: 'Biggest moves & new mentions vs. the prior period', prompt: 'Show what changed in our AI visibility over {TIMEFRAME} versus the prior period. Surface the biggest movers (topics, competitors and sources that gained or lost ground), any new brands or mentions that appeared, and anything that needs attention. End with a short "so what" and 2-3 concrete actions based on the changes.' },
-          { icon: 'smile', label: 'Sentiment Report', desc: 'How AI describes and frames our brand', prompt: 'Create a sentiment and perception report for {TIMEFRAME}. Summarise overall sentiment and its trend, the positive themes and claims worth amplifying, the negative or risky themes and where they seem to originate, and concrete actions to improve how AI describes us. Keep it structured and quotable.' },
-          { icon: 'recommendation', label: 'Action Plan', desc: 'Prioritised opportunities & next steps', prompt: 'Turn our AI visibility data for {TIMEFRAME} into a prioritised action plan. List the 5 highest-leverage opportunities (the prompts, topics and sources that would move our share of voice the most), each with the expected impact and one concrete next step. Order them by impact so we know exactly where to start.' }
+          { icon: 'fileText', label: 'Full Report', desc: 'Visibility, competitors, sources & sentiment in one', prompt: 'Create one comprehensive, presentation-ready AI visibility report for {TIMEFRAME} that I can export as a PDF and present as is. Start with a title line with the date range and a 3-bullet executive takeaway. Then one section each for: our overall visibility and share of voice versus competitors (with a line chart of weekly Visibility for us and the top 3 competitors), our strongest and weakest topics (with a bar chart of our Visibility by Topic), the sources and domains driving our mentions and where we are missing (with a doughnut chart of citations by Citation Type), a short sentiment read, and our single biggest win and biggest risk. Open every section with a one-sentence headline, use concrete numbers, and keep tables to what the charts do not show.' },
+          { icon: 'trend', label: 'What Changed', desc: 'Biggest moves & new mentions vs. the prior period', prompt: 'Show what changed in our AI visibility over {TIMEFRAME} versus the prior period, presentation-ready for a PDF export. Start with a 3-bullet summary of the biggest changes. Include a line chart of weekly Visibility for us and the competitors that moved the most, and a bar chart of the Domains whose citation share changed the most. Then cover the biggest movers (topics, competitors and sources that gained or lost ground), any new brands or mentions that appeared, and anything that needs attention, each with a one-sentence headline and concrete numbers. End with a short "so what" and 2-3 concrete actions based on the changes.' },
+          { icon: 'smile', label: 'Sentiment Report', desc: 'How AI describes and frames our brand', prompt: 'Create a sentiment and perception report for {TIMEFRAME} that I can export as a PDF and present. Start with a 3-bullet summary. Summarise overall sentiment and its trend, with a bar chart of our Sentiment by Topic. Then the positive themes and claims worth amplifying, the negative or risky themes and where they seem to originate, and concrete actions to improve how AI describes us. Open each section with a one-sentence headline; keep it structured and quotable.' },
+          { icon: 'recommendation', label: 'Action Plan', desc: 'Prioritised opportunities & next steps', prompt: 'Turn our AI visibility data for {TIMEFRAME} into a prioritised, presentation-ready action plan I can export as a PDF. Start with a one-line goal and a bar chart of our Visibility by Topic, so the weakest areas stand out. Then list the 5 highest-leverage opportunities (the prompts, topics and sources that would move our share of voice the most) as a table with the expected impact and one concrete next step each, ordered by impact so we know exactly where to start.' }
         ]}
       ]
     },
@@ -866,19 +866,19 @@
         ]},
         { name: 'Visibility & Wettbewerber', subs: [
           { name: 'Marken-Performance', prompts: [
-            'Wie sichtbar ist meine Marke im Vergleich zu Wettbewerbern?',
-            'Welche Wettbewerber haben sich zuletzt am stärksten verbessert?'
+            { label: 'Wie sichtbar ist meine Marke im Vergleich zu Wettbewerbern?', prompt: 'Wie sichtbar ist meine Marke im Vergleich zu Wettbewerbern? Bereite es präsentationsfertig für die letzten 30 Tage auf: ein Balkendiagramm der Visibility für uns und alle getrackten Wettbewerber und ein Liniendiagramm der wöchentlichen Visibility für uns und die Top 3, jeweils mit einem Satz als Kernaussage.' },
+            { label: 'Welche Wettbewerber haben sich zuletzt am stärksten verbessert?', prompt: 'Welche Wettbewerber haben sich zuletzt am stärksten verbessert? Vergleiche die letzten 30 Tage mit dem Zeitraum davor und zeige ein Liniendiagramm der wöchentlichen Visibility für uns und die Wettbewerber mit dem größten Zuwachs, mit einem Satz als Kernaussage und den Zahlen dahinter.' }
           ]},
           { name: 'Wettbewerbslücken', prompts: [
             'Warum werden Wettbewerber häufiger erwähnt als wir?',
             'In welchen Themen tauchen Wettbewerber auf, während wir fehlen?',
-            'Welche Themen sind stark für uns und sollten geschützt werden?'
+            { label: 'Welche Themen sind stark für uns und sollten geschützt werden?', prompt: 'Welche Themen sind stark für uns und sollten geschützt werden? Zeige ein Balkendiagramm unserer Visibility je Topic für die letzten 30 Tage und sag dann, welche Topics wir schützen sollten und warum, so dass ich es präsentieren kann.' }
           ]}
         ]},
         { name: 'Quellen, Citations & URLs', subs: [
           { name: 'Zitierte Quellen', prompts: [
-            'Welche URLs sind für unsere AI-Visibility am wichtigsten?',
-            'Welche Quellen sind in unseren Prioritäts-Themen am wichtigsten?',
+            { label: 'Welche URLs sind für unsere AI-Visibility am wichtigsten?', prompt: 'Welche URLs sind für unsere AI-Visibility am wichtigsten? Zeige ein Balkendiagramm der 10 meistzitierten URLs nach Global Share für die letzten 30 Tage mit ihrem Citation Type und einen Satz als Kernaussage für eine Folie.' },
+            { label: 'Welche Quellen sind in unseren Prioritäts-Themen am wichtigsten?', prompt: 'Welche Quellen sind in unseren Prioritäts-Themen am wichtigsten? Zeige für die letzten 30 Tage ein Ringdiagramm der Citations nach Citation Type und ein Balkendiagramm der meistzitierten Domains, jeweils mit einem Satz als Kernaussage, präsentationsfertig.' },
             'Auf welchen Domains sollten wir versuchen, gelistet zu werden?',
             'Welche UGC-/Community-Quellen sollten wir beobachten oder dort unsere Präsenz verbessern?'
           ]},
@@ -898,10 +898,10 @@
           ]}
         ]},
         { name: 'Reporting', reporting: true, desc: 'Ausführliche Reports zu deiner KI-Sichtbarkeit', reports: [
-          { icon: 'fileText', label: 'Vollständiger Report', desc: 'Sichtbarkeit, Wettbewerber, Quellen & Sentiment in einem', prompt: 'Erstelle einen umfassenden, präsentationsfertigen KI-Sichtbarkeits-Report für {TIMEFRAME}. Behandle unsere Gesamt-Sichtbarkeit und unseren Share of Voice gegenüber Wettbewerbern, unsere stärksten und schwächsten Themen, die Quellen und Domains, die unsere Nennungen treiben (und wo wir fehlen), eine kurze Sentiment-Einschätzung sowie unseren größten Erfolg und unser größtes Risiko. Klare Abschnitte, konkrete Zahlen und ein Executive-Takeaway in 3 Bullets.' },
-          { icon: 'trend', label: 'Was sich geändert hat', desc: 'Größte Bewegungen & neue Nennungen ggü. Vorperiode', prompt: 'Zeige, was sich an unserer KI-Sichtbarkeit über {TIMEFRAME} gegenüber der Vorperiode verändert hat. Hebe die größten Bewegungen hervor (Themen, Wettbewerber und Quellen, die zugelegt oder verloren haben), neue Marken oder Nennungen, die aufgetaucht sind, und alles, was Aufmerksamkeit braucht. Schließe mit einem kurzen "Was bedeutet das?" und 2-3 konkreten Maßnahmen.' },
-          { icon: 'smile', label: 'Sentiment-Report', desc: 'Wie KI unsere Marke beschreibt und einordnet', prompt: 'Erstelle einen Sentiment- und Wahrnehmungs-Report für {TIMEFRAME}. Fasse das Gesamt-Sentiment und seinen Trend zusammen, die positiven Themen und Aussagen zum Verstärken, die negativen oder riskanten Themen samt vermuteter Herkunft sowie konkrete Maßnahmen, um die KI-Wahrnehmung zu verbessern. Strukturiert und zitierfähig.' },
-          { icon: 'recommendation', label: 'Action Plan', desc: 'Priorisierte Chancen & nächste Schritte', prompt: 'Mach aus unseren KI-Sichtbarkeitsdaten für {TIMEFRAME} einen priorisierten Action Plan. Liste die 5 wirkungsvollsten Chancen (die Prompts, Themen und Quellen, die unseren Share of Voice am meisten heben würden), jeweils mit erwarteter Wirkung und einem konkreten nächsten Schritt. Sortiere nach Wirkung, damit klar ist, wo wir anfangen.' }
+          { icon: 'fileText', label: 'Vollständiger Report', desc: 'Sichtbarkeit, Wettbewerber, Quellen & Sentiment in einem', prompt: 'Erstelle einen umfassenden, präsentationsfertigen KI-Sichtbarkeits-Report für {TIMEFRAME}, den ich als PDF exportieren und direkt präsentieren kann. Beginne mit einer Titelzeile mit dem Zeitraum und einem Executive-Takeaway in 3 Bullets. Dann je ein Abschnitt zu: unserer Gesamt-Sichtbarkeit und unserem Share of Voice gegenüber Wettbewerbern (mit einem Liniendiagramm der wöchentlichen Visibility für uns und die Top-3-Wettbewerber), unseren stärksten und schwächsten Themen (mit einem Balkendiagramm unserer Visibility je Topic), den Quellen und Domains, die unsere Nennungen treiben, und wo wir fehlen (mit einem Ringdiagramm der Citations nach Citation Type), einer kurzen Sentiment-Einschätzung sowie unserem größten Erfolg und unserem größten Risiko. Beginne jeden Abschnitt mit einem Satz als Kernaussage, nenne konkrete Zahlen und zeige in Tabellen nur, was die Charts nicht zeigen.' },
+          { icon: 'trend', label: 'Was sich geändert hat', desc: 'Größte Bewegungen & neue Nennungen ggü. Vorperiode', prompt: 'Zeige, was sich an unserer KI-Sichtbarkeit über {TIMEFRAME} gegenüber der Vorperiode verändert hat, präsentationsfertig für einen PDF-Export. Beginne mit 3 Bullets zu den größten Veränderungen. Zeige ein Liniendiagramm der wöchentlichen Visibility für uns und die Wettbewerber mit den größten Bewegungen sowie ein Balkendiagramm der Domains, deren Citation-Anteil sich am stärksten verändert hat. Behandle dann die größten Bewegungen (Themen, Wettbewerber und Quellen, die zugelegt oder verloren haben), neue Marken oder Nennungen, die aufgetaucht sind, und alles, was Aufmerksamkeit braucht, jeweils mit einem Satz als Kernaussage und konkreten Zahlen. Schließe mit einem kurzen "Was bedeutet das?" und 2-3 konkreten Maßnahmen.' },
+          { icon: 'smile', label: 'Sentiment-Report', desc: 'Wie KI unsere Marke beschreibt und einordnet', prompt: 'Erstelle einen Sentiment- und Wahrnehmungs-Report für {TIMEFRAME}, den ich als PDF exportieren und präsentieren kann. Beginne mit 3 Bullets als Zusammenfassung. Fasse das Gesamt-Sentiment und seinen Trend zusammen, mit einem Balkendiagramm unseres Sentiments je Topic. Dann die positiven Themen und Aussagen zum Verstärken, die negativen oder riskanten Themen samt vermuteter Herkunft sowie konkrete Maßnahmen, um die KI-Wahrnehmung zu verbessern. Beginne jeden Abschnitt mit einem Satz als Kernaussage; strukturiert und zitierfähig.' },
+          { icon: 'recommendation', label: 'Action Plan', desc: 'Priorisierte Chancen & nächste Schritte', prompt: 'Mach aus unseren KI-Sichtbarkeitsdaten für {TIMEFRAME} einen priorisierten, präsentationsfertigen Action Plan, den ich als PDF exportieren kann. Beginne mit einem Satz zum Ziel und einem Balkendiagramm unserer Visibility je Topic, damit die schwächsten Bereiche sichtbar werden. Liste dann die 5 wirkungsvollsten Chancen (die Prompts, Themen und Quellen, die unseren Share of Voice am meisten heben würden) als Tabelle mit erwarteter Wirkung und je einem konkreten nächsten Schritt, sortiert nach Wirkung, damit klar ist, wo wir anfangen.' }
         ]}
       ]
     }
