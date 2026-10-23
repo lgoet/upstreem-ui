@@ -184,7 +184,11 @@
     d = obj(d) || {};
     zustand = obj(zustand) || {};
     var refs = (isArr(d.references) ? d.references : []).filter(obj).slice(0, 3).map(function (r) {
-      return { type: str(r.type), id: str(r.id), label: str(r.label).slice(0, 300) };
+      var o = { type: str(r.type), id: str(r.id), label: str(r.label).slice(0, 300) };
+      /* Ein Page Audit nennt den gezeigten Lauf und seinen Zeitpunkt (ask-mira.js picksRefs, 23.10.). */
+      if (str(r.run_id)) o.run_id = str(r.run_id);
+      if (str(r.run_at)) o.run_at = str(r.run_at).slice(0, 40);
+      return o;
     }).filter(function (r) { return r.type && r.id; });
     var b = {
       team_id: str(team), session_id: str(d.chat_id).trim() || null, message: str(d.message),

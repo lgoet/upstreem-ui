@@ -3690,10 +3690,11 @@
        der Linie, um die es oben geht. Mit 48 und 8/8 ist der Inhaltskasten wieder 8 bis 40,
        Mitte 24 -- dieselbe Linie, nur eine Zeile, die acht Pixel mehr Luft hat. */
     height: 48px; min-height: 48px;
-    /* Der Zurueck-Knopf steht 32 neben der Seitenleiste (Lukas 23.10.: "32px Gap zur Sidebar"): 16 Polster der Ansicht
-       (.wirt-ansicht) plus diese 16, gemessen aus- und eingeklappt (250/298 vorher 48, jetzt 32; 64/96). Ein Polster von
-       32 hier ergab 48. Dieselben Werte wie der Kopf ohne Chat, damit die Leiste beim Wechsel nicht seitlich springt. */
-    padding: 8px 16px;
+    /* LINKS KEIN EIGENES POLSTER (23.10. spaet, Lukas: der Zurueck-Knopf steht weiter von der Seitenleiste weg als 32, "fix
+       das einfach"): die 16 der Ansicht (.wirt-ansicht) sind der Abstand jedes Seitenkopfs zur Seitenleiste -- gemessen live
+       auf app.upstreem.ai: Page Audit beginnt mit Krume und Ueberschrift bei 266 (Leiste 250), der Zurueck-Knopf mit 16
+       Polster hier bei 282. Jetzt steht er auf derselben Linie wie die Koepfe aller Seiten. Rechts bleiben 16. */
+    padding: 8px 16px 8px 0;
     display: flex; align-items: center;
   }
   #ask-mira.has-messages .am-hero-inner { max-width: none; gap: 12px; flex-wrap: nowrap; }
@@ -3714,9 +3715,10 @@
      derselben Bedeutung an zwei Raendern desselben Bildschirms sollen gleich aussehen. */
   #ask-mira .am-prev-btn { color: var(--am-muted-2); }
   /* mobile/compact chat topbar: 16px side padding so the back & "Chats" buttons don't touch the edges */
-  #ask-mira.is-compact.has-messages .am-hero { padding-left: 16px; padding-right: 16px; }
+  /* Links 0 wie oben: die 16 der Ansicht reichen, sonst stuende der Kopf schmal 32 vom Rand statt 16 wie jeder Seitenkopf. */
+  #ask-mira.is-compact.has-messages .am-hero { padding-left: 0; padding-right: 16px; }
   @media (max-width: 720px) {
-    #ask-mira.has-messages .am-hero { padding-left: 16px; padding-right: 16px; }
+    #ask-mira.has-messages .am-hero { padding-left: 0; padding-right: 16px; }
   }
   /* normal desktop chat view keeps the full "View Previous Chats" label;
      compact/mobile still shorten to "Chats" via their own rules above. */
