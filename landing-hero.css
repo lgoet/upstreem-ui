@@ -3375,10 +3375,11 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
    neben den 36er-Knoepfen nicht als dritter Knopf auftritt. */
 .ulh-sprache {
   display: inline-flex; align-items: center; gap: 2px; height: 28px; padding: 2px; margin-right: 4px;
-  border-radius: 8px; background: var(--ulh-kasten); border: 1px solid var(--ulh-border);
+  /* Radien nach Rolle (23.10.): 28 hoch 6, die Kuerzel darin 22 hoch 4. */
+  border-radius: var(--up-r-m); background: var(--ulh-kasten); border: 1px solid var(--ulh-border);
 }
 .ulh-sprache a {
-  display: inline-flex; align-items: center; height: 22px; padding: 0 7px; border-radius: 6px;
+  display: inline-flex; align-items: center; height: 22px; padding: 0 7px; border-radius: var(--up-r-xs);
   font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: var(--ulh-sub); text-decoration: none;
   transition: color 160ms var(--ulh-ease), background 160ms var(--ulh-ease), box-shadow 160ms var(--ulh-ease);
 }
@@ -3448,7 +3449,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
   appearance: none; border: 0; background: transparent; cursor: pointer;
   font-family: inherit; font-size: 14px; font-weight: 400; letter-spacing: -0.01em;
   color: var(--ulh-sub); text-decoration: none;
-  height: 34px; padding: 0 12px; border-radius: 9px;
+  height: 34px; padding: 0 12px; border-radius: var(--up-r-m);
   display: inline-flex; align-items: center;
   transition: color 160ms var(--ulh-ease), background 160ms var(--ulh-ease);
 }
@@ -3464,7 +3465,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-nav-pop {
   position: absolute; top: calc(100% - 6px); left: 0;
   width: 0; height: 0; overflow: hidden;
-  background: #ffffff; border: 1px solid var(--ulh-border); border-radius: 14px;
+  background: #ffffff; border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 18px 44px rgba(11, 13, 24, .12);
   /* Es faehrt nach UNTEN auf: aus 10px ueber seiner Stelle in die Stelle. Die Lage (transform)
      springt beim ersten Oeffnen ohne Uebergang dorthin -- sonst kaeme es von der linken Kante
@@ -3489,7 +3490,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 }
 .ulh-nav-eintrag {
   display: flex; flex-direction: column; gap: 1px;
-  padding: 9px 10px; border-radius: 10px; text-decoration: none; min-width: 232px;
+  padding: 9px 10px; border-radius: var(--up-r-l); text-decoration: none; min-width: 232px;
   transition: background 160ms var(--ulh-ease);
 }
 .ulh-nav-eintrag:hover { background: var(--ulh-kasten); }
@@ -3739,7 +3740,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-fuss-logo img { display: block; height: 31px; width: auto; filter: invert(1); }
 .ulh-fuss-netz { display: flex; gap: 8px; margin-top: 4px; }
 .ulh-fuss-ic {
-  width: 32px; height: 32px; border-radius: 9px;
+  width: 32px; height: 32px; border-radius: var(--up-r-m);
   display: inline-flex; align-items: center; justify-content: center;
   color: #9a9a9a; background: rgba(255, 255, 255, .05);
   transition: color 160ms var(--ulh-ease), background 160ms var(--ulh-ease);
@@ -4038,6 +4039,12 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
    (clamp(84px, 12vh, 132px)), und die stehen dort auf ihrer Obergrenze. Ohne die Zeile war der
    eigene Fuss bei 1440x900 gemessen 48px niedriger als der auf der Startseite. */
 .ulh-root.ulh-teil { background: none; --ulh-fh: 20px; }
+/* DIE RADIUS-SKALA FUER SEITEN OHNE core.css (23.10.). Demo, Kontakt, Preise und der Blog laden nur
+   landing-hero.css; ohne core gibt es --up-r-* nicht, und ein unaufgeloestes var() in border-radius
+   ist eine scharfe Ecke (gemessen: Karten und Kasten auf /demo mit 0). Dieselben Werte wie an :root in
+   core.css -- aendert sich die Skala dort, zieht diese Zeile mit. Nur an den Teilen der Unterseiten
+   (.ulh-teil); auf der Startseite gilt core. */
+.ulh-root.ulh-teil { --up-r-xs: 4px; --up-r-s: 4px; --up-r-m: 6px; --up-r-l: 8px; --up-r-xl: 8px; --up-r-2xl: 12px; --up-r-3xl: 16px; --up-r-voll: 999px; }
 
 /* ---------- Der Kopf der Unterseiten (14.10.) ------------------------------------------------
    Demo, Contact, Blog und Rechtsseiten der Website: ein Band ueber die ganze Breite mit Chip,
@@ -4047,14 +4054,15 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-seitenkopf {
   position: relative; z-index: 1;
   border-bottom: 1px solid var(--ulh-border);
-  background-color: #ffffff;
+  /* Im Grau der Seite seit 23.10. (wie das Hell der App), das Punktraster bleibt. */
+  background-color: var(--ulh-seite);
   background-image: radial-gradient(circle, var(--ulh-schiene) 1px, transparent 1px);
   background-size: 8px 8px;
 }
-/* Das Raster nur unten sichtbar: oben weiss, damit die Ueberschrift auf ruhigem Grund steht. */
+/* Das Raster nur unten sichtbar: oben im Seitengrund, damit die Ueberschrift auf ruhigem Grund steht. */
 .ulh-seitenkopf::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(to bottom, #ffffff 35%, rgba(255, 255, 255, .55) 100%);
+  background: linear-gradient(to bottom, #fafafa 35%, rgba(250, 250, 250, .55) 100%);
 }
 .ulh-seitenkopf-in {
   position: relative; display: flex; flex-direction: column; align-items: flex-start;
