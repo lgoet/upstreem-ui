@@ -292,6 +292,20 @@ Weiß bei 3.08 und damit unter AA. Jetzt auf Weiß 5.33 und 5.37.
 - **Märkte** (`MARKT_FARBEN`): `#0072f5`, `#99ceff`, `#00254c`, `#52aeff`, `#0a4380`, `#cce6ff`,
   `#0062d1`, `#0090ff` (Geist Blue, hell und dunkel gemischt).
 - **Tarifpunkte**: Essential `#12a594`, Professional `#0072f5`, Enterprise `#8e4ec6`.
+- **Die Farbe einer einzelnen Reihe** (`UC.chartInk`, in CSS `var(--up-chart-ink, var(--up-accent-ink))`):
+  im Standard und in den Akzenten die Akzent-Tinte, mit „Standard + Blau“ das ruhige Blau
+  (`--up-chart-ink`, nur in diesem Modus gesetzt: `#3f66b0` hell, `#83abf4` dunkel). Gilt für jede
+  Linie, seit dem 23.10. auch für die kleinen Charts in CSS: den Ring in Zahlenzellen
+  (`UC.variationRing`: Brand Variations, Shopping/Ads Visibility) und die Sparkline in Kennzahl-
+  Kacheln (`UC.sparkHtml`, Shopping Product Detail). Vorher lasen sie `--up-accent` bzw.
+  `--up-accent-ink` und standen bei „Standard + Blau“ in der Schriftfarbe. Nie `--up-accent` für
+  einen Chart -- das ist die Fläche unter Knöpfen.
+- **Schrift im Balken aus dem Kontrast** (`UC.barSchrift`, seit 23.10.): Name und Wert in
+  `makeBarList` und im Balkenmodus von `makeTypeChart` halten WCAG AA 4.5:1 gegen die Füllung.
+  Erst die Haustinte mit dem höheren Kontrast (Weiß oder `#1f1f1b`); reicht keine (Balken um
+  L 0.18 bis 0.24), wird die dunkle Richtung Schwarz gezogen; die leisere Deckkraft des Werts
+  steigt, bis 4.5 steht. Gerechnet über die vier Rampen von `balkenGrau`: vorher 34 von 72 Texten
+  unter 4.5, jetzt 0. Keine feste Schwelle und keine feste Deckkraft mehr in einem Renderer.
 
 ### Feste (nicht theme-abhängige) Farben
 - Icon-Buttons: Ruhe `--vc-third`, Hover `--vc-text` (über die Marke, nicht mehr hart `#6f6f6f`)
@@ -1506,6 +1520,21 @@ der Werkzeugleiste, sondern als Zeilen im Menü „Filters“ mit Chip dahinter.
 Filter eine Wurzel `.up-ff.up-ff-<key>` (unsichtbarer Trigger, Panel mit `.up-filter-item`,
 Zeilen mindestens 34 hoch, eigener Inhalt wie ein Regler in `.up-ff-panel` mit `12px 10px 14px`
 Polster). Der Zustand bleibt in der Tabelle; sie feuert dieselben Ereignisse wie vorher ihre Knöpfe.
+
+**Das Bild im Wert eines Chips** (`wertBild` in filter-bar.js, Marken seit 23.10.): vor jedem Wert
+steht, was die Zeile im Menü davor zeigt -- Topic der Farbstrich, Modell das Logo, Markt die
+Flagge, Intent das Zeichen. **Marken aus der Struktur, nicht aus einer Liste:** jede Zeile eines
+Leisten-Filters mit Bild (`.up-ment-logo img`) bringt es mit (Brand in Shopping, Mentioned brands,
+Advertisers); eigene Marke ihr Logo, Wettbewerber ihr Favicon, wie geliefert. Gezeichnet als
+Logokachel `.ufb-bild` in der Größe des Modell-Logos im Chip, 18 (Bild 16, helle Platte, Radius 4),
+6 vor dem Namen. Mehrere Werte wie beim Models-Chip: zwei mit Bild, dann „+n“. Eine Zeile ohne
+Bild (Händler, Segment) bleibt ohne -- keine leere Kachel.
+
+```
+Brand    is      [Logo] A&M Beratung                    eine Marke (Shopping, einzeln)
+Brands   is any of  [Logo] LeeUp Media  [Logo] A&M Beratung  +1
+Model    is any of  [Logo] Gemini  [Logo] Google AI Overviews  +1
+```
 
 **Die Leiste über dem Band** (seit 16.10., Variante A der Leinwand „Citations Seitenaufbau“, für
 Citations und Brands › Tracked gewählt). Steht ein Chart über der Tabelle, steht die eine Leiste
