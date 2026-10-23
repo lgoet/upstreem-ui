@@ -469,6 +469,24 @@
     if (navr !== _navrLetzt){ _navrLetzt = navr; root.style.setProperty('--am-navr', navr + 'px'); }
   }
   var _sbwLetzt = -1, _navrLetzt = -1;
+  /* DAS POLSTER DER SEITENHUELLE (23.10. spaet): die Leiste des Agents gehoert an den Fensterrand wie die Hauptleiste
+     (ask-mira.css, "DIE LEISTE AN DEN FENSTERRAND"). Das Polster haengt am Wirt (App: .wirt-ansicht, Bubble: die Gruppe
+     #view-mira) und wird hier gelesen statt nachgeschrieben: der naechste Vorfahr mit Polster. Nur bis 32 -- das Polster
+     links von #view-mira ist der Platz der Seitenleiste (250) und darf nie herangezogen werden. Geschrieben wird nur bei
+     Aenderung; die Breite der Huelle haengt nicht an der Wurzel, also keine Schleife. */
+  var _randLetzt = '';
+  function ansichtRandSetzen(){
+    var el = root.parentElement, r = 0, l = 0;
+    for (var n = 0; el && el !== document.body && n < 6; n++, el = el.parentElement){
+      var cs = getComputedStyle(el), pr = parseFloat(cs.paddingRight) || 0, pl = parseFloat(cs.paddingLeft) || 0;
+      if (pr || pl){ r = pr <= 32 ? pr : 0; l = pl <= 32 ? pl : 0; break; }
+    }
+    var wert = r + '|' + l;
+    if (wert === _randLetzt) return;
+    _randLetzt = wert;
+    root.style.setProperty('--am-rand-r', r + 'px');
+    root.style.setProperty('--am-rand-l', l + 'px');
+  }
   /* Die Chatbreite aendert sich nicht nur beim Fensterwechsel, sondern jedes Mal, wenn die
      Chatliste auf- oder zugeht -- und dann stimmt der gemessene Abstand nicht mehr. Gemessen:
      mit offener Liste stand die Sprungleiste 74px zu weit links, weil der Wert vom vorigen
@@ -477,7 +495,7 @@
      des Chats nicht, es kann also keine Schleife entstehen. */
   try {
     if (elChat && window.ResizeObserver){
-      new ResizeObserver(function(){ scrollbarBreiteSetzen(); }).observe(elChat);
+      new ResizeObserver(function(){ ansichtRandSetzen(); scrollbarBreiteSetzen(); }).observe(elChat);
     }
   } catch(e){}
   var elSuggGrid   = root.querySelector('#am-suggested-grid');
@@ -9385,6 +9403,7 @@
      dieses Netz auskommen: einmal sofort, einmal nach dem Uebergang, weil die Breite erst am
      Ende der Bewegung feststeht. Der Setzer schreibt nur, wenn sich der Wert wirklich aendert. */
   function seitenBreiteNachmessen(){
+    ansichtRandSetzen();
     scrollbarBreiteSetzen();
     setTimeout(scrollbarBreiteSetzen, 320);
   }
@@ -9426,6 +9445,7 @@
     if (elPrevPanel.parentNode !== root) root.appendChild(elPrevPanel);
     /* Erst JETZT darf sie sichtbar werden -- siehe den Kommentar an .am-prev-panel in der CSS. */
     root.classList.add('side-mounted');
+    ansichtRandSetzen();
 
     var kopf = elPrevPanel.querySelector('.am-prev-head');
     if (kopf && !kopf.getAttribute('data-side')){

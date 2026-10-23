@@ -2634,7 +2634,8 @@
      Sie ist Teil des Layouts wie die grosse Leiste auch -- flex: 0 0 64px, kein Ueberdecken.
      Damit faellt der "All Chats"-Knopf im Kopf weg (Regel weiter unten). */
   .am-mini {
-    display: none; flex: 0 0 64px; width: 64px; box-sizing: border-box;
+    /* Breite aus der Hauptleiste (--usn-mini an :root, sidebar.css), kein zweiter Wert. */
+    display: none; flex: 0 0 var(--usn-mini); width: var(--usn-mini); box-sizing: border-box;
     /* UEBER DEM WEGGESCHOBENEN PANEL. Eingeklappt verschwindet die grosse Leiste nicht, sie wird
        mit einem negativen Aussenabstand aus dem Bild geschoben -- sie traegt damit keine Breite
        mehr, malt aber weiter ab derselben Stelle. Die schmale Leiste landet genau dort und lag
@@ -2660,6 +2661,15 @@
      721 und nicht 720, damit sie sich mit dem Overlay-Block (max-width: 720px) nicht ueberlappt. */
   @media (min-width: 721px) {
     #ask-mira.side-mounted:not(.prev-open) .am-mini { display: flex; }
+    /* DIE LEISTE AN DEN FENSTERRAND (23.10. spaet, Lukas: eingeklappt "breiter" als die Hauptsidebar, die Zeichen "nicht
+       mittig"). Gemessen waren beide 64 und die Zeichen in beiden mittig -- aber die Agent-Leiste endete 16 vor dem rechten
+       Fensterrand, im Polster der Seitenhuelle; die Hauptleiste sitzt buendig links. So las sie sich als 80 breit mit den
+       Zeichen 8 links der Mitte. Die Wurzel rueckt um genau das Polster der Huelle an den Rand (ask-mira.js
+       ansichtRandSetzen liest es dort ab), auf der Seite, auf der die Leiste steht. Erst ab 721, darunter liegt die Liste
+       als Ueberlagerung. */
+    /* Breite UND Rand: die Wurzel traegt width: 100% (oben), ein negativer Rand allein verschoebe sie nur. */
+    #ask-mira.side-mounted:not(.is-side-left) { width: calc(100% + var(--am-rand-r, 0px)); margin-right: calc(-1 * var(--am-rand-r, 0px)); }
+    #ask-mira.side-mounted.is-side-left { width: calc(100% + var(--am-rand-l, 0px)); margin-left: calc(-1 * var(--am-rand-l, 0px)); }
   }
   /* DIE BLENDE EINSCHALTEN. Diese Regel fehlte ganz: der Schleier stand auf opacity 0 und
      pointer-events: none, und nichts hat das je umgeschaltet -- er war unsichtbar UND

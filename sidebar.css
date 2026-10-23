@@ -66,13 +66,15 @@
 :root {
   --usn-fahrt: var(--up-t-3, 260ms);
   --usn-fahrt-kurve: var(--up-ease-auf, cubic-bezier(.22, 1, .36, 1));
+  /* Die Breite der eingeklappten Leiste an :root (23.10. spaet): die schmale Leiste des Agents (ask-mira.css .am-mini) ist
+     "genau so breit wie die Hauptsidebar im eingeklappten Zustand" und liest denselben Wert, statt eine zweite 64 zu fuehren. */
+  --usn-mini: 64px;
 }
 
 .usn-bar, .usn-fab, .usn-scrim {
   --usn-t: 200ms;
   --usn-ease: cubic-bezier(.4, 0, .2, 1);
   --usn-w: 250px;
-  --usn-mini: 64px;
   /* IM DUNKELN DER GRUND DER SEITE, IM HELLEN EINE STUFE DARUNTER (21.09. angefordert).
      Bis hierher trug die Leiste in BEIDEN Themen die Seitenfarbe -- so umgestellt am 07.09.,
      mit Linear als Begruendung: dort traegt die Navigation bg-primary, dieselbe Farbe wie die
