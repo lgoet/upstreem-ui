@@ -953,7 +953,9 @@
   }
 
   /* ---------------- Helpers ---------------- */
-  function esc(v){ var d = document.createElement('div'); d.textContent = String(v==null?'':v); return d.innerHTML; }
+  /* Auch Anfuehrungszeichen (Sicherheitspruefung 23.10., NIEDRIG 3): esc() steht in src="..." (Logos, Favicons der
+     Opportunities, Bilder), und textContent/innerHTML maskiert nur & < >. Dieselbe Fassung wie in core.js. */
+  function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
   /* HTML sanitizer: rebuilds a clean tree from a strict whitelist.
      -> No <script>/<style>/<iframe>, no inline event handlers, no javascript: URLs. */
@@ -1150,6 +1152,44 @@
     if (_typingActive && typeof _startStick === 'function') _startStick();
   });
   elChat.addEventListener('scroll', updateScrollBtn, { passive: true });
+  /* DIE LAGE UEBER EINEN ANSICHTSWECHSEL (gemeldet 23.10.: "Ansicht wechseln und zurueck zu Mira: der Chat steht
+     wieder ganz oben"). Die App verbirgt die Ansicht mit display: none, der Browser setzt scrollTop dabei auf 0
+     und meldet das als scroll (gemessen: 5925 -> 0). Gemerkt wird darum nur, solange der Kasten sichtbar ist;
+     wird er wieder sichtbar und steht noch derselbe Chat da, kommt die Lage zurueck, bevor gezeichnet wird. */
+  var _lage = { top: 0, chat: '', sichtbar: false }, _lageUhren = [];
+  elChat.addEventListener('scroll', function(){
+    if (elChat.clientHeight > 0){ _lage.top = elChat.scrollTop; _lage.chat = String(S.activeChatId || ''); }
+  }, { passive: true });
+  function lageZurueck(){
+    if (!(elChat.clientHeight > 0)) return;
+    /* Einmal sichtbar, ist es entschieden: die uebrigen Blicke fallen weg (scrollt der Nutzer danach selbst ganz
+       nach oben, bleibt er dort). */
+    _lageUhren.forEach(clearTimeout); _lageUhren = [];
+    if (_lage.top > 0 && elChat.scrollTop < 1 && _lage.chat === String(S.activeChatId || '')) elChat.scrollTop = _lage.top;
+  }
+  /* Der Beobachter setzt sie vor dem ersten Bild; der Ansichtswechsel der App ist die Sicherung fuer Flaechen, die
+     nicht zeichnen (dort meldet ein ResizeObserver nichts, gemessen im verdeckten Browserbereich). */
+  try {
+    if (window.ResizeObserver) new ResizeObserver(function(){
+      var sicht = elChat.clientHeight > 0;
+      if (sicht && !_lage.sichtbar) lageZurueck();
+      _lage.sichtbar = sicht;
+    }).observe(elChat);
+  } catch(e){}
+  /* Nach einem Wechsel wenige, begrenzte Blicke (die App blendet erst im naechsten Task ein); UC.beiSicht startet
+     kein neues Fenster, solange ein anderer Eintrag wartet (gemessen 23.10.: nach 2 s nicht ausgeloest). */
+  var LAGE_BLICKE = [0, 60, 160, 320, 640, 1200];
+  try {
+    var _ucLage = window.UpstreemCore;
+    if (_ucLage && _ucLage.onViewChange) _ucLage.onViewChange(function(name){
+      /* Beim Weggehen ist Mira hier noch sichtbar: die Lage jetzt lesen, nicht erst aus dem letzten
+         scroll-Ereignis (das kommt nur mit einem gezeichneten Bild). Beim Zurueckkommen ist sie schon wieder
+         sichtbar, mit scrollTop 0 -- darum entscheidet der Name der neuen Ansicht, nicht die Sichtbarkeit. */
+      if (name !== 'mira'){ if (elChat.clientHeight > 0){ _lage.top = elChat.scrollTop; _lage.chat = String(S.activeChatId || ''); } return; }
+      _lageUhren.forEach(clearTimeout);
+      _lageUhren = _lage.top > 0 ? LAGE_BLICKE.map(function(ms){ return setTimeout(lageZurueck, ms); }) : [];
+    });
+  } catch(e){}
   /* Gedrosselt: der Handler liest scrollHeight, scrollTop und clientHeight und schreibt danach
      eine Klasse -- an jedem Bild einer Ziehbewegung ist das ein erzwungenes Layout. Am Ende der
      Bewegung reicht es; beim Scrollen (der eigentliche Anlass) laeuft er unveraendert weiter. */
@@ -1987,7 +2027,8 @@
     });
     runs.forEach(function(run){
       var cards = [];
-      run.forEach(function(ph){ var o = byId[String(ph.getAttribute('data-mira-opportunity'))]; if (o) cards.push(o); });
+      /* Nur mit Inhalt: ein Eintrag aus { id, status } (mira_messages_v2) waere eine leere Karte mit "?". */
+      run.forEach(function(ph){ var o = byId[String(ph.getAttribute('data-mira-opportunity'))]; if (o && (o.headline || o.lead_url)) cards.push(o); });
       var first = run[0], parent = first.parentNode;
       if (cards.length && parent){
         var wrap = document.createElement('div'); wrap.className = 'am-opps';
@@ -2399,9 +2440,12 @@
     en: {
       copy: 'Copy', chartLeer: 'This chart has no data.',
       zustand: { running: 'Running', done: 'Done', failed: 'Failed', undone: 'Undone', blocked: 'Not available', expired: 'Expired' },
-      start: { page_audit: 'Run Audit', prompt_research: 'Start Research', track_brand: 'Track brand' },
+      start: { page_audit: 'Run Audit', prompt_research: 'Start Research', track_brand: 'Track brand', create_opportunity: 'Save as Opportunity' },
       oeffnen: { page_audit: 'Open audit', prompt_research: 'Open research' },
       ergebnis: 'View result', marke: 'Open brand', undo: 'Undo',
+      artName: { page_audit: 'Page Audit', prompt_research: 'Prompt Research', track_brand: 'Brand tracking', create_opportunity: 'Opportunity', opportunity_status: 'Status change' },
+      streifen: { running: '{art} running', done: '{art} done', failed: '{art} failed', undone: '{art} undone', blocked: '{art} not available', expired: '{art} expired' },
+      fertig: { page_audit: 'Page Audit completed', prompt_research: 'Prompt Research completed', track_brand: 'Brand tracked', create_opportunity: 'Opportunity saved', opportunity_status: 'Opportunity updated' },
       einheit: { page_audit: ['Page Audit', 'Page Audits'], prompt_research: ['research', 'researches'], brand_slot: ['brand slot', 'brand slots'] },
       zeitraum: { week: 'this week', day: 'today', month: 'this month', plan: 'on your plan' },
       kosten: 'Uses {n} of your {r} remaining {einheit} {zeitraum}'
@@ -2409,9 +2453,12 @@
     de: {
       copy: 'Kopieren', chartLeer: 'Für diesen Chart gibt es keine Daten.',
       zustand: { running: 'Läuft', done: 'Erledigt', failed: 'Fehlgeschlagen', undone: 'Rückgängig gemacht', blocked: 'Nicht verfügbar', expired: 'Abgelaufen' },
-      start: { page_audit: 'Audit starten', prompt_research: 'Research starten', track_brand: 'Marke tracken' },
+      start: { page_audit: 'Audit starten', prompt_research: 'Research starten', track_brand: 'Marke tracken', create_opportunity: 'Als Opportunity speichern' },
       oeffnen: { page_audit: 'Audit öffnen', prompt_research: 'Research öffnen' },
       ergebnis: 'Ergebnis ansehen', marke: 'Marke öffnen', undo: 'Rückgängig',
+      artName: { page_audit: 'Page Audit', prompt_research: 'Prompt Research', track_brand: 'Marken-Tracking', create_opportunity: 'Opportunity', opportunity_status: 'Statusänderung' },
+      streifen: { running: '{art} läuft', done: '{art} erledigt', failed: '{art} fehlgeschlagen', undone: '{art} rückgängig gemacht', blocked: '{art} nicht verfügbar', expired: '{art} abgelaufen' },
+      fertig: { page_audit: 'Page Audit abgeschlossen', prompt_research: 'Prompt Research abgeschlossen', track_brand: 'Marke wird getrackt', create_opportunity: 'Opportunity gespeichert', opportunity_status: 'Opportunity aktualisiert' },
       einheit: { page_audit: ['Page Audit', 'Page Audits'], prompt_research: ['Research', 'Researches'], brand_slot: ['Markenplatz', 'Markenplätzen'] },
       zeitraum: { week: 'diese Woche', day: 'heute', month: 'diesen Monat', plan: 'in deinem Tarif' },
       kosten: 'Verbraucht {n} von {r} verbleibenden {einheit} {zeitraum}'
@@ -2497,7 +2544,32 @@
   }
 
   /* ---- Markdown, eng: nur was der Agent schreibt (upstreem-app lib/mira/prompt.ts) ---- */
+  /* Ein Label, das nur ein Kuerzel ist ("[p10](ref:p10)", "[ref r6](ref:r6)", gemeldet 23.10.), zeigt den Namen
+     des Bezugs. Der Server ersetzt es seit 23.10. selbst (bezuege.ts aufloesen); das hier gilt fuer den laufenden
+     Text und fuer Antworten, die vorher gespeichert wurden. */
+  var BLK_KUERZEL = /^\s*(?:ref\s*[:#]?\s*|#)?[a-z]\d{1,5}\s*$/i;
+  var BLK_MONAT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function blkName(r){
+    var t = blkStr(r.title).replace(/[\[\]]/g, '').trim(), typ = blkStr(r.type);
+    if (typ === 'response'){
+      var m = /^(.*?)\s*(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+      if (!m) return t;
+      var tag = Number(m[4]), mon = Number(m[3]);
+      var datum = lang === 'de' ? tag + '.' + mon + '.' : (tag + ' ' + (BLK_MONAT[mon - 1] || '')).trim();
+      return m[1] ? m[1] + ', ' + datum : datum;
+    }
+    if (typ === 'url' && /^https?:\/\//i.test(t)) return t.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, '');
+    if (typ === 'prompt' && t.length > 70) return t.slice(0, 70).replace(/\s+\S*$/, '') + '…';
+    return t;
+  }
+  /* Titel aus den Daten kommen teils HTML-kodiert an ("Digitalisierung &amp; Marketing", Seitentitel aus dem Scraper):
+     fuer die Anzeige zurueck in Zeichen, escaped wird danach wie immer. */
+  function blkEntkodiert(v){
+    return blkStr(v).replace(/&(amp|lt|gt|quot|#39|apos|nbsp);/g, function(_m, n){ return { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", apos: "'", nbsp: ' ' }[n]; });
+  }
   function blkSpan(label, r){
+    if (BLK_KUERZEL.test(label)) label = blkName(r) || label;
+    label = blkEntkodiert(label);
     var t = blkStr(r.type);
     var a = ' data-mira-entity-type="' + escAttr(t) + '"';
     if (t === 'url') a += ' data-mira-entity-url="' + escAttr(r.entity_url || r.entity_id) + '"';
@@ -2513,14 +2585,27 @@
                  '~': ['data-mira-source-signal', 'likely'], '?': ['data-mira-source-signal', 'unclear'] };
   var BLK_ALT = /\[\[(POSITIVE_SPAN|NEGATIVE_SPAN|SOURCE_SIGNAL|UNCLEAR_SOURCE)_START\]\]([\s\S]*?)\[\[\1_END\]\]/g;
   var BLK_ALT_ZEICHEN = { POSITIVE_SPAN: '+', NEGATIVE_SPAN: '-', SOURCE_SIGNAL: '~', UNCLEAR_SOURCE: '?' };
+  /* Ein freier Link [Text](https://...) im Modelltext ist ein Abflussweg per Injection (Sicherheitspruefung 23.10.,
+     MITTEL 1): klickbar nur, wenn sein Host zu einem Bezug dieser Antwort gehoert (URL, Domain, Marke), sonst bleibt
+     der Text. Dieselbe Regel steht im PDF (upstreem-app lib/mira/pdf.ts linkErlaubt). */
+  function blkHost(u){ try { return new URL(u).hostname.toLowerCase().replace(/^www\./, ''); } catch(e){ return ''; } }
+  function blkLinkErlaubt(u, refs){
+    var h = blkHost(u);
+    if (!h) return false;
+    return Object.keys(refs || {}).some(function(k){
+      var r = refs[k] || {}, t = blkStr(r.type);
+      var rh = t === 'url' ? blkHost(blkStr(r.entity_url || r.entity_id)) : blkStr(r.domain || (t === 'domain' ? r.entity_id : '')).toLowerCase().replace(/^www\./, '');
+      return !!rh && (h === rh || h.slice(-(rh.length + 1)) === '.' + rh);
+    });
+  }
   function blkInline(s, refs){
     s = String(s == null ? '' : s).replace(BLK_ALT, function(_m, art, innen){ var z = BLK_ALT_ZEICHEN[art]; return '{' + z + innen + z + '}'; });
     var re = /\[([^\]\n]{1,300})\]\(ref:([a-z]\d{1,5})\)|\[([^\]\n]{1,300})\]\((https?:\/\/[^\s)]{1,2000})\)|\*\*([^*\n]+?)\*\*|__([^_\n]+?)__|\*([^*\s][^*\n]*?)\*|`([^`\n]+)`|\{([+\-~?])([^{}\n]{1,600}?)\9\}/g;
     var aus = '', i = 0, m;
     while ((m = re.exec(s))){
       aus += esc(s.slice(i, m.index));
-      if (m[1] !== undefined){ var r = refs[m[2]]; aus += r ? blkSpan(m[1], r) : esc(m[1]); }
-      else if (m[3] !== undefined) aus += '<a href="' + escAttr(m[4]) + '" target="_blank" rel="noopener noreferrer">' + esc(m[3]) + '</a>';
+      if (m[1] !== undefined){ var r = refs[m[2]]; aus += r ? blkSpan(m[1], r) : (BLK_KUERZEL.test(m[1]) ? '' : esc(m[1])); }
+      else if (m[3] !== undefined) aus += blkLinkErlaubt(m[4], refs) ? '<a href="' + escAttr(m[4]) + '" target="_blank" rel="noopener noreferrer">' + esc(m[3]) + '</a>' : esc(m[3]);
       else if (m[5] !== undefined || m[6] !== undefined) aus += '<strong>' + blkInline(m[5] !== undefined ? m[5] : m[6], refs) + '</strong>';
       else if (m[7] !== undefined) aus += '<em>' + blkInline(m[7], refs) + '</em>';
       else if (m[8] !== undefined) aus += '<code>' + esc(m[8]) + '</code>';
@@ -2787,7 +2872,9 @@
   }
 
   /* ---- Aktionskarte (upstreem-app mira/AKTIONSKARTE.md, Abschnitt 4) ---- */
-  var BLK_ART_ZEICHEN = { page_audit: 'fileText', prompt_research: 'search', track_brand: 'squareStack', create_opportunity: 'listTodo', opportunity_status: 'listTodo' };
+  /* Das Zeichen der Ansicht, wie in der Seitenleiste (sidebar.js; 23.10. geprueft: Page Audit trug fileText, Prompt
+     Research die Lupe der Suche, beide nicht ihr eigenes Zeichen). */
+  var BLK_ART_ZEICHEN = { page_audit: 'dna01', prompt_research: 'telescope', track_brand: 'squareStack', create_opportunity: 'listTodo', opportunity_status: 'listTodo' };
   function blkKosten(b){
     var c = blkObj(b.cost), q = blkObj(b.quota), L2 = BL();
     if (!c || !q || !(Number(c.amount) > 0)) return '';
@@ -2802,6 +2889,30 @@
     var t = Date.parse(u.until);
     return isFinite(t) && t > Date.now();
   }
+  /* LAUFSTREIFEN (23.10., Lukas: "Laufende Aktionskarten technischer: eine Karte wie der Laufstreifen in Prompt Research
+     bzw. der Lauf-Kasten in Page Audit -- Punkt in der Statusfarbe, Ring aus core, kein langer Erklaertext"). Grund und
+     Kosten braucht nur die vorgeschlagene Karte, zum Entscheiden; ab dem Start ist sie eine Zeile: Punkt (laeuft amber,
+     fertig gruen, gescheitert rot, sonst grau, die Flaechentoene aus core), der Ring solange sie laeuft, der Zustand und
+     das Ziel, rechts der Weg zum Ergebnis bzw. "Undo". Masse 1:1 aus .upa-lb (page-audit.css); dieselbe Form steht dort
+     und als .upr-lauf in Prompt Research -- ein core-Baustein fuer alle drei steht aus. */
+  function blkStreifen(b, m, fuss){
+    var L2 = BL(), k = window.UpstreemCore;
+    var art = blkStr(b.kind), st = blkStr(b.status), ziel = blkObj(b.target) || {};
+    var punkt = { running: ' is-warn', done: ' is-pos', failed: ' is-neg' }[st] || '';
+    var name = L2.artName[art] || blkStr(b.title);
+    var titel = st === 'done' && L2.fertig[art] ? L2.fertig[art] : (L2.streifen[st] || '{art}').replace('{art}', name);
+    var fehlt = (st === 'failed' || st === 'blocked' || st === 'expired') && blkStr(b.status_text);
+    var adresse = blkStr(ziel.url || ziel.domain), label = blkEntkodiert(ziel.label);
+    var zusatz = adresse && label && label.indexOf(adresse.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, '')) < 0 ? adresse : '';
+    var satz = fehlt ? '<span class="am-akt-ssatz' + (st === 'failed' ? ' is-fehler' : '') + '">' + esc(b.status_text) + '</span>'
+      : (label || adresse) ? '<span class="am-akt-ssatz">' + esc(label || adresse) + '</span>' + (zusatz ? '<span class="am-akt-ssatz is-adresse">' + esc(zusatz) + '</span>' : '') : '';
+    var ring = st === 'running' && k && k.ringHtml ? '<span class="am-akt-ring" aria-hidden="true">' + k.ringHtml(14) + '</span>' : '';
+    return '<div class="am-akt am-akt-streifen is-' + escAttr(st) + '" data-akt-id="' + escAttr(b.id) + '">' +
+             '<span class="am-akt-punkt' + punkt + '" aria-hidden="true"></span>' + ring +
+             '<span class="am-akt-stext"><span class="am-akt-stitel">' + esc(titel) + '</span>' + satz + '</span>' +
+             (fuss ? '<span class="am-akt-knoepfe">' + fuss + '</span>' : '') +
+           '</div>';
+  }
   function blkAktion(b, m){
     var L2 = BL(), k = window.UpstreemCore;
     var art = blkStr(b.kind), st = blkStr(b.status) || 'proposed', ziel = blkObj(b.target) || {};
@@ -2810,7 +2921,7 @@
     var fav = (k && k.faviconUrl && (ziel.domain || ziel.url)) ? k.faviconUrl(ziel.domain || ziel.url, 64) : '';
     /* Die Adresse steht als Text daneben, nicht nur als Favicon (P3: woran die Aktion wirkt, muss man lesen koennen),
        ausser sie steht schon im Label ("Sixt (sixt.de)", Page Audit traegt die Adresse als Label). */
-    var adresse = blkStr(ziel.url || ziel.domain), label = blkStr(ziel.label);
+    var adresse = blkStr(ziel.url || ziel.domain), label = blkEntkodiert(ziel.label);
     var zusatz = adresse && label.indexOf(adresse.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, '')) < 0 ? adresse : '';
     var zielHtml = (label || adresse) ? '<div class="am-akt-ziel">' + (fav ? '<img class="am-akt-fav" src="' + escAttr(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : '') +
       '<span class="am-akt-zieltext">' + esc(label || adresse) + '</span>' +
@@ -2820,19 +2931,28 @@
     if (st === 'proposed' && b.klasse === 3){
       var kosten = blkKosten(b);
       fuss = (kosten ? '<span class="am-akt-kosten">' + esc(kosten) + '</span>' : '<span></span>') +
-        '<button class="am-akt-knopf up-btn-pri" type="button" data-act="aktion-start"' + daten + '>' + esc(L2.start[art] || 'Start') + '</button>';
+        /* Ohne eigenes Etikett der Art traegt der Knopf den Titel der Karte (P3, 23.10.: opportunity_status als Vorschlag,
+           "Auf Done setzen"/"Move to Done", wenn Fremdtext im Kontext steht). */
+        '<button class="am-akt-knopf up-btn-pri" type="button" data-act="aktion-start"' + daten + '>' + esc(L2.start[art] || blkStr(b.title) || 'Start') + '</button>';
     } else if (st === 'running'){
-      fuss = '<span class="am-akt-lauf">' + (k && k.ringHtml ? k.ringHtml(14) : '') + '</span>' +
-        (href ? '<a class="am-akt-knopf up-btn-sec" href="' + escAttr(href) + '" data-act="aktion-link">' + esc(L2.oeffnen[art] || L2.ergebnis) + '</a>' : '');
+      fuss = href ? '<a class="am-akt-knopf up-btn-sec" href="' + escAttr(href) + '" data-act="aktion-link">' + esc(L2.oeffnen[art] || L2.ergebnis) + '</a>' : '';
     } else if (st === 'done'){
       var links = href ? '<a class="am-akt-knopf up-btn-sec" href="' + escAttr(href) + '" data-act="aktion-link">' + esc(L2.ergebnis) + '</a>' : '';
       if (art === 'track_brand' && b.result && b.result.company_id) links = '<button class="am-akt-knopf up-btn-sec" type="button" data-act="aktion-marke" data-company="' + escAttr(b.result.company_id) + '">' + esc(L2.marke) + '</button>';
       var undo = b.klasse === 2 && blkUndoMoeglich(b) ? '<button class="am-akt-knopf up-btn-sec" type="button" data-act="aktion-undo"' + daten + '>' + esc(L2.undo) + '</button>' : '';
-      fuss = (links || undo) ? '<span></span><span class="am-akt-knoepfe">' + links + undo + '</span>' : '';
+      fuss = links + undo;
+    } else if (st === 'failed' && href){
+      fuss = '<a class="am-akt-knopf up-btn-sec" href="' + escAttr(href) + '" data-act="aktion-link">' + esc(L2.oeffnen[art] || L2.ergebnis) + '</a>';
     }
     var satz = (st === 'blocked' || st === 'failed' || st === 'expired') && b.status_text
       ? '<p class="am-akt-satz' + (st === 'failed' ? ' is-fehler' : '') + '">' + esc(b.status_text) + '</p>' : '';
-    var opp = blkObj(b.opportunity) && b.opportunity.opportunity_id ? '<div><span data-mira-opportunity="' + escAttr(b.opportunity.opportunity_id) + '"></span></div>' : '';
+    /* Die Opportunity-Karte darunter nur mit ihren Daten: mira_messages_v2 liefert in opportunities[] fuer neue
+       Antworten nur { id, status }, daraus wurde eine leere Karte mit "?" (gemeldet 23.10.). Das Ziel und den
+       Zustand zeigt die Aktionskarte selbst. */
+    var oid = blkObj(b.opportunity) ? blkStr(b.opportunity.opportunity_id) : '';
+    var oppDa = oid && _msgOpps(m).some(function(o){ return o && String(o.id) === oid && (o.headline || o.lead_url); });
+    var opp = oppDa ? '<div><span data-mira-opportunity="' + escAttr(oid) + '"></span></div>' : '';
+    if (st !== 'proposed') return blkStreifen(b, m, fuss) + opp;
     return '<div class="am-akt is-' + escAttr(st) + '" data-akt-id="' + escAttr(b.id) + '">' +
              '<div class="am-akt-kopf"><span class="am-akt-ic" aria-hidden="true">' + zeichen + '</span>' +
                '<span class="am-akt-titel">' + esc(blkStr(b.title)) + '</span>' + marke + '</div>' +
@@ -2858,12 +2978,22 @@
   }
 
   /* Bloecke -> HTML. refs: die Bezuege (aus dem refs-Block bzw. waehrend des Laufs aus dem Stream). */
+  /* Der Titel einer Aktionskarte ist eine Aufgabe, kein Bezug: der Server laesst ihn seit 23.10. unverlinkt
+     (nutzlast.ts titelEntlinken); hier dasselbe fuer Antworten, die vorher gespeichert wurden. */
+  function blkKartenTitel(blocks){
+    var t = {};
+    blkArr(blocks).forEach(function(b){
+      if (!blkObj(b) || b.type !== 'action') return;
+      [b.title, blkObj(b.params) && b.params.title].forEach(function(x){ x = blkStr(x).trim().toLowerCase(); if (x) t[x] = 1; });
+    });
+    return t;
+  }
   function blkHtml(blocks, m, refs){
-    var amid = m && m.id;
+    var amid = m && m.id, kt = blkKartenTitel(blocks);
     return blkArr(blocks).map(function(b){
       if (!blkObj(b)) return '';
       switch (b.type){
-        case 'text': return blkMd(b.md, refs);
+        case 'text': return blkMd(String(b.md == null ? '' : b.md).replace(/\[([^\]\n]{1,300})\]\(ref:[a-z]\d{1,5}\)/g, function(x, l){ return kt[l.trim().toLowerCase()] ? l : x; }), refs);
         case 'table': return blkTabelle(b, refs);
         case 'card': return blkKarte(b, refs);
         case 'chart': return blkChartPlatz(b, amid, refs);
@@ -3070,6 +3200,12 @@
     if (!lbl){ lbl = document.createElement('span'); lbl.className = 'am-scroll-label'; elScrollBottom.appendChild(lbl); }
     lbl.textContent = 'New Message';
     elScrollBottom.classList.add('has-new', 'is-visible');
+  }
+  /* Die letzte Antwort ist neu und der Nutzer liest weiter oben: "New Message", wenn keine Zeile davon im Bild ist. */
+  function _neueAntwortMelden(){
+    var al = elMessages.querySelectorAll('.am-msg.is-assistant:not(.am-msg-loading)');
+    var neu = al.length ? al[al.length - 1] : null;
+    if (neu && _msgFullyBelow(neu)) _bumpNewBadge(neu);
   }
   function _clearNewBadge(){
     _newMsgEl = null;
@@ -3283,6 +3419,11 @@
        Nachfassen mit unveraenderten Nachrichten ans Ende -- der Nutzer las, die Ansicht rutschte.
        Jetzt steht er zwischen beiden: der Ladezustand gewinnt, danach gewinnt "unveraendert". */
     else if (_gleicheNachrichten){ /* nichts anfassen, siehe oben */ }
+    /* EINE SCHON LIVE GELESENE ANTWORT KOMMT PER REALTIME NACH, waehrend der Nutzer weiter oben liest (23.10. gemessen:
+       kam das Nachladen vor dem Abschluss des Streams, sprang die Ansicht wie beim Oeffnen eines Chats ans Ende und
+       "New Message" war weg). Das ist ein Anhaengen, kein Oeffnen: stehen lassen, und ist keine Zeile der Antwort im
+       Bild, die Marke zeigen. Steht er unten, gilt der Zweig darunter wie bisher. */
+    else if (_isAppend && _lastKey && _typedKeys[_lastKey] && !_atBottom(130)){ _neueAntwortMelden(); }
     else if (_scrollMode === 'bottom') {
       var _ungelesen = _oeffnenUngelesen && _oeffnenUngelesenFuer === String(S.activeChatId || '');
       elMessages.style.minHeight = '';
@@ -3291,6 +3432,12 @@
     }
     else { elMessages.style.minHeight = ''; scrollNewMessageTop(true); }
     _scrollMode = 'newmsg';
+    /* "New Message" zeigt auf die Ladezeile, solange die Antwort live laeuft; die fertige Antwort ersetzt
+       diesen Knoten. Dann zeigt die Marke auf die neue letzte Antwort, sonst sprang der Klick ins Leere. */
+    if (_newMsgEl && !_newMsgEl.isConnected){
+      var _alle = elMessages.querySelectorAll('.am-msg.is-assistant');
+      _newMsgEl = _alle.length ? _alle[_alle.length - 1] : null;
+    }
     updateLoopState();
     if (_typeUnits) _startTyping(_newBub, _typeUnits);
     if (typeof updateScrollBtn === 'function') setTimeout(updateScrollBtn, 80);
@@ -4030,6 +4177,34 @@
     opportunities:           ['listTodo',    ['Spotting sources worth pursuing', 'Checking your Opportunities']],
     get_knowledge:           ['bookOpen',    ['Grounding the answer in the basics', 'Pulling up the relevant concepts']],
     show_chart:              ['chartSpline', ['Drawing the chart', 'Putting the numbers into a chart']],
+    /* Seit P3/P4 (23.10. gemeldet: dreimal "Working on it" untereinander): jedes Werkzeug mit eigenem Satz, das
+       Zeichen der Ansicht aus der Seitenleiste (sidebar.js). */
+    dashboard_kpis:          ['home',          ['Reading your dashboard numbers', 'Checking your key metrics']],
+    performance_radar:       ['chartColumnUp', ['Comparing performance across models', 'Reading your performance profile']],
+    brand_metric_trend:      ['chartSpline',   ['Tracing the metric over time', 'Following the trend line']],
+    discover_brands:         ['squareStack',   ['Finding brands you do not track yet', 'Spotting new names in the answers']],
+    impact_events:           ['cells',         ['Checking your Impact events', 'Listing your tracked events']],
+    impact_event_analysis:   ['cells',         ['Measuring the impact of the event', 'Comparing before and after']],
+    impact_target_urls:      ['cells',         ['Reading the tracked pages', 'Checking the target URLs']],
+    impact_sitemap_coverage: ['cells',         ['Checking sitemap coverage', 'Seeing which pages get cited']],
+    shopping_overview:       ['shoppingBag',   ['Reading your shopping visibility', 'Checking product placements']],
+    shopping_products:       ['shoppingBag',   ['Checking which products appear', 'Listing the products shown']],
+    shopping_product_detail: ['shoppingBag',   ['Opening the product', 'Reading the product details']],
+    shopping_merchants:      ['shoppingBag',   ['Comparing merchants', 'Checking where products are sold']],
+    page_audits:             ['dna01',         ['Checking your page audits', 'Listing recent audits']],
+    page_audit_detail:       ['dna01',         ['Reading the audit results', 'Opening the page audit']],
+    prompt_research_jobs:    ['telescope',     ['Checking your prompt research', 'Listing recent research']],
+    prompt_research_result:  ['telescope',     ['Reading the research results', 'Opening the suggested prompts']],
+    ads_overview:            ['marketing',     ['Reading the ads in AI answers', 'Checking ad visibility']],
+    ads_advertisers:         ['marketing',     ['Comparing advertisers', 'Listing who advertises']],
+    ads_advertiser_detail:   ['marketing',     ['Opening the advertiser', 'Reading the advertiser details']],
+    ads_library:             ['marketing',     ['Browsing the ad library', 'Reading the ads shown']],
+    ads_prompts:             ['marketing',     ['Checking which prompts show ads', 'Reading prompts with ads']],
+    create_opportunity:      ['listTodo',      ['Saving the opportunity', 'Adding it to your board']],
+    set_opportunity_status:  ['listTodo',      ['Updating the opportunity', 'Moving the card on your board']],
+    propose_page_audit:      ['dna01',         ['Preparing the page audit', 'Setting up the audit card']],
+    propose_prompt_research: ['telescope',     ['Preparing the prompt research', 'Setting up the research card']],
+    propose_track_brand:     ['squareStack',   ['Preparing to track the brand', 'Setting up the brand card']],
     /* n8n (bis zum Umstieg P6) */
     company_lookup:          ['squareStack', ['Identifying your brand and competitors', 'Mapping out the companies in play', 'Pinning down the brands to track']],
     brand_overview:          ['squareStack', ["Reading your brand's visibility data", 'Checking how often you show up', 'Sizing up your overall presence']],
@@ -4085,7 +4260,8 @@
   function runFinde(id){
     for (var i = 0; i < RUN.runden.length; i++){
       for (var j = 0; j < RUN.runden[i].schritte.length; j++){
-        if (RUN.runden[i].schritte[j].id === id) return { r: RUN.runden[i], s: RUN.runden[i].schritte[j] };
+        var sj = RUN.runden[i].schritte[j];
+        if (sj.id === id || (sj.ids && sj.ids.indexOf(id) >= 0)) return { r: RUN.runden[i], s: sj };
       }
     }
     return null;
@@ -4114,10 +4290,44 @@
     txt.className = 'am-run-txt' + (fertig ? '' : ' up-glanz');
     txt.textContent = s.text;
     el.appendChild(txt);
+    var n = document.createElement('span'); n.className = 'am-run-n';
+    el.appendChild(n);
+    runZahlSetzen(s, n);
     if (fertig && s.fehler) el.setAttribute('data-tip', L().runFailed);
     s.el = el;
     if (frisch) setTimeout(function(){ runSchrittFertig(s); }, _TAKT.haken);
     return el;
+  }
+  /* GLEICHE AUFRUFE SIND EIN SATZ (23.10. gemeldet: "8-mal listing prompts in einer Zeile", "3-mal hintereinander
+     working on it"). Ein Schritt ist eine Gruppe: alle Aufrufe desselben Werkzeugs in einer Runde, dazu die Runden
+     direkt danach, die nur dieses eine Werkzeug rufen. Hinter dem Satz steht leise die Zahl ("×8"); fertig ist der
+     Satz, wenn alle Aufrufe fertig sind, rot, wenn einer davon scheiterte. */
+  function runZahlSetzen(s, n){
+    n = n || (s.el && s.el.querySelector('.am-run-n'));
+    if (!n) return;
+    var k = s.ids ? s.ids.length : 1;
+    n.textContent = k > 1 ? '\u00d7' + k : '';
+  }
+  function runZusammen(name){
+    var r = RUN.runden[RUN.runden.length - 1];
+    if (!r || !RUN.neueRunde || r.schritte.length !== 1 || r.schritte[0].name !== name) return null;
+    return { r: r, s: r.schritte[0] };
+  }
+  function runGliedDazu(r, s, id){
+    s.ids = s.ids || [s.id];
+    s.ids.push(id);
+    s.offen = (s.offen || 0) + 1;
+    if (s.endTs){
+      /* War der Satz schon abgehakt, laeuft er wieder: Ring statt Zeichen, Glanz an. */
+      s.endTs = 0; s.fehler = false;
+      if (s.el){
+        s.el.classList.remove('is-done', 'is-fehler', 'is-cold');
+        s.el.removeAttribute('data-tip');
+        var t = s.el.querySelector('.am-run-txt'); if (t) t.classList.add('up-glanz');
+      }
+    }
+    if (r.el) r.el.classList.remove('is-done');
+    runZahlSetzen(s);
   }
   function runSchrittFertig(s){
     var el = s.el; if (!el) return;
@@ -4309,7 +4519,7 @@
     if (_runQT && !sofort) return;
     while (_runQ.length && RUN.live){
       var e = _runQ[0];
-      if (!sofort && e.typ === 'start' && (RUN.neueRunde || !RUN.runden.length) && RUN.runden.length){
+      if (!sofort && e.typ === 'start' && (RUN.neueRunde || !RUN.runden.length) && RUN.runden.length && !runZusammen(e.name)){
         var warte = _KERN.laufWarten(_runRundeTs);
         if (warte > 0){
           _runQT = setTimeout(function(){ _runQT = null; runDrain(); }, warte);
@@ -4333,6 +4543,8 @@
       /* Text vor einem Werkzeug (das Modell schreibt kurz und ruft dann doch noch etwas): das Protokoll
          geht wieder auf, die Schreibzeile gilt nicht mehr. */
       if (RUN.phase){ RUN.phase = ''; runPhaseZeigen(box); }
+      var zus = runZusammen(e.name);
+      if (zus){ RUN.neueRunde = false; runGliedDazu(zus.r, zus.s, e.id); runDenkenSetzen(box); return; }
       var r = RUN.runden[RUN.runden.length - 1];
       if (RUN.neueRunde || !r){
         r = { schritte: [], shown: false, el: null };
@@ -4344,7 +4556,10 @@
           runReveal(r);
         }
       }
-      var s = { id: e.id, name: e.name, text: runSatz(e.name), endTs: 0, fehler: false, el: null, shown: false };
+      var gleich = null;
+      r.schritte.forEach(function(x){ if (x.name === e.name) gleich = x; });
+      if (gleich){ runGliedDazu(r, gleich, e.id); runDenkenSetzen(box); return; }
+      var s = { id: e.id, ids: [e.id], offen: 1, fehlerN: 0, name: e.name, text: runSatz(e.name), endTs: 0, fehler: false, el: null, shown: false };
       r.schritte.push(s);
       if (r.el){
         r.el.classList.remove('is-done');
@@ -4358,8 +4573,11 @@
     if (e.typ === 'ende' || e.typ === 'fehler'){
       var f = runFinde(e.id);
       if (!f || f.s.endTs) return;
+      if (e.typ === 'fehler') f.s.fehlerN = (f.s.fehlerN || 0) + 1;
+      f.s.offen = Math.max(0, (f.s.offen || 1) - 1);
+      if (f.s.offen > 0) return;
       f.s.endTs = Date.now();
-      f.s.fehler = (e.typ === 'fehler');
+      f.s.fehler = (f.s.fehlerN || 0) > 0;
       runSchrittFertig(f.s);
       if (f.r.el && f.r.schritte.every(function(x){ return x.endTs; })) f.r.el.classList.add('is-done');
       runDenkenSetzen(box);
@@ -8366,14 +8584,66 @@
      die fertige Antwort (blkAusText, blkHtml) -- beim Abschluss tauscht sich darum nur der Rahmen, der
      Text springt nicht. Gezeichnet wird hoechstens alle 120 ms (ein Teil kommt alle paar ms).
      Die fertige Antwort (askMiraStreamFertig) geht ueber askMiraSetMessages wie jede andere -- mit
-     ihrer Kennung als schon getippt markiert, sie wurde ja schon gelesen. */
-  var LIVE = { chat: '', amid: '', text: '', refs: {}, charts: {}, el: null, uhr: 0, gezeichnet: '' };
-  var LIVE_TAKT = 120;
+     ihrer Kennung als schon getippt markiert, sie wurde ja schon gelesen.
+     GETIPPT (Lukas 23.10.: "Die Tipp-Animation ist weg, der Text kommt in Bloecken. Bis etwa 1 s
+     Verzoegerung ist in Ordnung, Hauptsache es laeuft glatt"): das Modell liefert in Schueben. LIVE.ziel ist
+     alles Empfangene, LIVE.text das Gezeigte; alle LIVE_TIPP ms kommt ein Stueck dazu, so gross, dass der
+     Rueckstand in LIVE_AUFHOL ms aufgeholt ist (also langsamer, je naeher am Ende), mindestens ein Wort. Ein
+     Schub von 300 Zeichen laeuft so in rund 0,8 s ein statt auf einen Schlag. Geschnitten wird nur an
+     Wortgrenzen und nie in einem Link, einer Hervorhebung, Fettschrift oder einer halben Tabellenzeile. */
+  var LIVE = { chat: '', amid: '', text: '', ziel: '', refs: {}, charts: {}, el: null, uhr: 0, tipp: 0, gezeichnet: '' };
+  var LIVE_TAKT = 120, LIVE_TIPP = 50, LIVE_AUFHOL = 800, LIVE_EILIG = 200;
   function liveReset(){
     if (LIVE.uhr) clearTimeout(LIVE.uhr);
+    if (LIVE.tipp) clearTimeout(LIVE.tipp);
     if (LIVE.el && LIVE.el.parentNode) LIVE.el.parentNode.removeChild(LIVE.el);
-    LIVE = { chat: '', amid: '', text: '', refs: {}, charts: {}, el: null, uhr: 0, gezeichnet: '' };
+    LIVE = { chat: '', amid: '', text: '', ziel: '', refs: {}, charts: {}, el: null, uhr: 0, tipp: 0, gezeichnet: '' };
   }
+  /* Bis wohin gezeigt werden darf: Wortende hinter n, aber nie mitten in einem Konstrukt, das der Renderer
+     erst vollstaendig erkennt (sonst stuende kurz "[Anfragenfluss](re" da und spraenge danach zum Chip). */
+  function liveSchnitt(z, n){
+    /* Auch am Ende des bisher Empfangenen: ein Link, der erst halb da ist, wartet auf seinen Rest. */
+    var ws = n < z.length ? /\s/.exec(z.slice(n)) : null;
+    var s = z.slice(0, ws ? n + ws.index : z.length);
+    var zl = s.lastIndexOf('\n'), zeile = s.slice(zl + 1);
+    /* Tabellenzeile, Chart-Stelle, Codezaun: die Zeile erst, wenn sie fertig ist. */
+    if (/^\s*(\||\[\[chart|```)/.test(zeile)) return s.slice(0, zl + 1);
+    var offen = zeile.lastIndexOf('[');
+    if (offen >= 0 && zeile.indexOf(')', offen) < 0){
+      var ab = zl + 1 + offen, rest = z.slice(ab);
+      var l = /^\[[^\]\n]{0,300}\]\([^)\s]{0,2000}\)/.exec(rest);
+      if (l) s = z.slice(0, Math.max(s.length, ab + l[0].length));
+      else if (/^\[[^\]\n]{0,300}(\](\([^)\s]*)?)?$/.test(rest)) return s.slice(0, ab);
+      zl = s.lastIndexOf('\n'); zeile = s.slice(zl + 1);
+    }
+    if (((zeile.match(/\*\*/g) || []).length) % 2){
+      var fz = z.indexOf('**', s.length), fn = z.indexOf('\n', s.length);
+      if (fz >= 0 && (fn < 0 || fz < fn)) s = z.slice(0, fz + 2); else return s.slice(0, zl + 1 + zeile.lastIndexOf('**'));
+      zl = s.lastIndexOf('\n'); zeile = s.slice(zl + 1);
+    }
+    var h = /\{([+\-~?])[^{}\n]*$/.exec(zeile);
+    if (h && zeile.indexOf(h[1] + '}', h.index + 2) < 0){
+      var hz = z.indexOf(h[1] + '}', s.length), hn = z.indexOf('\n', s.length);
+      if (hz >= 0 && (hn < 0 || hz < hn)) s = z.slice(0, hz + 2); else return s.slice(0, zl + 1 + h.index);
+    }
+    return s;
+  }
+  function liveTippen(){
+    LIVE.tipp = 0;
+    if (!S.isLoading && !LIVE.danach) return;
+    var z = LIVE.ziel, n = LIVE.text.length;
+    if (n < z.length){
+      var rest = z.length - n;
+      var schritt = Math.max(1, Math.ceil(rest * LIVE_TIPP / (LIVE.danach ? LIVE_EILIG : LIVE_AUFHOL)));
+      if (LIVE.sofortBis && Date.now() < LIVE.sofortBis) schritt = rest;
+      var neu = liveSchnitt(z, n + schritt);
+      /* Steht der Schnitt vor einem Konstrukt, das noch kommt, bleibt der Text stehen, bis es da ist. */
+      if (neu.length > n){ LIVE.text = neu; liveZeichnen(); }
+    }
+    if (LIVE.text.length < LIVE.ziel.length) { LIVE.tipp = setTimeout(liveTippen, LIVE_TIPP); return; }
+    if (LIVE.danach){ var f = LIVE.danach; LIVE.danach = null; f(); }
+  }
+  function liveTippenPlanen(){ if (!LIVE.tipp) LIVE.tipp = setTimeout(liveTippen, LIVE.text ? LIVE_TIPP : 0); }
   function liveHier(chatId){
     var c = String(chatId == null ? '' : chatId);
     return !!c && c === String(S.activeChatId || '');
@@ -8406,6 +8676,14 @@
       LIVE.folgt = true;
       var lr = LIVE.el.getBoundingClientRect(), cr = elChat.getBoundingClientRect();
       if (lr.top < cr.bottom && lr.bottom > cr.top){ _anchorForTyping(LIVE.el); setTimeout(function(){ if (S.isLoading && LIVE.el) _startStick(); }, 430); }
+      else {
+        /* Der Nutzer liest weiter oben (gemeldet 23.10.: "New message" fehlte, "war vorher drin"): wie beim
+           Tippen der alten Antworten die Ansicht halten und unten "New Message" zeigen, solange keine Zeile
+           der Antwort im Bild ist. */
+        var lm = LIVE.el.closest ? LIVE.el.closest('.am-msg') : null;
+        _holdScroll();
+        if (_msgFullyBelow(LIVE.el)) _bumpNewBadge(lm || LIVE.el);
+      }
     }
   }
   function livePlanen(){ if (!LIVE.uhr) LIVE.uhr = setTimeout(liveZeichnen, LIVE_TAKT); }
@@ -8429,9 +8707,12 @@
   window.askMiraStreamText = function(chatId, amid, text){
     if (!S.isLoading || !liveHier(chatId)) return;
     LIVE.chat = String(chatId); if (amid) LIVE.amid = String(amid);
-    LIVE.text = String(text == null ? '' : text);
+    var z = String(text == null ? '' : text);
+    /* Neue Runde (die Seite setzt den Text je Schritt zurueck): von vorn. */
+    if (z.slice(0, LIVE.text.length) !== LIVE.text) LIVE.text = '';
+    LIVE.ziel = z;
     stummUhrStellen();
-    livePlanen();
+    liveTippenPlanen();
   };
   window.askMiraStreamRefs = function(chatId, amid, items){
     items = liveArg(items);
@@ -8451,6 +8732,8 @@
     liveReset();
     LIVE.chat = String(chatId); LIVE.amid = String(amid || '');
     if (LIVE.amid) _typedKeys['id:' + LIVE.amid] = true;
+    /* Der Puffer kommt in einem Zug: was schon geschrieben war, steht sofort da, getippt wird erst das Neue. */
+    LIVE.sofortBis = Date.now() + 400;
     if (!S.isLoading) setLoading(true);
   };
   /* Das gepruefte Ergebnis (data-mira): Bloecke, Text, Bezuege, Folgefragen, Dauer. */
@@ -8458,6 +8741,16 @@
     erg = liveArg(erg);
     if (!erg || typeof erg !== 'object' || !amid){ return; }
     if (!liveHier(chatId)){ if (LIVE.amid === String(amid)) liveReset(); return; }
+    /* Steht noch Getipptes aus, erst das in LIVE_EILIG zu Ende tippen, dann die fertige Antwort: sonst kaeme
+       der Rest auf einen Schlag. Hoechstens 600 ms, dann ohnehin. */
+    if (LIVE.el && LIVE.text.length < LIVE.ziel.length && !LIVE.danachVon){
+      var args = arguments, self = this;
+      LIVE.danachVon = String(amid);
+      LIVE.danach = function(){ if (LIVE.notUhr) clearTimeout(LIVE.notUhr); window.askMiraStreamFertig.apply(self, args); };
+      LIVE.notUhr = setTimeout(function(){ if (LIVE.danach){ var f = LIVE.danach; LIVE.danach = null; f(); } }, 600);
+      liveTippenPlanen();
+      return;
+    }
     var bloecke = Array.isArray(erg.bloecke) && erg.bloecke.length ? erg.bloecke : blkAusText(String(erg.text || ''), LIVE.charts);
     var text = String(erg.text || '').replace(/\[([^\]\n]{1,300})\]\(ref:[a-z]\d{1,5}\)/g, '$1').replace(/^\s*\[\[chart:c\d+\]\]\s*$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
     var fq = Array.isArray(erg.folgefragen) ? erg.folgefragen : [];
@@ -8476,6 +8769,8 @@
     _stopStick();
     _scrollHalten = true;
     window.askMiraSetMessages(liste, chatId);
+    /* Ist der Nutzer erst nach dem Anfang der Antwort nach oben gegangen, stand die Marke noch nicht da. */
+    if (!_atBottom(130)) _neueAntwortMelden();
   };
   /* Der Lauf ist gescheitert (Fehlerteil im Stream). Die DB meldet dasselbe gleich ueber Realtime
      (mira_message_error) -- die Kennung gilt darum schon als gesehen, sonst stuende der Satz zweimal. */
@@ -11196,14 +11491,40 @@
 
     /* Die Vorschau steht auf der Hoehe des ueberfahrenen Strichs -- nicht mittig zur Leiste.
        Sonst waendert das Auge zwischen zwei Orten, und bei zwanzig Strichen ist das weit. */
+    /* EIN KASTEN, DER GLEITET (Lukas 23.10.: "so glatt wie im Filter-Dropdown -- ein Container bleibt die ganze
+       Zeit und aendert nur Groesse, Lage und Inhalt"). Dasselbe Verfahren wie die Schale in UC.makeSubmenu: beim
+       Wechsel von Strich zu Strich alte Hoehe einfrieren, neue messen, beide setzen -- top und height laufen per
+       Uebergang (ask-mira.css). Beim ersten Aufgehen steht der Kasten sofort an seinem Platz, nur das Einblenden
+       laeuft; sonst rutschte er von der letzten Lage herein. */
+    var vorUhr = 0;
     function vorschauZeigen(idx){
       var u = items[idx]; if (!u) return;
       var tk = ticks.children[idx]; if (!tk) return;
+      var offen = nav.classList.contains('is-vorschau');
+      var altH = offen ? vor.offsetHeight : 0;
       elFrage.textContent = u.frage;
       elAntwort.textContent = u.antwort;
       elAntwort.style.display = u.antwort ? '' : 'none';
       var tr = tk.getBoundingClientRect(), nr = nav.getBoundingClientRect();
-      vor.style.top = Math.round(tr.top - nr.top + tr.height / 2) + 'px';
+      var top = Math.round(tr.top - nr.top + tr.height / 2) + 'px';
+      clearTimeout(vorUhr);
+      if (!altH){
+        vor.style.height = '';
+        vor.style.transitionProperty = 'opacity, transform';
+        vor.style.top = top;
+        void vor.offsetHeight;
+        vor.style.transitionProperty = '';
+      } else {
+        vor.style.top = top;
+        vor.style.height = 'auto';
+        var neuH = vor.offsetHeight;
+        if (neuH !== altH){
+          vor.style.height = altH + 'px';
+          void vor.offsetHeight;
+          vor.style.height = neuH + 'px';
+          vorUhr = setTimeout(function(){ vor.style.height = ''; }, 260);
+        } else vor.style.height = '';
+      }
       nav.classList.add('is-vorschau');
     }
     function vorschauAus(){ nav.classList.remove('is-vorschau'); }

@@ -2261,10 +2261,10 @@ upstreem-app `lib/mira/bloecke.ts`) und werden in **dieselben Formen** gezeichne
 | Block | Gezeichnet als | Wo |
 |---|---|---|
 | Text (Markdown) | Absätze, Listen, ganz fette Zeile als Überschrift (`promoteStrongHeadings`); Bezug `[Label](ref:b2)` als `span[data-mira-entity-type]` → `decorateEntitySpans` (Chip, Drawer, URL-Popover wie bisher); Logos für Bezüge des neuen Wegs aus dem Marken-Store bzw. `UC.faviconUrl` | `blkMd`, `blkInline`, `blkItems` |
-| Tabelle | `.am-table-scroll` mit `<table>` (waagerecht scrollbar); Zahlenspalten (drei von vier Zellen Zahlen) rechtsbündig samt Kopf (`.am-zahl`) | `blkTabelle` |
+| Tabelle | `.am-table-scroll` mit `<table>` (waagerecht scrollbar); Zahlenspalten (drei von vier Zellen Zahlen) rechtsbündig samt Kopf (`.am-zahl`). **Ein Rand** (23.10.): Rand, Radius 12 und Grund trägt der Kasten, die Tabelle darin keinen (vorher zwei Ränder mit 8 und 12) | `blkTabelle` |
 | Erklärkarte | `.am-karte`: Kopf 32 hoch, Titel 12/500 links, Kopieren rechts (der Knopf der Antwort, `.am-act-btn`), Text darunter | `blkKarte` |
 | Chart | `.am-chart` mit den Bausteinen aus core: Linie `makeLine` (Legende `.up-legend`, unter 500 Breite aus wie überall), Balken `makeBarList`, Ring `makeTypeChart`. Der Knoten bleibt über jedes Neuzeichnen der Liste (`_blkCharts`), ein Chart aus dem Lauf wird zum Chart der fertigen Antwort | `blkChartBauen`, `blkChartsEinhaengen` |
-| Aktionskarte | `.am-akt` in allen Zuständen nach upstreem-app `mira/AKTIONSKARTE.md` (Start/Rückgängig über die Seite an `/api/mira/aktion`) | `blkAktion`, `askMiraActionCard` |
+| Aktionskarte | `.am-akt` nach upstreem-app `mira/AKTIONSKARTE.md` (Start/Rückgängig über die Seite an `/api/mira/aktion`). Vorgeschlagen: Karte mit Zeichen der Ansicht (wie die Seitenleiste: Page Audit `dna01`, Prompt Research `telescope`), Ziel, Grund, Kosten, Knopf. **Ab dem Start ein Laufstreifen** (23.10., Lukas: „technischer, wie der Laufstreifen in Prompt Research bzw. der Lauf-Kasten in Page Audit“): Punkt 8 in der Statusfarbe (läuft `--vt-warn-flaeche`, fertig `--vt-up-flaeche`, gescheitert `--vt-down-flaeche`, sonst grau), Ring aus core solange sie läuft, Zustand („Page Audit completed“) und Ziel, rechts der Weg zum Ergebnis bzw. „Undo“; kein Grundtext. Maße 1:1 aus `.upa-lb` (48 hoch, Polster 7/8/7/16, Abstand 12). Eine Opportunity-Karte darunter nur mit Daten (sonst stand eine leere mit „?“) | `blkAktion`, `blkStreifen`, `askMiraActionCard` |
 | Hervorhebung | `{+…+}` positiv, `{-…-}` negativ, `{~…~}` wahrscheinliche Quelle, `{?…?}` unklar: dieselben Spans und Farben wie im alten HTML | `BLK_HL` |
 
 **Live:** Text, Bezüge und Charts kommen während des Laufs über die Seite (`askMiraStreamText`,
@@ -2273,6 +2273,17 @@ derselbe Renderer). Der Abschluss (`askMiraStreamFertig`) geht über `askMiraSet
 und ohne Sprung (gemessen 4 px). Nach Neuladen hängt sich die Seite an einen laufenden Lauf
 (`GET /api/mira?resume=…`, nur auf derselben Server-Instanz; sonst Realtime wie bisher).
 Antworten des neuen Wegs tragen keine Daumen (Plan, „bewusst nicht übernommen“).
+
+**Seit 23.10. (Runde nach Lukas' Test):** Der Live-Text wird **getippt**: Empfangenes (`LIVE.ziel`) läuft
+alle 50 ms um so viel nach, dass der Rückstand in 0,8 s aufgeholt ist (mindestens ein Wort), geschnitten nur an
+Wortgrenzen und nie in einem Link, einer Hervorhebung, Fettschrift oder halben Tabellenzeile (`liveSchnitt`);
+der Abschluss wartet, bis das Getippte da ist (höchstens 600 ms). Liest der Nutzer weiter oben, hält die
+Ansicht und unten steht „New Message“ wie bei den alten Antworten. Die **Scrollposition** des Chats bleibt über
+einen Ansichtswechsel (`_lage`, Rückkehr über `onViewChange`). Das **Protokoll** fasst gleiche Aufrufe einer
+Runde zu einem Satz mit leiser Zahl zusammen („×8“, `.am-run-n`), eine Runde mit demselben einzelnen Werkzeug
+wie die vorige hängt sich an diese an; jedes Werkzeug hat eigene Sätze (kein „Working on it“ mehr für die neuen).
+Bezug mit Kürzel als Label (`[p10](ref:p10)`) zeigt den Namen (`blkName`, der Server ersetzt es selbst). Die
+Frage des Nutzers steht in 16/500/24, Polster 10/16; Miras Kopfleiste hat links 32 Polster.
 
 ---
 
