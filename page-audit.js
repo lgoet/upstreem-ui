@@ -1494,14 +1494,16 @@
         '</div>';
       menuesVerdrahten(d);
     }
-    /* Der Agent bekommt das gezeigte Audit als Bezug (Seite und Lauf) und eine Frage in der Sprache der Oberflaeche; die
-       Antwort beginnt sofort (UC.agentFragen in core, askMiraOpen in ask-mira.js). */
+    /* Der Agent bekommt das gezeigte Audit als Bezug (Seite, Lauf und dessen Zeitpunkt) und eine Frage in der Sprache der
+       Oberflaeche; die Antwort beginnt sofort (UC.agentFragen in core, askMiraOpen in ask-mira.js). Der Zeitpunkt, weil es je
+       Seite mehrere Laeufe gibt, auch mehrere am Tag (Lukas 23.10.: "das Audit-Datum mitgeben, und zwar genau"). */
     function agentFragen() {
       var d = dasDetail();
       if (!d || !d.page || !d.selected || !d.selected.run || !UC.agentFragen) return;
       UC.agentFragen({
         frage: t("Put this Page Audit in context: what matters most, how serious is it, and what should I do first? Explain it in plain words."),
-        bezuege: [{ type: "page_audit", id: d.page.id, run_id: d.selected.run.id, name: d.page.fetchUrl || d.page.url || "" }]
+        bezuege: [{ type: "page_audit", id: d.page.id, run_id: d.selected.run.id,
+          run_at: d.selected.run.finishedAt || d.selected.run.startedAt || "", name: d.page.fetchUrl || d.page.url || "" }]
       });
     }
     var planPop = null, mehrPop = null;

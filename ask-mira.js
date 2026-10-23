@@ -6568,13 +6568,22 @@
      arbeitet: Marke und Prompt tragen ihre UID, Domain und URL sind selbst der Schluessel
      (die primaeren Schluessel dieser beiden Tabellen). Genau diese Zuordnung nimmt auch die
      Palette, wenn sie eine Zeile an Bubble meldet -- eine Quelle, kein zweites Verzeichnis. */
+  /* Zeitpunkt eines Laufs in Berliner Zeit, in der Form der Werkzeugdaten ("2026-10-23 10:17", upstreem-app werkzeuge.ts
+     berlin): so findet der Agent den Lauf in runs wieder. Leer, wenn keiner da ist. */
+  function berlinZeit(x){
+    var t = Date.parse(String(x || ''));
+    if (!isFinite(t)) return '';
+    try { return new Date(t).toLocaleString('sv-SE', { timeZone: 'Europe/Berlin' }).slice(0, 16); } catch(e){ return ''; }
+  }
   function picksRefs(){
     var UCg = window.UpstreemCore;
     return _picks.slice(0, 3).map(function(it){
       var label = (UCg && UCg.entityLabel) ? String(UCg.entityLabel(it) || '') : '';
-      /* Beim Page Audit der gezeigte Lauf dazu: page_audit_detail braucht page_id UND run_id, sonst nimmt es den neuesten. */
-      if (String(it.type) === 'page_audit' && it.run_id) label += ' (run_id ' + String(it.run_id) + ')';
-      return { type: String(it.type), id: String(pickKennung(it) || ''), label: label };
+      var r = { type: String(it.type), id: String(pickKennung(it) || ''), label: label };
+      /* Beim Page Audit der gezeigte Lauf und sein Zeitpunkt als eigene Felder (23.10.): page_audit_detail braucht page_id UND
+         run_id, sonst nimmt es den neuesten -- im Etikett hat der Agent die Kennung uebergangen (gemessen: Aufruf nur mit page_id). */
+      if (r.type === 'page_audit' && it.run_id){ r.run_id = String(it.run_id); if (it.run_at) r.run_at = String(it.run_at); }
+      return r;
     }).filter(function(r){ return r.type && r.id; });
   }
   function picksText(){
@@ -6587,8 +6596,9 @@
       if (t === 'prompt') return '- Prompt: "' + name + '" (uid: ' + id + ')';
       if (t === 'domain') return '- Domain: ' + id;
       if (t === 'url')    return '- URL: ' + id + (name && name !== id ? ' (' + name + ')' : '');
-      /* Nur die Adresse: Seite und Lauf gehen strukturiert mit (references), die Kennungen standen sonst lesbar in der Frage. */
-      if (t === 'page_audit') return '- Page Audit: ' + name;
+      /* Adresse und genauer Zeitpunkt des Laufs (je Seite gibt es mehrere, auch am selben Tag); die Kennungen gehen strukturiert
+         mit (references) und stehen nicht lesbar in der Frage. */
+      if (t === 'page_audit'){ var wann = berlinZeit(it.run_at); return '- Page Audit: ' + name + (wann ? ' (audit of ' + wann + ', Berlin time)' : ''); }
       return '- ' + t + ': ' + id;
     });
     return 'Context:\n' + zeilen.join('\n');
