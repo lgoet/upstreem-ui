@@ -2316,6 +2316,26 @@ Frage des Nutzers steht in 16/500/24, Polster 10/16; Miras Kopfleiste hat links 
 
 ---
 
+## 9d. Startseite des Agents: Kategorien als Knöpfe, ein Kasten darunter (seit 23.10.)
+
+Gewählt im Canvas „Agent Startseite: Kartenbereich“ (Variante C, Lukas: „die Knöpfe. C. aber bitte das
+Aus- und Einklappen der Container dahinter mit 200 ms ease Animation, wie alles andere“).
+
+- Unter der Begrüßung stehen die Kategorien als **Sekundärknöpfe aus core** (`.up-btn-sec.am-cat-chip`,
+  32 hoch, 13, Zeichen 14), Reporting zuerst. Fläche `--up-feld-bg`, gewählt `--up-wahl-bg` wie ein
+  gedrückter Knopf; `aria-expanded` und `aria-controls="am-cat-panel"`.
+- Erst ein Klick öffnet darunter **einen** Kasten (`.up-box.am-cat-box`, 12 Abstand): Kopf 48 mit Titel
+  (Abschnitt 16/600), bei Reporting rechts Topics und Zeitraum. Berichte als Zeilen 55 hoch (Zeichenkachel
+  32, Titel 14/500, Unterzeile 13), Fragen als Zeilen 40 in Gruppen (Etikett 12/500); Linie zwischen den
+  Zeilen, Zeichen nur beim Überfahren, Stift zum Bearbeiten nach dem Verweilen wie bisher.
+- Derselbe Knopf schließt, ein anderer wechselt. **Bewegt wird nur der Kasten** (`#am-cat-panel`), 200 ms
+  ease: auf = Höhe 0 → Inhalt und Deckkraft 0 → 1; zu = Höhe → 0 und Deckkraft → 0, der Inhalt geht erst
+  am Ende raus; Wechsel = Höhe alt → neu, nur das Innere (`.am-cat-boxin`) blendet ein, Rahmen und Fläche
+  bleiben stehen (`renderGallery`, `galKnoepfe`, `galInhalt` in ask-mira.js).
+- Am Telefon dieselben Knöpfe (umbrechend) statt der vier Schnellfragen (`#am-quick` ist aus).
+- Kein Zurück-Pfeil, keine Unterseite, keine Kopfzeile „Explore categories“ mehr; die alten Klassen
+  (`.am-cat-card`, `.am-gallery-back` …) stehen nur noch für den Vertrag (`display: none`).
+
 ## 10. Layout-Verhalten (Responsive)
 
 ### Kopfzeile: 64px Mindestabstand, gemessen statt geraten

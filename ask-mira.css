@@ -1178,141 +1178,52 @@
   .am-suggest-chev { flex: 0 0 auto; display: grid; place-items: center; color: var(--am-muted-2); }
   .am-suggest-chev svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-  /* ===== Question Gallery (clickable topic menu) ===== */
-  .am-cat-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
-  /* KEIN RAHMEN MEHR, nur eine ganz leise Fuellung (08.09. angefordert). Der Ton ist die
-     leiseste Sprosse, die die Leiter je Thema UEBER dem Seitengrund hat -- und er muss eine
-     Sprosse unter dem Hover liegen, sonst waere der Hover weg: der lag bisher auf
-     --vt-row-hover-solid, also genau auf dem Ton, der jetzt der RUHEZUSTAND ist.
-     ZWEITE FASSUNG (08.09.): hell eine Sprosse KRAEFTIGER, dunkel nur HALBE Deckkraft.
-     Die zwei Themen laufen hier auseinander, und das ist so gewollt -- auf Weiss war die erste
-     Fassung zu leise, im Dunkeln zu praesent.
-         hell    Seite #ffffff -> Karte --up-sel-bg   -> Hover --vc-sk
-         dunkel  Seite #121212 -> Karte --vc-bg zu 50% -> Hover --vc-bg voll
-     Die halbe Deckkraft und nicht ein eigener Hexwert: so bleibt es EIN Ton der Leiter, nur
-     halb aufgetragen -- und der Hover ist dann genau derselbe Ton voll. Ein Verhaeltnis, das
-     man erklaeren kann, statt zweier Zahlen, die zufaellig zueinander passen.
-     Hinter den Karten liegt kein Bild mehr, nur das feine 44px-Raster der Schale mit
-     Deckkraft 0.5 -- das schimmert durch die halbdurchsichtige Karte, und genau so ist es
-     gemeint. Die Zahlen stehen gemessen im Kommentar am Hover. */
-  .am-cat-card {
-    position: relative; overflow: hidden;
-    text-align: left; border-radius: var(--up-r-2xl);
-    /* 20.10.: der normale Rahmen (--vc-border) und der Grund der Karte (--am-card = --vc-bg, hell weiss) -- bis dahin ein halbdurchsichtiger Rahmen eigener Art ohne
-       Grund, und die Kategorie-Karten waren die einzigen Karten der App, die so aussahen. */
-    border: 1px solid var(--vc-border);
-    background: var(--am-card); padding: 13px 14px 13px 60px; cursor: pointer;
-    display: flex; align-items: center; gap: 11px; min-width: 0;
-    color: var(--am-text); font-size: 14px; font-weight: 500; line-height: 1.4;
-    transition: background 200ms ease;
-  }
-  .am-cat-card-full { width: 100%; margin-bottom: 10px; }
-  /* the Reporting category card is styled exactly like a report card (taller, with a subheading) */
-  .am-cat-card-report { padding: 12px 13px 12px 76px; align-items: center; }
-  .am-cat-card-report .am-cat-ic { left: 20px; top: 12px; width: 42px; height: 58px; border-radius: var(--up-r-l); padding-top: 11px; }
-  .am-cat-card-report .am-cat-ic svg { width: 16px; height: 16px; }
-  .am-cat-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-  .am-cat-label { font-size: 14px; font-weight: 600; color: var(--am-text); line-height: 1.2; }
-  .am-cat-desc { font-size: 11px; font-weight: 450; color: var(--am-muted); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  /* Der Hoverzustand des Hauses, wie an jeder Karte der App (.uo-card in opportunities): Rahmen
-     --vc-hover-border, Fuellung --vt-row-hover. Vorher standen hier zwei feste Zahlen, und die
-     dunkle war #2a2a2a DECKEND -- die Marke ist rgba(42,42,42,0.6), auf #121212 also etwa
-     rgb(30,30,30) statt rgb(42,42,42). Genau das war als "zu hell" gemeldet. Mit den Marken
-     braucht es auch keine eigene Zeile je Thema mehr.
-     -solid und nicht --vt-row-hover: der Wert ohne Suffix ist rgba(42,42,42,0.6), also
-     DURCHSICHTIG. Auf dem Startschirm liegt hinter den Karten das Hintergrundbild, und beim Hover
-     schien dessen Raster durch -- die Karte verlor ihren Boden. -solid ist derselbe Ton als voller
-     Wert und liegt vier Stufen daneben (36 statt 32 im Dunkeln), was niemand sieht. */
-  /* Der Hover: hell die naechste Sprosse, dunkel derselbe Ton VOLL statt halb. */
-  /* DER GETEILTE HOVER UNFARBIGER CONTAINER AUS CORE: --vc-heading-bg. Denselben Ton tragen
-     dort .up-iconbtn, .up-quietbtn, .up-filter-item, .up-page und .up-btn-sec -- ein Klickziel
-     ohne eigene Farbe sieht damit ueberall gleich aus.
-     Die alten Werte (--vc-sk hell, --vc-bg dunkel) stammten aus der Zeit, als die Karte im
-     Ruhezustand selbst einen Grund hatte: der Hover war die naechste Sprosse ueber diesem
-     Grund. Seit die Karte durchsichtig ist, springt derselbe Wert vom Nichts direkt auf einen
-     kraeftigen Ton -- gemessen im Hellen 17 Stufen gegen Weiss, wo der geteilte Ton 6 macht.
-     NUR DER GRUND. Die Kernregeln setzen daneben oft color und border-color; beides bleibt
-     hier, wo es ist -- ausdruecklich so verlangt.
+  /* ===== Question Gallery: Knoepfe und ein Kasten (23.10., Canvas Variante C) =====
+     Die Kategorien als Sekundaerknoepfe aus core (.up-btn-sec, 32 hoch, Radius 6), darunter EIN
+     Kasten (.up-box: Rand, Flaeche, Radius 12 wie die Karten der Hauptseite) mit der Liste der
+     gewaehlten Kategorie. Auf- und zuklappen macht ask-mira.js (renderGallery, 200ms ease).
+     Die Knoepfe tragen die Feldflaeche (--up-feld-bg) statt core-transparent: sie stehen auf dem
+     grauen Grund der Seite und waeren sonst nur ein Rahmen ohne Boden. Gewaehlt: der Gewaehlt-Ton
+     der Navigation (--up-wahl-bg), wie ein gedrueckter Knopf ueberall in der App. */
+  #ask-mira .am-cat-reihe { display: flex; flex-wrap: wrap; gap: 8px; }
+  #ask-mira .am-cat-chip { font-size: var(--up-fs-m); background: var(--up-feld-bg); }
+  #ask-mira .am-cat-chip:hover { background: var(--up-knopf-hover); }
+  #ask-mira .am-cat-chip.is-gewaehlt { background: var(--up-wahl-bg); }
+  #ask-mira .am-cat-chip svg { flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; color: var(--vc-muted); }
+  #ask-mira .am-cat-chip.is-gewaehlt svg { color: var(--vc-text); }
+  /* 12 Luft ueber dem Kasten sitzen IM bewegten Element, damit zugeklappt nichts davon uebrig bleibt. */
+  #ask-mira .am-cat-panelin { padding-top: 12px; }
+  #ask-mira .am-cat-panelin:empty { padding-top: 0; }
+  /* Kopf des Kastens: 48 hoch, Titel als Abschnitt (16/600), rechts Topics und Zeitraum. */
+  #ask-mira .am-cat-kopf { display: flex; align-items: center; gap: 8px; min-height: 48px; box-sizing: border-box;
+    padding: 8px 12px 8px 16px; border-bottom: 1px solid var(--vc-border); }
+  #ask-mira .am-cat-titel { margin: 0; }
 
-     WARUM IM DUNKELN EIN MIX UND NICHT DERSELBE TON: der geteilte Hover ist in core eine
-     BEZIEHUNG und keine Farbe -- --vc-heading-bg liegt dort auf --vc-bg und ist gemessen 7
-     Kanalstufen darueber. Miras Seite ist mit --am-bg #101114 dunkler als #1c1c1f, und der
-     nackte Ton macht auf ihr 19 Stufen: fast das Dreifache der geteilten Beziehung und
-     kraeftiger als die 12, die vorher zu stark waren. Hell trifft es von allein (#f9f8f9 auf
-     Weiss sind ebenfalls 7). Im Dunkeln bringt derselbe Ton auf 40 Prozent genau diese
-     Beziehung zurueck: gemessen 8 Stufen. Eine Farbe waere hier ein zweiter Wert, der
-     auseinanderlaufen kann -- der Mix bleibt an demselben Token haengen. */
-  .am-cat-card:hover { background: var(--vc-heading-bg); }
-  #ask-mira[data-theme="dark"] .am-cat-card:hover {
-    background: color-mix(in srgb, var(--vc-heading-bg) 40%, var(--am-card));
-  }
-  /* leading = a left-tilted little "document" tile, larger than the row so it bleeds past the bottom
-     and is clipped by the card (same logic as the report cards); absolute -> no extra card height */
-  .am-cat-ic {
-    position: absolute; left: 15px; top: 8px;
-    width: 34px; height: 46px; border-radius: var(--up-r-l);
-    display: flex; align-items: flex-start; justify-content: center; padding-top: 8px;
-    background: var(--am-card); border: 1px solid var(--am-border); color: var(--am-muted);
-    /* Ruht auf der Karte: e-1. Beim Ueberfahren hebt sie sich: e-2 (28.09.; vorher zwei eigene
-       Werte, 0 1px 4px und 0 3px 9px, mit Blaustich). */
-    box-shadow: var(--up-e-1);
-    transform: rotate(-8deg);
-    transition: transform 200ms cubic-bezier(.2,.8,.3,1), box-shadow 200ms ease, color 120ms ease;
-  }
-  /* Hell nur die Chip-Tiefe beim Ueberfahren (05.10.: "den Schatten der angeschraegten Elemente
-     stark reduzieren") -- e-2 ist der Schatten eines aufgeklappten Menues und lag wie eine Wolke
-     unter der kleinen Kachel. Dunkel bleibt e-2 (eigene Regel unten), dort traegt er kaum. */
-  .am-cat-card:hover .am-cat-ic { transform: rotate(-4deg) scale(1.02); box-shadow: var(--up-e-chip); color: var(--am-text); }
-  .am-cat-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-  .am-cat-name { flex: 1 1 auto; min-width: 0; }
-  /* Dunkel nach Geist (15.10.): die Kachel traegt dieselben Marken wie hell (--am-card mit
-     --am-border, also Background 1 mit Gray 400) -- vorher ein eigener Ton (42/42/42 zu 30 %) mit
-     Linears #28282c als Rand. Dunkel bleibt nur die Tiefe e-2 beim Ueberfahren. */
-  #ask-mira[data-theme="dark"] .am-cat-card:hover .am-cat-ic { color: var(--am-text); box-shadow: var(--up-e-2); }
-  /* Das Chevron rueckt beim Ueberfahren 4px nach rechts. transform und nicht margin: ein
-     transform laesst den Browser nicht neu umbrechen, die Karte darum bleibt also ruhig.
-     Der Uebergang steht in DIESER Regel und nicht in einer weiter oben: zwei Regeln mit
-     gleicher Spezifitaet entscheidet die Ladereihenfolge, und darauf darf hier nichts
-     beruhen. */
-  .am-cat-chev { flex: 0 0 auto; display: grid; place-items: center; color: var(--am-muted-2);
-    transition: transform 200ms ease, color 200ms ease; }
-  .am-cat-card:hover .am-cat-chev { transform: translateX(4px); color: var(--am-muted); }
-  .am-cat-chev svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* Seit dem 23.10. nicht mehr gezeichnet (Karten, Zurueck-Pfeil, Unterseitenkopf). Die Namen
+     bleiben fuer den Vertrag stehen, damit eine alte Verdrahtung nichts Fremdes trifft. */
+  .am-cat-grid, .am-cat-card, .am-cat-card-full, .am-cat-card-report, .am-cat-ic, .am-cat-text,
+  .am-cat-label, .am-cat-desc, .am-cat-name, .am-cat-chev, .am-gallery-head, .am-gallery-back,
+  .am-gallery-back-ic, .am-gallery-cat-ic, .am-gallery-cat-title { display: none; }
 
-  .am-gallery-head { display: flex; align-items: center; gap: 16px; margin: 0 0 20px; }
-  .am-gallery-back {
-    height: 32px; padding: 0 11px 0 8px; border: 1px solid var(--am-border); border-radius: var(--up-r-m);
-    background: var(--am-card); color: var(--am-muted); display: inline-flex; align-items: center; gap: 5px;
-    font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; flex: 0 0 auto;
-    transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
-  }
-  .am-gallery-back:hover { background: var(--am-soft); color: var(--am-text); }
-  .am-gallery-back svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  /* Der Zurueck-Knopf traegt in JEDER Kategorie kein Wort mehr, also ist er quadratisch: 24x24,
-     kein Polster, kein Zwischenraum. Radius 8 statt 9 -- auf 24px Kante wirkt 9 fast rund.
-     (Angefangen am 20.09. nur im Reporting-Kopf, wo der Platz knapp ist; noch am selben Tag auf
-     alle uebrigen Kategorien nachgezogen, damit die Kopfzeile ueberall dieselbe ist.) */
-  .am-gallery-back-ic { width: 24px; height: 24px; padding: 0; gap: 0; border-radius: var(--up-r-s); justify-content: center; }
-  .am-gallery-cat-ic { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border-radius: var(--up-r-m); background: var(--am-soft); border: 1px solid var(--am-border); color: var(--am-text); }
-  .am-gallery-cat-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .am-gallery-cat-title { font-size: var(--up-ueb-abschnitt-gr); font-weight: var(--up-ueb-abschnitt-gew); letter-spacing: var(--up-ueb-abschnitt-spur); color: var(--am-text); }
-  .am-gallery-sub { margin-top: 24px; }
-  .am-gallery-sub:first-child { margin-top: 0; }
-  /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
-     Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
-  .am-gallery-subhead { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--am-muted-2); }
-  .am-gallery-prompts { display: flex; flex-direction: column; gap: 2px; }
+  /* Fragen einer Kategorie: Gruppen mit Etikett (Gruppe 12/500), darunter Zeilen 40 hoch mit Linie
+     dazwischen; Zeichen nur beim Ueberfahren. */
+  .am-gallery-sub + .am-gallery-sub { border-top: 1px solid var(--vc-border); }
+  .am-gallery-subhead { margin: 0; padding: 12px 16px 4px; font-size: var(--up-ueb-gruppe-gr); font-weight: var(--up-ueb-gruppe-gew);
+    line-height: var(--up-ueb-gruppe-zeile); color: var(--vc-muted); }
+  .am-gallery-prompts { display: flex; flex-direction: column; }
   .am-gallery-prompt {
     text-align: left; border: 0; background: transparent; cursor: pointer; width: 100%;
-    display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: var(--up-r-m); margin: 0 -10px;
-    color: var(--am-text); font-family: inherit; font-size: 14px; font-weight: 450; line-height: 1.45;
-    transition: none;
+    display: flex; align-items: center; gap: 12px; min-height: var(--up-h-gross); box-sizing: border-box; padding: 8px 16px;
+    color: var(--vc-text); font-family: inherit; font-size: var(--up-fs-l); font-weight: 400; line-height: 20px;
+    transition: background var(--up-t-1) var(--up-ease);
   }
-  .am-gallery-prompt:hover { background: var(--am-soft); }
+  .am-gallery-prompt + .am-gallery-prompt { border-top: 1px solid var(--vc-border); }
+  .am-gallery-prompt:hover { background: var(--vt-row-hover-solid); }
   .am-gallery-prompt > span:first-child { flex: 1 1 auto; min-width: 0; }
-  .am-gallery-prompt-chev { flex: 0 0 auto; display: grid; place-items: center; color: var(--am-muted-2); opacity: 0; }
-  .am-gallery-prompt:hover .am-gallery-prompt-chev { opacity: 1; }
-  .am-gallery-prompt-chev svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .am-gallery-prompt-chev { flex: 0 0 auto; display: grid; place-items: center; color: var(--vc-third); opacity: 0;
+    transform: translateX(-4px); transition: opacity var(--up-t-2) var(--up-ease), transform var(--up-t-2) var(--up-ease); }
+  .am-gallery-prompt:hover .am-gallery-prompt-chev, .am-gallery-prompt:focus-visible .am-gallery-prompt-chev { opacity: 1; transform: none; }
+  .am-gallery-prompt-chev svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
   /* ===================== REPORTING ===================== */
   .am-rep-head { display: flex; align-items: center; gap: 10px; }
@@ -1388,83 +1299,45 @@
   .am-rep-range-sep { height: 1px; background: var(--up-menu-border); margin: 7px 4px; }
   .am-rep-range-lbl { max-width: 132px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  .am-rep-cards { display: flex; flex-direction: column; gap: 7px; margin-top: 14px; }
-  /* .check_reinvention.py meldet diese Regel als moeglichen Nachbau von .up-seg-btn, weil sie
-     background, border, border-radius, cursor und transition zusammen setzt. Sie ist keiner: das
-     ist eine Reportkarte mit einem gekippten Dokumentbild links (76px Einzug dafuer), Titel,
-     Unterzeile und Winkelzeichen -- ein Knopf des Segmentschalters hat davon nichts. Geaendert
-     wurde hier nur die Fuellung und der Hoverzustand, und die kommen jetzt aus den Haus-Marken;
-     die Regel ist damit naeher am Haus als vorher, nicht weiter weg. */
-  /* DIESELBE FASSUNG WIE DIE KATEGORIEKARTEN (08.09.): kein Rahmen, hell eine Sprosse
-     kraeftiger als der Seitengrund, dunkel derselbe Ton zu halber Deckkraft. Sie waren beim
-     ersten Umbau uebersehen worden und standen als einzige Kartenfamilie noch mit Rahmen da --
-     gemeldet als "die Reporting Cards sind alle noch auf dem alten Design".
-     Die Begruendung der Toene steht bei .am-cat-card; hier stehen nur dieselben Werte, damit
-     zwei Kartenfamilien nicht mit zwei Rechnungen auseinanderlaufen. */
+  /* Berichte: Zeilen 55 hoch (--up-h-row) wie in den Tabellen, Linie dazwischen; links die
+     Zeichenkachel 32 (Rand, Feldflaeche, Radius 6), Titel 14/500, Unterzeile 13 in der zweiten
+     Textfarbe. Bis zum 23.10. waren es eigene Karten mit gekipptem Dokumentbild. */
+  .am-rep-cards { display: flex; flex-direction: column; }
   .am-rep-card {
-    position: relative; overflow: hidden;
-    display: flex; align-items: center; gap: 13px; width: 100%; text-align: left;
-    border-radius: var(--up-r-2xl);
-    /* 23.10. (Lukas: "weisser Hintergrund und Rand wie die Karten auf der Hauptseite"): der Rahmen und Grund der
-       Kategoriekarten seit dem 20.10. (--vc-border, --am-card); hier war noch die Fassung davor stehen geblieben,
-       ein halber Rahmen ohne Grund. */
-    border: 1px solid var(--vc-border);
-    background: var(--am-card);
-    padding: 12px 13px 12px 76px; cursor: pointer; font-family: inherit;
-    transition: background 200ms ease;
+    position: relative;
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    min-height: var(--up-h-row); box-sizing: border-box; padding: 8px 16px;
+    border: 0; background: transparent; color: var(--vc-text); cursor: pointer; font-family: inherit;
+    transition: background var(--up-t-1) var(--up-ease);
   }
-  /* Der Hover: hell die naechste Sprosse, dunkel derselbe Ton VOLL statt halb -- wie bei den
-     Kategoriekarten. */
-  /* Derselbe geteilte Hover wie bei den Kategoriekarten, samt der dunklen Fassung -- die
-     Begruendung fuer den Mix steht dort. Die beiden Kartenfamilien muessen gleich reagieren. */
-  .am-rep-card:hover { background: var(--vc-heading-bg); }
-  #ask-mira[data-theme="dark"] .am-rep-card:hover {
-    background: color-mix(in srgb, var(--vc-heading-bg) 40%, var(--am-card));
-  }
-  /* leading element = a left-tilted little "document" card; larger than the row so it bleeds past the
-     bottom edge and is clipped by the card (absolute so it never changes the card height) */
+  .am-rep-card + .am-rep-card { border-top: 1px solid var(--vc-border); }
+  .am-rep-card:hover { background: var(--vt-row-hover-solid); }
   .am-rep-ic {
-    position: absolute; left: 20px; top: 12px;
-    width: 42px; height: 58px; border-radius: var(--up-r-l);
-    display: flex; align-items: flex-start; justify-content: center; padding-top: 11px;
-    background: var(--am-card); border: 1px solid var(--am-border); color: var(--am-muted);
-    /* Wie .am-cat-ic: ruht auf e-1, hebt sich beim Ueberfahren auf e-2 (28.09.). */
-    box-shadow: var(--up-e-1);
-    transform: rotate(-8deg);
-    transition: transform 200ms cubic-bezier(.2,.8,.3,1), box-shadow 200ms ease, color 120ms ease;
+    width: 32px; height: 32px; flex: 0 0 auto; box-sizing: border-box;
+    display: grid; place-items: center;
+    border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--up-feld-bg); color: var(--vc-muted);
   }
-  /* Wie .am-cat-ic: hell nur die Chip-Tiefe beim Ueberfahren (05.10.). */
-  .am-rep-card:hover .am-rep-ic { transform: rotate(-4deg) scale(1.02); box-shadow: var(--up-e-chip); color: var(--am-text); }
-  .am-rep-ic svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-  .am-rep-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-  .am-rep-label { font-size: 14px; font-weight: 600; color: var(--am-text); }
-  .am-rep-desc { font-size: 11px; font-weight: 450; color: var(--am-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  /* 4px und 200ms, wie an den Kategoriekarten -- zwei Kartenfamilien mit zwei verschiedenen
-     Wegen fuer dieselbe Bewegung sieht man sofort. */
-  .am-rep-go { flex: 0 0 auto; display: grid; place-items: center; color: var(--am-muted-2);
-    transition: transform 200ms ease, color 200ms ease; }
-  .am-rep-card:hover .am-rep-go { color: var(--am-muted); transform: translateX(4px); }
+  .am-rep-ic svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .am-rep-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .am-rep-label { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); line-height: 20px; color: var(--vc-text); }
+  .am-rep-desc { font-size: var(--up-fs-m); line-height: 18px; color: var(--vc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .am-rep-go { flex: 0 0 auto; display: grid; place-items: center; color: var(--vc-third); opacity: 0; transform: translateX(-4px);
+    transition: opacity var(--up-t-2) var(--up-ease), transform var(--up-t-2) var(--up-ease); }
+  .am-rep-card:hover .am-rep-go, .am-rep-card:focus-visible .am-rep-go { opacity: 1; transform: none; }
   .am-rep-go svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  /* edit affordance: appears on the right after ~1s of hover (is-editable added via JS), replacing the chevron */
+  /* Der Stift zum Bearbeiten: kommt nach ~1 s Verweilen (is-editable aus ask-mira.js) an die Stelle
+     des Zeichens. 24 hoch -> Radius 4 (Rolle nach Hoehe). */
   .am-rep-edit {
     position: absolute; right: 12px; top: 50%; transform: translateY(-50%); z-index: 2;
-    display: grid; place-items: center; width: 26px; height: 26px; border-radius: var(--up-r-m);
-    color: var(--am-muted); background: var(--am-card); border: 1px solid var(--am-border);
+    display: grid; place-items: center; width: 24px; height: 24px; box-sizing: border-box; border-radius: var(--up-r-s);
+    color: var(--vc-muted); background: var(--up-feld-bg); border: 1px solid var(--vc-border);
     opacity: 0; pointer-events: none; cursor: pointer;
-    transition: opacity 120ms ease, color 120ms ease, background 120ms ease, border-color 120ms ease;
+    transition: opacity var(--up-t-1) var(--up-ease), color var(--up-t-1) var(--up-ease), background var(--up-t-1) var(--up-ease);
   }
   .am-rep-edit svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
-  .am-rep-edit:hover { color: var(--am-text); border-color: var(--am-muted-2); background: var(--am-soft); }
+  .am-rep-edit:hover { color: var(--vc-text); background: var(--up-knopf-hover); }
   .am-rep-card.is-editable .am-rep-edit { opacity: 1; pointer-events: auto; }
   .am-rep-card.is-editable .am-rep-go { opacity: 0; pointer-events: none; }
-  /* Der Stift dunkel seit dem 15.10. aus denselben Marken wie hell (vorher #232326 / #28282c,
-     Hover #353638). */
-  /* dark mode: report cards without background, like the category cards */
-  /* Die zwei dunklen Sonderzeilen fuer die Reportkarte sind weg: --am-bg und
-     --vt-row-hover-solid drehen sich mit dem Thema, und #2a2a2a war deckend, aber zu hell --
-     dieselbe Meldung wie bei den Kategoriekarten. */
-  /* Wie die Kategoriekachel oben (15.10.): Marken statt eigener Toene, dunkel nur e-2 beim Ueberfahren. */
-  #ask-mira[data-theme="dark"] .am-rep-card:hover .am-rep-ic { color: var(--am-text); box-shadow: var(--up-e-2); }
 
   /* ===================== COMPOSER ===================== */
   .am-composer-area {
@@ -3698,8 +3571,11 @@
     .am-title-sep { display: none !important; }
     .am-title-row { flex-wrap: nowrap; gap: 10px; }
 
-    /* #8 — "Probier mal"-Cards weg (Greeting bleibt) */
-    .am-suggested-label, .am-suggested-grid { display: none !important; }
+    /* #8 — die Kopfzeile bleibt weg; die Knoepfe der Kategorien stehen seit dem 23.10. auch hier
+       (Canvas Variante C, 375 gemessen), an Stelle der vier Schnellfragen. */
+    .am-suggested-label { display: none !important; }
+    #ask-mira .am-cat-kopf { flex-wrap: wrap; padding: 8px 12px; }
+    #ask-mira .am-rep-desc { white-space: normal; }
 
     /* #6 — Highlight-Logos 2px höher in der Zeile */
     .am-inline-logo, .am-inline-ic { transform: translateY(-2px); }
@@ -3723,8 +3599,8 @@
     .am-model-btn .am-model-name { flex: 1 1 auto; text-align: left; }
     .am-model-menu { left: 0; right: 0; width: auto; max-width: none; }
 
-    /* mobile quick actions on the empty state (desktop categories are hidden above) */
-    .am-quick { display: grid !important; }
+    /* Die Schnellfragen (#am-quick) sind seit dem 23.10. auch am Telefon aus: dort stehen jetzt die
+       Knoepfe der Kategorien, und dieselben Berichte zweimal untereinander braucht es nicht. */
   }
 
   /* ===================== CHAT-VIEW TOPBAR ===================== */

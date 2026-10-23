@@ -3761,181 +3761,173 @@
      fires on the frame the transition actually completes. The timer stays only as a fallback for
      the cases where no transitionend ever comes (a zero-length change, or a background tab that
      never ran the animation at all). */
+  /* Bewegt wird seit dem 23.10. der Kasten unter den Knoepfen (#am-cat-panel), nicht mehr der ganze
+     Block -- _galEl ist das Element der laufenden Bewegung, _galFade das, dessen Deckkraft laeuft. */
+  var _galEl = null;
   function galAfter(prop, ms, fn){
+    var el = _galEl || elSuggGrid;
     var spent = false;
     function go(e){
-      if (e && (e.target !== elSuggGrid || e.propertyName !== prop)) return;
+      if (e && (e.target !== el || e.propertyName !== prop)) return;
       if (spent) return;
       spent = true;
-      elSuggGrid.removeEventListener('transitionend', go);
+      el.removeEventListener('transitionend', go);
       fn();
     }
-    elSuggGrid.addEventListener('transitionend', go);
-    _galOff.push(function(){ spent = true; elSuggGrid.removeEventListener('transitionend', go); });
+    el.addEventListener('transitionend', go);
+    _galOff.push(function(){ spent = true; el.removeEventListener('transitionend', go); });
     galLater(go, ms + 40);
   }
   function galReset(){
-    elSuggGrid.style.transition = '';
-    elSuggGrid.style.height = '';
-    elSuggGrid.style.overflow = '';
-    elSuggGrid.style.opacity = '';
-    elSuggGrid.style.transform = '';
-    elSuggGrid.style.contain = '';
-    elSuggGrid.style.clipPath = '';
-    elSuggGrid.style.willChange = '';
+    [_galEl, _galFade].forEach(function(el){
+      if (!el) return;
+      el.style.transition = '';
+      el.style.height = '';
+      el.style.overflow = '';
+      el.style.opacity = '';
+      el.style.transform = '';
+      el.style.contain = '';
+      el.style.clipPath = '';
+      el.style.willChange = '';
+    });
+    _galEl = null; _galFade = null;
     /* Die Bewegung ist vorbei -- was sich waehrenddessen angesammelt hat, laeuft jetzt. */
     _galBusy = false;
     galRunIdle();
   }
-  /* EINE durchgehende Bewegung, kein Ablauf aus Phasen mehr.
+  /* DIE KATEGORIEN SIND KNOEPFE, DER KASTEN DARUNTER KLAPPT (23.10., Canvas "Agent Startseite:
+     Kartenbereich", Lukas: "die knoepfe. c. aber bitte das aus und einklappen der container
+     dahinter mit 200ms ease animation. wie alles andere").
+     Vorher: eine breite Reporting-Karte und vier Kategoriekarten; ein Klick tauschte den ganzen
+     Block gegen eine Unterseite mit Zurueck-Pfeil. Jetzt stehen die Kategorien als Sekundaerknoepfe
+     aus core (.up-btn-sec) unter der Begruessung, und erst ein Klick oeffnet darunter EINEN Kasten
+     (.up-box) mit der Liste. Derselbe Knopf schliesst ihn wieder, ein anderer wechselt den Inhalt.
+     Das Eingabefeld bleibt die Hauptsache (Geist: erst die Eingabe, dann die Hilfen).
 
-     Vorher liefen drei Schritte hintereinander -- Inhalt ausblenden, tauschen und Hoehe
-     schieben, Inhalt einblenden -- und jeder wurde am transitionend des vorigen gestartet. Das
-     heisst: zwischen den Schritten liegt jedes Mal ein Sprung zurueck ins JavaScript, und der
-     kostet mindestens einen Frame, in dem sich nichts bewegt. Zwei solche Nahtstellen in einer
-     Bewegung von 250ms sind genau das, was man als Stocken sieht. Die Trennung war urspruenglich
-     die Antwort auf ein Ueberlappen, das ebenfalls unruhig aussah; die Loesung ist aber keins
-     von beidem, sondern gar keine Naht.
+     DIE BEWEGUNG SITZT AM KASTEN, NICHT AN DEN KNOEPFEN. Die Knoepfe stehen fest und werden nur
+     umgezeichnet (Zustand, Fokus bleibt); bewegt wird allein #am-cat-panel:
+       auf     Hoehe 0 -> Inhalt, Deckkraft 0 -> 1
+       zu      Hoehe -> 0, Deckkraft -> 0, der Inhalt geht erst am Ende raus (sonst schrumpft ein
+               leerer Rahmen)
+       Wechsel Hoehe alt -> neu; nur der INHALT des Kastens blendet ein, Rahmen und Flaeche bleiben
+               stehen -- ein Kasten, der beim Umschalten kurz verschwindet, liest sich wie ein Neuladen.
+     Alles 200ms ease (--up-t-2, --up-ease), wie jede andere Klappbewegung der App. Vorher lief hier
+     eine eigene Kurve (220ms, cubic-bezier) -- Lukas wollte ausdruecklich dieselbe wie ueberall.
 
-     Jetzt: einmal in JavaScript alles setzen, dann laeuft der Browser die Sache allein zu Ende.
-     Der Tausch passiert sofort, geklippt auf die alte Hoehe -- sichtbar wird davon nichts, weil
-     die Deckkraft im selben Zug auf 0 steht. Hoehe und Deckkraft starten danach GEMEINSAM aus
-     einer einzigen transition-Deklaration. Kein transitionend-Handler dazwischen, keine Timer-
-     Kette, nichts, was mitten in der Bewegung noch eine Entscheidung trifft.
-
-     contain:layout waehrend der Bewegung: die Hoehe ist die einzige Eigenschaft hier, die
-     wirklich neu layoutet, und ohne Containment zieht dieses Layout bei jedem Frame den Rest
-     der Seite mit durch. Mit Containment bleibt es im Block. Kommt am Ende wieder weg, damit
-     ein Element, das die meiste Zeit still steht, keine Sonderregel behaelt.
-
-     Die Deckkraft ist kuerzer als die Hoehe und startet mit einem kleinen Versatz: der Inhalt
-     soll auftauchen, waehrend die Box schon unterwegs ist, und vor ihr fertig sein -- sonst
-     sieht man am Ende noch etwas nachziehen, obwohl die Bewegung steht. */
-  var GAL_SLIDE = 220, GAL_FADE = 150, GAL_FADE_DELAY = 40;
-  /* Nicht `ease`. `ease` ist vorne schwer und verbringt sein letztes Drittel fast im Stillstand,
-     was bei einer Hoehe aussieht, als kroeche die Box die letzten Pixel. Diese Kurve zieht sanft
-     an und bremst ins Ziel -- dieselbe, die die Composer-Schublade schon benutzt. */
-  var GAL_EASE = 'cubic-bezier(.4,0,.2,1)';
+     Einmal in JavaScript alles setzen, dann laeuft der Browser die Bewegung allein zu Ende: kein
+     Schritt dazwischen, der auf ein transitionend wartet (zwei solche Nahtstellen waren frueher das
+     sichtbare Stocken). contain:layout haelt das Layout der Hoehe im Kasten, clip-path schneidet --
+     overflow allein reicht nicht, weil der Topics-Picker beim Einhaengen UC.unclipAncestors ruft und
+     jedem klippenden Vorfahren overflow:visible setzt. */
+  var GAL_DAUER = 200, GAL_KURVE = 'ease';
+  var _galFade = null;
+  function galPanel(){
+    if (!elSuggGrid) return null;
+    var p = elSuggGrid.querySelector('#am-cat-panel');
+    if (p) return p;
+    elSuggGrid.innerHTML = '<div class="am-cat-reihe" role="group"></div>' +
+      '<div class="am-cat-panel" id="am-cat-panel"><div class="am-cat-panelin"></div></div>';
+    return elSuggGrid.querySelector('#am-cat-panel');
+  }
   function renderGallery(){
-    if (!elSuggGrid || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
+    var p = galPanel();
+    if (!p || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
       return renderGalleryNow();
     }
-    var h0 = elSuggGrid.getBoundingClientRect().height;
+    var h0 = p.getBoundingClientRect().height;
+    var warOffen = h0 > 0 && !!p.querySelector('.am-cat-box');
     galClearTimers();
-    /* Nichts Messbares zu bewegen (erster Anstrich, oder der Startbildschirm ist noch verborgen)
-       -- direkt rendern und das Element in Ruhe lassen, statt ihm eine Hoehe aufzuzwingen. */
-    if (!h0){ galReset(); return renderGalleryNow(); }
+    /* Nichts zu sehen (Startbildschirm verborgen, erster Anstrich) oder nichts zu bewegen (zu und
+       bleibt zu): ohne Bewegung zeichnen. Sichtbarkeit am Block, nicht an der Hoehe -- die ist
+       beim Aufklappen 0 und trotzdem ein echter Start. */
+    var sichtbar = elSuggGrid.getClientRects().length > 0 && elSuggGrid.getBoundingClientRect().width > 0;
+    var zu = _galleryCat == null;
+    if (!sichtbar || (zu && !warOffen)){ galReset(); return renderGalleryNow(); }
 
-    /* Ab hier laeuft eine Bewegung: alles, was per galWhenIdle angemeldet wird, wartet auf ihr
-       Ende. Gesetzt NACH dem h0-Ausstieg, denn der rendert ohne Animation durch. */
     _galBusy = true;
+    _galEl = p;
+    p.style.transition = 'none';
+    p.style.overflow = 'hidden';
+    p.style.clipPath = 'inset(0)';
+    p.style.contain = 'layout';
+    p.style.willChange = 'height, opacity';
+    p.style.height = h0 + 'px';
 
-    /* ---- Tausch, unsichtbar und auf die alte Hoehe geklippt ----
-       Geklippt wird mit clip-path, nicht mit overflow allein, und das ist der Kern der Sache:
-       der Topics-Picker in der Reporting-Leiste ruft beim Mount UC.unclipAncestors(). Das laeuft
-       vom Picker nach oben und setzt overflow:visible auf jeden Vorfahren, der klippt -- also
-       auch auf genau diesen Block, mitten in der Bewegung. Die Hoehe animierte dann zwar, aber
-       nichts wurde abgeschnitten: man sah eine wandernde Kante bei stehendem Inhalt statt eines
-       Slides, und darunter sprang das Layout. Kein Wettlauf mit einem !important, sondern eine
-       Eigenschaft, die der Sweep gar nicht anfasst. overflow bleibt zusaetzlich stehen, es
-       schadet nicht und traegt den Fall, in dem gar nicht unclipped wird. */
-    elSuggGrid.style.transition = 'none';
-    elSuggGrid.style.overflow = 'hidden';
-    elSuggGrid.style.clipPath = 'inset(0)';
-    elSuggGrid.style.contain = 'layout';
-    elSuggGrid.style.willChange = 'height, opacity';
-    elSuggGrid.style.height = h0 + 'px';
-    elSuggGrid.style.opacity = '0';
-
-    renderGalleryNow();
-
-    /* Neue Hoehe frei messen, dann die alte zurueckschreiben, damit es einen Wert gibt, VON dem
-       aus animiert werden kann. Beide Schreibvorgaenge landen vor dem naechsten Anstrich, und
-       der Inhalt ist ohnehin unsichtbar -- der ungepinnte Moment ist nie zu sehen. */
-    elSuggGrid.style.height = '';
-    var h1 = elSuggGrid.getBoundingClientRect().height;
-    elSuggGrid.style.height = h0 + 'px';
-    /* Erzwungener Reflow, nicht kosmetisch: ohne ihn fasst der Browser Start- und Endwert zu
-       einem Style-Recalc zusammen und springt ohne Uebergang auf das Ziel. */
-    void elSuggGrid.offsetHeight;
-
-    /* ---- die eine Bewegung ---- */
-    elSuggGrid.style.transition =
-      'height ' + GAL_SLIDE + 'ms ' + GAL_EASE + ', ' +
-      'opacity ' + GAL_FADE + 'ms ease ' + GAL_FADE_DELAY + 'ms';
-    elSuggGrid.style.height = h1 + 'px';
-    elSuggGrid.style.opacity = '1';
-
-    /* Aufraeumen am Ende der laengeren der beiden, mit Timer als Rueckfall fuer den Fall, dass
-       nie ein transitionend kommt (Laenge null, oder ein Hintergrund-Tab). */
-    galAfter('height', GAL_SLIDE, galReset);
-  }
-
-  /* DER ZURUECK-KNOPF STEHT IN JEDER KATEGORIE OHNE WORT (20.09.). Angefangen hat es im
-     Reporting-Kopf, weil dort neben dem Titel noch der Topics-Picker und die Zeitraumwahl
-     stehen; nachgezogen auf alle uebrigen Kategorien, damit die Kopfzeile ueberall dieselbe
-     ist -- ein 24x24-Quadrat mit dem Chevron, dann der Titel.
-     Der Text geht nicht verloren, er wandert in aria-label und data-tip: data-tip ist der Haken
-     fuer den Chip aus core (UC.makeTooltips laeuft auf dieser Wurzel), aria-label gibt dem Knopf
-     seinen Namen fuer den Screenreader. EINE Stelle fuer beide Zweige -- vorher stand dasselbe
-     Markup zweimal da, und beim ersten Umbau bekam nur eins von beiden die Aenderung. */
-  function zurueckKnopfHtml(){
-    var titel = escAttr(L().galleryBack || 'All categories');
-    return '<button class="am-gallery-back am-gallery-back-ic" type="button" data-gallery-back' +
-           ' aria-label="' + titel + '" data-tip="' + titel + '">' +
-           '<svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("chevronLeft") + '</svg></button>';
-  }
-  function renderGalleryNow(){
-    var label = root.querySelector('#am-suggested-label');
-    var g = L().gallery || [];
-    if (_galleryCat === null){
-      if (label){
-        label.style.display = '';
-        /* Die Kopfzeile ist der Schalter -- Text links, Winkelzeichen rechts, und ein Klick
-           irgendwo darauf klappt den Block zu. Deshalb gebaut und nicht als textContent. */
-        label.innerHTML = '<span class="am-sugg-lbl">' + esc(L().galleryLabel || L().tryAsking) + '</span>' +
-                          '<span class="am-sugg-chev">' + ICON.chevron + '</span>';
-        label.setAttribute('role', 'button');
-        label.setAttribute('tabindex', '0');
-        label.setAttribute('aria-expanded', _catClosed ? 'false' : 'true');
-      }
-      function catCardHTML(cat, i, full){
-        return '<button class="am-cat-card'+(full ? ' am-cat-card-full' : '')+'" type="button" data-cat="'+i+'">'+
-          '<span class="am-cat-ic">'+(GALLERY_ICONS[i] || ICON.trend)+'</span>'+
-          '<span class="am-cat-name">'+esc(cat.name)+'</span>'+
-          '<span class="am-cat-chev"><svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("chevronRight") + '</svg></span>'+
-        '</button>';
-      }
-      var repIdx = -1;
-      for (var _k = 0; _k < g.length; _k++){ if (g[_k] && g[_k].reporting){ repIdx = _k; break; } }
-      var html = '';
-      if (repIdx >= 0){
-        html += '<button class="am-cat-card am-cat-card-full am-cat-card-report" type="button" data-cat="'+repIdx+'">'+
-          '<span class="am-cat-ic">'+(GALLERY_ICONS[repIdx] || ICON.fileText)+'</span>'+
-          '<span class="am-cat-text"><span class="am-cat-label">'+esc(g[repIdx].name)+'</span>'+
-            '<span class="am-cat-desc">'+esc(g[repIdx].desc || 'Full reports on your AI visibility')+'</span></span>'+
-          '<span class="am-cat-chev"><svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("chevronRight") + '</svg></span>'+
-        '</button>';
-      }
-      html += '<div class="am-cat-grid">' + g.map(function(cat, i){
-        return (i === repIdx) ? '' : catCardHTML(cat, i, false);
-      }).join('') + '</div>';
-      /* Zwei Huellen und nicht eine: die AEUSSERE ist das Raster, das von 1fr auf 0fr laeuft, die
-         INNERE haelt den Inhalt und schneidet ihn ab. Braucht die aeussere mehr als ein Kind, legt
-         der Browser eine zweite Reihe automatisch an, und die bleibt beim Zuklappen stehen.
-         Die Bewegung sitzt hier und NICHT an #am-suggested-grid: dort animiert renderGallery
-         schon Hoehe und Deckkraft mit eigenen Inline-Stilen, und zwei Bewegungen an einem Element
-         geraten sich in die Quere. */
-      elSuggGrid.innerHTML = '<div class="am-sugg-fold"><div class="am-sugg-foldin">' + html + '</div></div>';
-      if (elSugg) elSugg.classList.toggle('is-catclosed', _catClosed);
+    galKnoepfe();
+    var h1 = 0, fade = p;
+    if (zu){
+      void p.offsetHeight;
+      p.style.transition = 'height ' + GAL_DAUER + 'ms ' + GAL_KURVE + ', opacity ' + GAL_DAUER + 'ms ' + GAL_KURVE;
+      p.style.height = '0px';
+      p.style.opacity = '0';
+      /* Erst am Ende leeren: bis dahin schrumpft der Kasten MIT seinem Inhalt. */
+      galAfter('height', GAL_DAUER, function(){ galInhalt(); galReset(); });
       return;
     }
-    var cat = g[_galleryCat];
-    /* renderGalleryNow, not renderGallery: this is the same render correcting its own stale
-       category index, not a second open -- re-entering the animated wrapper here would measure a
-       half-built block as the "before" height. */
-    if (!cat){ _galleryCat = null; return renderGalleryNow(); }
-    if (label) label.style.display = 'none';
+    galInhalt();
+    if (warOffen){
+      /* Wechsel: der Rahmen bleibt, nur das Innere blendet. */
+      fade = p.querySelector('.am-cat-boxin') || p;
+    }
+    _galFade = fade;
+    fade.style.transition = 'none';
+    fade.style.opacity = '0';
+    p.style.height = '';
+    h1 = p.getBoundingClientRect().height;
+    p.style.height = h0 + 'px';
+    /* Erzwungener Reflow, nicht kosmetisch: ohne ihn fasst der Browser Start- und Endwert zu
+       einem Style-Recalc zusammen und springt ohne Uebergang auf das Ziel. */
+    void p.offsetHeight;
+    /* Beim Aufklappen ist der Kasten selbst das, was einblendet -- dann EINE Deklaration fuer beides,
+       sonst ueberschreibt die zweite Zeile die erste und die Hoehe springt. */
+    if (fade === p){
+      p.style.transition = 'height ' + GAL_DAUER + 'ms ' + GAL_KURVE + ', opacity ' + GAL_DAUER + 'ms ' + GAL_KURVE;
+    } else {
+      p.style.transition = 'height ' + GAL_DAUER + 'ms ' + GAL_KURVE;
+      fade.style.transition = 'opacity ' + GAL_DAUER + 'ms ' + GAL_KURVE;
+    }
+    p.style.height = h1 + 'px';
+    fade.style.opacity = '1';
+    galAfter('height', GAL_DAUER, galReset);
+  }
+
+  /* Die Knoepfe: Reporting zuerst (die fertigen Berichte sind der haeufigste Einstieg), dann die
+     Kategorien in der Reihenfolge der Daten. Sie werden bei jedem Zeichnen neu gesetzt -- Sprache und
+     Zustand wechseln --, und ein Knopf, der den Fokus hatte, bekommt ihn danach zurueck, sonst
+     verliert die Tastatur nach jedem Klick ihren Platz. */
+  function galKnoepfe(){
+    var reihe = elSuggGrid && elSuggGrid.querySelector('.am-cat-reihe');
+    if (!reihe) return;
+    var g = L().gallery || [];
+    var fokus = document.activeElement && reihe.contains(document.activeElement)
+      ? document.activeElement.getAttribute('data-cat') : null;
+    var folge = [];
+    g.forEach(function(cat, i){ if (cat && cat.reporting) folge.push(i); });
+    g.forEach(function(cat, i){ if (cat && !cat.reporting) folge.push(i); });
+    reihe.setAttribute('aria-label', L().galleryLabel || 'Explore categories');
+    reihe.innerHTML = folge.map(function(i){
+      var an = (_galleryCat === i);
+      return '<button class="up-btn-sec am-cat-chip' + (an ? ' is-gewaehlt' : '') + '" type="button" data-cat="' + i + '"' +
+        ' aria-expanded="' + (an ? 'true' : 'false') + '" aria-controls="am-cat-panel">' +
+        (GALLERY_ICONS[i] || ICON.trend) + '<span>' + esc(g[i].name) + '</span></button>';
+    }).join('');
+    if (fokus != null){
+      var neu = reihe.querySelector('[data-cat="' + fokus + '"]');
+      if (neu) neu.focus({ preventScroll: true });
+    }
+  }
+
+  /* Der Inhalt des Kastens. Reporting: Kopf mit Topics und Zeitraum, darunter die Berichte als
+     Zeilen. Jede andere Kategorie: Kopf mit dem Namen, darunter ihre Fragen in Gruppen.
+     Die Klassen der Klickziele sind die alten (.am-rep-card mit data-rep-idx, .am-gallery-prompt mit
+     data-q): die Verdrahtung unten bleibt damit dieselbe, samt Stift zum Bearbeiten. */
+  function galInhalt(){
+    var p = galPanel(); if (!p) return;
+    var innen = p.querySelector('.am-cat-panelin');
+    var cat = (_galleryCat == null) ? null : (L().gallery || [])[_galleryCat];
+    if (!cat){ _galleryCat = null; innen.innerHTML = ''; return; }
+    var kopf = '<div class="am-cat-kopf"><h3 class="up-heading up-sec-h am-cat-titel">' + esc(cat.name) + '</h3>';
+    var liste = '';
     if (cat.reporting){
       var de = (L() === STR.de);
       var opts = repRangeOptions();
@@ -3947,11 +3939,7 @@
         menu += '<button class="am-rep-range-opt'+(o.id===_reportRange?' is-sel':'')+'" type="button" data-rep-range="'+escAttr(o.id)+'">'+esc(o.label)+
           '<span class="am-rep-range-check"><svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("check") + '</svg></span></button>';
       });
-      var rhtml = '<div class="am-gallery-head am-rep-head">'+
-        zurueckKnopfHtml()+
-        '<span class="am-gallery-cat-title">'+esc(cat.name)+'</span>'+
-        '<span class="am-rep-spacer"></span>'+
-        repTopicsMarkup(de)+
+      kopf += '<span class="am-rep-spacer"></span>' + repTopicsMarkup(de) +
         '<div class="am-rep-range-wrap">'+
           '<button class="am-rep-range" type="button" data-rep-range-toggle>'+
             '<svg width="24" height="24" class="am-rep-cal" viewBox="0 0 24 24">' + amFormen("calendar") + '</svg>'+
@@ -3959,9 +3947,8 @@
             '<svg width="24" height="24" class="am-rep-range-chev" viewBox="0 0 24 24">' + amFormen("chevronDown") + '</svg>'+
           '</button>'+
           '<div class="am-rep-range-menu">'+menu+'</div>'+
-        '</div>'+
-      '</div>';
-      rhtml += '<div class="am-rep-cards">'+ (cat.reports || []).map(function(r, i){
+        '</div>';
+      liste = '<div class="am-rep-cards">' + (cat.reports || []).map(function(r, i){
         return '<button class="am-rep-card" type="button" data-rep-idx="'+i+'">'+
           '<span class="am-rep-ic">'+(ICON[r.icon] || ICON.trend)+'</span>'+
           '<span class="am-rep-text"><span class="am-rep-label">'+esc(r.label)+'</span><span class="am-rep-desc">'+esc(r.desc || '')+'</span></span>'+
@@ -3969,30 +3956,34 @@
           '<span class="am-rep-go"><svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("chevronRight") + '</svg></span>'+
         '</button>';
       }).join('') + '</div>';
-      elSuggGrid.innerHTML = rhtml;
-      /* The reporting branch returns HERE -- it never reaches the end of this function. That is
-         where the picker actually lives, so the hand-over has to happen on this path too. */
-      syncRepTopics();
-      return;
+    } else {
+      liste = (cat.subs || []).map(function(sub){
+        return '<div class="am-gallery-sub"><p class="am-gallery-subhead">'+esc(sub.name)+'</p><div class="am-gallery-prompts">'+
+          (sub.prompts || []).map(function(q){
+            var label = (q && typeof q === 'object') ? (q.label || q.prompt || '') : q;
+            var prompt = (q && typeof q === 'object') ? (q.prompt || q.label || '') : q;
+            return '<button class="am-gallery-prompt" type="button" data-q="'+escAttr(prompt)+'"><span>'+esc(label)+'</span>'+
+              '<span class="am-gallery-prompt-chev"><svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("chevronRight") + '</svg></span></button>';
+          }).join('')+
+        '</div></div>';
+      }).join('');
     }
-    var html = '<div class="am-gallery-head">'+
-      zurueckKnopfHtml()+
-      '<span class="am-gallery-cat-title">'+esc(cat.name)+'</span>'+
-    '</div>';
-    html += (cat.subs || []).map(function(sub){
-      return '<div class="am-gallery-sub"><p class="am-gallery-subhead">'+esc(sub.name)+'</p><div class="am-gallery-prompts">'+
-        (sub.prompts || []).map(function(q){
-          var label = (q && typeof q === 'object') ? (q.label || q.prompt || '') : q;
-          var prompt = (q && typeof q === 'object') ? (q.prompt || q.label || '') : q;
-          return '<button class="am-gallery-prompt" type="button" data-q="'+escAttr(prompt)+'"><span>'+esc(label)+'</span>'+
-            '<span class="am-gallery-prompt-chev"><svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("chevronRight") + '</svg></span></button>';
-        }).join('')+
-      '</div></div>';
-    }).join('');
-    elSuggGrid.innerHTML = html;
-    /* The picker was just rebuilt with the rest of the gallery -- hand it the list and the
-       current selection again. Both setters are silent, so this cannot echo back. */
+    kopf += '</div>';
+    innen.innerHTML = '<div class="up-box am-cat-box"><div class="am-cat-boxin">' + kopf + liste + '</div></div>';
+    /* Der Picker wurde mit dem Kasten neu gebaut -- Liste und Auswahl neu uebergeben. Beide Setter
+       sind still, also kein Echo. */
     syncRepTopics();
+  }
+
+  function renderGalleryNow(){
+    /* Die Kopfzeile "Explore categories" mit dem Zuklappen gibt es in dieser Form nicht mehr: die
+       Knoepfe SIND das Zugeklappte. Das Element bleibt im Markup (Bubble-Vorlage), nur unsichtbar. */
+    var label = root.querySelector('#am-suggested-label');
+    if (label) label.style.display = 'none';
+    if (elSugg) elSugg.classList.remove('is-catclosed');
+    if (!galPanel()) return;
+    galKnoepfe();
+    galInhalt();
   }
 
   /* ---- Grok-style looping placeholder ---- */
@@ -8878,8 +8869,6 @@
      Zeile Ereignisverdrahtung gewesen. */
 
   elSuggGrid.addEventListener('click', function(e){
-    var back = e.target.closest('[data-gallery-back]');
-    if (back){ _galleryCat = null; renderGallery(); return; }
     // reporting: date-range dropdown toggle
     var rtog = e.target.closest('[data-rep-range-toggle]');
     if (rtog){ e.stopPropagation(); var wrap = rtog.closest('.am-rep-range-wrap');
@@ -8918,8 +8907,14 @@
       sendMessage(q);
       return;
     }
-    var catc = e.target.closest('.am-cat-card');
-    if (catc){ _galleryCat = parseInt(catc.getAttribute('data-cat'), 10); renderGallery(); return; }
+    /* Ein Knopf oeffnet seinen Kasten, derselbe Knopf schliesst ihn, ein anderer wechselt. */
+    var catc = e.target.closest('.am-cat-chip');
+    if (catc){
+      var ci = parseInt(catc.getAttribute('data-cat'), 10);
+      _galleryCat = (_galleryCat === ci) ? null : ci;
+      renderGallery();
+      return;
+    }
     var pr = e.target.closest('.am-gallery-prompt');
     if (!pr) return;
     var q = pr.getAttribute('data-q');
