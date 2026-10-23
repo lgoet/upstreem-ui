@@ -953,7 +953,9 @@
   }
 
   /* ---------------- Helpers ---------------- */
-  function esc(v){ var d = document.createElement('div'); d.textContent = String(v==null?'':v); return d.innerHTML; }
+  /* Auch Anfuehrungszeichen (Sicherheitspruefung 23.10., NIEDRIG 3): esc() steht in src="..." (Logos, Favicons der
+     Opportunities, Bilder), und textContent/innerHTML maskiert nur & < >. Dieselbe Fassung wie in core.js. */
+  function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
   /* HTML sanitizer: rebuilds a clean tree from a strict whitelist.
      -> No <script>/<style>/<iframe>, no inline event handlers, no javascript: URLs. */
@@ -2438,7 +2440,7 @@
     en: {
       copy: 'Copy', chartLeer: 'This chart has no data.',
       zustand: { running: 'Running', done: 'Done', failed: 'Failed', undone: 'Undone', blocked: 'Not available', expired: 'Expired' },
-      start: { page_audit: 'Run Audit', prompt_research: 'Start Research', track_brand: 'Track brand' },
+      start: { page_audit: 'Run Audit', prompt_research: 'Start Research', track_brand: 'Track brand', create_opportunity: 'Save as Opportunity' },
       oeffnen: { page_audit: 'Open audit', prompt_research: 'Open research' },
       ergebnis: 'View result', marke: 'Open brand', undo: 'Undo',
       artName: { page_audit: 'Page Audit', prompt_research: 'Prompt Research', track_brand: 'Brand tracking', create_opportunity: 'Opportunity', opportunity_status: 'Status change' },
@@ -2451,7 +2453,7 @@
     de: {
       copy: 'Kopieren', chartLeer: 'Für diesen Chart gibt es keine Daten.',
       zustand: { running: 'Läuft', done: 'Erledigt', failed: 'Fehlgeschlagen', undone: 'Rückgängig gemacht', blocked: 'Nicht verfügbar', expired: 'Abgelaufen' },
-      start: { page_audit: 'Audit starten', prompt_research: 'Research starten', track_brand: 'Marke tracken' },
+      start: { page_audit: 'Audit starten', prompt_research: 'Research starten', track_brand: 'Marke tracken', create_opportunity: 'Als Opportunity speichern' },
       oeffnen: { page_audit: 'Audit öffnen', prompt_research: 'Research öffnen' },
       ergebnis: 'Ergebnis ansehen', marke: 'Marke öffnen', undo: 'Rückgängig',
       artName: { page_audit: 'Page Audit', prompt_research: 'Prompt Research', track_brand: 'Marken-Tracking', create_opportunity: 'Opportunity', opportunity_status: 'Statusänderung' },
@@ -2583,6 +2585,19 @@
                  '~': ['data-mira-source-signal', 'likely'], '?': ['data-mira-source-signal', 'unclear'] };
   var BLK_ALT = /\[\[(POSITIVE_SPAN|NEGATIVE_SPAN|SOURCE_SIGNAL|UNCLEAR_SOURCE)_START\]\]([\s\S]*?)\[\[\1_END\]\]/g;
   var BLK_ALT_ZEICHEN = { POSITIVE_SPAN: '+', NEGATIVE_SPAN: '-', SOURCE_SIGNAL: '~', UNCLEAR_SOURCE: '?' };
+  /* Ein freier Link [Text](https://...) im Modelltext ist ein Abflussweg per Injection (Sicherheitspruefung 23.10.,
+     MITTEL 1): klickbar nur, wenn sein Host zu einem Bezug dieser Antwort gehoert (URL, Domain, Marke), sonst bleibt
+     der Text. Dieselbe Regel steht im PDF (upstreem-app lib/mira/pdf.ts linkErlaubt). */
+  function blkHost(u){ try { return new URL(u).hostname.toLowerCase().replace(/^www\./, ''); } catch(e){ return ''; } }
+  function blkLinkErlaubt(u, refs){
+    var h = blkHost(u);
+    if (!h) return false;
+    return Object.keys(refs || {}).some(function(k){
+      var r = refs[k] || {}, t = blkStr(r.type);
+      var rh = t === 'url' ? blkHost(blkStr(r.entity_url || r.entity_id)) : blkStr(r.domain || (t === 'domain' ? r.entity_id : '')).toLowerCase().replace(/^www\./, '');
+      return !!rh && (h === rh || h.slice(-(rh.length + 1)) === '.' + rh);
+    });
+  }
   function blkInline(s, refs){
     s = String(s == null ? '' : s).replace(BLK_ALT, function(_m, art, innen){ var z = BLK_ALT_ZEICHEN[art]; return '{' + z + innen + z + '}'; });
     var re = /\[([^\]\n]{1,300})\]\(ref:([a-z]\d{1,5})\)|\[([^\]\n]{1,300})\]\((https?:\/\/[^\s)]{1,2000})\)|\*\*([^*\n]+?)\*\*|__([^_\n]+?)__|\*([^*\s][^*\n]*?)\*|`([^`\n]+)`|\{([+\-~?])([^{}\n]{1,600}?)\9\}/g;
@@ -2590,7 +2605,7 @@
     while ((m = re.exec(s))){
       aus += esc(s.slice(i, m.index));
       if (m[1] !== undefined){ var r = refs[m[2]]; aus += r ? blkSpan(m[1], r) : (BLK_KUERZEL.test(m[1]) ? '' : esc(m[1])); }
-      else if (m[3] !== undefined) aus += '<a href="' + escAttr(m[4]) + '" target="_blank" rel="noopener noreferrer">' + esc(m[3]) + '</a>';
+      else if (m[3] !== undefined) aus += blkLinkErlaubt(m[4], refs) ? '<a href="' + escAttr(m[4]) + '" target="_blank" rel="noopener noreferrer">' + esc(m[3]) + '</a>' : esc(m[3]);
       else if (m[5] !== undefined || m[6] !== undefined) aus += '<strong>' + blkInline(m[5] !== undefined ? m[5] : m[6], refs) + '</strong>';
       else if (m[7] !== undefined) aus += '<em>' + blkInline(m[7], refs) + '</em>';
       else if (m[8] !== undefined) aus += '<code>' + esc(m[8]) + '</code>';
