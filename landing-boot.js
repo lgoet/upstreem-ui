@@ -193,6 +193,37 @@
      hellHalten in landing-hero.js -- Begruendung dort.) In der App steht die Zeile nicht. */
   try { window.__upThemeBooted = true; } catch (e){}
 
+  /* ══ DER LINECHART IM HERO KOMMT FERTIG (23.10.) ═══════════════════════════════════════════
+     Gemeldet: "das Linechart soll schon so wie es ist reinkommen, nicht beim ersten Appear aufbauen".
+     core zeichnet jede Linie mit 600ms Einfahrt von Chart.js und faehrt sie beim Auftritt der Seite
+     noch einmal ab (fahrtBeimAuftritt: reset + update) -- beides auf dem Hauptstrang, genau waehrend
+     das Fenster einfaehrt. Hier bekommt nur ein Linechart im Dashboard des Fensters (.ulh-main) die
+     Einfahrt abgestellt; der Filterwechsel danach stellt seine Bewegung selbst ein (chartWandern in
+     landing-hero.js). Gegriffen wird am Konstruktor, denn Chart.js setzt sich per UMD als
+     globalThis.Chart: dieser Setter faengt das ab, bevor core das erste Chart baut. In der App steht
+     die Zeile nicht. */
+  try {
+    var chartKlasse = window.Chart;
+    var umhuellen = function(K){
+      if (!K || K.__ulhOhneEinfahrt || typeof K !== "function") return K;
+      var Ohne = class extends K {
+        constructor(item, cfg){
+          var el = item && (item.canvas || item);
+          if (cfg && cfg.type === "line" && cfg.options && el && el.closest && el.closest(".ulh-main")) cfg.options.animation = false;
+          super(item, cfg);
+        }
+      };
+      Ohne.__ulhOhneEinfahrt = true;
+      return Ohne;
+    };
+    Object.defineProperty(window, "Chart", {
+      configurable: true,
+      get: function(){ return chartKlasse; },
+      set: function(v){ chartKlasse = umhuellen(v); }
+    });
+    if (chartKlasse) chartKlasse = umhuellen(chartKlasse);
+  } catch (e){}
+
   /* Die Intents sind freigegeben (19.10.): die Filterleisten der Seiten im Fenster bauen den
      Intent-Filter nur, wenn der Gastgeber sie freigibt (UC.intentsLive). In der App setzt das
      Kopf-Skript den Schalter; hier steht er, damit die Performance-Seite ihren Chip zeigen kann

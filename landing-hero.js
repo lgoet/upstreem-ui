@@ -84,7 +84,7 @@
     "Notes on AI search": "Praxiswissen zur KI-Suche", "Documentation": "Dokumentation",
     "How everything works": "Anleitungen und Hilfe",
     /* Hero */
-    "New": "Neu", "Customer journey tracking": "Customer-Journey-Tracking",
+    "New": "Neu", "Customer journey tracking": "Customer-Journey-Tracking", "MCP Server": "MCP Server",
     /* h1 und Unterzeile des Hero bleiben auf Deutsch ENGLISCH (14.10. so entschieden: "lass h1 und
        h2 einfach auf englisch" -- "einfach gemacht" klang uebersetzt). Deshalb stehen sie hier nicht. */
     "Book a demo": "Demo vereinbaren", "Tracked daily on": "Täglich gemessen in",
@@ -681,7 +681,7 @@
   /* Die Texte des Hero an einer Stelle (14.10.). */
   var HERO = {
     neu: "New",
-    chip: "Customer journey tracking",
+    chip: "MCP Server",
     h1a: "AI Search Analytics",
     h1b: "made simple.",
     /* Zwei feste Zeilen (14.10. abends angefordert): die erste endet nach "brand", die zweite
@@ -729,10 +729,11 @@
       '<div class="ulh-text">' +
         /* DER CHIP KUENDIGT AN (14.10.). Vorher sagte er "Get mentioned in AI search" -- dasselbe wie
            die Ueberschrift darunter, nur kleiner. Die grossen Seiten nutzen den Platz ueber der h1
-           fuer das Neueste und verlinken es; hier die Customer-Journey-Sektion (#journey). Form und
+           fuer das Neueste und verlinken es; seit 23.10. der MCP Server (#mcp, die Sektion dazu ist
+           im Entwurf; bis sie steht, springt der Anker nicht). Form und
            Masse des Badges bleiben (30.09.), dazu vorn das dunkle "New" und hinten ein Pfeil. */
         '<p class="ulh-eyebrow">' +
-          '<a class="ulh-chip ulh-chip-link" href="' + startUrl("journey") + '">' +
+          '<a class="ulh-chip ulh-chip-link" href="' + startUrl("mcp") + '">' +
             '<span class="ulh-chip-in">' +
               '<span class="ulh-chip-neu">' + HERO.neu + '</span>' +
               '<span class="ulh-chip-t">' + HERO.chip + '</span>' +
@@ -6088,7 +6089,8 @@
     }
     (function warte(){
       if (lauf) return;
-      if (root.classList.contains("is-inhalt")){ setTimeout(los, 250); return; }
+      /* Nach der Bewegung des Fensters (FENSTER_MS), nicht in ihr. */
+      if (root.classList.contains("is-inhalt")){ setTimeout(los, FENSTER_MS + 250); return; }
       if (Date.now() - t0 > 9000){ los(); return; }
       setTimeout(warte, 100);
     })();
@@ -6612,10 +6614,9 @@
     /* Dauer und Kurve der Linienbewegung auf die der Zeilen gestellt. Das Kit steht auf 600ms
        easeOutQuart -- das ist die EINGANGSanimation, und die soll so bleiben; hier wird nur diese
        eine Instanz umgestellt, und zwar erst jetzt, lange nach dem Eingang. */
-    if (chart.options && chart.options.animation){
-      chart.options.animation.duration = dauer;
-      chart.options.animation.easing = "easeOutQuad";
-    }
+    /* Seit dem 23.10. kommt dieser Chart OHNE Einfahrt (landing-boot.js, animation: false) -- die
+       Bewegung des Filterwechsels wird hier also ganz gesetzt, nicht nur umgestellt. */
+    if (chart.options) chart.options.animation = { duration: dauer, easing: "easeOutQuad" };
     /* chart.update() und danach SOFORT das Anstecken des Tooltips wieder. Beides ist noetig, und
        beides aus einem gemessenen Grund:
        - chart.update() raeumt die aktiven Punkte ab, der Tooltip geht auf opacity 0 und
@@ -8724,6 +8725,9 @@
        ausblendeten (.vot-box traegt aus der Komponente "transition: opacity 200ms") -- der linke
        Chartkasten stand kurz bei 33 Prozent, war danach 1.3s weg und stieg erst dann auf. */
     root.classList.remove("is-inhalt");
+    /* Ab jetzt steigen die Kaesten bei der Rueckkehr einzeln auf (landing-hero.css, is-runde); beim
+       ersten Auftritt kommen sie mit dem Fenster als ein Stueck. */
+    root.classList.add("is-runde");
     root.__ulhInhaltAn = false;
 
     setTimeout(function(){
@@ -9047,7 +9051,6 @@
            Die Animationen sind CSS (Deckkraft, Transform) und laufen mit ihren Verzoegerungen los;
            das Fenster selbst steigt erst nach 970 ms, und bis dahin ist gefuellt. */
         mass(root);
-        root.classList.add("is-bereit");
         erscheinen(root);
         try { fuellen(); root.__ulhGefuellt = true; }
         catch (e){
@@ -9190,20 +9193,63 @@
      Dritteln durch, und der Inhalt setzt darauf auf, statt zu warten, bis alles steht.
      Seit dem 01.10. faengt der Rahmen bei 970 an statt bei 440 (der Textblock darueber ist
      langsamer), also 970 + 440 = 1410. */
-  var INHALT_FRUEH = 650;       /* 19.10.: Fenster steigt 150 ms nach is-bereit, 440 ms spaeter ist es zu zwei Dritteln durch */
+  var INHALT_FRUEH = 400;       /* 23.10.: der Text laeuft ab dem ersten Bild, das Fenster kommt fruehestens 400 ms danach */
+  var FENSTER_MS = 900;         /* die eine Bewegung des Fensters (landing-hero.css, .is-fenster) */
   var INHALT_SPAET = 6000;       /* Notbremse */
+  /* Den Auftritt der Dashboard-Seite (core makeAuftritt) im Fenster abschliessen: Warteklasse weg,
+     laufende Einblendungen beendet. Er lief, waehrend das Fenster noch unsichtbar war, und haette
+     sonst unter der Bewegung des Fensters weitergemacht. Was danach noch einsetzt (ein spaeter
+     Zeitgeber der Staffel), faengt der kurze Nachlauf ab. */
+  function auftrittSchlucken(root){
+    var fenster = root.querySelector(".ulh-frame");
+    if (!fenster) return;
+    function einmal(){
+      fenster.querySelectorAll(".up-auftritt-zu").forEach(function(el){ el.classList.remove("up-auftritt-zu"); });
+      fenster.querySelectorAll(".up-seite *").forEach(function(el){
+        if (el.__upAuftritt){ try { el.__upAuftritt.finish(); } catch (e){} el.__upAuftritt = null; }
+      });
+    }
+    einmal();
+    var n = 0;
+    var uhr = setInterval(function(){ einmal(); if (++n >= 15) clearInterval(uhr); }, 100);
+  }
   function inhaltZeigen(root, frueh){
     if (root.__ulhInhaltAn) return;
     root.__ulhInhaltAn = true;
     var start = Date.now(), fertig = false, ab = frueh == null ? INHALT_FRUEH : frueh;
+    /* EINE BEWEGUNG (23.10., gemeldet: "die erste Appear-Animation ... echt total furchtbar").
+       Vorher liefen drei Auftritte gegeneinander: das Fenster stieg herauf, die Dashboard-Seite
+       blendete dieselben Kaesten mit ihrem eigenen Auftritt ein (core makeAuftritt, Web Animations
+       auf .uds-teil und .tcd-box), und die Landing hob Chart und Zitate darin noch einmal mit einer
+       Staffel an -- dazu baute sich die Linie auf und Stufe 2 der Dateien startete mitten in der
+       Bewegung. Jetzt steht alles fertig da, bevor sich etwas bewegt: der Auftritt der Seite wird
+       abgeschlossen (auftrittSchlucken), im naechsten Bild faehrt das Fenster samt Inhalt als EIN
+       Stueck ein (nur transform und opacity, also auf dem Compositor), und Schweres -- Stufe 2, die
+       Karten darunter -- kommt erst nach dem Ende der Bewegung. */
     function zeigen(){
       if (fertig) return;
       fertig = true;
-      root.classList.add("is-inhalt");
-      /* Die uebrigen Seiten des Fensters jetzt holen (Stufe 2), mit einem Atemzug Abstand. */
-      setTimeout(restAnstossen, 300);
-      try { performance.mark("ulh-inhalt"); } catch (e){}
-      miraAnsetzen(root, INHALT_MS + MIRA_WARTEN);
+      auftrittSchlucken(root);
+      var los = false;
+      function bewegen(){
+        if (los) return;
+        los = true;
+        /* Das Fenster faehrt nur beim ersten Mal ein; in den Runden danach kommt die Seite mit
+           ihren Kaesten zurueck (is-runde, neustart). */
+        if (!root.__ulhFensterDa){
+          root.__ulhFensterDa = true;
+          root.classList.add("is-fenster");
+          setTimeout(function(){ root.classList.remove("is-fenster"); }, FENSTER_MS + 200);
+        }
+        root.classList.add("is-bereit", "is-inhalt");
+        try { performance.mark("ulh-inhalt"); } catch (e){}
+        /* Die uebrigen Seiten des Fensters erst nach der Bewegung holen (Stufe 2). */
+        setTimeout(restAnstossen, FENSTER_MS + 200);
+        miraAnsetzen(root, INHALT_MS + MIRA_WARTEN);
+      }
+      /* Ein Bild nach dem Aufraeumen; der Zeitgeber, falls der Tab verdeckt ist (dort ruht rAF). */
+      if (window.requestAnimationFrame) requestAnimationFrame(bewegen);
+      setTimeout(bewegen, 120);
     }
     (function warten(){
       if (fertig) return;

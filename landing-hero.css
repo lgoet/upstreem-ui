@@ -710,8 +710,10 @@
    vorgerenderten Markup), das Fenster aber erst, wenn landing-hero.js BEREIT meldet (is-bereit: Leiste
    und Komponenten stehen). Die Verzoegerung zaehlt ab da: vorher 970/1170 ab Skriptstart, weil der
    Text erst dann anfing; jetzt hat der Text schon vorgelaufen. */
-.ulh-root.is-entering.is-bereit .ulh-frame  { animation: ulhRise 900ms var(--ulh-expo) 150ms backwards; }
-.ulh-root.is-entering.is-bereit :is(.uds-pagehead, .uds-filterzeile) { animation: ulhRise 810ms var(--ulh-expo) 350ms backwards; }
+/* 23.10.: EINE Bewegung fuer Fenster und Inhalt (is-fenster, siehe zeigen() in landing-hero.js) --
+   keine eigene Staffel mehr fuer Seitenkopf und Kaesten darin, die liefen gegen den Auftritt der
+   Seite aus core. Nur transform und opacity, damit sie auf dem Compositor laeuft. */
+.ulh-root.is-fenster .ulh-frame { animation: ulhRise 900ms var(--ulh-expo) backwards; will-change: transform, opacity; }
 /* NICHT MEHR ZWEI GROSSE RECHTECKE (21.09. gemeldet: "Bitte eine richtige Appear animation im
    Dashboard, das sieht aktuell sehr mau aus"). Vorher stiegen .vot-root und .tcd-root als je ein
    Block herauf -- zwei Bewegungen fuer vier Kaesten, und in einer Sektion, in der das Brett der
@@ -751,14 +753,14 @@
    schoene smoothe Animation sein"). Die Abstaende waren 0/70/60/130/260/330/320/390 -- vor allem
    die 130ms Pause zwischen dem Visibility-Chart und den Zitaten lasen sich als zwei Auftritte
    statt als einer, der durchlaeuft. Jetzt laeuft er ohne Absatz von oben nach unten durch. */
-.ulh-root.is-inhalt .vot-unit-left  .vot-head { animation: ulhRise 730ms var(--ulh-expo) backwards; }
-.ulh-root.is-inhalt .vot-unit-left  .vot-box  { animation: ulhRise 810ms var(--ulh-expo) 45ms backwards; }
-.ulh-root.is-inhalt .vot-unit-right .vot-head { animation: ulhRise 730ms var(--ulh-expo) 40ms backwards; }
-.ulh-root.is-inhalt .vot-unit-right .vot-box  { animation: ulhRise 810ms var(--ulh-expo) 85ms backwards; }
-.ulh-root.is-inhalt .tcd-unit-left  .tcd-head { animation: ulhRise 730ms var(--ulh-expo) 150ms backwards; }
-.ulh-root.is-inhalt .tcd-unit-left  .tcd-box  { animation: ulhRise 810ms var(--ulh-expo) 195ms backwards; }
-.ulh-root.is-inhalt .tcd-unit-right .tcd-head { animation: ulhRise 730ms var(--ulh-expo) 190ms backwards; }
-.ulh-root.is-inhalt .tcd-unit-right .tcd-box  { animation: ulhRise 810ms var(--ulh-expo) 230ms backwards; }
+.ulh-root.is-runde.is-inhalt .vot-unit-left  .vot-head { animation: ulhRise 730ms var(--ulh-expo) backwards; }
+.ulh-root.is-runde.is-inhalt .vot-unit-left  .vot-box  { animation: ulhRise 810ms var(--ulh-expo) 45ms backwards; }
+.ulh-root.is-runde.is-inhalt .vot-unit-right .vot-head { animation: ulhRise 730ms var(--ulh-expo) 40ms backwards; }
+.ulh-root.is-runde.is-inhalt .vot-unit-right .vot-box  { animation: ulhRise 810ms var(--ulh-expo) 85ms backwards; }
+.ulh-root.is-runde.is-inhalt .tcd-unit-left  .tcd-head { animation: ulhRise 730ms var(--ulh-expo) 150ms backwards; }
+.ulh-root.is-runde.is-inhalt .tcd-unit-left  .tcd-box  { animation: ulhRise 810ms var(--ulh-expo) 195ms backwards; }
+.ulh-root.is-runde.is-inhalt .tcd-unit-right .tcd-head { animation: ulhRise 730ms var(--ulh-expo) 190ms backwards; }
+.ulh-root.is-runde.is-inhalt .tcd-unit-right .tcd-box  { animation: ulhRise 810ms var(--ulh-expo) 230ms backwards; }
 @media (prefers-reduced-motion: reduce) {
   .ulh-root:not(.is-inhalt) .vot-unit-left  .vot-head,
   .ulh-root:not(.is-inhalt) .vot-unit-left  .vot-box,
@@ -3996,7 +3998,9 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
       Faellt das Skript aus, setzt landing-hero.js is-shown trotzdem (Aufgeben nach 10 s). */
 .ulh-root[data-ulh-ssr]:not(.is-shown) :is(.ulh-eyebrow, .ulh-h1, .ulh-sub, .ulh-cta, .ulh-modelle) { opacity: 0; }
 /* Das Fenster bleibt unsichtbar, bis es sich aufbauen darf (is-bereit); danach uebernimmt seine Animation. */
-.ulh-root[data-ulh-ssr]:not(.is-bereit) .ulh-frame { opacity: 0; }
+/* 0.001 statt 0: core zaehlt Deckkraft 0 als unsichtbar (UC.istSichtbar), und das Dashboard darin
+   baut sich in dieser Zeit fertig. */
+.ulh-root[data-ulh-ssr]:not(.is-bereit) .ulh-frame { opacity: 0.001; }
 /* 3. Die Anker der Leiste (#overview, #sources, #mira) kommen von anderen Seiten: die Sektion
       soll beim Sprung unter der Leiste stehen, nicht dahinter. */
 .ulh-root > section[id] { scroll-margin-top: 63px; }
@@ -4348,3 +4352,8 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-root .ulh-vis .uev-abd-schalter.uev-abd-schalter { --up-sw-r: calc(var(--up-r-s) / var(--ulh-vs, 1)); }
 /* Fahnen: 3 wie in der App (Haarlinie unter 4, ohne Token). */
 .ulh-root .ulh-vis .up-flag { border-radius: calc(3px / var(--ulh-vs, 1)); }
+
+/* Der Chip "Non-branded prompts" in den Filterleisten des Fensters (23.10. angefordert: "ueberall
+   raus"). In der App nennt er den Umfang der Zahlen (filter-bar.js, standardChip); auf einer
+   Vorfuehrung ist er ein Etikett ohne Bedeutung. Nur ausgeblendet, die Leiste bleibt sonst gleich. */
+.ulh-root .ufb-chip.is-standard { display: none; }
