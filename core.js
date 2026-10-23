@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261200;
+  var BUILD = 20261201;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -24985,23 +24985,16 @@
     "Show event markers": "Event-Marker zeigen", "Events": "Events"
   });
   /* Die Gegenrichtung, wie upstreemBrandsChanged und upstreemMarketsChanged (04.10.): events.js
-     ruft sie nach jedem GELUNGENEN Anlegen, Bearbeiten, URL hinzufuegen/entfernen und Loeschen.
-     Bubble antwortet mit list_impact_events_v1 + setUpstreemEvents -- EIN Workflow auf der
-     Hauptseite statt eines zweiten RPC-Aufrufs in jedem der fuenf aendernden Workflows, und die
-     Pins in den Diagrammen ziehen mit, ohne dass ein Aenderungsort von ihnen weiss. */
+     ruft sie nach jedem GELUNGENEN Anlegen, Bearbeiten, URL hinzufuegen/entfernen und Loeschen,
+     und core laedt den Teil events nach (team_context_v1) -- die Pins in den Diagrammen ziehen mit,
+     ohne dass ein Aenderungsort von ihnen weiss.
+     OHNE BUBBLE (23.10.): bis dahin ging das Signal ohne App-Start an Bubble
+     (bubble_fn_upEventsChanged, dessen Workflow list_impact_events_v1 rief, sonst ein Hinweis in
+     der Konsole). Die App startet immer ueber core, Bubble ist aus, und list_impact_events_v1 faellt
+     am 30.10. weg -- der Zweig und sein Konsolentext sind entfernt (CLAUDE.md §5). Ohne App-Start
+     (Pruefstand, Vorfuehrung) laedt nichts nach; false sagt das dem Aufrufer. */
   function eventsChanged(){
-    /* Kommt der Start von core (APP-START), laedt core den Teil selbst nach (13.10.). */
-    if (appTeilNachladen("events")) return true;
-    var fn = resolveBubbleFn("bubble_fn_upEventsChanged");
-    if (typeof fn === "function"){ try { fn(""); } catch(e){} return true; }
-    if (window.console) {
-      console.info("[events] bubble_fn_upEventsChanged not found. The event overview and the event " +
-        "markers in the charts will not refresh by themselves, so a created, edited or deleted event " +
-        "only shows up after a reload. Add a Toolbox \"JavaScript to Bubble\" element named " +
-        "upEventsChanged (Trigger event checked) whose workflow re-runs list_impact_events_v1 and " +
-        "calls setUpstreemEvents().");
-    }
-    return false;
+    return appTeilNachladen("events");
   }
   window.setUpstreemEvents = function(rows){ return setEvents(rows, "setUpstreemEvents"); };
   window.getUpstreemEvents = getEvents;
