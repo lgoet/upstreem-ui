@@ -3555,8 +3555,8 @@
       auf.addEventListener("mouseenter", function(){ ziel[welche] = LANGSAM; });
       auf.addEventListener("mouseleave", function(){ ziel[welche] = 1; });
     }
-    hover(lauf, "band");
-    hover(orb, "bahn");
+    /* Kein Verlangsamen beim Ueberfahren mehr (23.10.: keine Hover-Effekte in den Plattform-Karten);
+       hover() bleibt als Griff, falls ein anderer Abschnitt es braucht. */
 
     /* Nur laufen, wenn man es sehen kann. Ohne IntersectionObserver laeuft es immer -- das ist
        die alte Lage und nicht schlechter als vorher. */
@@ -3804,13 +3804,7 @@
        die erste Fassung, beide vom Nutzer: die Linie einer fremden Marke hervorzuheben sagt
        nichts, und eine Linie in einer Vorschau genau zu treffen ist eine Zumutung -- die Karte
        ist das Ziel, das man ohnehin trifft. */
-    var karte = feld.closest ? feld.closest(".ulh-card") : null;
-    var eigene = 0;
-    KRV.forEach(function(k, i){ if (k.id === MARKEN[0].id) eigene = i; });
-    if (karte){
-      karte.addEventListener("mouseenter", function(){ krvHeben(feld, eigene); });
-      karte.addEventListener("mouseleave", function(){ krvHeben(feld, -1); });
-    }
+    /* Seit 23.10. ohne Heben beim Ueberfahren (keine Hover-Effekte in den Plattform-Karten). */
     return true;
   }
 
