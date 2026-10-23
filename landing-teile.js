@@ -152,7 +152,8 @@
      einblendet (opacity + transform, die Expo-Kurve der Seite) -- sichtbar wird es ueber
      visibility, damit es geschlossen auch fuer Tastatur und Vorleser nicht da ist.
      Zu geht es: mit dem Knopf, mit Escape, mit einem Klick daneben, mit jedem Eintrag, und wenn das
-     Fenster breiter als 900px wird (dort steht die Mitte wieder da). */
+     Fenster breiter als 1199px wird (dort steht die Mitte wieder da; bis 23.10. 900, siehe
+     landing-hero.css "Das Menue auf dem Telefon"). */
   function mobilLauf(nav, springen){
     var knopf = nav.querySelector(".ulh-nav-menue"), blatt = nav.querySelector(".ulh-nav-mobil");
     if (!knopf || !blatt || knopf.__ulhMobil) return;
@@ -179,7 +180,7 @@
       });
     });
     if (window.matchMedia){
-      var breit = window.matchMedia("(min-width: 901px)");
+      var breit = window.matchMedia("(min-width: 1200px)");
       var weg = function(){ if (breit.matches) setzen(false); };
       if (breit.addEventListener) breit.addEventListener("change", weg); else if (breit.addListener) breit.addListener(weg);
     }
@@ -334,6 +335,42 @@
     });
   }
 
+  /* Der Themenschalter der Leiste (23.10.). Der Zustand ist das Attribut, das core selbst fuehrt
+     (html[data-up-pagetheme]) unter dessen Schluessel pref_theme -- auf den Unterseiten laeuft kein
+     core, und die Form (landing-hero.css) haengt ohnehin nur am Attribut. Ein Klick schreibt beides
+     und meldet "ulh-thema"; auf der Startseite stellt landing-hero.js daraufhin die Fenster um.
+     Gebunden am document und nicht am Knopf: auf der Startseite entsteht die Leiste ohne
+     vorgerendertes Markup erst nach diesem Skript. */
+  function themaJetzt(){
+    return document.documentElement.getAttribute("data-up-pagetheme") === "dark" ? "dark" : "light";
+  }
+  function themaKnoepfe(){
+    var an = themaJetzt() === "dark" ? "true" : "false";
+    [].forEach.call(document.querySelectorAll(".ulh-thema"), function(b){
+      if (b.getAttribute("aria-pressed") !== an) b.setAttribute("aria-pressed", an);
+    });
+  }
+  function themaBinden(){
+    var h = document.documentElement;
+    if (!h.hasAttribute("data-up-pagetheme")){
+      var t = null;
+      try { t = window.localStorage.getItem("pref_theme"); } catch (e){}
+      if (t === "dark") h.setAttribute("data-up-pagetheme", "dark");
+    }
+    themaKnoepfe();
+    if (document.__ulhThema) return;
+    document.__ulhThema = true;
+    document.addEventListener("click", function(e){
+      var b = e.target && e.target.closest && e.target.closest(".ulh-thema");
+      if (!b) return;
+      var neu = themaJetzt() === "dark" ? "light" : "dark";
+      try { window.localStorage.setItem("pref_theme", neu); } catch (err){}
+      h.setAttribute("data-up-pagetheme", neu);
+      themaKnoepfe();
+      try { document.dispatchEvent(new CustomEvent("ulh-thema", { detail: neu })); } catch (err){}
+    });
+  }
+
   /* ---- Anker auf derselben Seite (15.10. gemeldet: "der Klick auf Neu Customer Journey Tracking
      scrollt eher zu Domain Detail") ----
      Der Browser rechnet das Ziel eines weichen Sprungs EINMAL, am Anfang. Auf der Startseite aendern
@@ -445,6 +482,7 @@
 
   function binden(){
     ankerBinden();
+    themaBinden();
     /* Die Leiste der STARTSEITE ist keine eigene Wurzel (data-ulh-teil fehlt) -- ihr Toggle wird
        trotzdem gebunden. */
     spracheBinden(document);
@@ -460,7 +498,7 @@
 
   window.UpstreemLandingTeile = { navLauf: navLauf, nachweisBinden: nachweisBinden,
                                   jahrSetzen: jahrSetzen, kalenderBinden: kalenderBinden, spracheBinden: spracheBinden,
-                                  preiseBinden: preiseBinden,
+                                  preiseBinden: preiseBinden, themaKnoepfe: themaKnoepfe,
                                   binden: binden };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", binden);

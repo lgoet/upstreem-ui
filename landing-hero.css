@@ -113,6 +113,19 @@
   --ulh-border: #e0e2e6;
   /* Der Funke -- seit dem 06.10. als Hover der zwei Knoepfe im Hero, vorher um den Chip. */
   --ulh-funke: #98CEF2;
+  /* DIE ROLLEN FUER DAS DUNKLE THEMA (23.10.). Bis dahin standen diese Werte als feste Zahlen in
+     den Regeln, die Seite war immer hell. Hier stehen sie mit genau den Zahlen von vorher -- hell
+     sieht nichts anders aus --, und der dunkle Block weiter unten setzt sie neu. */
+  --ulh-g7: #8f8f8f; --ulh-g9: #4d4d4d;
+  --ulh-pri-hover: #33332e; --ulh-ring-hover: #c9ccd2;
+  --ulh-leise-a: #767a82; --ulh-leise-b: #a9adb5;
+  --ulh-gitter: rgba(0, 0, 0, .06);
+  --ulh-platz1: #d4d4d4; --ulh-platz2: #f2f2f2; --ulh-seg-leer: #e8eaee;
+  --ulh-rahmen-bg: rgba(236, 237, 241, .78); --ulh-rahmen-rand: rgba(11, 13, 24, .06);
+  --ulh-pot-a: #c4c9d0; --ulh-team-ink: #1d4ed8; --ulh-pille: #ffffff;
+  --ulh-sw-rail: #f9f9f9; --ulh-sw-pill: #ffffff; --ulh-sw-rand: #e0e2e6;
+  --ulh-wahl: rgba(0, 0, 0, .05); --ulh-fehler: #b0200c; --ulh-schalter-aus: #d6d6d4;
+  --ulh-code-f: #0068d6; --ulh-code-w: #a75500; --ulh-code-ok: #297a3a;
   /* Die Buehne hat eine FESTE Breite und wird als Ganzes verkleinert. Nur so sieht man die App in
      ihrem Desktop-Layout: die Komponenten messen ihre eigene Breite (clientWidth) und stapeln
      darunter um -- eine transform-Verkleinerung aendert clientWidth nicht, ein kleinerer Kasten
@@ -289,7 +302,7 @@
   height: calc(100% - 2px);
   padding: 0 19px 0 15px;
   border-radius: 999px;
-  background: #ffffff;
+  background: var(--ulh-grund);
   font-size: 13px;
   font-weight: 500;
   letter-spacing: .01em;
@@ -371,7 +384,7 @@
    Erst die Sache, dann die Aufloesung im leisen Ton: ein Verlauf von --ulh-sub nach heller, als
    Textfuellung. Gleiches Gewicht und gleiche Groesse -- nur die Farbe tritt zurueck. */
 .ulh-h1-leise {
-  background: linear-gradient(90deg, #767a82 0%, #a9adb5 100%);
+  background: linear-gradient(90deg, var(--ulh-leise-a) 0%, var(--ulh-leise-b) 100%);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent; color: transparent;
 }
@@ -381,7 +394,7 @@
    Pfeil, der beim Hover einen Schritt macht. Der Ring wird beim Hover dunkler -- dieselbe
    Rueckmeldung wie beim zweiten Knopf. */
 .ulh-chip-link { text-decoration: none; cursor: pointer; transition: background 160ms ease; }
-.ulh-chip-link:hover { --ulh-chip-ring: #c9ccd2; }
+.ulh-chip-link:hover { --ulh-chip-ring: var(--ulh-ring-hover); }
 .ulh-chip-link .ulh-chip-in { gap: 8px; padding: 0 7px 0 4px; }
 /* DIE ABSTAENDE NACH DEM BILD, NICHT NACH DEM KASTEN (23.10.): "New" steht 4 vom Rand (wie oben und
    unten), dann 8 bis zum Paar aus Zeichen und Wort, darin 6. Der Pfeil zeichnet in seinem 13er-Kasten
@@ -403,7 +416,7 @@
 .ulh-chip.ulh-chip-link { box-shadow: 0 1px 1px rgba(11, 13, 24, .07), 0 2px 3px -1px rgba(11, 13, 24, .1); }
 .ulh-chip-neu {
   display: inline-flex; align-items: center; height: 22px; padding: 0 8px;
-  border-radius: 999px; background: var(--ulh-text); color: #ffffff;
+  border-radius: 999px; background: var(--ulh-text); color: var(--ulh-grund);
   font-size: 11px; font-weight: 600; letter-spacing: .02em;
 }
 .ulh-chip-pfeil { color: var(--ulh-sub); transition: transform 200ms var(--ulh-expo), color 160ms ease; }
@@ -469,8 +482,8 @@
   background: var(--vc-heading-bg, #f5f5f5);
   border-color: var(--vc-hover-border, #6f6f6f);
 }
-.ulh-btn-pri { border: 1px solid var(--ulh-text); background: var(--ulh-text); color: #ffffff; }
-.ulh-btn-pri:hover { background: #33332e; border-color: #33332e; }
+.ulh-btn-pri { border: 1px solid var(--ulh-text); background: var(--ulh-text); color: var(--ulh-grund); }
+.ulh-btn-pri:hover { background: var(--ulh-pri-hover); border-color: var(--ulh-pri-hover); }
 /* DER FUNKE ALS HOVER der zwei Knoepfe im Hero (06.10. angefordert, vorher lief er um den Chip).
    Dieselbe Machart wie dort: der Knopf selbst ist der RING (seine Fuellung), innen liegt 1px
    eingerueckt die eigentliche Flaeche (::after), und zwischen beiden dreht der Lichtstreifen
@@ -497,7 +510,7 @@
 }
 .ulh-text .ulh-cta .ulh-btn-pri::after { background: var(--ulh-text); }
 .ulh-text .ulh-cta .ulh-btn-sec:hover::after { background: var(--vc-heading-bg, #f5f5f5); }
-.ulh-text .ulh-cta .ulh-btn-pri:hover::after { background: #33332e; }
+.ulh-text .ulh-cta .ulh-btn-pri:hover::after { background: var(--ulh-pri-hover); }
 .ulh-text .ulh-cta .ulh-btn::before {
   content: "";
   position: absolute;
@@ -634,7 +647,7 @@
      stuenden weisse Linien auf dem hellen Seitengrund unsichtbar. 6 Prozent Schwarz ergibt auf #fafafa
      etwa die Rahmenfarbe der App (#ebebeb). */
   background: repeating-linear-gradient(to right,
-              rgba(0, 0, 0, .06) 0, rgba(0, 0, 0, .06) 1px,
+              var(--ulh-gitter) 0, var(--ulh-gitter) 1px,
               transparent 1px, transparent 8px);
   -webkit-mask-image: linear-gradient(to bottom, transparent 16%, rgba(0,0,0,.18) 32%,
                       rgba(0,0,0,.62) 50%, #000 66%);
@@ -659,7 +672,7 @@
   height: 32px;
   z-index: 2;
   pointer-events: none;
-  background: linear-gradient(to top, var(--ulh-blende), rgba(240, 240, 240, 0));
+  background: linear-gradient(to top, var(--ulh-blende), transparent);
 }
 /* Die Blende beginnt bei 218px mal Massstab, also kurz vor der Kante der ausgeklappten Leiste. Klappt die
    Leiste auf die Zeichenschiene zusammen (is-mini, von sidebar.js nach der Fensterbreite gesetzt),
@@ -1644,7 +1657,7 @@
   /* Reines Weiss auf dem off-white Grund der Seite, dazu Rahmen und ein Schatten, der die Karte
      einen Millimeter anhebt und nicht mehr. Die Werte sind die der App (--vc-border) und die
      leiseste Stufe des Fensterschattens oben. */
-  background: #ffffff;
+  background: var(--ulh-grund);
   border: 1px solid var(--ulh-border);
   /* Karte nach Rolle: 12 wie jede Karte der App (23.10., vorher 16). */
   border-radius: var(--up-r-2xl);
@@ -1915,7 +1928,7 @@
    Ueberschrift und Karten gleichmaessig stehen. Links und rechts bleiben es 8px. */
 .ulh-quell-panel {
   border: 1px solid var(--ulh-border);
-  border-radius: var(--up-r-2xl); background: #ffffff;
+  border-radius: var(--up-r-2xl); background: var(--ulh-grund);
   /* Ringsum dasselbe Polster (14.10. abends, "Paddings checken"): gemessen standen oben 21px,
      seitlich 8 -- die Kurve begann 9px neben dem Rand, das Logo darueber 17. Jetzt beginnen Logo,
      Kurve, Trichter und die zwei Karten auf einer Kante, so weit vom Rand wie von oben. */
@@ -2040,7 +2053,7 @@
 }
 .ulh-vis-eventabd::before, .ulh-vis-eventziel::before {
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 18%;
-  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, #ffffff 94%);
+  background: linear-gradient(to bottom, transparent 0%, var(--ulh-grund) 94%);
   pointer-events: none; z-index: 3;
 }
 /* Der Abstand von 40px, den die Seite in der App ueber der Sitemap laesst, entfaellt: hier steht sie oben. */
@@ -2109,7 +2122,7 @@
 .ulh-pk .upr-volume-track {
   width: 58px; height: 6px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px;
 }
-.ulh-pk .upr-volume-seg { border-radius: 2px; background: #e8eaee; }
+.ulh-pk .upr-volume-seg { border-radius: 2px; background: var(--ulh-seg-leer); }
 .ulh-pk .upr-volume-seg.is-filled.level-1 { background: #d2865d; }
 .ulh-pk .upr-volume-seg.is-filled.level-2 { background: #d9b85d; }
 .ulh-pk .upr-volume-seg.is-filled.level-3 { background: #9fd25d; }
@@ -2126,8 +2139,8 @@
   content: ""; position: absolute; left: 0; right: 0; height: 15%;
   pointer-events: none; z-index: 3;
 }
-.ulh-vis-sprachen::before { top: 40px; background: linear-gradient(to bottom, #ffffff 12%, rgba(255,255,255,0) 100%); }
-.ulh-vis-sprachen::after  { bottom: 0;  background: linear-gradient(to top,    #ffffff 12%, rgba(255,255,255,0) 100%); }
+.ulh-vis-sprachen::before { top: 40px; background: linear-gradient(to bottom, var(--ulh-grund) 12%, transparent 100%); }
+.ulh-vis-sprachen::after  { bottom: 0;  background: linear-gradient(to top,    var(--ulh-grund) 12%, transparent 100%); }
 
 /* Die Bahnen. Der Kasten ist der Bezugsrahmen, jeder Ring liegt mittig darin und dreht als
    Ganzes; die Zeichen drehen ihren Ring wieder heraus (landing-hero.js, orbTakt).
@@ -2165,8 +2178,8 @@
 .ulh-orb-mitte {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   width: 84px; height: 84px; border-radius: 50%; z-index: 2;
-  background: #ffffff; border: 1px solid var(--ulh-border);
-  box-shadow: 0 6px 22px rgba(11, 13, 24, .10), 0 0 0 10px rgba(255, 255, 255, .92);
+  background: var(--ulh-grund); border: 1px solid var(--ulh-border);
+  box-shadow: 0 6px 22px rgba(11, 13, 24, .10), 0 0 0 10px color-mix(in srgb, var(--ulh-grund) 92%, transparent);
   display: flex; align-items: center; justify-content: center;
 }
 .ulh-orb-mitte img { width: 38px; height: 38px; display: block; }
@@ -2194,7 +2207,7 @@
   position: absolute; opacity: 0; transform: translate(-50%, -100%);
   display: inline-flex; align-items: center; gap: 8px;
   padding: 8px 11px; border-radius: var(--up-r-m); white-space: nowrap;
-  background: #ffffff; border: 1px solid var(--ulh-border);
+  background: var(--ulh-grund); border: 1px solid var(--ulh-border);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .05), 0 8px 20px rgba(11, 13, 24, .07);
   font-size: 12.5px; line-height: 1.2;
   transition: opacity 364ms var(--ulh-aus), filter 280ms var(--ulh-aus);
@@ -2244,7 +2257,7 @@
 .ulh-krv-punkt {
   position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px;
   border-radius: 999px; background: var(--krv-farbe, #579cf1);
-  box-shadow: 0 0 0 2px #ffffff, 0 1px 3px rgba(11, 13, 24, .18);
+  box-shadow: 0 0 0 2px var(--ulh-grund), 0 1px 3px rgba(11, 13, 24, .18);
   opacity: 0; pointer-events: none;
 }
 .ulh-krv-punkt::after {
@@ -2372,7 +2385,7 @@
 }
 .ulh-vis-zeilen::before, .ulh-vis-domains::before, .ulh-vis-chancen::before, .ulh-vis-bewegung::before {
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 18%;
-  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, #ffffff 94%);
+  background: linear-gradient(to bottom, transparent 0%, var(--ulh-grund) 94%);
   pointer-events: none; z-index: 3;
 }
 
@@ -2466,7 +2479,7 @@
   /* 23.10.: innen 12 auf dem Schirm (Fenster = Karte, durch den Massstab geteilt, siehe "DIE RADIEN IN
      DEN VORSCHAUEN"), aussen konzentrisch dazu: plus 16 Polster und 1 Rand. */
   padding: 16px; border-radius: calc(var(--up-r-2xl) / var(--ulh-vs, 1) + 17px);
-  background: rgba(236, 237, 241, .78); border: 1px solid rgba(11, 13, 24, .06);
+  background: var(--ulh-rahmen-bg); border: 1px solid var(--ulh-rahmen-rand);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 22px 50px rgba(11, 13, 24, .08);
 }
 /* Das Fenster: weiss, eine Kante, darin der Kopf und die Tabelle buendig bis an den Rand -- die
@@ -2499,7 +2512,7 @@
 /* Der Ruhezustand der gehobenen Zeile steht AUSDRUECKLICH da, sonst gibt es nichts, wovon der
    Uebergang ausgehen koennte: Rundung 0 und ein durchsichtiges WEISS (nicht "transparent" -- das
    waere durchsichtiges Schwarz, und der Grund blendete durch Grau). */
-.ulh-vis-tab .up-row.is-mitte { border-radius: 0; background-color: rgba(255, 255, 255, 0); }
+.ulh-vis-tab .up-row.is-mitte { border-radius: 0; background-color: transparent; }
 /* Die gehobene Zeile bekommt KEINEN eigenen Radius. Sie nimmt den, den ihr Bauteil ohnehin hat:
    die Chancenzeile hat 12px von sich aus, die Zeile der Tabelle hat keinen -- ihr Rahmen ist der
    der Tabelle, und deren 12px stehen hier. */
@@ -2508,7 +2521,7 @@
    App, aber sie haengt an .up-root, und diese Vorschau steht darueber: die Angabe war ungueltig,
    die Zeile blieb durchsichtig, und man sah ihre Nachbarn hindurch. Dieselbe Falle wie beim Kasten
    der Quellen-Sektion. */
-.ulh-card:hover .ulh-vis-tab .up-row.is-mitte { background-color: #ffffff; }
+.ulh-card:hover .ulh-vis-tab .up-row.is-mitte { background-color: var(--ulh-grund); }
 /* Der eigene Hover der Bauteile faellt weg. */
 .ulh-vis .up-row:hover, .ulh-vis .uo-row:hover, .ulh-vis .udt-subrow:hover {
   background: var(--vc-bg); border-color: var(--vc-border);
@@ -2598,7 +2611,7 @@
    danach und wuerde hier einen zweiten Controller aufziehen. Ohne sie ist der Farbverlauf der
    gefuellten Balken ungueltig und faellt auf "none" zurueck: gemessen standen alle vier Balken
    grau da, obwohl drei die Klasse is-on trugen. Die Werte sind die der Komponente. */
-.ulh-vis-chancen .ulh-vis-in { --uo-pot-a: #c4c9d0; --uo-pot-b: var(--vc-text); }
+.ulh-vis-chancen .ulh-vis-in { --uo-pot-a: var(--ulh-pot-a); --uo-pot-b: var(--vc-text); }
 .ulh-vis-chancen .uo-list-rows { gap: 8px; }
 .ulh-vis-chancen .uo-row { cursor: default; }
 
@@ -2620,7 +2633,7 @@
   .ulh-root .ulh-card:hover .ulh-vis-tab .up-row.is-mitte,
   .ulh-root .ulh-card:hover .ulh-vis-chancen .uo-row.is-mitte {
     transform: none; box-shadow: none; border-radius: 0;
-    background-color: rgba(255, 255, 255, 0);
+    background-color: transparent;
   }
 }
 
@@ -2857,7 +2870,7 @@
   flex: 0 0 auto; height: 20px; padding: 0 7px; border-radius: 6px;
   display: inline-flex; align-items: center;
   font-size: 11px; font-weight: 600;
-  background: rgba(37, 99, 235, 0.085); color: #1d4ed8;
+  background: rgba(37, 99, 235, 0.085); color: var(--ulh-team-ink);
 }
 
 /* ---- Zweites Fenster: die URL-Typen, dunkel ----
@@ -3226,7 +3239,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
      oben steht und die Antwort gleich an ihrer endgueltigen Stelle landet (_pinSendScroll);
      landing-hero.js nimmt sie hier zurueck (obenHalten). Ohne das ist jede Zahl um eine halbe
      Chathoehe zu gross -- daran waren drei Messungen zu gross. */
-.ulh-msc-rahmen { display: block; width: 100%; height: 660px; border: 0; background: #ffffff; }
+.ulh-msc-rahmen { display: block; width: 100%; height: 660px; border: 0; background: var(--ulh-grund); }
 @media (max-width: 900px) {
   /* Untereinander -- die Reihe bricht schon durch .ulh-cards-row um; hier stehen nur die drei
      Karten wieder NEBENeinander, denn 20 Prozent von wenig ist nichts. */
@@ -3319,7 +3332,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
    Schraffur steht. Darunter lief sie an der tiefen ersten Marke sogar unter die Linie. */
 .ulh-geo-mk-txt {
   display: flex; flex-direction: column; gap: 1px; margin-bottom: 64px;
-  text-shadow: 0 0 5px #fff, 0 0 5px #fff, 0 0 10px #fff;
+  text-shadow: 0 0 5px var(--ulh-grund), 0 0 5px var(--ulh-grund), 0 0 10px var(--ulh-grund);
 }
 /* Eigener Takt fuer die Marken: sie kommen NACH der Kurve und eine nach der anderen von links
    nach rechts. 260ms je Schritt statt der 110ms, die sonst auf der Seite gelten -- bei drei
@@ -3363,7 +3376,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
    scrollt das Fenster darueber) -- dann steht sie einfach am Anfang der Seite. */
 .ulh-nav {
   position: sticky; top: 0; z-index: 40;
-  background: rgba(250, 250, 250, .82);
+  background: color-mix(in srgb, var(--ulh-seite) 82%, transparent);
   -webkit-backdrop-filter: saturate(180%) blur(14px);
           backdrop-filter: saturate(180%) blur(14px);
   /* Die Linie unten laeuft IMMER und ueber die ganze Breite -- sie ist die oberste der
@@ -3372,7 +3385,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
   border-bottom: 1px solid var(--ulh-border);
   transition: background 200ms var(--ulh-ease);
 }
-.ulh-nav.is-offen { background: rgba(250, 250, 250, .94); }
+.ulh-nav.is-offen { background: color-mix(in srgb, var(--ulh-seite) 94%, transparent); }
 /* Der Sprach-Toggle (14.10., nur auf der eigenen Website): zwei Kuerzel in einer leisen Pille, das
    aktive auf weissem Grund wie die gleitende Pille von .up-seg. Hoehe 28 (--up-h-seg), damit er
    neben den 36er-Knoepfen nicht als dritter Knopf auftritt. */
@@ -3396,7 +3409,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
   box-shadow: 0 0 0 1px rgba(11, 13, 24, .08); opacity: .7; transition: opacity 160ms var(--ulh-ease);
 }
 .ulh-sprache a:hover .ulh-sprache-flagge, .ulh-sprache a.is-an .ulh-sprache-flagge { opacity: 1; }
-.ulh-sprache a.is-an { background: #ffffff; color: var(--ulh-text); box-shadow: 0 1px 2px rgba(11, 13, 24, .08); }
+.ulh-sprache a.is-an { background: var(--ulh-pille); color: var(--ulh-text); box-shadow: 0 1px 2px rgba(11, 13, 24, .08); }
 /* Ganz schmal wird es eng: Logo, Toggle und "Kostenlos starten" brauchten bei 375px 6px mehr als
    da war (gemessen 14.10. auf /de). Toggle und Knopf ruecken zusammen, nichts faellt weg. */
 @media (max-width: 420px) {
@@ -3468,7 +3481,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-nav-pop {
   position: absolute; top: calc(100% - 6px); left: 0;
   width: 0; height: 0; overflow: hidden;
-  background: #ffffff; border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl);
+  background: var(--ulh-grund); border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 18px 44px rgba(11, 13, 24, .12);
   /* Es faehrt nach UNTEN auf: aus 10px ueber seiner Stelle in die Stelle. Die Lage (transform)
      springt beim ersten Oeffnen ohne Uebergang dorthin -- sonst kaeme es von der linken Kante
@@ -3508,25 +3521,29 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-root :is(a, button):focus-visible { outline: 2px solid var(--ulh-text); outline-offset: 2px; }
 .ulh-root :is(.ulh-app, .ulh-stage, .ulh-vis-in) :is(a, button):focus-visible { outline: none; }
 .ulh-fuss :is(a, button):focus-visible { outline-color: rgba(255, 255, 255, .7); }
-.ulh-chip-link:focus-visible { --ulh-chip-ring: #c9ccd2; }
+.ulh-chip-link:focus-visible { --ulh-chip-ring: var(--ulh-ring-hover); }
 .ulh-chip-link:focus-visible .ulh-chip-pfeil { transform: translateX(2px); color: var(--ulh-text); }
 .ulh-nav-punkt:focus-visible, .ulh-nav-eintrag:focus-visible { background: var(--ulh-kasten); color: var(--ulh-text); }
 
 /* ---- Das Menue auf dem Telefon (14.10., Audit) ----
-   Unter 900px faellt die Mitte der Leiste weg; dafuer steht rechts ein Knopf, der ein Blatt unter
-   der Leiste aufmacht. Bewegung wie ueberall: Deckkraft und ein kurzer Weg von oben, Expo-Kurve,
+   Unter 1200px (seit 23.10., vorher 900) faellt die Mitte der Leiste weg; dafuer steht rechts ein
+   Knopf, der ein Blatt unter der Leiste aufmacht. Die 1200 sind gemessen: die Mitte steht absolut in
+   der Mitte und weicht niemandem aus, und mit dem Themenschalter braucht die Leiste auf /de 1183px,
+   damit Mitte und rechte Gruppe 16px auseinander bleiben (Englisch 1071; beides mit den Flaggen ohne
+   Kuerzel, siehe unten). Schon vorher lagen die Sprachflaggen zwischen 901 und rund 1070 (Englisch)
+   bzw. 1180 (Deutsch) ueber "Pricing" / "Preise". Bewegung wie ueberall: Deckkraft und ein kurzer Weg von oben, Expo-Kurve,
    heraus schneller als herein. visibility haelt das geschlossene Blatt aus der Tab-Reihenfolge;
    ihr Uebergang wartet beim Schliessen, bis das Ausblenden vorbei ist.
    Die Zeichen im Knopf tauschen ueber Deckkraft und Groesse und drehen sich nie. */
 .ulh-nav-menue, .ulh-nav-mobil { display: none; }
-@media (max-width: 900px) {
+@media (max-width: 1199px) {
   /* .check_reinvention.py meldet hier den Segment-Knopf der App (.up-seg-btn). Fehlalarm wie bei
      .ulh-nav-punkt: ein einzelner Menueknopf der Website-Leiste, ausserhalb jeder .up-root, ohne
      Gruppe und ohne aktiven Zustand -- seine Masse sind die der 36er-Knoepfe daneben. */
   .ulh-nav-menue {
     position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
     width: 36px; height: 36px; padding: 0; border-radius: 10px;
-    border: 1px solid var(--ulh-border); background: #ffffff; color: var(--ulh-text); cursor: pointer;
+    border: 1px solid var(--ulh-border); background: var(--ulh-grund); color: var(--ulh-text); cursor: pointer;
     transition: background 160ms var(--ulh-ease);
   }
   .ulh-nav-menue:hover { background: var(--ulh-kasten); }
@@ -3537,11 +3554,11 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
   }
   .ulh-nav-menue-zu, .ulh-nav.is-mobil .ulh-nav-menue-auf { opacity: 0; transform: scale(.6); }
   .ulh-nav.is-mobil .ulh-nav-menue-zu { opacity: 1; transform: none; }
-  .ulh-nav.is-mobil { background: #ffffff; }
+  .ulh-nav.is-mobil { background: var(--ulh-grund); }
   .ulh-nav-mobil {
     display: block; position: absolute; top: 100%; left: 0; right: 0;
     max-height: calc(100dvh - 63px); overflow-y: auto; overscroll-behavior: contain;
-    background: #ffffff; border-bottom: 1px solid var(--ulh-border);
+    background: var(--ulh-grund); border-bottom: 1px solid var(--ulh-border);
     /* Der Schleier ueber der Seite darunter ist ein Schatten ohne Unschaerfe, so gross wie der
        Schirm, und nach oben weggeschnitten (clip-path), damit er die Leiste nicht trifft. Ein
        eigenes Element waere ein zweites, das auf- und zugehen muss -- so blendet er mit dem Blatt. */
@@ -3571,7 +3588,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
   .ulh-nm-knoepfe { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
   .ulh-nm-knoepfe .ulh-btn { justify-content: center; height: 44px; }
 }
-@media (max-width: 900px) and (prefers-reduced-motion: reduce) {
+@media (max-width: 1199px) and (prefers-reduced-motion: reduce) {
   .ulh-nav-mobil, .ulh-nav-mobil.is-offen, .ulh-nav-menue svg { transition: none; }
 }
 /* Ganz schmal steht der Sprachschalter nicht mehr in der Leiste (dort ist der Platz fuer den
@@ -3653,9 +3670,9 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
    Landingpage unveraendert, obwohl core seither einen kraeftigeren Schienenton fuehrt: hier steht
    der Schalter auf einer hellen, ruhigen Flaeche und soll leiser sein als in der App. */
 .ulh-preis-schalter {
-  --vc-switch-rail: #f9f9f9;
-  --vc-switch-pill: #ffffff;
-  --vc-switch-border: #e0e2e6;
+  --vc-switch-rail: var(--ulh-sw-rail);
+  --vc-switch-pill: var(--ulh-sw-pill);
+  --vc-switch-border: var(--ulh-sw-rand);
   --vc-text: var(--ulh-text);
   --vc-muted: var(--ulh-muted);
   margin-top: 30px; padding: 0 24px; display: flex; justify-content: center;
@@ -3670,7 +3687,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
   position: relative;
   display: flex; flex-direction: column; text-align: left;
   padding: 28px 26px 30px; border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl);
-  background: #ffffff;
+  background: var(--ulh-grund);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .035), 0 6px 16px rgba(11, 13, 24, .028);
 }
 /* Die empfohlene Karte traegt einen zweiten Ring statt eines 2px-Rahmens -- sonst spraenge ihr
@@ -3794,8 +3811,10 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-fuss-nachweis p { margin: 0 0 8px; max-width: 120ch; }
 .ulh-fuss-nachweis a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255, 255, 255, .25); text-underline-offset: 2px; }
 .ulh-fuss-nachweis a:hover { color: #e0e0e0; }
-@media (max-width: 900px) {
+@media (max-width: 1199px) {
   .ulh-nav-mitte { display: none; }
+}
+@media (max-width: 900px) {
   .ulh-fuss-in { gap: 32px; }
   .ulh-stimme-satz { max-width: none; }
 }
@@ -4048,6 +4067,8 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
    core.css -- aendert sich die Skala dort, zieht diese Zeile mit. Nur an den Teilen der Unterseiten
    (.ulh-teil); auf der Startseite gilt core. */
 .ulh-root.ulh-teil { --up-r-xs: 4px; --up-r-s: 4px; --up-r-m: 6px; --up-r-l: 8px; --up-r-xl: 8px; --up-r-2xl: 12px; --up-r-3xl: 16px; --up-r-voll: 999px; }
+/* Ebenso Dauer und Kurve fuer den Themenschalter in der Leiste (23.10.), Werte aus core. */
+.ulh-root.ulh-teil { --up-t-1: 120ms; --up-t-2: 200ms; --up-ease: cubic-bezier(.2, 0, .38, .9); }
 
 /* ---------- Der Kopf der Unterseiten (14.10.) ------------------------------------------------
    Demo, Contact, Blog und Rechtsseiten der Website: ein Band ueber die ganze Breite mit Chip,
@@ -4065,7 +4086,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 /* Das Raster nur unten sichtbar: oben im Seitengrund, damit die Ueberschrift auf ruhigem Grund steht. */
 .ulh-seitenkopf::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(to bottom, #fafafa 35%, rgba(250, 250, 250, .55) 100%);
+  background: linear-gradient(to bottom, var(--ulh-seite) 35%, color-mix(in srgb, var(--ulh-seite) 55%, transparent) 100%);
 }
 .ulh-seitenkopf-in {
   position: relative; display: flex; flex-direction: column; align-items: flex-start;
@@ -4151,7 +4172,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
    diese Regel hervor. Wartet der Kalender auf die Einwilligung (is-wartet), ist das kein Fehler. */
 .ulh-termin-fehler {
   position: absolute; top: 216px; left: 0; right: 0; margin: 0; padding: 0 24px; text-align: center;
-  font-size: 14px; line-height: 1.5; color: #b0200c;
+  font-size: 14px; line-height: 1.5; color: var(--ulh-fehler);
   visibility: hidden;
 }
 .ulh-termin-kal:not(.is-da):not(.is-wartet) .ulh-termin-fehler { animation: ulhTerminSpaet 1ms 25s forwards; }
@@ -4179,7 +4200,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-rs, .ulh-br {
   position: relative; z-index: 1;
   margin: 18px auto 0; max-width: 100%;
-  background: #ffffff; border: 1px solid var(--ulh-border); border-radius: 12px;
+  background: var(--ulh-grund); border: 1px solid var(--ulh-border); border-radius: 12px;
   box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 10px 28px rgba(11, 13, 24, .06);
 }
 .ulh-rs { width: calc(100% - 40px); padding: 16px 18px 16px; }
@@ -4206,7 +4227,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-rs-linie {
   /* --rs-y als Anteil (0 bis 1) der 150px, in denen die Saeulen stehen (.ulh-rs-s). */
   position: absolute; left: 0; right: 0; bottom: calc(var(--rs-y) * 150px);
-  border-top: 1px dashed rgba(31, 31, 27, .07); pointer-events: none;
+  border-top: 1px dashed color-mix(in srgb, var(--ulh-text) 7%, transparent); pointer-events: none;
 }
 .ulh-rs-sp { position: relative; display: flex; justify-content: center; align-items: flex-end; gap: 8px; height: 100%; }
 /* Eine Saeule: oben der Wert, darunter der Koerper. Die Hoehe des Koerpers ist ein Anteil des
@@ -4418,10 +4439,10 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-mcp-buehne { position: relative; height: 640px; margin-top: 56px; overflow: clip; overflow-clip-margin: 0; }
 .ulh-mcp-buehne::after {
   content: ""; position: absolute; left: -8px; right: -8px; bottom: 0; height: 200px; z-index: 3; pointer-events: none;
-  background: linear-gradient(to bottom, rgba(250, 250, 250, 0), var(--ulh-seite));
+  background: linear-gradient(to bottom, transparent, var(--ulh-seite));
 }
 .ulh-mcp-dok, .ulh-mcp-auto {
-  position: absolute; box-sizing: border-box; background: #ffffff;
+  position: absolute; box-sizing: border-box; background: var(--ulh-grund);
   border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl);
 }
 /* Der Code steht OHNE Karte direkt auf dem Seitengrund (23.10. angefordert) -- er ist die technische
@@ -4430,13 +4451,13 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-mcp-dok { left: 0.6%; width: 40.1%; top: 104px; height: 640px; box-shadow: 0 2px 2px rgba(0, 0, 0, .04); padding: 124px 56px 0; z-index: 0; }
 .ulh-mcp-kachel {
   position: absolute; left: 56px; top: -48px; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center;
-  background: #ffffff; border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl);
+  background: var(--ulh-grund); border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl);
   box-shadow: 0 1px 1px rgba(0,0,0,.02), 0 4px 8px -4px rgba(0,0,0,.04), 0 16px 24px -8px rgba(0,0,0,.06);
 }
 .ulh-mcp-kachel img { width: 52px; height: 52px; display: block; }
-.ulh-mcp-dok-t { display: block; font-size: 32px; line-height: 36px; font-weight: 600; letter-spacing: -1.2px; color: #d4d4d4; }
+.ulh-mcp-dok-t { display: block; font-size: 32px; line-height: 36px; font-weight: 600; letter-spacing: -1.2px; color: var(--ulh-platz1); }
 .ulh-mcp-dok-z { display: flex; flex-direction: column; gap: 10px; width: 260px; max-width: 100%; margin-top: 24px; }
-.ulh-mcp-dok-z i { display: block; height: 10px; border-radius: var(--up-r-xs); background: #f2f2f2; }
+.ulh-mcp-dok-z i { display: block; height: 10px; border-radius: var(--up-r-xs); background: var(--ulh-platz2); }
 .ulh-mcp-dok-z i:nth-child(2) { width: 82%; }
 .ulh-mcp-dok-z i:nth-child(3) { width: 90%; }
 .ulh-mcp-auto {
@@ -4445,32 +4466,32 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 }
 .ulh-mcp-logo { width: 48px; height: 48px; display: block; border-radius: var(--up-r-voll); }
 .ulh-mcp-auto-h { margin: 24px 0 0; font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.6px; color: var(--ulh-text); }
-.ulh-mcp-auto-s { margin: 8px 0 0; font-size: 14px; line-height: 20px; color: #4d4d4d; }
+.ulh-mcp-auto-s { margin: 8px 0 0; font-size: 14px; line-height: 20px; color: var(--ulh-g9); }
 .ulh-mcp-liste { list-style: none; margin: 28px 0 0; padding: 0; }
 .ulh-mcp-punkt { display: flex; gap: 14px; padding: 16px 0; border-top: 1px solid var(--ulh-border); }
-.ulh-mcp-punkt-ic { flex: 0 0 auto; display: inline-flex; color: #4d4d4d; margin-top: 1px; }
+.ulh-mcp-punkt-ic { flex: 0 0 auto; display: inline-flex; color: var(--ulh-g9); margin-top: 1px; }
 .ulh-mcp-punkt-ic svg { width: 18px; height: 18px; display: block; }
 .ulh-mcp-punkt-tx { display: flex; flex-direction: column; gap: 2px; }
 .ulh-mcp-punkt-t { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--ulh-text); }
-.ulh-mcp-punkt-s { font-size: 13px; line-height: 18px; color: #4d4d4d; }
+.ulh-mcp-punkt-s { font-size: 13px; line-height: 18px; color: var(--ulh-g9); }
 .ulh-mcp-code { right: 0.6%; width: 29.9%; top: 64px; height: 640px; overflow: hidden; z-index: 1; padding-left: 12px; }
 .ulh-mcp-reiter { display: flex; align-items: center; gap: 4px; height: 48px; padding: 0 8px 0 0; border-bottom: 1px solid var(--ulh-border); }
-.ulh-mcp-reiter-b { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: var(--up-r-m); font-size: 13px; font-weight: 500; color: #8f8f8f; }
-.ulh-mcp-reiter-b.is-an { background: rgba(0, 0, 0, .05); color: var(--ulh-text); }
+.ulh-mcp-reiter-b { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: var(--up-r-m); font-size: 13px; font-weight: 500; color: var(--ulh-g7); }
+.ulh-mcp-reiter-b.is-an { background: var(--ulh-wahl); color: var(--ulh-text); }
 .ulh-mcp-pre {
   margin: 0; padding: 20px 0; white-space: pre; overflow: hidden;
   font-family: ui-monospace, "Geist Mono", SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 20px; color: var(--ulh-text);
 }
-.ulh-mcp-pre .is-k { color: #8f8f8f; }
-.ulh-mcp-pre .is-f { color: #0068d6; }
-.ulh-mcp-pre .is-w { color: #a75500; }
-.ulh-mcp-pre .is-l { color: #4d4d4d; }
-.ulh-mcp-pre .is-ok { display: inline-flex; align-items: center; gap: 6px; color: #297a3a; }
+.ulh-mcp-pre .is-k { color: var(--ulh-g7); }
+.ulh-mcp-pre .is-f { color: var(--ulh-code-f); }
+.ulh-mcp-pre .is-w { color: var(--ulh-code-w); }
+.ulh-mcp-pre .is-l { color: var(--ulh-g9); }
+.ulh-mcp-pre .is-ok { display: inline-flex; align-items: center; gap: 6px; color: var(--ulh-code-ok); }
 .ulh-mcp-ok svg { width: 14px; height: 14px; display: block; }
 .ulh-mcp-marken { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0 0; }
 .ulh-mcp-marken span {
   display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border: 1px solid var(--ulh-border);
-  border-radius: var(--up-r-voll); font-size: 12px; font-weight: 500; color: #4d4d4d;
+  border-radius: var(--up-r-voll); font-size: 12px; font-weight: 500; color: var(--ulh-g9);
 }
 /* Unter 1000: kein Ueberlappen mehr, die drei Karten untereinander in voller Breite, ohne Auslauf. */
 @media (max-width: 1000px) {
@@ -4493,8 +4514,8 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-sek-h { margin: 0; font-size: clamp(34px, 4vw, 48px); line-height: 1.08; font-weight: 500; letter-spacing: -0.045em; color: var(--ulh-text); }
 .ulh-sek-h span { display: block; }
 .ulh-sek-satz { margin: 0; font-size: 24px; line-height: 32px; font-weight: 500; letter-spacing: -0.7px; color: var(--ulh-text); }
-.ulh-sek-satz span { color: #8f8f8f; }
-.ulh-sek-feat-t { margin: 40px 0 0; font-size: 14px; line-height: 20px; color: #8f8f8f; }
+.ulh-sek-satz span { color: var(--ulh-g7); }
+.ulh-sek-feat-t { margin: 40px 0 0; font-size: 14px; line-height: 20px; color: var(--ulh-g7); }
 .ulh-sek-feat { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--ulh-text); }
 
 /* Agent: links das echte Fenster im flachen Rahmen, rechts der Text. Masse wie im Entwurf bei 1296
@@ -4502,7 +4523,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-msc-h { padding: 0 8px; }
 .ulh-msc-reihe { display: grid; grid-template-columns: minmax(0, 66.4fr) minmax(0, 27.5fr); column-gap: 6.1%; align-items: center; margin-top: 56px; padding: 0 8px; }
 .ulh-msc-fenster {
-  height: 700px; border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl); background: #ffffff; overflow: hidden;
+  height: 700px; border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl); background: var(--ulh-grund); overflow: hidden;
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 140px), transparent);
           mask-image: linear-gradient(to bottom, #000 calc(100% - 140px), transparent);
 }
@@ -4522,7 +4543,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-quell-h2 { padding: 0 8px; }
 .ulh-qr {
   margin: 56px 8px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
-  border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl); background: #ffffff; overflow: hidden;
+  border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl); background: var(--ulh-grund); overflow: hidden;
 }
 /* Subgrid statt display: contents fuer die zwei Huellen mit eigener Breite: die Komponente misst ihre
    Breitenstufen an .udd-root (UC.widthTiers) -- ohne eigenen Kasten kam dort 0 heraus, und sie stellte
@@ -4540,8 +4561,8 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-root .ulh-qr .ulh-qr-zahlen { grid-column: 3; grid-row: 3; padding: 28px; border-top: 1px solid var(--ulh-border); display: flex; flex-direction: column; gap: 22px; }
 .ulh-qr-zahl { display: flex; flex-direction: column; }
 .ulh-qr-zahl-w { font-size: 40px; line-height: 44px; font-weight: 500; letter-spacing: -1.6px; color: var(--ulh-text); }
-.ulh-qr-zahl-l { margin-top: 6px; font-size: 13px; line-height: 18px; color: #4d4d4d; }
-.ulh-qr-zahl-n { font-size: 13px; line-height: 18px; color: #8f8f8f; }
+.ulh-qr-zahl-l { margin-top: 6px; font-size: 13px; line-height: 18px; color: var(--ulh-g9); }
+.ulh-qr-zahl-n { font-size: 13px; line-height: 18px; color: var(--ulh-g7); }
 @media (max-width: 1000px) {
   .ulh-qr { grid-template-columns: minmax(0, 1fr); margin-top: 32px; }
   .ulh-root .ulh-qr :is(.ulh-quell-app, .udd-root) { display: block; grid-column: 1; grid-row: auto; }
@@ -4552,3 +4573,95 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
   .ulh-root .ulh-qr .ulh-quell-held { border-top: 1px solid var(--ulh-border); }
   .ulh-root .ulh-qr :is(.ulh-quell-held, .udd-card.udd-chartcard, .ulh-qr-text, .udd-card.udd-typecard, .udd-card.udd-modelcard, .ulh-qr-zahlen) { padding-left: 20px; padding-right: 20px; }
 }
+
+/* ---------- DAS DUNKLE THEMA (23.10.) -----------------------------------------------------------
+   Angefordert: "eine Darkmode Version der Seite ... oben in der Topbar light / dark umschalten".
+   Der Schalter ist das Attribut, das core ohnehin setzt (setUpstreemTheme -> html[data-up-pagetheme]),
+   gespeichert unter demselben Schluessel (pref_theme): EIN Zustand fuer core, die Fenster der Seite
+   und die Unterseiten ohne core. upstreem-web setzt das Attribut schon im Kopf der Seite, damit das
+   erste Bild nicht hell aufblitzt.
+   Die Werte sind die dunklen der App (gemessen an einer .up-root[data-theme=dark] unter
+   html[data-up-dunkel=geist]): Seite #0a0a0a, Inhalt #0f0f0f, Rand #222222, Schrift #ededed /
+   #c9c9c9 / #a1a1a1 -- wie das Hell der Seite das graue Hell der App spiegelt. Die --vc-*-Marken
+   stehen mit, weil Regeln ausserhalb der Fenster sie mit hellem Rueckfall lesen.
+   (0,2,1) schlaegt jede Marke an .ulh-root (0,1,0), auch die spaeter in der Datei. */
+html[data-up-pagetheme="dark"] { color-scheme: dark; }
+html[data-up-pagetheme="dark"] .ulh-root {
+  --vc-bg: #0f0f0f; --vc-heading-bg: #1f1f1f; --vc-hover-border: #707070; --vc-third: #a1a1a1;
+  --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-border: #222222;
+  --ulh-grund: #0f0f0f; --ulh-seite: #0a0a0a; --ulh-kasten: #0a0a0a; --ulh-schirm: #0f0f0ff2;
+  --ulh-blende: #141414; --ulh-schiene: #1a1a1a;
+  --ulh-text: #ededed; --ulh-muted: #a1a1a1; --ulh-sub: #a1a1a1; --ulh-third: #7d7d7d;
+  --ulh-border: #222222; --ulh-chip-ring: #2a2a2a; --ulh-punkt: #2e2e2e;
+  /* Geists dunkle Grauleiter: 700 bleibt #8f8f8f, 900 ist #a1a1a1. */
+  --ulh-g7: #8f8f8f; --ulh-g9: #a1a1a1;
+  --ulh-pri-hover: #cccccc; --ulh-ring-hover: #454545;
+  /* Der leise Teil der H1 tritt im Dunkeln zurueck, also dunkler und nicht heller. */
+  --ulh-leise-a: #8f8f8f; --ulh-leise-b: #5c5c5c;
+  --ulh-gitter: rgba(255, 255, 255, .07);
+  --ulh-platz1: #2e2e2e; --ulh-platz2: #1f1f1f; --ulh-seg-leer: #2e2e2e;
+  --ulh-rahmen-bg: rgba(31, 31, 31, .78); --ulh-rahmen-rand: rgba(255, 255, 255, .06);
+  --ulh-pot-a: #454545; --ulh-team-ink: #60a5fa; --ulh-pille: #1f1f1f;
+  --ulh-sw-rail: #1a1a1a; --ulh-sw-pill: #2e2e2e; --ulh-sw-rand: #2e2e2e;
+  --ulh-wahl: rgba(255, 255, 255, .06); --ulh-fehler: #ff6166; --ulh-schalter-aus: #2e2e2e;
+  /* Die Codefarben aus Geists dunkler Skala (Blue/Amber/Green 900). */
+  --ulh-code-f: #47a8ff; --ulh-code-w: #ffb224; --ulh-code-ok: #62c073;
+}
+/* Die Schatten sind auf Schwarz unsichtbar; die Kante traegt im Dunkeln der Rand, wie in der App
+   ("Dark = Light beim Rand"). Fenster: die Haarlinie der ersten Schattenebene in der Randfarbe. */
+html[data-up-pagetheme="dark"] .ulh-root :is(.ulh-frame, .ulh-fen) { box-shadow: 0 0 0 .906px var(--ulh-border); }
+/* Der Fuss ist in beiden Themen dunkel; auf der dunklen Seite trennt ihn eine Linie. */
+html[data-up-pagetheme="dark"] .ulh-root .ulh-fuss { border-top: 1px solid var(--ulh-border); }
+/* Wortmarke und Zeichen sind schwarz (#1f1f1f); auf der dunklen Seite gekehrt wie im Fuss (.ulh-fuss-logo). */
+html[data-up-pagetheme="dark"] :is(.ulh-nav-logo img, .ulh-mcp-logo) { filter: invert(1); }
+
+/* DER SCHALTER IN DER LEISTE. Derselbe Knopf wie "Log in" (.ulh-btn-sec), quadratisch. Zwei Zeichen
+   uebereinander, getauscht ueber Deckkraft und Groesse wie beim Menueknopf -- keine Drehung. Hell
+   zeigt den Mond (wohin es geht), dunkel die Sonne. Das Zeichen haengt am Attribut und nicht an
+   einem Zustand im Markup: die Startseite wird vorgerendert und nur uebernommen, wenn ihr Markup
+   gleich bleibt (data-ulh-ssr). */
+.ulh-btn.ulh-thema { position: relative; width: 36px; padding: 0; justify-content: center; }
+.ulh-thema svg {
+  position: absolute; width: 16px; height: 16px; display: block;
+  transition: opacity var(--up-t-2) var(--up-ease), transform var(--up-t-2) var(--up-ease);
+}
+.ulh-thema .ulh-thema-sonne { opacity: 0; transform: scale(.6); }
+html[data-up-pagetheme="dark"] .ulh-thema .ulh-thema-mond { opacity: 0; transform: scale(.6); }
+html[data-up-pagetheme="dark"] .ulh-thema .ulh-thema-sonne { opacity: 1; transform: none; }
+/* PLATZ IN DER LEISTE (23.10., gemessen auf / und /de). Unter 1300 zeigt der Sprachschalter nur die
+   Flaggen -- wie schon unter 420; das Kuerzel bleibt fuer Vorleser im Markup. Unter 640 weicht
+   "Log in" ins Blatt (dort steht er gross): auf /de brauchten Flaggen, Schalter, "Einloggen",
+   "Kostenlos starten" und der Menueknopf bei 561px 30px mehr als da war. Unter 560 gehen Sprache
+   und Thema als eigene Zeilen ins Blatt, die Leiste traegt dann nur Logo, Hauptknopf und Menue. */
+@media (max-width: 1299px) {
+  .ulh-nav-rechts > .ulh-sprache .ulh-sprache-t {
+    position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+  }
+}
+@media (max-width: 640px) {
+  .ulh-nav-rechts > .ulh-btn-sec:not(.ulh-thema) { display: none; }
+}
+/* Die Zeile im Blatt: Name links, rechts ein Schalter in der Form von .up-switch aus core (38 x 22,
+   Knopf 18) -- an heisst dunkel. aria-pressed sagt dasselbe (landing-teile.js, themaKnoepfe). */
+.ulh-nm-thema { display: none; }
+@media (max-width: 560px) {
+  .ulh-nav-mobil .ulh-nm-thema {
+    display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px;
+    margin: 6px 0 0; padding: 8px 10px; box-sizing: border-box; border: 0; border-radius: var(--up-r-l);
+    background: none; font: inherit; font-size: 14px; font-weight: 500; color: var(--ulh-text); cursor: pointer;
+    transition: background var(--up-t-1, 120ms) var(--up-ease);
+  }
+  .ulh-nav-mobil .ulh-nm-thema:hover { background: var(--ulh-kasten); }
+  .ulh-nav-mobil .ulh-nm-thema:focus-visible { outline: 2px solid var(--ulh-text); outline-offset: -2px; }
+}
+.ulh-nm-schalter {
+  position: relative; flex: 0 0 auto; width: 38px; height: 22px; border-radius: var(--up-r-voll);
+  background: var(--ulh-schalter-aus); transition: background var(--up-t-2) var(--up-ease);
+}
+.ulh-nm-schalter::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: var(--up-r-voll);
+  background: var(--ulh-grund); box-shadow: 0 1px 2px rgba(11, 13, 24, .2); transition: transform var(--up-t-2) var(--up-ease);
+}
+html[data-up-pagetheme="dark"] .ulh-nm-schalter { background: var(--ulh-text); }
+html[data-up-pagetheme="dark"] .ulh-nm-schalter::after { transform: translateX(16px); }

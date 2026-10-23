@@ -1169,10 +1169,13 @@
     if (UC.onTheme) UC.onTheme(function (dunkel) {
       isDark = !!dunkel;
       if (isDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
-      /* Die Kurve zeichnet das Kit selbst neu (makeLine haengt an onTheme). Trichter, Balken und
-         der Typ-Split tragen ihre Farben im Markup und muessen es hier tun. */
+      /* Trichter, Balken und der Typ-Split tragen ihre Farben im Markup und muessen es hier tun.
+         Die Kurve AUCH (23.10.): makeLine baut beim Wechsel zwar Achsen und Raster neu, die Farbe
+         der Linie steht aber in den Daten, die hier mit ruhig(isDark) entstehen -- ohne neues
+         render() blieb sie im alten Thema (gemessen: #1f1f1b auf dunklem Grund). */
       renderTypes();
       renderFunnel(); renderBars();
+      renderChart();
     });
     /* Akzent gewechselt (06.10., "Standard + Blau"): Kurven, Trichter und Balken tragen ihre Farbe
        aus UC.chartFamilie, die Farbe steht beim Zeichnen fest -- also neu zeichnen. */

@@ -21198,9 +21198,18 @@
        Hier im Kit und nicht in den fuenf Komponenten: jede haette denselben Beobachter gebraucht,
        und eine haette ihn irgendwann nicht bekommen. Genau das war der Fall -- brand-detail hatte
        data-isdark nicht einmal im Filter. */
+    /* ERST NACH DEN ANDEREN ABONNENTEN (23.10.). makeLine meldet sich beim Bau an, also VOR der
+       Komponente, die es benutzt -- und die stellt ihr isDark() oft erst in ihrem eigenen Abonnenten
+       um (domain-detail: "isDark = !!dunkel"). Synchron gebaut nahm die Kurve damit die Farben des
+       ALTEN Themas, und niemand baute sie danach neu: gemessen auf der Landingpage, Domain-Kurve nach
+       dem Wechsel auf hell mit Linie #e0e0e0 und Achse #a0a0a0 (dunkle Werte), nach dem Wechsel auf
+       dunkel mit der hellen Achse #6b6f78. Ein Mikrotask laeuft nach allen synchronen Abonnenten und
+       vor dem naechsten Bild -- zu sehen ist kein Zwischenstand. */
     onTheme(function(){
-      if (!isOwner() || !chart || !lastBuilt) return;
-      neuBauen();
+      Promise.resolve().then(function(){
+        if (!isOwner() || !chart || !lastBuilt) return;
+        neuBauen();
+      });
     });
 
     /* Zwei verschiedene Toene, und das ist der Kern der Meldung "die Rasterfarbe gegen die neuen

@@ -76,7 +76,7 @@
   var LANG = window.__ulhLang === "de" ? "de" : "en";
   var DE = {
     /* Leiste und Menue */
-    "Language": "Sprache", "Platform": "Plattform", "Resources": "Ressourcen", "Pricing": "Preise", "Log in": "Einloggen",
+    "Language": "Sprache", "Dark mode": "Dunkelmodus", "Platform": "Plattform", "Resources": "Ressourcen", "Pricing": "Preise", "Log in": "Einloggen",
     "Menu": "Menü", "Close menu": "Menü schließen", "English": "English", "Deutsch": "Deutsch",
     "Start for free": "Kostenlos testen", "Overview": "Überblick", "What upstreem shows you": "Alle Funktionen im Überblick",
     "Which pages answers are built from": "Woher KI-Antworten ihr Wissen beziehen",
@@ -628,8 +628,28 @@
      Danach kommt hellHalten und haelt die Wurzeln hell -- seit dem 06.10. in derselben Schreibweise
      wie core (kein data-theme), damit die beiden nicht mehr gegeneinander schreiben (Begruendung
      dort). */
-  function themaHell(){
-    try { if (window.setUpstreemTheme) window.setUpstreemTheme("light"); } catch (e){}
+  /* DAS THEMA DER SEITE (23.10.: "eine Darkmode Version der Seite ... oben in der Topbar
+     umschalten"). Bis dahin stand hier immer "light". Die Wahl ist das Attribut, das core selbst
+     fuehrt (html[data-up-pagetheme], gespeichert als pref_theme): upstreem-web setzt es schon im
+     Kopf der Seite, der Schalter in der Leiste (landing-teile.js) beim Klick. Ohne Wahl hell. */
+  function themaWahl(){
+    var t = null;
+    try { t = document.documentElement.getAttribute("data-up-pagetheme"); } catch (e){}
+    if (t !== "dark" && t !== "light"){ try { t = window.localStorage.getItem("pref_theme"); } catch (e){} }
+    return t === "dark" ? "dark" : "light";
+  }
+  function themaAnwenden(){
+    var dunkel = themaWahl() === "dark";
+    try { if (window.setUpstreemTheme) window.setUpstreemTheme(dunkel ? "dark" : "light"); } catch (e){}
+    /* Im Dunkeln das Gegenstueck des grauen Hells (core.js hellAnwenden): data-up-dunkel="geist"
+       trennt in den Fenstern Inhalt (#0f0f0f) von Seite (#0a0a0a) wie in der App. core setzt es auf
+       der Landingpage nicht, also hier -- wie das graue Hell darunter. */
+    try {
+      var h = document.documentElement;
+      h.setAttribute("data-up-pagetheme", dunkel ? "dark" : "light");
+      if (dunkel){ h.removeAttribute("data-up-hell"); h.setAttribute("data-up-dunkel", "geist"); return; }
+      h.removeAttribute("data-up-dunkel");
+    } catch (e){}
     /* DAS GRAUE HELL DER APP IM FENSTER (16.10.: "so wie es in der App aussieht"). In der App ist
        Light grau: Seite, Seitenleiste und Leisten #fafafa, Tabellen, Baender und Charts weiss
        (core.css, html[data-up-hell="grau"]). core setzt das Attribut auf der Landingpage bewusst
@@ -637,6 +657,20 @@
        wuerde. Hier steht es trotzdem, und landing-hero.css haelt die Seite selbst weiss -- grau wird
        nur der Schirm des Fensters. */
     try { document.documentElement.setAttribute("data-up-hell", "grau"); } catch (e){}
+  }
+  /* Der Wechsel zur Laufzeit: Thema setzen (core zeichnet seine Abonnenten neu), die Wurzeln
+     umstempeln und das Fenster des Agenten mitnehmen, das ein eigenes Dokument ist. */
+  function themaWechselBinden(root){
+    /* Die Leiste kann nach landing-teile.js entstanden sein: den Knopf einmal auf den Stand bringen. */
+    try { var lt = window.UpstreemLandingTeile; if (lt && lt.themaKnoepfe) lt.themaKnoepfe(); } catch (e){}
+    if (document.__ulhThemaWechsel) return;
+    document.__ulhThemaWechsel = true;
+    document.addEventListener("ulh-thema", function(){
+      themaAnwenden();
+      var w = document.querySelector(WURZEL) || root;
+      hellHalten(w);
+      mscThema(w);
+    });
   }
 
   /* ---------- Vorgerendert oder selbst gebaut (13.10.) ---------------------------------------
@@ -686,7 +720,7 @@
     var platz = root.querySelectorAll("template[data-ulh-m], template[data-ulh-v]");
     if (root.querySelector(".ulh-frame") && !platz.length) return;          /* schon gebaut */
     listenmodusSetzen();
-    themaHell();
+    themaAnwenden();
     if (platz.length && root.getAttribute("data-ulh-ssr") === standDerSeite()){
       /* An der Stelle des Platzhalters, nicht am Ende des Elternteils: .ulh-seite traegt zwei oder
          drei Komponenten hintereinander, und ihre Reihenfolge ist die der Vorlage. */
@@ -983,6 +1017,18 @@
             '<a href="/de" hreflang="de" lang="de" data-sprache="de"' + (LANG === "de" ? ' class="is-an" aria-current="true"' : '') + '>' +
               '<img class="ulh-sprache-flagge" src="https://flagcdn.com/de.svg" alt="" width="16" height="12"/><span class="ulh-sprache-t">DE</span></a>' +
           '</div> ' : '') +
+          /* DER THEMENSCHALTER (23.10.), vor "Log in". Ein Knopf mit aria-pressed (an = dunkel);
+             das Verhalten steht in landing-teile.js, weil dieselbe Leiste auf den Unterseiten ohne
+             core steht. Die Zeichen inline aus demselben Grund wie beim Menueknopf unten; es sind
+             sun und moon aus core (Hugeicons). Welches zu sehen ist, sagt die CSS am Attribut des
+             Dokuments -- das Markup bleibt in beiden Themen gleich (vorgerendert, data-ulh-ssr). */
+          '<button class="ulh-btn ulh-btn-sec ulh-thema" type="button" aria-pressed="false" aria-label="' + T("Dark mode") + '">' +
+            '<svg class="ulh-thema-mond" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+              '<path d="M21.5 14.0784C20.3003 14.7189 18.9301 15.0821 17.4751 15.0821C12.7491 15.0821 8.91792 11.2509 8.91792 6.52485C8.91792 5.06986 9.28105 3.69968 9.92163 2.5C5.66765 3.49698 2.5 7.31513 2.5 11.8731C2.5 17.1899 6.8101 21.5 12.1269 21.5C16.6849 21.5 20.503 18.3324 21.5 14.0784Z"></path></svg>' +
+            '<svg class="ulh-thema-sonne" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+              '<path d="M17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12Z"></path>' +
+              '<path d="M12 2V3.5M12 20.5V22M19.0708 19.0713L18.0101 18.0106M5.98926 5.98926L4.9286 4.9286M22 12H20.5M3.5 12H2M19.0713 4.92871L18.0106 5.98937M5.98975 18.0107L4.92909 19.0714"></path></svg>' +
+          '</button> ' +
           /* Anmelden und Registrieren gehen in einen NEUEN Tab: die Seite ist die Werbung, die
              App ist die Arbeit -- wer sich anmeldet, soll die Seite nicht verlieren. */
           '<a class="ulh-btn ulh-btn-sec" target="_blank" rel="noopener"' +
@@ -1039,6 +1085,10 @@
             '<a href="/de" hreflang="de" lang="de" data-sprache="de"' + (LANG === "de" ? ' class="is-an" aria-current="true"' : '') + '>' +
               '<img class="ulh-sprache-flagge" src="https://flagcdn.com/de.svg" alt="" width="16" height="12"/><span>Deutsch</span></a>' +
           '</div>' : '') +
+        /* Der Themenschalter als Zeile (23.10.): unter 560px steht er nicht in der Leiste. Dieselbe
+           Klasse .ulh-thema, also derselbe Klick (landing-teile.js). */
+        ' <button class="ulh-nm-thema ulh-thema" type="button" aria-pressed="false">' +
+          '<span>' + T("Dark mode") + '</span><span class="ulh-nm-schalter" aria-hidden="true"></span></button>' +
         ' <div class="ulh-nm-knoepfe">' +
           '<a class="ulh-btn ulh-btn-sec" target="_blank" rel="noopener" href="https://app.upstreem.ai/signup?mode=login">Log in</a> ' +
           '<a class="ulh-btn ulh-btn-pri" target="_blank" rel="noopener" href="https://app.upstreem.ai/signup">Start for free</a>' +
@@ -1883,6 +1933,27 @@
 
   /* srcdoc und keine zweite HTML-Datei: die Dateiliste der Seite steht in landing-boot.js, und
      eine zweite Datei waere ein zweiter Ort, an dem ein Pin veralten kann. */
+  /* Der Grund des Rahmendokuments ist der Grund der Karte, in der es steht (--ulh-grund), gelesen
+     und nicht geschrieben: so folgt er dem Thema, ohne dass die Farbe hier ein zweites Mal steht. */
+  function mscGrund(){
+    var w = document.querySelector(WURZEL), v = "";
+    try { if (w) v = window.getComputedStyle(w).getPropertyValue("--ulh-grund").trim(); } catch (e){}
+    return v || "#ffffff";
+  }
+  /* Beim Themenwechsel: dasselbe Dokument, nur das Thema darin neu (Mira und core im Rahmen haben
+     ihre eigenen Setter). Kein neues srcdoc -- das hiesse, die Vorfuehrung von vorn zu beginnen. */
+  function mscThema(root){
+    var rahmen = root && root.querySelector(".ulh-msc-rahmen");
+    if (!rahmen || !rahmen.__ulhAuf) return;
+    try {
+      var w = rahmen.contentWindow, d = rahmen.contentDocument, t = themaWahl(), g = mscGrund();
+      if (!w || !d) return;
+      d.documentElement.style.background = g;
+      if (d.body) d.body.style.background = g;
+      if (w.setUpstreemTheme) w.setUpstreemTheme(t);
+      if (w.askMiraSetTheme) w.askMiraSetTheme(t);
+    } catch (e){}
+  }
   function mscSeite(){
     var basis = mscBasis();
     return '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
@@ -1890,7 +1961,7 @@
       '<link rel="stylesheet" href="' + basis + 'core.css">' +
       '<link rel="stylesheet" href="' + basis + 'ask-mira.css">' +
       '<style>' +
-        'html,body{margin:0;padding:0;background:#ffffff;overflow:hidden;}' +
+        'html,body{margin:0;padding:0;background:' + mscGrund() + ';overflow:hidden;}' +
         '#ask-mira{height:100vh;}' +
         /* Der Knopf "All Chats" fuehrt in eine Liste, die es hier nicht gibt. */
         '#am-open-prev{display:none;}' +
@@ -2041,7 +2112,7 @@
            sonst eine schwarze Komponente in einer hellen Seite. Die Schleife, weil der Setter erst
            existiert, wenn ask-mira.js gelaufen ist. */
         '(function(){var n=0;(function go(){if(window.askMiraSetTheme){' +
-        'window.askMiraSetTheme("light");return;}if(n++<60)setTimeout(go,50);})();})();' +
+        'window.askMiraSetTheme("' + themaWahl() + '");return;}if(n++<60)setTimeout(go,50);})();})();' +
         /* DAS ADD-DROPDOWN OEFFNET NACH UNTEN (29.09. spaet angefordert). Das Feld steht hier auf
            dem Startschirm im oberen Drittel, weil Kategorien und Hinweis ausgeblendet sind --
            unter ihm ist Platz, ueber ihm steht die Begruessung. is-pick-unten ist Miras eigener
@@ -3996,20 +4067,28 @@
     if (!kern || !kern.makeLine || !feld || feld.__ulhEvk) return;
     feld.__ulhEvk = true;
     var wrap = feld.querySelector(".ulh-evk-wrap"), leinwand = feld.querySelector("canvas");
+    var linie = null;
     function zeichnen(){
       var d = eventKurveDaten();
       var tinte = kern.chartInk ? kern.chartInk(feld) : "#1f1f1b";
+      if (linie){ linieZeigen(d, tinte); return; }
       /* OHNE TOOLTIP, ABER MIT VERGLEICHSGRUPPE UND LEGENDE (06.10. spaet richtiggestellt: weg
          sollte nur der Tooltip, die gestrichelte Vergleichslinie und die Legende gehoeren dazu).
          Den Tooltip beim Ueberfahren nimmt landing-hero.css (.ulh-evk canvas). */
-      var linie = kern.makeLine({
+      /* Seit 23.10. nach dem Thema der Seite und nicht mehr fest hell; die Tinte der eigenen Kurve
+         steht in den Daten und wird beim Wechsel neu gelesen (onTheme unten). */
+      linie = kern.makeLine({
         wrap: wrap, canvas: leinwand, legend: feld.querySelector(".up-legend"),
-        isDark: function(){ return false; }, gran: function(){ return "day"; },
+        isDark: function(){ return themaWahl() === "dark"; }, gran: function(){ return "day"; },
         unit: function(){ return "%"; }, decimals: function(){ return 1; },
         tipLabel: function(){ return "Visibility:"; }, legendeImmer: true,
         markers: function(){ return [{ id: "lh-ev1", date: "2026-09-15", name: EVENT_NAME,
                                        type: "website_relaunch", color: EVENT_TON, fokus: true }]; }
       });
+      if (kern.onTheme) kern.onTheme(function(){ zeichnen(); });
+      linieZeigen(d, tinte);
+    }
+    function linieZeigen(d, tinte){
       linie.render({ labels: d.tage, datasets: [
         { label: T("Affected prompts"), __id: "affected", __baseColor: tinte, borderColor: tinte, data: d.betroffen },
         { label: T("Comparison group"), __id: "comparison", __baseColor: "#80858e", borderColor: "#80858e", __dash: true, data: d.vergleich }
@@ -4748,7 +4827,7 @@
      Chart.js (neu/update/destroy je Chart der Komponente) und dem Aufrufstapel jedes Ausloesers:
      am Ende jeder Runde ruft neustart() fuellen(), um das Dashboard auf Zustand A zurueckzustellen,
      und fuellen() rief dabei JEDES MAL auch quellFuellen(). Darin steckten zwei Ausloeser:
-       1. themaHell() -> setUpstreemTheme("light"). core ruft dabei jeden Themen-Abonnenten, auch
+       1. themaHell() (seit 23.10. themaAnwenden) -> setUpstreemTheme("light"). core ruft dabei jeden Themen-Abonnenten, auch
           wenn das Thema schon hell ist (THEME.subs ohne Vergleich). makeLine baut die Kurve
           daraufhin neu -- destroy und ein neues Chart samt Eingangsanimation --, und domain-detail
           zeichnet Ring, Trichter und Modellbalken neu.
@@ -4768,7 +4847,7 @@
     uddWurzel.__ulhQuellGefuellt = true;
     /* Erst das Thema, dann die Daten: die Charts nehmen ihre Farben beim Zeichnen, und das
        passiert im selben Zug wie das Setzen der Daten. */
-    themaHell();
+    themaAnwenden();
     var wurzel0 = document.querySelector(WURZEL);
     if (wurzel0) hellHalten(wurzel0);
     window.__uddMode = window.__uddMode || {};
@@ -5696,7 +5775,7 @@
      Also ein Waechter an den Wurzeln hier drin, der das Dunkle wieder herausnimmt, falls es kommt.
      Nur schreiben, wenn der Wert abweicht -- sonst loest der Waechter sich selbst wieder aus.
      HELL HEISST HIER WIE IN CORE: KEIN data-theme, data-isdark "no" (06.10. umgestellt). Bis dahin
-     schrieb diese Stelle data-theme="light" -- und core, dem themaHell() das helle Thema gesagt
+     schrieb diese Stelle data-theme="light" -- und core, dem themaHell() (heute themaAnwenden) das helle Thema gesagt
      hat, nimmt genau dieses Attribut fuer hell wieder weg (applyThemeTo), bei JEDEM neuen Knoten
      auf der Seite. Zwei Schreiber im Wechsel: gemessen sieben Wurzeln der Shopping-Seite mitten im
      Einlauf ihrer Zeilen, und jede Komponente mit einem Waechter auf data-isdark zeichnete mit.
@@ -5706,7 +5785,17 @@
      Komponente selbst setzt, bleibt stehen -- es bedeutet dasselbe. */
   function hellHalten(root){
     var alle = [root].concat([].slice.call(root.querySelectorAll(".up-root")));
+    /* Seit 23.10. haelt derselbe Waechter auch das DUNKLE Thema, wenn es gewaehlt ist: dann wird
+       jede Wurzel so gestempelt wie das eine Nebenfenster unten -- nur ohne data-up-thema-fest,
+       denn core will hier dasselbe. Die Landing-Wurzel selbst ist keine .up-root und bleibt ohne
+       Attribut; ihre Farben kommen aus html[data-up-pagetheme] (landing-hero.css). */
+    var alleDunkel = themaWahl() === "dark";
     alle.forEach(function(el){
+      if (alleDunkel && el.classList.contains("up-root") && !(el.closest && el.closest("[data-ulh-dunkel]"))){
+        if (el.getAttribute("data-theme") !== "dark") el.setAttribute("data-theme", "dark");
+        if (el.getAttribute("data-isdark") !== "yes") el.setAttribute("data-isdark", "yes");
+        return;
+      }
       /* EIN Nebenfenster ist dunkel (die URL-Typen). Es traegt data-ulh-dunkel, und alles darin
          bekommt hier das dunkle Thema statt des hellen -- derselbe Waechter, nur mit dem anderen
          Wert. Ohne diese Abfrage haette der Waechter das Fenster im naechsten Takt wieder
@@ -6377,6 +6466,7 @@
         filterWerte();
         shopLieferant();
         hellBewachen(w);
+        themaWechselBinden(w);
         reiterBewachen(w);
         stufenWachen(w);
       }
