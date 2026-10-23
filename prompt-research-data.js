@@ -136,6 +136,9 @@
   function jobFehlerSatz(code) {
     if (code === "n8n_unreachable") return "The research could not be started. Please try again.";
     if (code === "timeout") return "The research timed out. Please try again.";
+    /* n8n_failed (23.10., Job 42ed60c2): der Schritt, der aus den Begriffen die Prompts schreibt, lieferte keine
+       lesbare Antwort. "The research failed" sagte nicht, was los war (Lukas: "ohne Entwicklertext"). */
+    if (code === "n8n_failed") return "No suggestions could be generated for these terms this time. Please start the research again.";
     return "The research failed. Please try again.";
   }
 
