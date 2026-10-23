@@ -717,6 +717,11 @@
   }
 
   function bauen(root){
+    /* Der Modus der Domain-Kurve steht VOR dem Start der Komponente fest (23.10.): ohne Umschalter
+       in der Sektion zeigte sie sonst, was im Browser des Besuchers gespeichert war (uddMode__ ueber
+       prefGet) -- mal Citation Share, mal URL Share. domain-detail liest window.__uddMode zuerst. */
+    window.__uddMode = window.__uddMode || {};
+    window.__uddMode[ID.udd] = "citation";
     var platz = root.querySelectorAll("template[data-ulh-m], template[data-ulh-v]");
     if (root.querySelector(".ulh-frame") && !platz.length) return;          /* schon gebaut */
     listenmodusSetzen();
@@ -2450,10 +2455,48 @@
     fr.__ulhFall = function(k){ var meine = ++lauf; leeren(); fall(meine, faelle[k % faelle.length]); };
     fr.__ulhFaelle = faelle;     /* zum Nachmessen: die Antworten ohne Lauf und ohne Tippen setzen */
 
+    /* STATISCH (23.10. angefordert: "lass uns das bitte statisch machen. nimm dafuer einen screen, mit
+       dem pageaudit z.b. was gerade laeuft"). Kein Tippen, kein Laden, kein naechster Fall: das
+       Fenster zeigt von Anfang an die fertige Antwort auf "What should I fix first this week?" mit
+       dem laufenden Page Audit darin (der Fall mit dem Laufstreifen, mscAuditStreifen). Die Folge
+       oben (naechster, fall) bleibt fuer die Handhabe __ulhFall zum Nachsehen. */
+    function statisch(){
+      var f = faelle.filter(function(x){ return String(x.html || "").indexOf("am-akt-streifen") >= 0; })[0] || faelle[0];
+      var jetzt = new Date().toISOString();
+      if (w.askMiraSetPreviousChats) w.askMiraSetPreviousChats([{ id: "msc-chat", title: f.titel, updated_at: jetzt }]);
+      if (w.askMiraSetTitlePending) w.askMiraSetTitlePending("no");
+      if (w.askMiraSetSettings) w.askMiraSetSettings({ brand: "logo", citation: "favicon", response: "logo" });
+      if (w.askMiraSetActiveChat) w.askMiraSetActiveChat("msc-chat");
+      /* Das Eingabefeld gehoert zu einer Frage, die noch kommt; hier ist sie gestellt. Wie im Lauf
+         vor der Antwort: aus dem Fluss, damit die Antwort den Platz hat. */
+      var flaeche = d.querySelector(".am-composer-area");
+      if (flaeche) flaeche.style.display = "none";
+      /* Der Laufstreifen geht NICHT durch die Antwort: Miras Filter nimmt in diesem Weg (ohne Tippen)
+         jedes class-Attribut heraus, und uebrig blieben drei nackte <span> (gemessen). Also ohne ihn
+         setzen und danach selbst in die fertige Antwort einhaengen, an das Ende des Texts. */
+      var streifen = (String(f.html || "").match(/<div class="am-akt am-akt-streifen[\s\S]*?<\/span><\/span><\/div>/) || [""])[0];
+      if (w.askMiraSetMessages) w.askMiraSetMessages([
+        { id: "msc-q", role: "user", content: f.q, created_at: jetzt },
+        { id: "msc-a", role: "assistant", status: "success", created_at: jetzt, content_html: String(f.html || "").replace(streifen, ""),
+          evidence_items: miraBelege().concat(f.belege || []), latency_ms: f.dauer }
+      ]);
+      if (streifen) (function einhaengen(n){
+        var blase = d.querySelector(".am-msg.is-assistant .am-bubble");
+        if (!blase){ if (n < 40) setTimeout(function(){ einhaengen(n + 1); }, 50); return; }
+        if (blase.querySelector(".am-akt-streifen")) return;
+        var vor = blase.querySelector(".am-evidence");
+        var halter = d.createElement("div");
+        halter.innerHTML = streifen;
+        blase.insertBefore(halter.firstChild, vor);
+      })(0);
+      obenHalten(lauf);
+      [300, 1000, 2000].forEach(function(ms){ setTimeout(hoeheNachfuehren, ms); });
+    }
+
     /* Erst anfangen, wenn die Komponente im iframe wirklich steht. */
     var versuche = 0;
     (function warten(){
-      if (d.querySelector("#am-textarea") && w.askMiraSetMessages){ vorraete(); naechster(); return; }
+      if (d.querySelector("#am-textarea") && w.askMiraSetMessages){ vorraete(); statisch(); return; }
       if (versuche++ < 120) setTimeout(warten, 100);
     })();
   }
@@ -4714,7 +4757,8 @@
      window.__uddMode (domain-detail.js, modusLesen), und das ist der Weg ohne Klick und ohne
      Umweg ueber die gespeicherte Vorliebe des Besuchers. Ein Klick haette beides getan -- erst
      Citation Share zeichnen, dann umschalten, und dabei die Vorliebe des Besuchers ueberschrieben.
-     "domain" ist der URL-Share-Modus (so heisst er in der Komponente). */
+     "domain" ist der URL-Share-Modus (so heisst er in der Komponente); seit 23.10. steht hier
+     "citation" und dasselbe schon in bauen(), weil es keinen Umschalter mehr gibt. */
   /* ---- ALLE BESCHRIFTUNGEN DES MODELL-BALKENCHARTS NACH AUSSEN (24.09. angefordert) --------
      core entscheidet je Zeile neu: passt Logo, Name und Wert in den Balken, stehen sie drin,
      sonst daneben (renderBars in makeTypeChart). Bei vier Modellen heisst das zwei innen und zwei
@@ -4851,7 +4895,7 @@
     var wurzel0 = document.querySelector(WURZEL);
     if (wurzel0) hellHalten(wurzel0);
     window.__uddMode = window.__uddMode || {};
-    window.__uddMode[ID.udd] = "domain";
+    window.__uddMode[ID.udd] = "citation";
     /* Die Farben der Kurven VOR den Daten: sie muessen im ersten Bild stimmen (siehe
        quellLinienFarben). Die Beschriftungen der Modellbalken ebenfalls vorher -- der Waechter
        sieht dann schon die ersten Zeilen entstehen. */
@@ -6304,10 +6348,14 @@
     if (window.UpstreemCore && window.UpstreemCore.setColorScalePref){
       window.UpstreemCore.setColorScalePref("linear");
     }
-    var serie = reihen("a");
-    var tab = tabelle("a");
-    /* Die eigene Marke ist Acme und steht im Zustand A auf Platz 3 -- nicht tab[0]. Der
-       Seitenkopf zeigt IHRE Zahlen, nicht die des Ersten. */
+    /* DAS DASHBOARD STEHT (23.10. angefordert: "dashboard soll nicht werte aendern"). Bis dahin
+       stand es zuerst in Zustand A und wechselte fuenf Sekunden spaeter einmal auf B (der
+       Filterwechsel, szene()). Jetzt gleich B und kein Wechsel: B ist der Stand, den die Antwort
+       von Mira und die Karte "See how often AI recommends you" nennen (Acme vorn, 38.9). */
+    var serie = reihen(DASH_STAND);
+    var tab = tabelle(DASH_STAND);
+    /* Die eigene Marke ist Acme -- nicht tab[0]. Der Seitenkopf zeigt IHRE Zahlen, nicht die des
+       Ersten. */
     var eigene = tab.filter(function(r){ return r.company_id === "ac"; })[0] || tab[0];
 
     /* ERST DEN PINSPEICHER LEEREN, DANN DIE LEISTE FUELLEN (21.09.). upstreemPinToSidebar HAENGT
@@ -6540,7 +6588,10 @@
   var WEICH = "cubic-bezier(.25,.46,.45,.94)";      /* easeOutQuad als Bezier, fuer die CSS-Seite */
   function weich(t){ return 1 - (1 - t) * (1 - t); } /* easeOutQuad fuer das Zaehlwerk */
   var KACHEL_MS = 200;          /* das Auf- und Abblenden von Fuellung und Linie der Kachel */
-  var zustand = "a";
+  /* Der eine Stand des Dashboards (siehe fuellen). zustand steht damit von Anfang an auf B, und
+     szene() -- der Wechsel von A nach B -- kehrt sofort zurueck, falls sie jemand ruft. */
+  var DASH_STAND = "b";
+  var zustand = DASH_STAND;
 
   /* Die Formate sind die der Komponenten und nicht neu erfunden -- sonst zaehlt eine Zelle in einer
      anderen Genauigkeit hoch, als sie danach anzeigt, und der letzte Schritt ist ein Sprung.
@@ -8982,9 +9033,9 @@
       if (window.askMiraSetLoading) window.askMiraSetLoading("false");
       if (window.askMiraSetMessages) window.askMiraSetMessages([]);
 
-      /* 4. Das Dashboard wieder auf Zustand A -- Zahlen, Zeilen, Linien. fuellen() baut Chart und
-         Tabelle neu; der Filterwechsel darf danach wieder laufen. */
-      zustand = "a";
+      /* 4. Das Dashboard wieder auf seinen Stand -- Zahlen, Zeilen, Linien. fuellen() baut Chart und
+         Tabelle neu. (Bis 23.10. Zustand A, danach lief der Filterwechsel auf B.) */
+      zustand = DASH_STAND;
       try { fuellen(); } catch (e){ if (window.console) console.warn("[landing-hero]", e); }
       /* Und die Linien AUSDRUECKLICH auf Zustand A zurueck. Ohne diese Zeile blieb das Chart ab der
          zweiten Runde auf den Zahlen des Filterwechsels stehen, waehrend Tabelle und Kennzahlen
@@ -8997,7 +9048,7 @@
          Sein Gedaechtnis steht also noch auf A, waehrend die Leinwand B zeigt: die Anfrage aus
          fuellen() sieht fuer makeLine aus wie "schon da".
          Deshalb hier derselbe Weg zurueck, den der Wechsel hin genommen hat, nur ohne Dauer. */
-      chartWandern(root, reihen("a"), 0);
+      chartWandern(root, reihen(DASH_STAND), 0);
 
       /* 5. Die Seite kommt zurueck -- UND ZWAR MIT DEMSELBEN AUFTRITT WIE BEIM ERSTEN LADEN
          (24.09. angefordert: "wenn die Animation einmal durchgeloopt ist, dann bitte auch beim
@@ -9033,7 +9084,7 @@
       /* 7. Und die Kette neu ansetzen. Der Filterwechsel wartet von sich aus auf ein lebendes
          Chart; Mira haengt an einer festen Uhr, die hier nicht beim Erscheinen des Fensters
          beginnt, sondern beim Auftritt dieser Seite. */
-      szeneAnsetzen(root);
+      /* Kein Filterwechsel mehr (23.10., das Dashboard steht, siehe fuellen). */
       miraAnsetzen(root, NEUSTART_KOMMT + MIRA_WARTEN);
     }, AUSBLENDEN_MS);
     return true;
@@ -9261,7 +9312,6 @@
         teamsLaufen(root);
         donutLaufen(root);
         taktgeber(root);
-        szeneAnsetzen(root);
         /* miraAnsetzen steht NICHT mehr hier: die Uhr faengt an, wenn der Inhalt der
            Dashboard-Seite steht, und das entscheidet inhaltZeigen. */
         return;
