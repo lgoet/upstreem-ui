@@ -633,9 +633,9 @@
   /* ---------------- Localization (DE for German market, else EN) ---------------- */
   var STR = {
     en: {
-      antwortHaengt: 'This is taking longer than expected. Mira keeps looking for the answer.',
-      antwortNichtGeladen: 'Mira’s answer is ready but didn’t load here. Open the chat again to see it.',
-      placeholder: 'Ask Mira...',
+      antwortHaengt: 'This is taking longer than expected. The Agent keeps looking for the answer.',
+      antwortNichtGeladen: 'The Agent’s answer is ready but didn’t load here. Open the chat again to see it.',
+      placeholder: 'Ask Agent...',
       /* DER ERSTE Bezug in einem leeren Feld -> die naheliegende Frage steht dort als echter TEXT
          (17.09. angefordert, am 18.09. vom Platzhalter zum Text geworden). Wer etwas anderes
          wissen will, loescht sie und schreibt seine eigene -- als Platzhalter ging das nicht.
@@ -712,7 +712,7 @@
       pickOfflineSub: 'Please reload the page and try again.',
       pickMax: 'max 3',
       pickPlaceholder: 'Search brands, domains, URLs, prompts\u2026',
-      effFlashNote: 'Mira Flash always answers at Medium.',
+      effFlashNote: 'Agent Flash always answers at Medium.',
       urlDetail: 'Open detail page',
       oppAdd: 'Add as opportunity',
       oppAdding: 'Adding\u2026',
@@ -723,7 +723,7 @@
       oppRate: 'Too many requests. Please wait a moment and try again.',
       oppStatusError: 'The status couldn\u2019t be changed. Please try again.',
       sendFailed: 'The message could not be sent. Please try again.',
-      turnFailed: 'Mira couldn\u2019t finish this answer. Please try again.',
+      turnFailed: 'The Agent couldn\u2019t finish this answer. Please try again.',
       runNow: 'Working for', runDone: 'Worked for', thoughtMoment: 'Thought for a moment',
       runThinking: 'Thinking', runWriting: 'Writing the answer', runChecking: 'Checking the numbers', runFailed: 'This step failed',
       galleryBack: 'All categories',
@@ -778,9 +778,9 @@
       ]
     },
     de: {
-      antwortHaengt: 'Das dauert länger als erwartet. Mira sucht weiter nach der Antwort.',
-      antwortNichtGeladen: 'Miras Antwort ist fertig, kam hier aber nicht an. Öffne den Chat erneut, um sie zu sehen.',
-      placeholder: 'Frag Mira...',
+      antwortHaengt: 'Das dauert länger als erwartet. Der Agent sucht weiter nach der Antwort.',
+      antwortNichtGeladen: 'Die Antwort des Agenten ist fertig, kam hier aber nicht an. Öffne den Chat erneut, um sie zu sehen.',
+      placeholder: 'Frag den Agenten...',
       bezugFrage: {
         brand:      'Was kannst du mir über diese Brand sagen?',
         competitor: 'Was kannst du mir über diesen Wettbewerber sagen?',
@@ -837,7 +837,7 @@
       pickOfflineSub: 'Bitte die Seite neu laden und noch einmal versuchen.',
       pickMax: 'max. 3',
       pickPlaceholder: 'Brands, Domains, URLs, Prompts suchen\u2026',
-      effFlashNote: 'Mira Flash antwortet immer auf Mittel.',
+      effFlashNote: 'Agent Flash antwortet immer auf Mittel.',
       urlDetail: 'Detailseite öffnen',
       oppAdd: 'Als Opportunity hinzufügen',
       oppAdding: 'Wird hinzugefügt\u2026',
@@ -848,7 +848,7 @@
       oppRate: 'Zu viele Anfragen. Warte kurz und versuch es noch einmal.',
       oppStatusError: 'Der Status konnte nicht geändert werden. Versuch es noch einmal.',
       sendFailed: 'Die Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.',
-      turnFailed: 'Mira konnte diese Antwort nicht abschliessen. Bitte erneut versuchen.',
+      turnFailed: 'Der Agent konnte diese Antwort nicht abschliessen. Bitte erneut versuchen.',
       runNow: 'Arbeitet seit', runDone: 'Gearbeitet', thoughtMoment: 'Kurz nachgedacht',
       runThinking: 'Denkt nach', runWriting: 'Schreibt die Antwort', runChecking: 'Prüft die Zahlen', runFailed: 'Dieser Schritt ist fehlgeschlagen',
       galleryBack: 'Alle Kategorien',
@@ -2598,8 +2598,24 @@
       return !!rh && (h === rh || h.slice(-(rh.length + 1)) === '.' + rh);
     });
   }
+  /* Kaputte Hervorhebung (Lukas 23.10.: "{−Marketing … +}" stand roh im Text): Minus- und Gedankenstrich als Oeffner
+     gelten als "-", ein abweichendes Ende als das des Oeffners, ein Zeichen ohne Gegenstueck faellt weg. Rohe Marker
+     stehen nie im Text. Dieselbe Regel auf dem Server (upstreem-app lib/mira/bloecke.ts hervorhebungenOrdnen), hier
+     fuer gespeicherte Antworten von vorher und den Live-Text. Code in Backticks bleibt, wie er ist. */
+  function blkHlOrdnen(s){
+    if (!/[{}]/.test(s)) return s;
+    return s.split(/(`[^`\n]+`)/).map(function(teil, i){
+      if (i % 2) return teil;
+      var z = teil.replace(/\{[\u2212\u2013\u2014]/g, '{-').replace(/[\u2212\u2013\u2014]\}/g, '-}')
+        .replace(/\{([+\-~?])([^{}\n]{1,600}?)([+\-~?])\}/g, function(_m, a, innen){ return '{' + a + innen + a + '}'; });
+      var paare = [];
+      z = z.replace(/\{([+\-~?])([^{}\n]{1,600}?)\1\}/g, function(m){ paare.push(m); return '\u0000' + (paare.length - 1) + '\u0000'; });
+      z = z.replace(/\{[+\-~?]|[+\-~?]\}/g, '');
+      return z.replace(/\u0000(\d+)\u0000/g, function(_m, n){ return paare[Number(n)]; });
+    }).join('');
+  }
   function blkInline(s, refs){
-    s = String(s == null ? '' : s).replace(BLK_ALT, function(_m, art, innen){ var z = BLK_ALT_ZEICHEN[art]; return '{' + z + innen + z + '}'; });
+    s = blkHlOrdnen(String(s == null ? '' : s).replace(BLK_ALT, function(_m, art, innen){ var z = BLK_ALT_ZEICHEN[art]; return '{' + z + innen + z + '}'; }));
     var re = /\[([^\]\n]{1,300})\]\(ref:([a-z]\d{1,5})\)|\[([^\]\n]{1,300})\]\((https?:\/\/[^\s)]{1,2000})\)|\*\*([^*\n]+?)\*\*|__([^_\n]+?)__|\*([^*\s][^*\n]*?)\*|`([^`\n]+)`|\{([+\-~?])([^{}\n]{1,600}?)\9\}/g;
     var aus = '', i = 0, m;
     while ((m = re.exec(s))){
@@ -2773,6 +2789,48 @@
     var d = Number(b.decimals) >= 0 ? Number(b.decimals) : 0;
     return Number(v).toFixed(d) + (b.unit === '%' ? '%' : '');
   }
+  /* FESTE FARBEN IN CHARTS (Lukas 23.10.: "Citation Types, URL Types, Modelle, Marken in denselben Tokens wie die
+     App, unabhaengig vom Akzent"). Gehoeren ALLE Beschriftungen eines Charts (ohne "Other") einer Familie an,
+     kommt jede aus core: Citation- und URL-Typen mit ihrer Typfarbe (typeColor, dieselbe wie Ring und Chips)
+     und dem Namen aus typLabel; Marken und Modelle mit ihrem Logo wie in den Balkenlisten der App. Eine eigene
+     Farbe haben Marken und Modelle in der App nicht (der Store traegt keine, Modelle stehen nach Rang in der
+     Rampe, domain-detail.js modelItems), dort bleibt die Farbe nach Rang. Sonst null: der Chart bleibt, wie er war. */
+  /* "Misc" schickt sources_trend als eigenen Typ (gemessen 23.10.); er zaehlt wie "Other" und wird grau. */
+  var BLK_REST = /^(other|others|misc|miscellaneous|uncategori[sz]ed|sonstige|andere)$/i;
+  function blkFamilie(namen, dunkel){
+    var k = window.UpstreemCore;
+    if (!k) return null;
+    var echt = namen.filter(function(n){ return !BLK_REST.test(n.trim()); });
+    if (!echt.length) return null;
+    /* URL-Typen kommen als Schluessel ("product_service") oder als Name ("Product / Service"). */
+    var urlKey = function(n){ return n.trim().toLowerCase().replace(/[\s\/-]+/g, '_'); };
+    /* Der Rest heisst wie in der App: "uncategorized" wird "Uncategorized" (typLabel mit leerem Wert). */
+    var restName = function(n){ return /^uncategori/i.test(n.trim()) && k.typLabel ? k.typLabel('', 'url') : n.trim().charAt(0).toUpperCase() + n.trim().slice(1); };
+    if (k.typeColor){
+      var grauC = k.typeColor('\u0000', 'citation', dunkel), grauU = k.typeColor('\u0000', 'url', dunkel);
+      if (echt.every(function(n){ return k.typeColor(n, 'citation', dunkel) !== grauC; }))
+        return namen.map(function(n){ return { farbe: k.typeColor(n, 'citation', dunkel), name: BLK_REST.test(n.trim()) ? restName(n) : k.typLabel ? k.typLabel(n, 'citation') : n }; });
+      if (echt.every(function(n){ return k.typeColor(urlKey(n), 'url', dunkel) !== grauU; }))
+        return namen.map(function(n){ return { farbe: k.typeColor(urlKey(n), 'url', dunkel), name: BLK_REST.test(n.trim()) ? restName(n) : k.typLabel ? k.typLabel(urlKey(n), 'url') : n }; });
+    }
+    var marken = {}, modelle = {};
+    try { (k.getBrands ? k.getBrands() : []).forEach(function(b){ if (b && b.name) marken[String(b.name).trim().toLowerCase()] = b; }); } catch(e){}
+    try { (k.getModels ? k.getModels() : []).forEach(function(m){
+      if (!m) return;
+      [m.key, m.model, m.display_name].forEach(function(x){ if (x) modelle[String(x).trim().toLowerCase()] = m; });
+    }); } catch(e){}
+    var von = function(tab){ return function(n){ return tab[n.trim().toLowerCase()]; }; };
+    if (echt.every(von(marken))) return namen.map(function(n){
+      var b = von(marken)(n);
+      return { name: n, logo: b ? blkLogo({ type: 'brand', company_id: b.company_id, domain: b.domain }) : '' };
+    });
+    if (echt.every(von(modelle))) return namen.map(function(n){
+      var m = von(modelle)(n), schl = m ? blkStr(m.key || m.model) : '';
+      return { name: m ? blkStr(m.display_name || schl) : n, modell: true,
+        logo: m && k.modelLogoUrl ? k.modelLogoUrl(schl, m.logo_url, dunkel, m.provider) : (m ? blkStr(m.logo_url) : '') };
+    });
+    return null;
+  }
   function blkChartBauen(key){
     var e = _blkCharts[key], b = e && e.daten, k = window.UpstreemCore;
     var el = document.createElement('div');
@@ -2787,11 +2845,12 @@
       if (b.kind === 'line' && k.makeLine && k.buildLineDatasets){
         flaeche.innerHTML = '<div class="am-chart-linie"><canvas></canvas></div><div class="up-legend am-chart-legende"></div>';
         var zeilen = [], firmen = [];
+        var famL = blkFamilie(reihen.map(function(r){ return blkStr(r.name); }), dunkel());
         reihen.forEach(function(r, i){
-          var id = blkStr(r.ref) || ('s' + i), marke = null;
+          var id = blkStr(r.ref) || ('s' + i), marke = null, f = famL && famL[i];
           var ref = r.ref && e.refs && e.refs[r.ref];
           if (ref && (ref.type === 'brand' || ref.type === 'competitor')) marke = blkMarke(ref.company_id || ref.entity_id);
-          firmen.push({ company_id: id, name: blkStr(r.name), color: marke && marke.color ? marke.color : null, favicon_url: ref ? blkLogo(ref) : '' });
+          firmen.push({ company_id: id, name: f ? f.name : blkStr(r.name), color: marke && marke.color ? marke.color : (f && f.farbe) || null, favicon_url: ref ? blkLogo(ref) : (f && f.logo) || '' });
           labels.forEach(function(l, j){ zeilen.push({ company_id: id, day: l, visibility_pct: blkArr(r.values)[j] }); });
         });
         var gebaut = k.buildLineDatasets(zeilen, firmen);
@@ -2806,9 +2865,11 @@
         /* Erst zeichnen, wenn der Kasten im Dokument steht und Breite hat (makeLine misst selbst). */
         e.zeichnen = function(){ try { linie.render(gebaut); } catch(err){} };
       } else if (b.kind === 'doughnut' && k.makeTypeChart){
-        var r0 = reihen[0], werte = blkArr(r0.values);
+        var r0 = reihen[0], werte = blkArr(r0.values), famR = blkFamilie(labels, dunkel());
         var stuecke = labels.map(function(l, j){
-          return { key: l, name: l, share: Number(werte[j]) || 0, color: k.balkenGrau ? k.balkenGrau(j, dunkel()) : '' };
+          var f = famR && famR[j];
+          return { key: l, name: f ? f.name : l, share: Number(werte[j]) || 0, logo: f && f.logo || '', modell: !!(f && f.modell),
+            color: f && f.farbe ? f.farbe : (k.balkenGrau ? k.balkenGrau(j, dunkel()) : '') };
         }).filter(function(x){ return x.share > 0; });
         var ring = k.makeTypeChart({ body: flaeche, isDark: dunkel, decimals: Number(b.decimals) || 0,
           total: function(){ return stuecke.length; }, centerLabel: '' });
@@ -2827,11 +2888,12 @@
         });
         e.zeichnen = function(){
           listen.forEach(function(x){
-            var werte2 = blkArr(x.r.values);
+            var werte2 = blkArr(x.r.values), famB = blkFamilie(labels, dunkel());
             var eintraege = labels.map(function(l, j){
-              var v = werte2[j];
+              var v = werte2[j], f = famB && famB[j];
               if (v == null || !isFinite(v)) return null;
-              return { key: l, name: l, share: max ? Math.abs(v) / max * 100 : 0, wert: blkZahl(v, b), color: k.balkenGrau ? k.balkenGrau(j, dunkel()) : '' };
+              return { key: l, name: f ? f.name : l, share: max ? Math.abs(v) / max * 100 : 0, wert: blkZahl(v, b), logo: f && f.logo || '', modell: !!(f && f.modell),
+                color: f && f.farbe ? f.farbe : (k.balkenGrau ? k.balkenGrau(j, dunkel()) : '') };
             }).filter(Boolean);
             try { x.liste.render(eintraege); } catch(err){}
           });
@@ -3076,6 +3138,7 @@
   /* ---- typing reveal for brand-new answers (same feel & speed as the landing-page showcase) ---- */
   var _prevMsgKeys = [];
   var _prevLoading = false;
+  var _renderChat = '';   /* der Chat des letzten Zeichnens (renderMessages, Lage der letzten Frage) */
   var _typedKeys = Object.create(null);
   var _forceTypeNext = false;
   /* Die erwartete Antwort ist eben angekommen (siehe _erwartet): der NAECHSTE Durchgang tippt sie.
@@ -3230,7 +3293,10 @@
       var msgEl = bub.closest ? bub.closest('.am-msg') : null;
       if (!msgEl){ _followCapTop = -1; return; }
       var prev = msgEl.previousElementSibling;
-      var anchor = (prev && prev.classList && prev.classList.contains('am-msg')) ? prev : msgEl;
+      /* Nur eine FRAGE kommt nach oben (23.10.): eine Antwort ohne Frage davor (Zusammenfassung eines fertigen Jobs) zog
+         sonst die vorige Antwort an den oberen Rand, bei einer langen Antwort ein Sprung um Bildschirme. Dann gilt die
+         neue Nachricht selbst als Anker. */
+      var anchor = (prev && prev.classList && prev.classList.contains('am-msg') && prev.classList.contains('is-user')) ? prev : msgEl;
       var top = anchor.getBoundingClientRect().top - elChat.getBoundingClientRect().top + elChat.scrollTop - 14;
       _followCapTop = Math.max(0, top);                 // don't auto-scroll past here -> question stays in view
       elChat.scrollTo({ top: _followCapTop, behavior: 'smooth' });
@@ -3252,7 +3318,7 @@
     elChat.addEventListener('touchstart', release, { passive: true });
     requestAnimationFrame(pin);
   }
-  function _startTyping(bub, units){
+  function _startTyping(bub, units, ohneFrage){
     if (!units || !units.length) return;
     var _typeMul = parseFloat(root.getAttribute('data-typespeed'));
     if (!isFinite(_typeMul) || _typeMul <= 0) _typeMul = 1;
@@ -3260,8 +3326,12 @@
     if (msgEl) msgEl.classList.add('am-typing');     // hide the hover bar (copy/good/bad) until done
     _typingActive = true;
     root.classList.add('am-is-typing');              // guard: keep un-revealed opportunity buttons hidden (survives re-renders)
-    var follow = _atBottom(120);                     // only follow if the user is essentially at the bottom
-    if (follow){
+    var follow = !ohneFrage && _atBottom(120);       // only follow if the user is essentially at the bottom
+    /* OHNE FRAGE (Zusammenfassung eines fertigen Jobs, 23.10.): keine Fahrt. Die Nachricht steht im Platz, der unter der
+       letzten Antwort reserviert ist; nur wenn keine Zeile von ihr im Bild ist, "New Message". */
+    if (ohneFrage){
+      if (_msgFullyBelow(msgEl)) _bumpNewBadge(msgEl);
+    } else if (follow){
       _anchorForTyping(bub);
       setTimeout(function(){ if (_typingActive) _startStick(); }, 430);   // start sticking once the anchor settles
     } else {
@@ -3317,6 +3387,17 @@
        Der Lade-Eintrag wird VOR dem Ersetzen abgelesen -- danach ist er weg. */
     var _warDa = _gezeigt;
     _ladeStill = !!elMessages.querySelector('.am-msg-loading');
+    /* DIE LETZTE FRAGE BLEIBT, WO SIE STEHT (23.10. gemessen): zeichnet sich derselbe Chat neu, ohne dass eine Frage dazu
+       kommt (Nachladen, Abschluss, neue Karte, Job), rueckte die Frage, weil sich darueber etwas in der Hoehe aenderte
+       (gemessen 41 px, von 26 auf -15). Ihre Lage im Bild wird vor dem Zeichnen gelesen und danach wiederhergestellt;
+       die Regeln weiter unten (Absenden, Tippen, Oeffnen) scrollen danach wie bisher. Gezaehlt wird die Lage der
+       letzten Frage, nicht ihre Kennung: die lokale Kennung wechselt waehrend des Laufs zur echten. */
+    var _fragenDom = elMessages.querySelectorAll('.am-msg.is-user');
+    var _fragenZahl = 0;
+    for (var _fz = 0; _fz < S.messages.length; _fz++){ if (S.messages[_fz] && S.messages[_fz].role === 'user') _fragenZahl++; }
+    var _frageVorher = (_renderChat === String(S.activeChatId || '') && !S.chatLoading && _fragenDom.length && _fragenDom.length === _fragenZahl)
+      ? _fragenDom[_fragenDom.length - 1].getBoundingClientRect().top : null;
+    _renderChat = String(S.activeChatId || '');
     elMessages.innerHTML = S.messages.map(function(m, idx){ return messageHtml(m, poolTerms, idx === lastAsstIdx, idx === letzteIdx, _schonGezeigt(_warDa, m)); }).join('');
     blkChartsEinhaengen(elMessages);   /* Charts der Bloecke: behaltene Knoten zurueck an ihren Platz */
     _gezeigt = _gezeigtMerken(S.messages);
@@ -3343,6 +3424,12 @@
       }
       runMount();
     }
+    if (_frageVorher !== null){
+      var _fragenNeu = elMessages.querySelectorAll('.am-msg.is-user');
+      var _fn = _fragenNeu.length ? _fragenNeu[_fragenNeu.length - 1] : null;
+      var _versatz = _fn ? _fn.getBoundingClientRect().top - _frageVorher : 0;
+      if (Math.abs(_versatz) >= 1) elChat.scrollTop += _versatz;
+    }
 
     /* ---- decide whether the LAST message should type out ----
        It types only if the last message is an assistant answer that is genuinely NEW, detected by
@@ -3363,6 +3450,8 @@
     var _loadingDone = _prevLoading && !S.isLoading;
     var _lastKey = (lastAsstIdx >= 0 && lastAsstIdx === S.messages.length - 1) ? _curKeys[lastAsstIdx] : null;
     var _typeUnits = null;
+    /* Die neue letzte Antwort hat keine Frage direkt davor (Zusammenfassung eines fertigen Jobs). */
+    var _ohneFrage = lastAsstIdx > 0 && !!S.messages[lastAsstIdx - 1] && S.messages[lastAsstIdx - 1].role !== 'user';
     var _shouldType = _lastKey && !S.isLoading && !_typedKeys[_lastKey] && (
       _forceTypeNext || _isAppend || _loadingDone || _typeErwartet
     );
@@ -3400,7 +3489,9 @@
        wo sie ist -- auch der reservierte Platz darunter, sonst rutschte eine kurze Antwort nach unten. */
     var _halten = _scrollHalten; _scrollHalten = false;
     if (!S.messages.length){ elMessages.style.minHeight = ''; if (!S.isLoading){ elChat.scrollTop = 0; } }
-    else if (_typeUnits) { elMessages.style.minHeight = ''; }
+    /* Eine Antwort ohne eigene Frage (Job-Ende) gibt den reservierten Platz nicht frei: sonst zog der Browser scrollTop
+       nach und der Verlauf rutschte (gemessen 123 px). */
+    else if (_typeUnits) { if (!_ohneFrage) elMessages.style.minHeight = ''; }
     else if (_halten && !S.isLoading) { /* stehen lassen */ }
     /* SOLANGE EINE ANTWORT LAEUFT, GEHOERT DIE POSITION DEM LADEZUSTAND (24.09. gemessen).
        Der Zweig 'bottom' stand davor -- und askMiraSetMessages setzt _scrollMode bei JEDEM
@@ -3419,11 +3510,14 @@
        Nachfassen mit unveraenderten Nachrichten ans Ende -- der Nutzer las, die Ansicht rutschte.
        Jetzt steht er zwischen beiden: der Ladezustand gewinnt, danach gewinnt "unveraendert". */
     else if (_gleicheNachrichten){ /* nichts anfassen, siehe oben */ }
-    /* EINE SCHON LIVE GELESENE ANTWORT KOMMT PER REALTIME NACH, waehrend der Nutzer weiter oben liest (23.10. gemessen:
-       kam das Nachladen vor dem Abschluss des Streams, sprang die Ansicht wie beim Oeffnen eines Chats ans Ende und
-       "New Message" war weg). Das ist ein Anhaengen, kein Oeffnen: stehen lassen, und ist keine Zeile der Antwort im
-       Bild, die Marke zeigen. Steht er unten, gilt der Zweig darunter wie bisher. */
-    else if (_isAppend && _lastKey && _typedKeys[_lastKey] && !_atBottom(130)){ _neueAntwortMelden(); }
+    /* EINE SCHON LIVE GEZEIGTE ANTWORT KOMMT PER REALTIME NACH (23.10. gemessen): das Nachladen kam vor dem Abschluss des
+       Streams, und der Zweig darunter behandelte die angehaengte Antwort wie das Oeffnen eines Chats -- scrollOeffnen
+       sprang ans Ende, die Frage stand bei -451 px statt oben im Bild (Lukas: "springt etwas zu weit nach oben"). Das ist
+       ein Anhaengen dessen, was schon dasteht: die Ansicht bleibt, wo sie ist. Liest der Nutzer weiter oben und ist keine
+       Zeile der Antwort im Bild, die Marke. Erkannt am selben Chat mit gleich vielen Fragen (_frageVorher), nicht an der
+       Schluesselliste: die Kennung der Frage wechselt waehrend des Laufs von lokal zu echt, die Liste ist dann kein
+       Praefix mehr (gemessen: zweiter Lauf sprang trotz des ersten Fixes auf -401). */
+    else if (_frageVorher !== null && _lastKey && _typedKeys[_lastKey]){ if (!_atBottom(130)) _neueAntwortMelden(); }
     else if (_scrollMode === 'bottom') {
       var _ungelesen = _oeffnenUngelesen && _oeffnenUngelesenFuer === String(S.activeChatId || '');
       elMessages.style.minHeight = '';
@@ -3439,7 +3533,7 @@
       _newMsgEl = _alle.length ? _alle[_alle.length - 1] : null;
     }
     updateLoopState();
-    if (_typeUnits) _startTyping(_newBub, _typeUnits);
+    if (_typeUnits) _startTyping(_newBub, _typeUnits, _ohneFrage);
     if (typeof updateScrollBtn === 'function') setTimeout(updateScrollBtn, 80);
     /* NACH DEM ZEICHNEN NACHMESSEN. Der Beobachter an .am-chat meldet nur Groessenaenderungen des
        KASTENS -- der Kasten ist aber flex: 1 1 0 und bleibt gleich gross, waehrend sein INHALT
@@ -5401,8 +5495,8 @@
      Raus damit: ein SVG ohne Groessenangabe, das niemand braucht, kann beim Aufbau nur
      aufblitzen. Die Groessenangabe selbst liegt jetzt in core (siehe ICON_MASS). */
   var MODELS = {
-    pro:   { name: 'Mira Pro 1.0', desc: 'Detailed answers for bigger tasks, with sources and links.' },
-    flash: { name: 'Mira Flash',   desc: 'Fast, lightweight answers for quick everyday questions.' }
+    pro:   { name: 'Agent Pro 1.0', desc: 'Detailed answers for bigger tasks, with sources and links.' },
+    flash: { name: 'Agent Flash',  desc: 'Fast, lightweight answers for quick everyday questions.' }
   };
   /* ---- Das Modell in DERSELBEN Schaltflaeche ---------------------------------------------- */
   function effModelleBauen(){
@@ -6340,17 +6434,19 @@
          nuetzlichere Auskunft. In der Auswahlliste darueber (.am-pick-cav/.am-pick-av) bleibt die
          Flagge, wo sie ist. */
       var istPrompt = String(it.type) === 'prompt';
-      var bild = istPrompt ? '' : ((UCg && UCg.entityBild) ? UCg.entityBild(it) : '');
+      /* Ein Page Audit traegt das Zeichen seiner Ansicht (dna01), wie ein Prompt das seine (23.10., "Ask Agent"). */
+      var istAudit = String(it.type) === 'page_audit';
+      var bild = (istPrompt || istAudit) ? '' : ((UCg && UCg.entityBild) ? UCg.entityBild(it) : '');
       var lbl  = (UCg && UCg.entityLabel) ? UCg.entityLabel(it) : '';
-      var kl = 'am-pick-tag-av up-feldchip-av' + (istPrompt ? ' is-prompt' : '') + (bild ? '' : ' is-fb');
+      var kl = 'am-pick-tag-av up-feldchip-av' + ((istPrompt || istAudit) ? ' is-prompt' : '') + (bild ? '' : ' is-fb');
       /* DER RUECKFALL LIEGT IN DER HUELLE -av-fb, und zwar IMMER. Hier stand der Buchstabe
          (bei einer Brand) und das Marktkuerzel (bei einem Prompt) NACKT daneben -- also ohne
          die Huelle, die ihn verbirgt, solange ein Bild da ist. Sichtbare Folge: neben dem
          Logo stand noch ein "N", neben der deutschen Flagge ein "D", und weil der Buchstabe
          im Flex Platz beansprucht, war das Bild daneben zusammengequetscht.
          Genau EIN Ort entscheidet jetzt, was man sieht: die Klasse is-fb an der Kachel. */
-      var inner = istPrompt
-        ? ((UCg && UCg.icon) ? UCg.icon('zap', 2) : '')
+      var inner = (istPrompt || istAudit)
+        ? ((UCg && UCg.icon) ? UCg.icon(istAudit ? 'dna01' : 'zap', 2) : '')
         : (String(it.type) === 'brand'
             ? '<span class="am-pick-tag-av-t">' + esc(String(lbl).charAt(0).toUpperCase()) + '</span>'
             : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">' + amFormen("globe") + '</svg>');
@@ -6475,7 +6571,10 @@
   function picksRefs(){
     var UCg = window.UpstreemCore;
     return _picks.slice(0, 3).map(function(it){
-      return { type: String(it.type), id: String(pickKennung(it) || ''), label: (UCg && UCg.entityLabel) ? String(UCg.entityLabel(it) || '') : '' };
+      var label = (UCg && UCg.entityLabel) ? String(UCg.entityLabel(it) || '') : '';
+      /* Beim Page Audit der gezeigte Lauf dazu: page_audit_detail braucht page_id UND run_id, sonst nimmt es den neuesten. */
+      if (String(it.type) === 'page_audit' && it.run_id) label += ' (run_id ' + String(it.run_id) + ')';
+      return { type: String(it.type), id: String(pickKennung(it) || ''), label: label };
     }).filter(function(r){ return r.type && r.id; });
   }
   function picksText(){
@@ -6488,6 +6587,8 @@
       if (t === 'prompt') return '- Prompt: "' + name + '" (uid: ' + id + ')';
       if (t === 'domain') return '- Domain: ' + id;
       if (t === 'url')    return '- URL: ' + id + (name && name !== id ? ' (' + name + ')' : '');
+      /* Nur die Adresse: Seite und Lauf gehen strukturiert mit (references), die Kennungen standen sonst lesbar in der Frage. */
+      if (t === 'page_audit') return '- Page Audit: ' + name;
       return '- ' + t + ': ' + id;
     });
     return 'Context:\n' + zeilen.join('\n');
@@ -6498,7 +6599,7 @@
   elAskSel.type = 'button';
   elAskSel.className = 'am-ask-sel';
   elAskSel.id = 'am-ask-sel';
-  elAskSel.innerHTML = '<svg width="24" height="24" class="am-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + amFormen("chatDots") + '</svg><span>Ask Mira</span>';
+  elAskSel.innerHTML = '<svg width="24" height="24" class="am-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + amFormen("chatDots") + '</svg><span>Ask Agent</span>';
   root.appendChild(elAskSel);
 
   var _askSelText = '';
@@ -8612,10 +8713,14 @@
       if (fz >= 0 && (fn < 0 || fz < fn)) s = z.slice(0, fz + 2); else return s.slice(0, zl + 1 + zeile.lastIndexOf('**'));
       zl = s.lastIndexOf('\n'); zeile = s.slice(zl + 1);
     }
-    var h = /\{([+\-~?])[^{}\n]*$/.exec(zeile);
-    if (h && zeile.indexOf(h[1] + '}', h.index + 2) < 0){
-      var hz = z.indexOf(h[1] + '}', s.length), hn = z.indexOf('\n', s.length);
-      if (hz >= 0 && (hn < 0 || hz < hn)) s = z.slice(0, hz + 2); else return s.slice(0, zl + 1 + h.index);
+    /* Jedes Ende gilt, auch ein abweichendes ("{−… +}", 23.10.: das Tippen blieb sonst bis zum Abschluss davor
+       stehen), und gewartet wird nur, solange die Zeile noch nicht fertig ist: ein Oeffner ohne Ende faellt im
+       Renderer weg (blkHlOrdnen). */
+    var h = /\{([+\-~?\u2212\u2013\u2014])[^{}\n]*$/.exec(zeile);
+    if (h && !/[+\-~?\u2212\u2013\u2014]\}/.test(zeile.slice(h.index + 2))){
+      var nach = z.slice(s.length), hm = /[+\-~?\u2212\u2013\u2014]\}/.exec(nach), hn = nach.indexOf('\n');
+      if (hm && (hn < 0 || hm.index < hn)) s = z.slice(0, s.length + hm.index + 2);
+      else if (hn < 0) return s.slice(0, zl + 1 + h.index);
     }
     return s;
   }
@@ -9227,7 +9332,7 @@
      window.RichTooltip widget that was never actually defined anywhere in this codebase, so in
      practice nothing showed on hover -- this is the first working version of it. */
   var EV_TIP_TITLE = 'Connected data points';
-  var EV_TIP_TEXT = 'Mira used these parts of your AI Search data to build this answer. The listed items show which connected data types supported the response.';
+  var EV_TIP_TEXT = 'The Agent used these parts of your AI Search data to build this answer. The listed items show which connected data types supported the response.';
   if (window.UpstreemCore && window.UpstreemCore.makeExplain){
     window.UpstreemCore.makeExplain({
       root: root,
@@ -9338,7 +9443,7 @@
          (.am-wordmark), die Leiste setzt nur die Groesse. */
       var logo = document.createElement('span');
       logo.className = 'am-brand am-side-logo';
-      logo.innerHTML = '<span class="am-wordmark">mira</span>';
+      logo.innerHTML = '<span class="am-wordmark">agent</span>';
       kopf.appendChild(um); kopf.appendChild(logo);
 
       /* ---- DIE EINGEKLAPPTE LEISTE (21.09. angefordert) --------------------------------------
@@ -9358,9 +9463,9 @@
       if (!mini){
         mini = document.createElement('aside');
         mini.className = 'am-mini';
-        mini.setAttribute('aria-label', 'Mira');
+        mini.setAttribute('aria-label', 'Agent');
         mini.innerHTML =
-          '<span class="am-mini-logo" aria-hidden="true">' + ic('blend') + '</span>' +
+          '<span class="am-mini-logo" aria-hidden="true">' + ic('circlePile') + '</span>' +
           '<button class="up-iconbtn am-mini-toggle" type="button" data-mini="open"' +
             ' aria-label="Expand sidebar" data-tip="Expand sidebar">' +
             '<span class="am-side-l">' + ic('panelLeft') + '</span>' +
@@ -9907,6 +10012,9 @@
      auch "Recent chats" im Power Dashboard (askMiraOpen({ chatId })). Vorher stand er nur im
      Klick-Handler; ein zweiter Aufrufer haette ihn kopieren muessen. */
   function chatWaehlen(id){
+    /* Der offene Chat steht schon da (Lukas 23.10.: "Klick auf den aktiven Chat laedt ihn neu, das ist nicht notwendig"):
+       kein Neuladen, keine Skelette. Nur solange er wirklich steht; laedt er noch oder ist leer, laedt der Klick ihn. */
+    if (String(id) === String(S.activeChatId || '') && root.classList.contains('has-messages') && !S.chatLoading && S.messages.length) return;
     S.chatLoading = true;                              // show the chat + skeletons right away
     ladeMarkeSetzen();                                 /* die Zeile dreht sich ab dem Klick */
     S.messages = [];                                   // drop the previous chat's messages so the skeleton shows
@@ -10470,6 +10578,17 @@
     if (o.prompt){
       zuMira({ neu: true });
       var q = String(o.prompt).replace('{TIMEFRAME}', repTimeframe(_reportRange));
+      /* MIT BEZUEGEN (23.10., "Ask Agent" im Page Audit): die Bezuege als Chips ins Feld, die Frage dazu, und dann wie ein
+         Absenden aus dem Feld -- nur so gehen Kontextzeilen und references mit (ein ausdruecklicher Text laesst beides weg). */
+      var refs = (Array.isArray(o.references) ? o.references : []).filter(function(r){ return r && typeof r === 'object' && r.type && r.id != null; }).slice(0, 3);
+      if (refs.length){
+        clearQuote(); clearPicks();
+        refs.forEach(function(r){ _picks.push(Object.assign({}, r)); });
+        picksZeichnen();
+        elTextarea.value = q;
+        sendMessage();
+        return true;
+      }
       if (window.bubble_fn_ask_mira_suggested_question) window.bubble_fn_ask_mira_suggested_question(q);
       sendMessage(q);
       return true;
@@ -11249,7 +11368,7 @@
     var m = root.querySelector('.am-logo-mark');
     if (!m || m.classList.contains('is-icon')) return;
     var kern = window.UpstreemCore;
-    var svg = (kern && kern.icon) ? kern.icon('blend', 1.8) : '';
+    var svg = (kern && kern.icon) ? kern.icon('circlePile', 1.8) : '';
     if (!svg) return;
     m.innerHTML = svg;
     m.classList.add('is-icon');

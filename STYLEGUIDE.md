@@ -2292,9 +2292,9 @@ upstreem-app `lib/mira/bloecke.ts`) und werden in **dieselben Formen** gezeichne
 | Text (Markdown) | Absätze, Listen, ganz fette Zeile als Überschrift (`promoteStrongHeadings`); Bezug `[Label](ref:b2)` als `span[data-mira-entity-type]` → `decorateEntitySpans` (Chip, Drawer, URL-Popover wie bisher); Logos für Bezüge des neuen Wegs aus dem Marken-Store bzw. `UC.faviconUrl` | `blkMd`, `blkInline`, `blkItems` |
 | Tabelle | `.am-table-scroll` mit `<table>` (waagerecht scrollbar); Zahlenspalten (drei von vier Zellen Zahlen) rechtsbündig samt Kopf (`.am-zahl`). **Ein Rand** (23.10.): Rand, Radius 12 und Grund trägt der Kasten, die Tabelle darin keinen (vorher zwei Ränder mit 8 und 12) | `blkTabelle` |
 | Erklärkarte | `.am-karte`: Kopf 32 hoch, Titel 12/500 links, Kopieren rechts (der Knopf der Antwort, `.am-act-btn`), Text darunter | `blkKarte` |
-| Chart | `.am-chart` mit den Bausteinen aus core: Linie `makeLine` (Legende `.up-legend`, unter 500 Breite aus wie überall), Balken `makeBarList`, Ring `makeTypeChart`. Der Knoten bleibt über jedes Neuzeichnen der Liste (`_blkCharts`), ein Chart aus dem Lauf wird zum Chart der fertigen Antwort | `blkChartBauen`, `blkChartsEinhaengen` |
+| Chart | `.am-chart` mit den Bausteinen aus core: Linie `makeLine` (Legende `.up-legend`, unter 500 Breite aus wie überall), Balken `makeBarList`, Ring `makeTypeChart`. Der Knoten bleibt über jedes Neuzeichnen der Liste (`_blkCharts`), ein Chart aus dem Lauf wird zum Chart der fertigen Antwort **Feste Farben** (23.10. spät, Lukas: „dieselben Tokens wie die App, unabhängig vom Akzent“): gehören alle Beschriftungen (ohne „Other“) zu den Citation Types oder den URL Types, trägt jede ihre Typfarbe aus core (`typeColor`, dieselbe wie Ring und Chip, in allen Akzenten gleich) und ihren Namen aus `typLabel`; Marken und Modelle tragen ihr Logo wie in den Balkenlisten (`it.logo`, `it.modell`), die Farbe bleibt nach Rang, denn eine eigene haben sie in der App nicht (Store ohne Farbe, Modelle in domain-detail nach Rang) | `blkChartBauen`, `blkFamilie`, `blkChartsEinhaengen` |
 | Aktionskarte | `.am-akt` nach upstreem-app `mira/AKTIONSKARTE.md` (Start/Rückgängig über die Seite an `/api/mira/aktion`). Vorgeschlagen: Karte mit Zeichen der Ansicht (wie die Seitenleiste: Page Audit `dna01`, Prompt Research `telescope`), Ziel, Grund, Kosten, Knopf. **Ab dem Start ein Laufstreifen** (23.10., Lukas: „technischer, wie der Laufstreifen in Prompt Research bzw. der Lauf-Kasten in Page Audit“): Punkt 8 in der Statusfarbe (läuft `--vt-warn-flaeche`, fertig `--vt-up-flaeche`, gescheitert `--vt-down-flaeche`, sonst grau), Ring aus core solange sie läuft, Zustand („Page Audit completed“) und Ziel, rechts der Weg zum Ergebnis bzw. „Undo“; kein Grundtext. Maße 1:1 aus `.upa-lb` (48 hoch, Polster 7/8/7/16, Abstand 12). Eine Opportunity-Karte darunter nur mit Daten (sonst stand eine leere mit „?“) | `blkAktion`, `blkStreifen`, `askMiraActionCard` |
-| Hervorhebung | `{+…+}` positiv, `{-…-}` negativ, `{~…~}` wahrscheinliche Quelle, `{?…?}` unklar: dieselben Spans und Farben wie im alten HTML | `BLK_HL` |
+| Hervorhebung | `{+…+}` positiv, `{-…-}` negativ, `{~…~}` wahrscheinliche Quelle, `{?…?}` unklar: dieselben Spans und Farben wie im alten HTML. **Nie roh im Text** (23.10. spät, gemeldet „{−Marketing … +}“): Minus- oder Gedankenstrich als Öffner gilt als „-“, ein abweichendes Ende als das des Öffners, ein Zeichen ohne Gegenstück fällt weg, Code in Backticks bleibt; der Live-Text wartet nur, solange die Zeile offen ist (vorher blieb das Tippen vor einem falschen Ende bis zum Abschluss stehen). Dieselbe Regel auf dem Server (`hervorhebungenOrdnen`) | `BLK_HL`, `blkHlOrdnen`, `liveSchnitt` |
 
 **Live:** Text, Bezüge und Charts kommen während des Laufs über die Seite (`askMiraStreamText`,
 `-Refs`, `-Chart`) und stehen in einer Blase unter dem Protokoll (`.am-live`, höchstens alle 120 ms neu,
@@ -2312,7 +2312,15 @@ einen Ansichtswechsel (`_lage`, Rückkehr über `onViewChange`). Das **Protokoll
 Runde zu einem Satz mit leiser Zahl zusammen („×8“, `.am-run-n`), eine Runde mit demselben einzelnen Werkzeug
 wie die vorige hängt sich an diese an; jedes Werkzeug hat eigene Sätze (kein „Working on it“ mehr für die neuen).
 Bezug mit Kürzel als Label (`[p10](ref:p10)`) zeigt den Namen (`blkName`, der Server ersetzt es selbst). Die
-Frage des Nutzers steht in 16/500/24, Polster 10/16; Miras Kopfleiste hat links 32 Polster.
+Frage des Nutzers steht in 16/450/24, Polster 10/16; der Zurück-Knopf der Kopfleiste steht 32 neben der Seitenleiste
+(16 Polster der Ansicht plus 16 im Kopf).
+
+**Agent statt Mira (23.10. spät):** sichtbar heißt Mira „Agent“ (Seitenleiste, „Ask Agent“ bzw. „Ask Agent about this“
+in Knöpfen und Tooltips, Sätze „The Agent …“/„Der Agent …“), das Zeichen ist `circlePile` (Hugeicons CirclePile);
+interne Namen (`askMira*`, `am-`, `mira_*`) und der System-Prompt bleiben. **Scroll-Regel:** die Lage der letzten Frage
+bleibt über jedes Zeichnen desselben Chats (Nachladen, Abschluss, Karte, Job-Ende); nur eine neue Frage wird oben
+verankert (`_anchorForTyping`), eine Antwort ohne Frage (Job-Ende) erscheint an Ort und Stelle, ohne Fahrt und ohne den
+reservierten Platz freizugeben.
 
 ---
 

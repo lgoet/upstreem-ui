@@ -1462,8 +1462,8 @@
          wie dort. Ohne core oder ohne vollstaendigen Bezug ist die Zeile weg (openRowMenu). */
       '<button class="mqa-rowmenu-opt" type="button" data-rowmenu-act="mira">' +
         '<span class="mqa-rowmenu-opt-ic"><svg viewBox="0 0 24 24">' +
-          ((window.UpstreemCore && window.UpstreemCore.iconFormen) ? window.UpstreemCore.iconFormen("blend") : "") +
-        '</svg></span>Ask Mira</button>' +
+          ((window.UpstreemCore && window.UpstreemCore.iconFormen) ? window.UpstreemCore.iconFormen("circlePile") : "") +
+        '</svg></span>Ask Agent</button>' +
       '<button class="mqa-rowmenu-opt" type="button" data-rowmenu-act="pin">' +
         '<span class="mqa-rowmenu-opt-ic">' + PIN_SVG + '</span>Pin to sidebar</button>';
     overlay.appendChild(rowMenuEl);

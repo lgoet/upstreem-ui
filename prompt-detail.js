@@ -199,7 +199,7 @@
     if (P.kopf) {
       P.kopf.name(str(d.prompt_text));
       var html = "";
-      if (UC.anMira && UC.miraBezug) html += knopf("mira", "blend", "Ask Mira about this");
+      if (UC.anMira && UC.miraBezug) html += knopf("mira", "circlePile", "Ask Agent about this");
       if (typeof window.upstreemPinToSidebar === "function") html += knopf("pin", "pin", "Pin to sidebar");
       P.kopf.eigen.innerHTML = html;
     }

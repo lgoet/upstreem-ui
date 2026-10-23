@@ -178,7 +178,7 @@
     if (B.kopf) {
       B.kopf.name(str(d.name));
       var html = knopf("edit", "squarePen", "Edit brand");
-      if (UC.anMira && UC.miraBezug) html += knopf("mira", "blend", "Ask Mira about this");
+      if (UC.anMira && UC.miraBezug) html += knopf("mira", "circlePile", "Ask Agent about this");
       if (typeof window.upstreemPinToSidebar === "function") html += knopf("pin", "pin", "Pin to sidebar");
       B.kopf.eigen.innerHTML = html;
     }

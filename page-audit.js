@@ -75,6 +75,8 @@
     "Restriction detected": "Sperre gefunden", "Potential issue": "Mögliches Problem",
     "No obstacle found": "Kein Hindernis gefunden", "Inconclusive": "Nicht eindeutig",
     "Run again": "Erneut prüfen", "Cancel run": "Lauf abbrechen", "Cancelling…": "Wird abgebrochen…",
+    "Put this Page Audit in context: what matters most, how serious is it, and what should I do first? Explain it in plain words.":
+      "Ordne dieses Page Audit ein: Was ist das Wichtigste, wie schlimm ist es und was sollte ich zuerst tun? Erkläre es verständlich.",
     "Delete Audit": "Audit löschen", "Open page": "Seite öffnen",
     "Audit started": "Audit gestartet", "This page is already being audited": "Diese Seite wird schon geprüft",
     "Audit deleted": "Audit gelöscht", "Schedule updated": "Zeitplan geändert", "Audit cancelled": "Audit abgebrochen",
@@ -1453,7 +1455,9 @@
          neu (ein offenes Menue ginge dabei zu). */
       var d0 = state.ansicht === "detail" ? dasDetail() : null, a0 = aktiverLauf(d0);
       var stand = state.ansicht + "|" + kontingentHtml() + "|" + (d0 && d0.page ? [d0.page.id, d0.page.schedule, d0.page.fetchUrl].join(",") : "") +
-        "|" + (a0 ? a0.id + (a0.cancelRequested ? "!" : "") : "");
+        "|" + (a0 ? a0.id + (a0.cancelRequested ? "!" : "") : "") +
+        /* "Ask Agent" haengt am gezeigten Lauf. */
+        "|" + (d0 && d0.selected && d0.selected.run ? d0.selected.run.id : "");
       if (stand === kopfStand && elKopf.firstChild) return;
       kopfStand = stand;
       if (state.ansicht === "liste") {
@@ -1472,6 +1476,11 @@
             UC.icon("calendar", 2) + '<span>' + esc(t(plan)) + '</span>' + UC.icon("chevronDown", 2) + '</button>' +
           '<div class="up-sort-menu upa-planmenu" role="menu" aria-hidden="true"></div>' +
         '</div>' +
+        /* ASK AGENT (23.10., Lukas: "oben im Page Audit einen Knopf, der dieses Audit referenziert und den Agent fragt, wie es
+           einzuordnen ist"): nur mit fertigem Lauf und wenn der Agent auf der Seite ist. */
+        (UC.agentFragen && d.selected && d.selected.run && d.selected.run.id
+          ? '<button type="button" class="up-btn-sec upa-agent">' + UC.icon("circlePile", 2) + '<span>' + esc(t("Ask Agent")) + '</span></button>'
+          : '') +
         (aktiv
           ? '<button type="button" class="up-btn-sec upa-abbrechen"' + (aktiv.cancelRequested ? ' disabled' : '') + '>' + UC.icon("x", 2) +
               '<span>' + esc(t(aktiv.cancelRequested ? "Cancelling…" : "Cancel run")) + '</span></button>'
@@ -1484,6 +1493,16 @@
           '</div>' +
         '</div>';
       menuesVerdrahten(d);
+    }
+    /* Der Agent bekommt das gezeigte Audit als Bezug (Seite und Lauf) und eine Frage in der Sprache der Oberflaeche; die
+       Antwort beginnt sofort (UC.agentFragen in core, askMiraOpen in ask-mira.js). */
+    function agentFragen() {
+      var d = dasDetail();
+      if (!d || !d.page || !d.selected || !d.selected.run || !UC.agentFragen) return;
+      UC.agentFragen({
+        frage: t("Put this Page Audit in context: what matters most, how serious is it, and what should I do first? Explain it in plain words."),
+        bezuege: [{ type: "page_audit", id: d.page.id, run_id: d.selected.run.id, name: d.page.fetchUrl || d.page.url || "" }]
+      });
     }
     var planPop = null, mehrPop = null;
     function menuesVerdrahten(d) {
@@ -1552,6 +1571,7 @@
     elKopf.addEventListener("click", function (e) {
       if (e.target.closest("[data-upa-anlegen]")) { anlegenOeffnen(); return; }
       if (e.target.closest(".upa-nochmal")) { nochmal(); return; }
+      if (e.target.closest(".upa-agent")) { agentFragen(); return; }
       if (e.target.closest(".upa-abbrechen")) { abbrechen(); return; }
       var po = e.target.closest(".upa-planopt[data-plan]");
       if (po) {
