@@ -553,6 +553,9 @@ body > .up-root[data-ufb-geparkt][hidden] { display: none; }
 /* Die Flagge behaelt ihr Seitenverhaeltnis; Rundung und Rand bringt sie aus markets-filter.css mit. */
 .ufb-wert-bild.umk-opt-flag { width: 16px; height: 12px; }
 .ufb-wert-bild svg { color: var(--vc-third); }
+/* Das Logo einer Marke im Wert (zeilenLogo, 23.10.) ist die Logokachel .ufb-bild in 14 wie im
+   Zeichen des Chips -- zwei Klassen gegen die 16 von .ufb-bild, nicht die Reihenfolge. */
+.ufb-chip-wert .ufb-bild { width: 14px; height: 14px; }
 .ufb-wert-mehr { color: var(--vc-third); }
 
 /* "Clear All" in der grossen Form als Chip mit leichtem Grund (15.10. verlangt): Hoehe, Radius und

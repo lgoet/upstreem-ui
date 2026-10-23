@@ -1131,8 +1131,20 @@
          farbige Strich (oder das Emoji des Topics), bei Models das Logo, bei Markets die Flagge, bei
          Intent das Zeichen, bei den Marken das Logo. Genommen wird es aus der Zeile des Filters
          selbst -- dieselbe Quelle wie der Name (namen()), also kein zweiter Renderer. */
-      var WERT_BILD = { models: ".umf-opt-logo", markets: ".umk-opt-flag", intents: ".uif-opt-main > svg", brands: ".up-ment-logo", rbrands: ".up-ment-logo",
-                        dbrands: ".up-ment-logo", ubrands: ".up-ment-logo" };
+      /* DIE MARKEN AUS DER STRUKTUR, NICHT AUS EINER LISTE (23.10., Lukas: "der Chip des Brand-Filters zeigt im Wert immer
+         das Logo der Marke vor dem Markennamen, genau wie der Models-Chip das LLM-Logo"). Hier standen die vier Filter
+         "Mentioned brands" als Liste; die Marke der Shopping-Produkte (shbrand) fehlte darin, ihr Chip zeigte nur den Namen.
+         Jetzt bringt jede Zeile eines Leisten-Filters (makeLeistenFilter mit Suche), die ein Bild traegt, es in den Chip mit
+         -- auch ein kuenftiger Markenfilter, ohne Eintrag hier. Gezeichnet als dieselbe Logokachel wie das Zeichen des Chips
+         (.ufb-bild: Logo-Grund, Radius 4, 1px Polster), 14 wie jedes Bild im Wert. Welches Bild, entscheidet die Zeile: die
+         eigene Marke ihr Logo, Wettbewerber ihr Favicon (logo_url wie geliefert). Eine Zeile ohne Bild (Haendler) bleibt
+         ohne -- eine leere Kachel waere ein Loch vor dem Namen. */
+      var WERT_BILD = { models: ".umf-opt-logo", markets: ".umk-opt-flag", intents: ".uif-opt-main > svg" };
+      function zeilenLogo(row) {
+        var img = row.querySelector(".up-ment-logo img");
+        var src = img ? String(img.getAttribute("src") || "").trim() : "";
+        return src ? '<span class="ufb-bild ufb-wert-bild"><img src="' + esc(src) + '" alt="" referrerpolicy="no-referrer"/></span>' : "";
+      }
       function wertBild(f, id) {
         var w = eingezogen[f.key];
         if (!w) return "";
@@ -1147,7 +1159,7 @@
         }
         var sel = WERT_BILD[f.key];
         var b = sel ? row.querySelector(sel) : null;
-        if (!b) return "";
+        if (!b) return zeilenLogo(row);
         var k = b.cloneNode(true);
         k.classList.add("ufb-wert-bild");
         return k.outerHTML;
