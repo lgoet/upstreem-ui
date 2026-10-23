@@ -4381,3 +4381,91 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
    raus"). In der App nennt er den Umfang der Zahlen (filter-bar.js, standardChip); auf einer
    Vorfuehrung ist er ein Etikett ohne Bedeutung. Nur ausgeblendet, die Leiste bleibt sonst gleich. */
 .ulh-root .ufb-chip.is-standard { display: none; }
+
+/* ---------- MCP-Abschnitt (23.10., Entwurf B aus dem Canvas) ----------
+   Ueberschrift links, darunter eine Buehne aus drei Karten, die sich ueberlappen wie im Entwurf:
+   links das Dokument mit der Kachel von Claude, davor die Automatisierungen, rechts der Code. Die
+   Lagen in Prozent der Spur (Entwurf bei 1296: 0/520, 408/460, 908/388), damit sie bei jeder Breite
+   ueber 1000 gleich stehen. Unten laeuft die Buehne in den Seitengrund aus. Radien nach Rolle:
+   Karten und Kachel 12, Reiter 6, Marken rund. */
+.ulh-mcp { position: relative; z-index: 1; padding: clamp(72px, calc(11 * var(--ulh-fh)), 132px) 0 0; }
+.ulh-mcp-kopf { padding: 0 8px; }
+.ulh-mcp-chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px 0 8px;
+  border-radius: var(--up-r-voll); background: rgba(59, 130, 246, 0.10); color: #3b82f6;
+  font-size: 12px; font-weight: 500;
+}
+.ulh-mcp-chip-ic { display: inline-flex; }
+.ulh-mcp-chip-ic svg { width: 16px; height: 16px; display: block; }
+.ulh-mcp-h {
+  margin: 20px 0 0; font-size: clamp(36px, 4.6vw, 56px); line-height: 1.07; font-weight: 600;
+  letter-spacing: -0.05em; color: var(--ulh-text);
+}
+.ulh-mcp-h span { display: block; }
+.ulh-mcp-buehne { position: relative; height: 640px; margin-top: 56px; }
+.ulh-mcp-buehne::after {
+  content: ""; position: absolute; left: -8px; right: -8px; bottom: 0; height: 200px; z-index: 3; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(250, 250, 250, 0), var(--ulh-seite));
+}
+.ulh-mcp-dok, .ulh-mcp-auto, .ulh-mcp-code {
+  position: absolute; box-sizing: border-box; background: #ffffff;
+  border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl);
+}
+.ulh-mcp-dok { left: 0.6%; width: 40.1%; top: 104px; height: 640px; box-shadow: 0 2px 2px rgba(0, 0, 0, .04); padding: 124px 56px 0; z-index: 0; }
+.ulh-mcp-kachel {
+  position: absolute; left: 56px; top: -48px; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center;
+  background: #ffffff; border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl);
+  box-shadow: 0 1px 1px rgba(0,0,0,.02), 0 4px 8px -4px rgba(0,0,0,.04), 0 16px 24px -8px rgba(0,0,0,.06);
+}
+.ulh-mcp-kachel img { width: 52px; height: 52px; display: block; }
+.ulh-mcp-dok-t { display: block; font-size: 32px; line-height: 36px; font-weight: 600; letter-spacing: -1.2px; color: #d4d4d4; }
+.ulh-mcp-dok-z { display: flex; flex-direction: column; gap: 10px; width: 260px; max-width: 100%; margin-top: 24px; }
+.ulh-mcp-dok-z i { display: block; height: 10px; border-radius: var(--up-r-xs); background: #f2f2f2; }
+.ulh-mcp-dok-z i:nth-child(2) { width: 82%; }
+.ulh-mcp-dok-z i:nth-child(3) { width: 90%; }
+.ulh-mcp-auto {
+  left: 31.5%; width: 35.5%; top: 0; height: 720px; padding: 32px 32px 0; z-index: 2;
+  box-shadow: 0 1px 1px rgba(0,0,0,.02), 0 8px 16px -4px rgba(0,0,0,.04), 0 24px 32px -8px rgba(0,0,0,.06);
+}
+.ulh-mcp-logo { width: 48px; height: 48px; display: block; border-radius: var(--up-r-voll); }
+.ulh-mcp-auto-h { margin: 24px 0 0; font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.6px; color: var(--ulh-text); }
+.ulh-mcp-auto-s { margin: 8px 0 0; font-size: 14px; line-height: 20px; color: #4d4d4d; }
+.ulh-mcp-liste { list-style: none; margin: 28px 0 0; padding: 0; }
+.ulh-mcp-punkt { display: flex; gap: 14px; padding: 16px 0; border-top: 1px solid var(--ulh-border); }
+.ulh-mcp-punkt-ic { flex: 0 0 auto; display: inline-flex; color: #4d4d4d; margin-top: 1px; }
+.ulh-mcp-punkt-ic svg { width: 18px; height: 18px; display: block; }
+.ulh-mcp-punkt-tx { display: flex; flex-direction: column; gap: 2px; }
+.ulh-mcp-punkt-t { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--ulh-text); }
+.ulh-mcp-punkt-s { font-size: 13px; line-height: 18px; color: #4d4d4d; }
+.ulh-mcp-code { right: 0.6%; width: 29.9%; top: 64px; height: 640px; overflow: hidden; z-index: 1; box-shadow: 0 2px 2px rgba(0, 0, 0, .04); }
+.ulh-mcp-reiter { display: flex; align-items: center; gap: 4px; height: 48px; padding: 0 12px; border-bottom: 1px solid var(--ulh-border); }
+.ulh-mcp-reiter-b { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: var(--up-r-m); font-size: 13px; font-weight: 500; color: #8f8f8f; }
+.ulh-mcp-reiter-b.is-an { background: rgba(0, 0, 0, .05); color: var(--ulh-text); }
+.ulh-mcp-pre {
+  margin: 0; padding: 20px; white-space: pre; overflow: hidden;
+  font-family: ui-monospace, "Geist Mono", SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 20px; color: var(--ulh-text);
+}
+.ulh-mcp-pre .is-k { color: #8f8f8f; }
+.ulh-mcp-pre .is-f { color: #0068d6; }
+.ulh-mcp-pre .is-w { color: #a75500; }
+.ulh-mcp-pre .is-l { color: #4d4d4d; }
+.ulh-mcp-pre .is-ok { display: inline-flex; align-items: center; gap: 6px; color: #297a3a; }
+.ulh-mcp-ok svg { width: 14px; height: 14px; display: block; }
+.ulh-mcp-marken { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 20px 0; }
+.ulh-mcp-marken span {
+  display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border: 1px solid var(--ulh-border);
+  border-radius: var(--up-r-voll); font-size: 12px; font-weight: 500; color: #4d4d4d;
+}
+/* Unter 1000: kein Ueberlappen mehr, die drei Karten untereinander in voller Breite, ohne Auslauf. */
+@media (max-width: 1000px) {
+  .ulh-mcp-buehne { height: auto; display: flex; flex-direction: column; gap: 16px; padding: 48px 8px 0; margin-top: 32px; }
+  .ulh-mcp-buehne::after { display: none; }
+  .ulh-mcp-dok, .ulh-mcp-auto, .ulh-mcp-code { position: relative; left: auto; right: auto; top: auto; width: auto; height: auto; }
+  .ulh-mcp-dok { padding: 72px 24px 24px; }
+  .ulh-mcp-kachel { left: 24px; width: 72px; height: 72px; top: -36px; }
+  .ulh-mcp-kachel img { width: 40px; height: 40px; }
+  .ulh-mcp-dok-t { font-size: 24px; line-height: 28px; }
+  .ulh-mcp-auto { padding: 24px 24px 8px; }
+  .ulh-mcp-code { padding-bottom: 20px; }
+  .ulh-mcp-pre { overflow-x: auto; }
+}

@@ -85,6 +85,18 @@
     "How everything works": "Anleitungen und Hilfe",
     /* Hero */
     "New": "Neu", "Customer journey tracking": "Customer-Journey-Tracking", "MCP Server": "MCP Server",
+    /* MCP-Abschnitt (23.10.). Die Ueberschrift bleibt englisch wie alle h1/h2, der Code ebenfalls. */
+    "Weekly report": "Wochenbericht", "Runs while you work": "Läuft, während du arbeitest",
+    "Set it up once in Claude. Every run reads the latest numbers from upstreem.": "Einmal in Claude einrichten. Jeder Lauf liest die neuesten Zahlen aus upstreem.",
+    "Weekly report every Monday": "Wochenbericht jeden Montag",
+    "Visibility, rank and sentiment against last week.": "Visibility, Rank und Sentiment im Vergleich zur Vorwoche.",
+    "Alert when a competitor overtakes you": "Hinweis, wenn dich ein Wettbewerber überholt",
+    "Checked on every new run, per market and model.": "Bei jedem neuen Lauf geprüft, je Markt und Modell.",
+    "Content briefs from lost citations": "Content-Briefings aus verlorenen Zitierungen",
+    "Which pages AI stopped citing, and what to change.": "Welche Seiten KI nicht mehr zitiert und was du ändern solltest.",
+    "Answers for the whole team": "Antworten fürs ganze Team",
+    "Anyone can ask, nobody needs a dashboard login.": "Jeder kann fragen, niemand braucht einen Dashboard-Login.",
+    "Read-only": "Nur lesend", "OAuth sign-in": "OAuth-Anmeldung",
     /* h1 und Unterzeile des Hero bleiben auf Deutsch ENGLISCH (14.10. so entschieden: "lass h1 und
        h2 einfach auf englisch" -- "einfach gemacht" klang uebersetzt). Deshalb stehen sie hier nicht. */
     "Book a demo": "Demo vereinbaren", "Tracked daily on": "Täglich gemessen in",
@@ -865,6 +877,7 @@
       ereignisse() +
       quellen() +
       msc() +
+      mcp() +
       geo() +
       stimme() +
       preise() +
@@ -1741,6 +1754,69 @@
   var MSC_H = "An analyst, not a dashboard";
   var MSC_SUB = "Ask in your own words and Mira does the work: it reads your prompts, responses " +
     "and sources, shows where every number comes from, and says what to do next.";
+
+  /* ---- DER MCP-ABSCHNITT (23.10., Entwurf B aus dem Canvas "Landingpage Geist") ----
+     Links die Kachel von Claude ueber einem Dokument, in der Mitte, was sich mit den Daten
+     automatisieren laesst (bewusst kein Chat: der saehe aus wie Mira), rechts die technische Seite:
+     der echte Befehl fuer Claude Code mit Adresse und Port aus mcp-server.js, die Werkzeugnamen des
+     Servers (upstreem-app /api/mcp) und ein Beispielaufruf. Die Zahlen im Aufruf sind Demowerte wie
+     im Fenster oben. Die Ueberschrift links, nicht mittig wie die anderen Abschnitte -- so gewaehlt. */
+  var MCP_URL = "https://app.upstreem.ai/api/mcp";
+  var MCP_LOGO_CLAUDE = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/claude-logo%20(1).svg";
+  var MCP_LOGO_UP = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-mark-square-1f1f1f.svg";
+  var MCP_PUNKTE = [
+    { ic: "calendar", t: "Weekly report every Monday", s: "Visibility, rank and sentiment against last week." },
+    { ic: "bell", t: "Alert when a competitor overtakes you", s: "Checked on every new run, per market and model." },
+    { ic: "fileText", t: "Content briefs from lost citations", s: "Which pages AI stopped citing, and what to change." },
+    { ic: "messageCircle", t: "Answers for the whole team", s: "Anyone can ask, nobody needs a dashboard login." }
+  ];
+  var MCP_WERKZEUGE = ["dashboard_kpis", "prompts", "sources_domains", "opportunities", "impact_event_analysis"];
+  function mcp(){
+    return '<section class="ulh-mcp" id="mcp">' +
+      '<div class="ulh-spur ulh-mcp-in">' +
+        '<div class="ulh-mcp-kopf ulh-auf">' +
+          '<span class="ulh-mcp-chip"><span class="ulh-mcp-chip-ic" data-ic="mcpServer" data-ic-w="1.75" aria-hidden="true"></span>' +
+            '<span>MCP Server</span></span>' +
+          '<h2 class="ulh-mcp-h"><span>Build workflows and automate</span> <span>with your data in Claude</span></h2>' +
+        '</div>' +
+        '<div class="ulh-mcp-buehne">' +
+          '<div class="ulh-mcp-dok ulh-auf" style="--auf:0">' +
+            '<span class="ulh-mcp-kachel"><img src="' + MCP_LOGO_CLAUDE + '" alt="Claude" width="52" height="52" referrerpolicy="no-referrer"></span>' +
+            '<span class="ulh-mcp-dok-t">Weekly report</span>' +
+            '<span class="ulh-mcp-dok-z" aria-hidden="true"><i></i><i></i><i></i></span>' +
+          '</div>' +
+          '<div class="ulh-mcp-auto ulh-auf" style="--auf:1">' +
+            '<img class="ulh-mcp-logo" src="' + MCP_LOGO_UP + '" alt="upstreem" width="48" height="48" referrerpolicy="no-referrer">' +
+            '<h3 class="ulh-mcp-auto-h">Runs while you work</h3>' +
+            '<p class="ulh-mcp-auto-s">Set it up once in Claude. Every run reads the latest numbers from upstreem.</p>' +
+            '<ul class="ulh-mcp-liste">' +
+              MCP_PUNKTE.map(function(k){
+                return '<li class="ulh-mcp-punkt"><span class="ulh-mcp-punkt-ic" data-ic="' + k.ic + '" data-ic-w="1.75" aria-hidden="true"></span>' +
+                  '<span class="ulh-mcp-punkt-tx"><span class="ulh-mcp-punkt-t">' + k.t + '</span>' +
+                  '<span class="ulh-mcp-punkt-s">' + k.s + '</span></span></li>';
+              }).join("") +
+            '</ul>' +
+          '</div>' +
+          '<div class="ulh-mcp-code ulh-auf" style="--auf:2">' +
+            '<div class="ulh-mcp-reiter"><span class="ulh-mcp-reiter-b is-an">Claude Code</span><span class="ulh-mcp-reiter-b">Claude</span></div>' +
+            '<pre class="ulh-mcp-pre"><code>' +
+              '<span class="is-k"># connect upstreem</span>\n' +
+              '<span class="is-k">$</span> claude mcp add <span class="is-f">--transport</span> http \\\n' +
+              '    <span class="is-f">--callback-port</span> 33418 \\\n' +
+              '    upstreem <span class="is-w">' + MCP_URL + '</span>\n\n' +
+              '<span class="is-ok"><span class="ulh-mcp-ok" data-ic="check" data-ic-w="2" aria-hidden="true"></span>upstreem connected</span>\n\n' +
+              '<span class="is-k"># read-only tools, for example</span>\n' +
+              MCP_WERKZEUGE.join("\n") + '\n\n' +
+              '<span class="is-k"># a call from Claude</span>\n' +
+              '<span class="is-f">dashboard_kpis</span>()\n' +
+              '<span class="is-l">→ visibility 38.4%, rank 2.1, sentiment 74</span>' +
+            '</code></pre>' +
+            '<div class="ulh-mcp-marken"><span>Read-only</span><span>OAuth sign-in</span><span>Streamable HTTP</span></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</section>';
+  }
 
   function msc(){
     return '<section class="ulh-msc" id="mira">' +
