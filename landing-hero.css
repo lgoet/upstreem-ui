@@ -4670,14 +4670,13 @@ html[data-up-pagetheme="dark"] :is(.ulh-nav-logo img, .ulh-mcp-logo) { filter: i
 /* Antwortkarte: ohne Datum ("das 'vor 3 Stunden' weg"). */
 .ulh-fen-antwort .urt-card-date { display: none; }
 
-/* ---------- DIE KARTEN DIREKT AUF DER SEITE (23.10.) ------------------------------------------
-   "guck, dass die ganze Cards-Sektion mit gleichem Gap zum Webseitengrund ist wie die Cards darin":
-   der Kasten um die Karten hatte im Dunkeln dieselbe Flaeche wie die Karten (#0f0f0f), dazu einen
-   eigenen Rand -- zwischen den Karten lag also Kartenflaeche, und es standen drei Linien ineinander
-   (Schiene, Kasten, Karte). Jetzt traegt der Kasten nichts mehr, die Karten stehen auf dem Grund der
-   Seite, rundum 8 vom Gitter und 8 untereinander. Gilt fuer jeden Kartenabschnitt, es ist dasselbe
-   Bauteil. */
-.ulh-root .ulh-cards-box { padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
+/* ---------- KARTEN IM KASTEN, EIN ABSTAND (24.10.) -------------------------------------------
+   "guck, dass die ganze Cards-Sektion mit gleichem Gap zum Webseitengrund ist wie die Cards darin",
+   dann am 24.10.: "diese doppelten Cards wie frueher lassen" -- der Kasten bleibt, aber ein Mass fuer
+   alles: 8 vom Gitter zum Kasten, 8 Polster im Kasten, 8 zwischen den Karten (vorher 8/4/4). Der
+   Radius ist konzentrisch zu den 12 der Karten: 12 + 8 Polster + 1 Rand. Gilt fuer jeden
+   Kartenabschnitt, es ist dasselbe Bauteil. */
+.ulh-root .ulh-cards-box { padding: 8px; border-radius: calc(var(--up-r-2xl) + 9px); }
 .ulh-root .ulh-cards, .ulh-root .ulh-cards-row { gap: 8px; }
 
 /* ---------- PLATTFORM: DIE VORSCHAUEN GROESSER (23.10.) -----------------------------------------
