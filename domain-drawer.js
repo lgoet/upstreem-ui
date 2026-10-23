@@ -262,7 +262,7 @@
       /* Ohne Recht (can_override false, nur owner/admin) oeffnet der Knopf trotzdem: das Menue nennt
          dann den Typ und sagt, wer ihn aendern darf (Vertrag 13.10.: "nur lesbar"). */
       html += zaehltKnopf();
-      if (UC.anMira && UC.miraBezug) html += knopf("mira", "blend", "Ask Mira about this");
+      if (UC.anMira && UC.miraBezug) html += knopf("mira", "circlePile", "Ask Agent about this");
       if (typeof window.upstreemPinToSidebar === "function") html += knopf("pin", "pin", "Pin to sidebar");
       S.kopf.eigen.innerHTML = html;
       zaehltMenueVerdrahten();

@@ -1396,7 +1396,7 @@
     var html = "";
     if (duStr(d.domain).trim() && typeof window.openDrawer === "function") html += knopf("domain", "domain", "Go to parent domain");
     if (UC.openCreateWithAi) html += knopf("ai", "astroid", "Create with AI");
-    if (UC.anMira && UC.miraBezug) html += knopf("mira", "blend", "Ask Mira about this");
+    if (UC.anMira && UC.miraBezug) html += knopf("mira", "circlePile", "Ask Agent about this");
     if (typeof window.upstreemPinToSidebar === "function") html += knopf("pin", "pin", "Pin to sidebar");
     k.eigen.innerHTML = html;
   }

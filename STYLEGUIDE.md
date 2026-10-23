@@ -2312,7 +2312,15 @@ einen Ansichtswechsel (`_lage`, Rückkehr über `onViewChange`). Das **Protokoll
 Runde zu einem Satz mit leiser Zahl zusammen („×8“, `.am-run-n`), eine Runde mit demselben einzelnen Werkzeug
 wie die vorige hängt sich an diese an; jedes Werkzeug hat eigene Sätze (kein „Working on it“ mehr für die neuen).
 Bezug mit Kürzel als Label (`[p10](ref:p10)`) zeigt den Namen (`blkName`, der Server ersetzt es selbst). Die
-Frage des Nutzers steht in 16/500/24, Polster 10/16; Miras Kopfleiste hat links 32 Polster.
+Frage des Nutzers steht in 16/450/24, Polster 10/16; der Zurück-Knopf der Kopfleiste steht 32 neben der Seitenleiste
+(16 Polster der Ansicht plus 16 im Kopf).
+
+**Agent statt Mira (23.10. spät):** sichtbar heißt Mira „Agent“ (Seitenleiste, „Ask Agent“ bzw. „Ask Agent about this“
+in Knöpfen und Tooltips, Sätze „The Agent …“/„Der Agent …“), das Zeichen ist `circlePile` (Hugeicons CirclePile);
+interne Namen (`askMira*`, `am-`, `mira_*`) und der System-Prompt bleiben. **Scroll-Regel:** die Lage der letzten Frage
+bleibt über jedes Zeichnen desselben Chats (Nachladen, Abschluss, Karte, Job-Ende); nur eine neue Frage wird oben
+verankert (`_anchorForTyping`), eine Antwort ohne Frage (Job-Ende) erscheint an Ort und Stelle, ohne Fahrt und ohne den
+reservierten Platz freizugeben.
 
 ---
 

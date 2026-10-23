@@ -283,9 +283,9 @@
           'aria-label="' + esc(UC.t("Create with AI")) + '">' +
           UC.icon("astroid", 2) + '</button>' +
         '<button type="button" class="up-iconbtn utb-mira" data-utb-mira hidden ' +
-          'data-tip="' + esc(UC.t("Ask Mira about this")) + '" ' +
-          'aria-label="' + esc(UC.t("Ask Mira about this")) + '">' +
-          UC.icon("blend", 2) + '</button>' +
+          'data-tip="' + esc(UC.t("Ask Agent about this")) + '" ' +
+          'aria-label="' + esc(UC.t("Ask Agent about this")) + '">' +
+          UC.icon("circlePile", 2) + '</button>' +
         '<button type="button" class="up-iconbtn utb-pin" data-utb-pin ' +
           'data-tip="' + esc(UC.t("Pin to sidebar")) + '" aria-label="' + esc(UC.t("Pin to sidebar")) + '">' +
           UC.icon("pin", 2) + '</button>' +

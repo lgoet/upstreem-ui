@@ -115,7 +115,7 @@
          Komponente selbst, und es kommt wie jedes andere aus UC.icon. Damit faellt der Sonderweg
          ueber ein Bild von Bubbles CDN weg -- mit ihm die zwei Helligkeitsfilter, die noetig
          waren, weil ein fremdes SVG sich nicht einfaerben laesst. */
-      { key: "mira",          label: "Mira",            icon: "blend" }
+      { key: "mira",          label: "Agent",           icon: "circlePile" }
     ]},
     { head: "Organisation", items: [
       { key: "teams",    label: "Teams",    icon: "folders", chips: true },

@@ -2948,7 +2948,7 @@
     "Appearance": "Darstellung",
     "How brands, citations and responses are marked in answers":
       "Wie Brands, Quellen und Antworten in den Antworten markiert werden",
-    "Ask Mira about this": "Mira dazu fragen",
+    "Ask Agent about this": "Agent dazu fragen",
     "Suggested Followups": "Vorgeschlagene Folgefragen",
     "Your messages": "Deine Nachrichten",
     "How they look in the chat.": "Wie sie im Chat aussehen.",
@@ -3133,7 +3133,7 @@
     "Citations view": "Web-Quellen-Ansicht",
 
     /* ---- Mira ---- */
-    "Ask Mira": "Mira fragen",
+    "Ask Agent": "Agent fragen",
     "New Message": "Neue Nachricht",
     "New project": "Neues Projekt",
     "Project name": "Projektname",
@@ -3155,14 +3155,14 @@
     "More": "Mehr",
     "Show more": "Mehr zeigen",
     "Show less": "Weniger zeigen",
-    "Mira answers based on...": "Mira antwortet auf Basis von…",
+    "The Agent answers based on...": "Der Agent antwortet auf Basis von…",
     /* DER GANZE SATZ, und nicht nur der abgeschnittene Schluessel darueber. Der Hinweis unter
        dem Eingabefeld steht als voller Satz im Markup (bubble/ask_mira_bubble.html, .am-hint),
        und ohne diesen Eintrag blieb er auf Deutsch englisch -- direkt unter einem Feld, das
        sonst vollstaendig uebersetzt ist. Gefunden beim Ansehen des neuen Composers auf dem
        Telefon; .finde_untexte.py meldet es nicht, weil es bubble/*.html nicht durchsucht. */
-    "Mira answers based on your selected workspace data.":
-      "Mira antwortet auf Basis der Daten deines ausgew\u00e4hlten Arbeitsbereichs.",
+    "The Agent answers based on your selected workspace data.":
+      "Der Agent antwortet auf Basis der Daten deines ausgew\u00e4hlten Arbeitsbereichs.",
     "Reading your brand's visibility data": "Die Visibility-Daten deiner Brand werden gelesen",
     "Transcribing voice message": "Sprachnachricht wird transkribiert"
   });
@@ -27202,6 +27202,11 @@
        leere Huelle statt eines Zeichens. */
     scan: '<path d="M16.0042 2.5C17.9974 2.61348 19.2576 2.93381 20.1619 3.83811C21.0662 4.74243 21.3865 6.00268 21.5 7.99598M7.99582 2.5C6.00261 2.61348 4.74241 2.93381 3.83812 3.83811C2.9338 4.74243 2.61347 6.00268 2.5 7.99598M21.5 16.004C21.3865 17.9973 21.0662 19.2576 20.1619 20.1619C19.2576 21.0662 17.9973 21.3865 16.004 21.5M2.5 16.004C2.61347 17.9973 2.9338 19.2576 3.83812 20.1619C4.74244 21.0662 6.00268 21.3865 7.99597 21.5"/>' +
           '<path d="M5 12H19"/>',
+    /* Hugeicons CirclePile (23.10., Lukas: "als Icon ueberall CirclePileIcon"): das Zeichen des Agenten in Seitenleiste,
+       Knoepfen und Fenster, statt blend. Woertlich aus @hugeicons/core-free-icons@4.3.5 (dist/esm/CirclePileIcon.js),
+       sechs Kreise r 2; die Strichbreite gibt die Huelle vor. */
+    circlePile: '<circle cx="12" cy="19" r="2"/><circle cx="4" cy="19" r="2"/><circle cx="16" cy="12" r="2"/>' +
+                '<circle cx="8" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="20" cy="19" r="2"/>',
     blend:    '<path d="M13.427 8.08396C12.8007 5.84272 12.3226 4 11.0004 4C9.67824 4 9.19964 5.84274 8.5731 8.08399C8.31853 8.99465 8.19125 9.44998 7.82042 9.82077C7.4496 10.1916 6.99434 10.3188 6.08381 10.5732C3.84273 11.1995 2 11.6775 2 13C2 14.3225 3.84273 14.8005 6.08381 15.4268C6.99434 15.6812 7.4496 15.8084 7.82042 16.1792C8.19125 16.55 8.31853 17.0054 8.5731 17.916C9.19964 20.1573 9.67824 22 11.0004 22C12.3226 22 12.8007 20.1573 13.427 17.916C13.6815 17.0054 13.8087 16.5501 14.1795 16.1793C14.5504 15.8085 15.0056 15.6812 15.9162 15.4268C18.1573 14.8005 20 14.3225 20 13C20 11.6775 18.1573 11.1995 15.9162 10.5732C15.0056 10.3188 14.5504 10.1915 14.1795 9.8207C13.8087 9.44986 13.6815 8.99456 13.427 8.08396Z"/>' +
            '<path d="M19.5 2.9375V4.5M19.5 4.5V6.0625M19.5 4.5H18.25M19.5 4.5H20.75M22 4.5L21.548 4.34934C20.8497 4.11658 20.5006 4.00019 20.2502 3.74981C19.9998 3.49942 19.8834 3.15027 19.6507 2.45198L19.5 2L19.3493 2.45198C19.1166 3.15027 19.0002 3.49942 18.7498 3.74981C18.4994 4.00019 18.1503 4.11658 17.452 4.34934L17 4.5L17.452 4.65066C18.1503 4.88342 18.4994 4.99981 18.7498 5.25019C19.0002 5.50058 19.1166 5.84973 19.3493 6.54802L19.5 7L19.6507 6.54802C19.8834 5.84973 19.9998 5.50058 20.2502 5.25019C20.5006 4.99981 20.8497 4.88342 21.548 4.65066L22 4.5Z"/>',
     telescope: '<path d="M19 9.5V8.3C18.992 5.49713 18.9051 4.0112 17.967 3.05442C16.9332 2 15.2694 2 11.9416 2L10.0592 2C6.73147 2 5.0676 2 4.0338 3.05442C3 4.10883 3 5.80589 3 9.2L3 13.8C3 17.1941 3 18.8912 4.0338 19.9456C4.95155 20.8816 6.36586 20.9867 9 20.9985"/>' +

@@ -355,7 +355,7 @@
         var m = /filename\*=UTF-8''([^;]+)/i.exec(cd);
         var name = "";
         try { name = m ? decodeURIComponent(m[1]) : ""; } catch (e) {}
-        return r.blob().then(function (b) { return { ok: true, status: r.status, daten: { blob: b, name: name || "mira.pdf" } }; });
+        return r.blob().then(function (b) { return { ok: true, status: r.status, daten: { blob: b, name: name || "agent.pdf" } }; });
       }
       return r.text().then(function (t) {
         var j = null;

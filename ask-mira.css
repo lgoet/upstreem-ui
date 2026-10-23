@@ -162,7 +162,7 @@
     /* 16px on left/top/right, so the logo block and the "All Chats" button keep the same inset
        from the component edge that the rest of the app's chrome has. Bottom stays larger: that is
        breathing room before the chat/composer below, unrelated to the side inset. */
-    padding: 16px 16px 28px 32px;
+    padding: 16px 16px 28px;
   }
   .am-hero-inner {
     display: flex; align-items: center; gap: 16px;
@@ -316,9 +316,10 @@
     width: 100%; max-width: min(100%, 782px); color: var(--am-text);
   }
   .am-msg.is-user .am-bubble {
-    /* Die Frage je eine Stufe groesser und kraeftiger als in G1 (14/400; Lukas 23.10.: "zu klein und zu duenn"):
-       16/500 auf 24 wie Geists copy-16, das Polster mit dem Faktor 16/14 auf 10/16. */
-    font-size: var(--up-fs-xl); font-weight: var(--up-fw-m); line-height: 24px; padding: 10px 16px;
+    /* Die Frage eine Stufe groesser als in G1 (14/400; Lukas 23.10.: "zu klein und zu duenn"): 16 auf 24 wie Geists
+       copy-16, das Polster mit dem Faktor 16/14 auf 10/16. Der Schnitt 450 (Lukas 23.10. spaet, nach 500: "etwas weniger
+       font weight"): zwischen 400 (zu duenn) und 500, der Schnitt ist ein Bereich (CLAUDE.md 1c). */
+    font-size: var(--up-fs-xl); font-weight: 450; line-height: 24px; padding: 10px 16px;
     background: var(--am-user-bg); color: var(--am-user-text);
     border-top-right-radius: var(--up-r-xs);
   }
@@ -3806,9 +3807,10 @@
        der Linie, um die es oben geht. Mit 48 und 8/8 ist der Inhaltskasten wieder 8 bis 40,
        Mitte 24 -- dieselbe Linie, nur eine Zeile, die acht Pixel mehr Luft hat. */
     height: 48px; min-height: 48px;
-    /* Links 32 (Lukas 23.10.: "Topbar: links 32px Polster"), rechts 16; dieselben Werte wie der Kopf ohne Chat,
-       damit die Leiste beim Wechsel nicht seitlich springt. Kompakt und am Telefon bleibt es bei 16 (unten). */
-    padding: 8px 16px 8px 32px;
+    /* Der Zurueck-Knopf steht 32 neben der Seitenleiste (Lukas 23.10.: "32px Gap zur Sidebar"): 16 Polster der Ansicht
+       (.wirt-ansicht) plus diese 16, gemessen aus- und eingeklappt (250/298 vorher 48, jetzt 32; 64/96). Ein Polster von
+       32 hier ergab 48. Dieselben Werte wie der Kopf ohne Chat, damit die Leiste beim Wechsel nicht seitlich springt. */
+    padding: 8px 16px;
     display: flex; align-items: center;
   }
   #ask-mira.has-messages .am-hero-inner { max-width: none; gap: 12px; flex-wrap: nowrap; }

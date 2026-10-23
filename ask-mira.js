@@ -633,9 +633,9 @@
   /* ---------------- Localization (DE for German market, else EN) ---------------- */
   var STR = {
     en: {
-      antwortHaengt: 'This is taking longer than expected. Mira keeps looking for the answer.',
-      antwortNichtGeladen: 'Mira’s answer is ready but didn’t load here. Open the chat again to see it.',
-      placeholder: 'Ask Mira...',
+      antwortHaengt: 'This is taking longer than expected. The Agent keeps looking for the answer.',
+      antwortNichtGeladen: 'The Agent’s answer is ready but didn’t load here. Open the chat again to see it.',
+      placeholder: 'Ask Agent...',
       /* DER ERSTE Bezug in einem leeren Feld -> die naheliegende Frage steht dort als echter TEXT
          (17.09. angefordert, am 18.09. vom Platzhalter zum Text geworden). Wer etwas anderes
          wissen will, loescht sie und schreibt seine eigene -- als Platzhalter ging das nicht.
@@ -712,7 +712,7 @@
       pickOfflineSub: 'Please reload the page and try again.',
       pickMax: 'max 3',
       pickPlaceholder: 'Search brands, domains, URLs, prompts\u2026',
-      effFlashNote: 'Mira Flash always answers at Medium.',
+      effFlashNote: 'Agent Flash always answers at Medium.',
       urlDetail: 'Open detail page',
       oppAdd: 'Add as opportunity',
       oppAdding: 'Adding\u2026',
@@ -723,7 +723,7 @@
       oppRate: 'Too many requests. Please wait a moment and try again.',
       oppStatusError: 'The status couldn\u2019t be changed. Please try again.',
       sendFailed: 'The message could not be sent. Please try again.',
-      turnFailed: 'Mira couldn\u2019t finish this answer. Please try again.',
+      turnFailed: 'The Agent couldn\u2019t finish this answer. Please try again.',
       runNow: 'Working for', runDone: 'Worked for', thoughtMoment: 'Thought for a moment',
       runThinking: 'Thinking', runWriting: 'Writing the answer', runChecking: 'Checking the numbers', runFailed: 'This step failed',
       galleryBack: 'All categories',
@@ -778,9 +778,9 @@
       ]
     },
     de: {
-      antwortHaengt: 'Das dauert länger als erwartet. Mira sucht weiter nach der Antwort.',
-      antwortNichtGeladen: 'Miras Antwort ist fertig, kam hier aber nicht an. Öffne den Chat erneut, um sie zu sehen.',
-      placeholder: 'Frag Mira...',
+      antwortHaengt: 'Das dauert länger als erwartet. Der Agent sucht weiter nach der Antwort.',
+      antwortNichtGeladen: 'Die Antwort des Agenten ist fertig, kam hier aber nicht an. Öffne den Chat erneut, um sie zu sehen.',
+      placeholder: 'Frag den Agenten...',
       bezugFrage: {
         brand:      'Was kannst du mir über diese Brand sagen?',
         competitor: 'Was kannst du mir über diesen Wettbewerber sagen?',
@@ -837,7 +837,7 @@
       pickOfflineSub: 'Bitte die Seite neu laden und noch einmal versuchen.',
       pickMax: 'max. 3',
       pickPlaceholder: 'Brands, Domains, URLs, Prompts suchen\u2026',
-      effFlashNote: 'Mira Flash antwortet immer auf Mittel.',
+      effFlashNote: 'Agent Flash antwortet immer auf Mittel.',
       urlDetail: 'Detailseite öffnen',
       oppAdd: 'Als Opportunity hinzufügen',
       oppAdding: 'Wird hinzugefügt\u2026',
@@ -848,7 +848,7 @@
       oppRate: 'Zu viele Anfragen. Warte kurz und versuch es noch einmal.',
       oppStatusError: 'Der Status konnte nicht geändert werden. Versuch es noch einmal.',
       sendFailed: 'Die Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.',
-      turnFailed: 'Mira konnte diese Antwort nicht abschliessen. Bitte erneut versuchen.',
+      turnFailed: 'Der Agent konnte diese Antwort nicht abschliessen. Bitte erneut versuchen.',
       runNow: 'Arbeitet seit', runDone: 'Gearbeitet', thoughtMoment: 'Kurz nachgedacht',
       runThinking: 'Denkt nach', runWriting: 'Schreibt die Antwort', runChecking: 'Prüft die Zahlen', runFailed: 'Dieser Schritt ist fehlgeschlagen',
       galleryBack: 'Alle Kategorien',
@@ -3076,6 +3076,7 @@
   /* ---- typing reveal for brand-new answers (same feel & speed as the landing-page showcase) ---- */
   var _prevMsgKeys = [];
   var _prevLoading = false;
+  var _renderChat = '';   /* der Chat des letzten Zeichnens (renderMessages, Lage der letzten Frage) */
   var _typedKeys = Object.create(null);
   var _forceTypeNext = false;
   /* Die erwartete Antwort ist eben angekommen (siehe _erwartet): der NAECHSTE Durchgang tippt sie.
@@ -3230,7 +3231,10 @@
       var msgEl = bub.closest ? bub.closest('.am-msg') : null;
       if (!msgEl){ _followCapTop = -1; return; }
       var prev = msgEl.previousElementSibling;
-      var anchor = (prev && prev.classList && prev.classList.contains('am-msg')) ? prev : msgEl;
+      /* Nur eine FRAGE kommt nach oben (23.10.): eine Antwort ohne Frage davor (Zusammenfassung eines fertigen Jobs) zog
+         sonst die vorige Antwort an den oberen Rand, bei einer langen Antwort ein Sprung um Bildschirme. Dann gilt die
+         neue Nachricht selbst als Anker. */
+      var anchor = (prev && prev.classList && prev.classList.contains('am-msg') && prev.classList.contains('is-user')) ? prev : msgEl;
       var top = anchor.getBoundingClientRect().top - elChat.getBoundingClientRect().top + elChat.scrollTop - 14;
       _followCapTop = Math.max(0, top);                 // don't auto-scroll past here -> question stays in view
       elChat.scrollTo({ top: _followCapTop, behavior: 'smooth' });
@@ -3252,7 +3256,7 @@
     elChat.addEventListener('touchstart', release, { passive: true });
     requestAnimationFrame(pin);
   }
-  function _startTyping(bub, units){
+  function _startTyping(bub, units, ohneFrage){
     if (!units || !units.length) return;
     var _typeMul = parseFloat(root.getAttribute('data-typespeed'));
     if (!isFinite(_typeMul) || _typeMul <= 0) _typeMul = 1;
@@ -3260,8 +3264,12 @@
     if (msgEl) msgEl.classList.add('am-typing');     // hide the hover bar (copy/good/bad) until done
     _typingActive = true;
     root.classList.add('am-is-typing');              // guard: keep un-revealed opportunity buttons hidden (survives re-renders)
-    var follow = _atBottom(120);                     // only follow if the user is essentially at the bottom
-    if (follow){
+    var follow = !ohneFrage && _atBottom(120);       // only follow if the user is essentially at the bottom
+    /* OHNE FRAGE (Zusammenfassung eines fertigen Jobs, 23.10.): keine Fahrt. Die Nachricht steht im Platz, der unter der
+       letzten Antwort reserviert ist; nur wenn keine Zeile von ihr im Bild ist, "New Message". */
+    if (ohneFrage){
+      if (_msgFullyBelow(msgEl)) _bumpNewBadge(msgEl);
+    } else if (follow){
       _anchorForTyping(bub);
       setTimeout(function(){ if (_typingActive) _startStick(); }, 430);   // start sticking once the anchor settles
     } else {
@@ -3317,6 +3325,17 @@
        Der Lade-Eintrag wird VOR dem Ersetzen abgelesen -- danach ist er weg. */
     var _warDa = _gezeigt;
     _ladeStill = !!elMessages.querySelector('.am-msg-loading');
+    /* DIE LETZTE FRAGE BLEIBT, WO SIE STEHT (23.10. gemessen): zeichnet sich derselbe Chat neu, ohne dass eine Frage dazu
+       kommt (Nachladen, Abschluss, neue Karte, Job), rueckte die Frage, weil sich darueber etwas in der Hoehe aenderte
+       (gemessen 41 px, von 26 auf -15). Ihre Lage im Bild wird vor dem Zeichnen gelesen und danach wiederhergestellt;
+       die Regeln weiter unten (Absenden, Tippen, Oeffnen) scrollen danach wie bisher. Gezaehlt wird die Lage der
+       letzten Frage, nicht ihre Kennung: die lokale Kennung wechselt waehrend des Laufs zur echten. */
+    var _fragenDom = elMessages.querySelectorAll('.am-msg.is-user');
+    var _fragenZahl = 0;
+    for (var _fz = 0; _fz < S.messages.length; _fz++){ if (S.messages[_fz] && S.messages[_fz].role === 'user') _fragenZahl++; }
+    var _frageVorher = (_renderChat === String(S.activeChatId || '') && !S.chatLoading && _fragenDom.length && _fragenDom.length === _fragenZahl)
+      ? _fragenDom[_fragenDom.length - 1].getBoundingClientRect().top : null;
+    _renderChat = String(S.activeChatId || '');
     elMessages.innerHTML = S.messages.map(function(m, idx){ return messageHtml(m, poolTerms, idx === lastAsstIdx, idx === letzteIdx, _schonGezeigt(_warDa, m)); }).join('');
     blkChartsEinhaengen(elMessages);   /* Charts der Bloecke: behaltene Knoten zurueck an ihren Platz */
     _gezeigt = _gezeigtMerken(S.messages);
@@ -3343,6 +3362,12 @@
       }
       runMount();
     }
+    if (_frageVorher !== null){
+      var _fragenNeu = elMessages.querySelectorAll('.am-msg.is-user');
+      var _fn = _fragenNeu.length ? _fragenNeu[_fragenNeu.length - 1] : null;
+      var _versatz = _fn ? _fn.getBoundingClientRect().top - _frageVorher : 0;
+      if (Math.abs(_versatz) >= 1) elChat.scrollTop += _versatz;
+    }
 
     /* ---- decide whether the LAST message should type out ----
        It types only if the last message is an assistant answer that is genuinely NEW, detected by
@@ -3363,6 +3388,8 @@
     var _loadingDone = _prevLoading && !S.isLoading;
     var _lastKey = (lastAsstIdx >= 0 && lastAsstIdx === S.messages.length - 1) ? _curKeys[lastAsstIdx] : null;
     var _typeUnits = null;
+    /* Die neue letzte Antwort hat keine Frage direkt davor (Zusammenfassung eines fertigen Jobs). */
+    var _ohneFrage = lastAsstIdx > 0 && !!S.messages[lastAsstIdx - 1] && S.messages[lastAsstIdx - 1].role !== 'user';
     var _shouldType = _lastKey && !S.isLoading && !_typedKeys[_lastKey] && (
       _forceTypeNext || _isAppend || _loadingDone || _typeErwartet
     );
@@ -3400,7 +3427,9 @@
        wo sie ist -- auch der reservierte Platz darunter, sonst rutschte eine kurze Antwort nach unten. */
     var _halten = _scrollHalten; _scrollHalten = false;
     if (!S.messages.length){ elMessages.style.minHeight = ''; if (!S.isLoading){ elChat.scrollTop = 0; } }
-    else if (_typeUnits) { elMessages.style.minHeight = ''; }
+    /* Eine Antwort ohne eigene Frage (Job-Ende) gibt den reservierten Platz nicht frei: sonst zog der Browser scrollTop
+       nach und der Verlauf rutschte (gemessen 123 px). */
+    else if (_typeUnits) { if (!_ohneFrage) elMessages.style.minHeight = ''; }
     else if (_halten && !S.isLoading) { /* stehen lassen */ }
     /* SOLANGE EINE ANTWORT LAEUFT, GEHOERT DIE POSITION DEM LADEZUSTAND (24.09. gemessen).
        Der Zweig 'bottom' stand davor -- und askMiraSetMessages setzt _scrollMode bei JEDEM
@@ -3419,11 +3448,14 @@
        Nachfassen mit unveraenderten Nachrichten ans Ende -- der Nutzer las, die Ansicht rutschte.
        Jetzt steht er zwischen beiden: der Ladezustand gewinnt, danach gewinnt "unveraendert". */
     else if (_gleicheNachrichten){ /* nichts anfassen, siehe oben */ }
-    /* EINE SCHON LIVE GELESENE ANTWORT KOMMT PER REALTIME NACH, waehrend der Nutzer weiter oben liest (23.10. gemessen:
-       kam das Nachladen vor dem Abschluss des Streams, sprang die Ansicht wie beim Oeffnen eines Chats ans Ende und
-       "New Message" war weg). Das ist ein Anhaengen, kein Oeffnen: stehen lassen, und ist keine Zeile der Antwort im
-       Bild, die Marke zeigen. Steht er unten, gilt der Zweig darunter wie bisher. */
-    else if (_isAppend && _lastKey && _typedKeys[_lastKey] && !_atBottom(130)){ _neueAntwortMelden(); }
+    /* EINE SCHON LIVE GEZEIGTE ANTWORT KOMMT PER REALTIME NACH (23.10. gemessen): das Nachladen kam vor dem Abschluss des
+       Streams, und der Zweig darunter behandelte die angehaengte Antwort wie das Oeffnen eines Chats -- scrollOeffnen
+       sprang ans Ende, die Frage stand bei -451 px statt oben im Bild (Lukas: "springt etwas zu weit nach oben"). Das ist
+       ein Anhaengen dessen, was schon dasteht: die Ansicht bleibt, wo sie ist. Liest der Nutzer weiter oben und ist keine
+       Zeile der Antwort im Bild, die Marke. Erkannt am selben Chat mit gleich vielen Fragen (_frageVorher), nicht an der
+       Schluesselliste: die Kennung der Frage wechselt waehrend des Laufs von lokal zu echt, die Liste ist dann kein
+       Praefix mehr (gemessen: zweiter Lauf sprang trotz des ersten Fixes auf -401). */
+    else if (_frageVorher !== null && _lastKey && _typedKeys[_lastKey]){ if (!_atBottom(130)) _neueAntwortMelden(); }
     else if (_scrollMode === 'bottom') {
       var _ungelesen = _oeffnenUngelesen && _oeffnenUngelesenFuer === String(S.activeChatId || '');
       elMessages.style.minHeight = '';
@@ -3439,7 +3471,7 @@
       _newMsgEl = _alle.length ? _alle[_alle.length - 1] : null;
     }
     updateLoopState();
-    if (_typeUnits) _startTyping(_newBub, _typeUnits);
+    if (_typeUnits) _startTyping(_newBub, _typeUnits, _ohneFrage);
     if (typeof updateScrollBtn === 'function') setTimeout(updateScrollBtn, 80);
     /* NACH DEM ZEICHNEN NACHMESSEN. Der Beobachter an .am-chat meldet nur Groessenaenderungen des
        KASTENS -- der Kasten ist aber flex: 1 1 0 und bleibt gleich gross, waehrend sein INHALT
@@ -5410,8 +5442,8 @@
      Raus damit: ein SVG ohne Groessenangabe, das niemand braucht, kann beim Aufbau nur
      aufblitzen. Die Groessenangabe selbst liegt jetzt in core (siehe ICON_MASS). */
   var MODELS = {
-    pro:   { name: 'Mira Pro 1.0', desc: 'Detailed answers for bigger tasks, with sources and links.' },
-    flash: { name: 'Mira Flash',   desc: 'Fast, lightweight answers for quick everyday questions.' }
+    pro:   { name: 'Agent Pro 1.0', desc: 'Detailed answers for bigger tasks, with sources and links.' },
+    flash: { name: 'Agent Flash',  desc: 'Fast, lightweight answers for quick everyday questions.' }
   };
   /* ---- Das Modell in DERSELBEN Schaltflaeche ---------------------------------------------- */
   function effModelleBauen(){
@@ -6507,7 +6539,7 @@
   elAskSel.type = 'button';
   elAskSel.className = 'am-ask-sel';
   elAskSel.id = 'am-ask-sel';
-  elAskSel.innerHTML = '<svg width="24" height="24" class="am-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + amFormen("chatDots") + '</svg><span>Ask Mira</span>';
+  elAskSel.innerHTML = '<svg width="24" height="24" class="am-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + amFormen("chatDots") + '</svg><span>Ask Agent</span>';
   root.appendChild(elAskSel);
 
   var _askSelText = '';
@@ -9232,7 +9264,7 @@
      window.RichTooltip widget that was never actually defined anywhere in this codebase, so in
      practice nothing showed on hover -- this is the first working version of it. */
   var EV_TIP_TITLE = 'Connected data points';
-  var EV_TIP_TEXT = 'Mira used these parts of your AI Search data to build this answer. The listed items show which connected data types supported the response.';
+  var EV_TIP_TEXT = 'The Agent used these parts of your AI Search data to build this answer. The listed items show which connected data types supported the response.';
   if (window.UpstreemCore && window.UpstreemCore.makeExplain){
     window.UpstreemCore.makeExplain({
       root: root,
@@ -9343,7 +9375,7 @@
          (.am-wordmark), die Leiste setzt nur die Groesse. */
       var logo = document.createElement('span');
       logo.className = 'am-brand am-side-logo';
-      logo.innerHTML = '<span class="am-wordmark">mira</span>';
+      logo.innerHTML = '<span class="am-wordmark">agent</span>';
       kopf.appendChild(um); kopf.appendChild(logo);
 
       /* ---- DIE EINGEKLAPPTE LEISTE (21.09. angefordert) --------------------------------------
@@ -9363,9 +9395,9 @@
       if (!mini){
         mini = document.createElement('aside');
         mini.className = 'am-mini';
-        mini.setAttribute('aria-label', 'Mira');
+        mini.setAttribute('aria-label', 'Agent');
         mini.innerHTML =
-          '<span class="am-mini-logo" aria-hidden="true">' + ic('blend') + '</span>' +
+          '<span class="am-mini-logo" aria-hidden="true">' + ic('circlePile') + '</span>' +
           '<button class="up-iconbtn am-mini-toggle" type="button" data-mini="open"' +
             ' aria-label="Expand sidebar" data-tip="Expand sidebar">' +
             '<span class="am-side-l">' + ic('panelLeft') + '</span>' +
@@ -9912,6 +9944,9 @@
      auch "Recent chats" im Power Dashboard (askMiraOpen({ chatId })). Vorher stand er nur im
      Klick-Handler; ein zweiter Aufrufer haette ihn kopieren muessen. */
   function chatWaehlen(id){
+    /* Der offene Chat steht schon da (Lukas 23.10.: "Klick auf den aktiven Chat laedt ihn neu, das ist nicht notwendig"):
+       kein Neuladen, keine Skelette. Nur solange er wirklich steht; laedt er noch oder ist leer, laedt der Klick ihn. */
+    if (String(id) === String(S.activeChatId || '') && root.classList.contains('has-messages') && !S.chatLoading && S.messages.length) return;
     S.chatLoading = true;                              // show the chat + skeletons right away
     ladeMarkeSetzen();                                 /* die Zeile dreht sich ab dem Klick */
     S.messages = [];                                   // drop the previous chat's messages so the skeleton shows
@@ -11254,7 +11289,7 @@
     var m = root.querySelector('.am-logo-mark');
     if (!m || m.classList.contains('is-icon')) return;
     var kern = window.UpstreemCore;
-    var svg = (kern && kern.icon) ? kern.icon('blend', 1.8) : '';
+    var svg = (kern && kern.icon) ? kern.icon('circlePile', 1.8) : '';
     if (!svg) return;
     m.innerHTML = svg;
     m.classList.add('is-icon');
