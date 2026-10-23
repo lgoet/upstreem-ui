@@ -124,7 +124,7 @@
   --ulh-rahmen-bg: rgba(236, 237, 241, .78); --ulh-rahmen-rand: rgba(11, 13, 24, .06);
   --ulh-pot-a: #c4c9d0; --ulh-team-ink: #1d4ed8; --ulh-pille: #ffffff;
   --ulh-sw-rail: #f9f9f9; --ulh-sw-pill: #ffffff; --ulh-sw-rand: #e0e2e6;
-  --ulh-wahl: rgba(0, 0, 0, .05); --ulh-fehler: #b0200c; --ulh-schalter-aus: #d6d6d4;
+  --ulh-wahl: rgba(0, 0, 0, .05); --ulh-fehler: #b0200c;
   --ulh-code-f: #0068d6; --ulh-code-w: #a75500; --ulh-code-ok: #297a3a;
   /* Die Buehne hat eine FESTE Breite und wird als Ganzes verkleinert. Nur so sieht man die App in
      ihrem Desktop-Layout: die Komponenten messen ihre eigene Breite (clientWidth) und stapeln
@@ -4609,7 +4609,7 @@ html[data-up-pagetheme="dark"] .ulh-root {
   --ulh-rahmen-bg: rgba(31, 31, 31, .78); --ulh-rahmen-rand: rgba(255, 255, 255, .06);
   --ulh-pot-a: #454545; --ulh-team-ink: #60a5fa; --ulh-pille: #1f1f1f;
   --ulh-sw-rail: #1a1a1a; --ulh-sw-pill: #2e2e2e; --ulh-sw-rand: #2e2e2e;
-  --ulh-wahl: rgba(255, 255, 255, .06); --ulh-fehler: #ff6166; --ulh-schalter-aus: #2e2e2e;
+  --ulh-wahl: rgba(255, 255, 255, .06); --ulh-fehler: #ff6166;
   /* Die Codefarben aus Geists dunkler Skala (Blue/Amber/Green 900). */
   --ulh-code-f: #47a8ff; --ulh-code-w: #ffb224; --ulh-code-ok: #62c073;
 }
@@ -4621,24 +4621,11 @@ html[data-up-pagetheme="dark"] .ulh-root .ulh-fuss { border-top: 1px solid var(-
 /* Wortmarke und Zeichen sind schwarz (#1f1f1f); auf der dunklen Seite gekehrt wie im Fuss (.ulh-fuss-logo). */
 html[data-up-pagetheme="dark"] :is(.ulh-nav-logo img, .ulh-mcp-logo) { filter: invert(1); }
 
-/* DER SCHALTER IN DER LEISTE. Derselbe Knopf wie "Log in" (.ulh-btn-sec), quadratisch. Zwei Zeichen
-   uebereinander, getauscht ueber Deckkraft und Groesse wie beim Menueknopf -- keine Drehung. Hell
-   zeigt den Mond (wohin es geht), dunkel die Sonne. Das Zeichen haengt am Attribut und nicht an
-   einem Zustand im Markup: die Startseite wird vorgerendert und nur uebernommen, wenn ihr Markup
-   gleich bleibt (data-ulh-ssr). */
-.ulh-btn.ulh-thema { position: relative; width: 36px; padding: 0; justify-content: center; }
-.ulh-thema svg {
-  position: absolute; width: 16px; height: 16px; display: block;
-  transition: opacity var(--up-t-2) var(--up-ease), transform var(--up-t-2) var(--up-ease);
-}
-.ulh-thema .ulh-thema-sonne { opacity: 0; transform: scale(.6); }
-html[data-up-pagetheme="dark"] .ulh-thema .ulh-thema-mond { opacity: 0; transform: scale(.6); }
-html[data-up-pagetheme="dark"] .ulh-thema .ulh-thema-sonne { opacity: 1; transform: none; }
 /* PLATZ IN DER LEISTE (23.10., gemessen auf / und /de). Unter 1300 zeigt der Sprachschalter nur die
    Flaggen -- wie schon unter 420; das Kuerzel bleibt fuer Vorleser im Markup. Unter 640 weicht
-   "Log in" ins Blatt (dort steht er gross): auf /de brauchten Flaggen, Schalter, "Einloggen",
-   "Kostenlos starten" und der Menueknopf bei 561px 30px mehr als da war. Unter 560 gehen Sprache
-   und Thema als eigene Zeilen ins Blatt, die Leiste traegt dann nur Logo, Hauptknopf und Menue. */
+   "Log in" ins Blatt (dort steht er gross): auf /de brauchten Flaggen, "Einloggen", "Kostenlos
+   starten" und der Menueknopf bei 561px schon ohne den (inzwischen entfernten) Themenschalter 28px
+   mehr als da war. */
 @media (max-width: 1299px) {
   .ulh-nav-rechts > .ulh-sprache .ulh-sprache-t {
     position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden;
@@ -4646,31 +4633,8 @@ html[data-up-pagetheme="dark"] .ulh-thema .ulh-thema-sonne { opacity: 1; transfo
   }
 }
 @media (max-width: 640px) {
-  .ulh-nav-rechts > .ulh-btn-sec:not(.ulh-thema) { display: none; }
+  .ulh-nav-rechts > .ulh-btn-sec { display: none; }
 }
-/* Die Zeile im Blatt: Name links, rechts ein Schalter in der Form von .up-switch aus core (38 x 22,
-   Knopf 18) -- an heisst dunkel. aria-pressed sagt dasselbe (landing-teile.js, themaKnoepfe). */
-.ulh-nm-thema { display: none; }
-@media (max-width: 560px) {
-  .ulh-nav-mobil .ulh-nm-thema {
-    display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px;
-    margin: 6px 0 0; padding: 8px 10px; box-sizing: border-box; border: 0; border-radius: var(--up-r-l);
-    background: none; font: inherit; font-size: 14px; font-weight: 500; color: var(--ulh-text); cursor: pointer;
-    transition: background var(--up-t-1, 120ms) var(--up-ease);
-  }
-  .ulh-nav-mobil .ulh-nm-thema:hover { background: var(--ulh-kasten); }
-  .ulh-nav-mobil .ulh-nm-thema:focus-visible { outline: 2px solid var(--ulh-text); outline-offset: -2px; }
-}
-.ulh-nm-schalter {
-  position: relative; flex: 0 0 auto; width: 38px; height: 22px; border-radius: var(--up-r-voll);
-  background: var(--ulh-schalter-aus); transition: background var(--up-t-2) var(--up-ease);
-}
-.ulh-nm-schalter::after {
-  content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: var(--up-r-voll);
-  background: var(--ulh-grund); box-shadow: 0 1px 2px rgba(11, 13, 24, .2); transition: transform var(--up-t-2) var(--up-ease);
-}
-html[data-up-pagetheme="dark"] .ulh-nm-schalter { background: var(--ulh-text); }
-html[data-up-pagetheme="dark"] .ulh-nm-schalter::after { transform: translateX(16px); }
 
 /* ---------- DER AGENT IM FENSTER (23.10.) ------------------------------------------------------
    "immer nur ein spinner at a time, nie mehrere ... bisschen ruhiger": waehrend Mira arbeitet,

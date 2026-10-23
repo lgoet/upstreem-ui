@@ -335,40 +335,12 @@
     });
   }
 
-  /* Der Themenschalter der Leiste (23.10.). Der Zustand ist das Attribut, das core selbst fuehrt
-     (html[data-up-pagetheme]) unter dessen Schluessel pref_theme -- auf den Unterseiten laeuft kein
-     core, und die Form (landing-hero.css) haengt ohnehin nur am Attribut. Ein Klick schreibt beides
-     und meldet "ulh-thema"; auf der Startseite stellt landing-hero.js daraufhin die Fenster um.
-     Gebunden am document und nicht am Knopf: auf der Startseite entsteht die Leiste ohne
-     vorgerendertes Markup erst nach diesem Skript. */
-  function themaJetzt(){
-    return document.documentElement.getAttribute("data-up-pagetheme") === "dark" ? "dark" : "light";
-  }
-  function themaKnoepfe(){
-    var an = themaJetzt() === "dark" ? "true" : "false";
-    [].forEach.call(document.querySelectorAll(".ulh-thema"), function(b){
-      if (b.getAttribute("aria-pressed") !== an) b.setAttribute("aria-pressed", an);
-    });
-  }
+  /* Das Thema der Website (23.10. abends: "kein lightmode mehr. immer darkmode bitte"). Bis dahin
+     stand hier ein Schalter in der Leiste; jetzt ist die Seite immer dunkel, gesetzt als dasselbe
+     Attribut, das core fuehrt (html[data-up-pagetheme]). upstreem-web schreibt es schon ins
+     ausgelieferte HTML; hier nur fuer Einbettungen ohne diesen Kopf (Framer). */
   function themaBinden(){
-    var h = document.documentElement;
-    if (!h.hasAttribute("data-up-pagetheme")){
-      var t = null;
-      try { t = window.localStorage.getItem("pref_theme"); } catch (e){}
-      if (t === "dark") h.setAttribute("data-up-pagetheme", "dark");
-    }
-    themaKnoepfe();
-    if (document.__ulhThema) return;
-    document.__ulhThema = true;
-    document.addEventListener("click", function(e){
-      var b = e.target && e.target.closest && e.target.closest(".ulh-thema");
-      if (!b) return;
-      var neu = themaJetzt() === "dark" ? "light" : "dark";
-      try { window.localStorage.setItem("pref_theme", neu); } catch (err){}
-      h.setAttribute("data-up-pagetheme", neu);
-      themaKnoepfe();
-      try { document.dispatchEvent(new CustomEvent("ulh-thema", { detail: neu })); } catch (err){}
-    });
+    document.documentElement.setAttribute("data-up-pagetheme", "dark");
   }
 
   /* ---- Anker auf derselben Seite (15.10. gemeldet: "der Klick auf Neu Customer Journey Tracking
@@ -498,7 +470,7 @@
 
   window.UpstreemLandingTeile = { navLauf: navLauf, nachweisBinden: nachweisBinden,
                                   jahrSetzen: jahrSetzen, kalenderBinden: kalenderBinden, spracheBinden: spracheBinden,
-                                  preiseBinden: preiseBinden, themaKnoepfe: themaKnoepfe,
+                                  preiseBinden: preiseBinden,
                                   binden: binden };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", binden);

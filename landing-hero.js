@@ -76,7 +76,7 @@
   var LANG = window.__ulhLang === "de" ? "de" : "en";
   var DE = {
     /* Leiste und Menue */
-    "Language": "Sprache", "Dark mode": "Dunkelmodus", "Platform": "Plattform", "Resources": "Ressourcen", "Pricing": "Preise", "Log in": "Einloggen",
+    "Language": "Sprache", "Platform": "Plattform", "Resources": "Ressourcen", "Pricing": "Preise", "Log in": "Einloggen",
     "Menu": "Menü", "Close menu": "Menü schließen", "English": "English", "Deutsch": "Deutsch",
     "Start for free": "Kostenlos testen", "Overview": "Überblick", "What upstreem shows you": "Alle Funktionen im Überblick",
     "Which pages answers are built from": "Woher KI-Antworten ihr Wissen beziehen",
@@ -631,13 +631,10 @@
   /* DAS THEMA DER SEITE (23.10.: "eine Darkmode Version der Seite ... oben in der Topbar
      umschalten"). Bis dahin stand hier immer "light". Die Wahl ist das Attribut, das core selbst
      fuehrt (html[data-up-pagetheme], gespeichert als pref_theme): upstreem-web setzt es schon im
-     Kopf der Seite, der Schalter in der Leiste (landing-teile.js) beim Klick. Ohne Wahl hell. */
-  function themaWahl(){
-    var t = null;
-    try { t = document.documentElement.getAttribute("data-up-pagetheme"); } catch (e){}
-    if (t !== "dark" && t !== "light"){ try { t = window.localStorage.getItem("pref_theme"); } catch (e){} }
-    return t === "dark" ? "dark" : "light";
-  }
+     Kopf der Seite, der Schalter in der Leiste (landing-teile.js) beim Klick. Ohne Wahl hell.
+     SEIT DEM 23.10. ABENDS IMMER DUNKEL ("kein lightmode mehr. immer darkmode bitte"): kein Schalter,
+     keine Wahl. Die hellen Werte in landing-hero.css bleiben als Grundlage der Rollen stehen. */
+  function themaWahl(){ return "dark"; }
   function themaAnwenden(){
     var dunkel = themaWahl() === "dark";
     try { if (window.setUpstreemTheme) window.setUpstreemTheme(dunkel ? "dark" : "light"); } catch (e){}
@@ -658,21 +655,6 @@
        nur der Schirm des Fensters. */
     try { document.documentElement.setAttribute("data-up-hell", "grau"); } catch (e){}
   }
-  /* Der Wechsel zur Laufzeit: Thema setzen (core zeichnet seine Abonnenten neu), die Wurzeln
-     umstempeln und das Fenster des Agenten mitnehmen, das ein eigenes Dokument ist. */
-  function themaWechselBinden(root){
-    /* Die Leiste kann nach landing-teile.js entstanden sein: den Knopf einmal auf den Stand bringen. */
-    try { var lt = window.UpstreemLandingTeile; if (lt && lt.themaKnoepfe) lt.themaKnoepfe(); } catch (e){}
-    if (document.__ulhThemaWechsel) return;
-    document.__ulhThemaWechsel = true;
-    document.addEventListener("ulh-thema", function(){
-      themaAnwenden();
-      var w = document.querySelector(WURZEL) || root;
-      hellHalten(w);
-      mscThema(w);
-    });
-  }
-
   /* ---------- Vorgerendert oder selbst gebaut (13.10.) ---------------------------------------
      Bis zum 13.10. baute diese Datei die GANZE Seite im Browser -- im rohen HTML der Startseite
      stand kein einziges Wort, keine Ueberschrift, kein Link. Gemessen auf upstreem.ai: 0 Woerter
@@ -1022,18 +1004,6 @@
             '<a href="/de" hreflang="de" lang="de" data-sprache="de"' + (LANG === "de" ? ' class="is-an" aria-current="true"' : '') + '>' +
               '<img class="ulh-sprache-flagge" src="https://flagcdn.com/de.svg" alt="" width="16" height="12"/><span class="ulh-sprache-t">DE</span></a>' +
           '</div> ' : '') +
-          /* DER THEMENSCHALTER (23.10.), vor "Log in". Ein Knopf mit aria-pressed (an = dunkel);
-             das Verhalten steht in landing-teile.js, weil dieselbe Leiste auf den Unterseiten ohne
-             core steht. Die Zeichen inline aus demselben Grund wie beim Menueknopf unten; es sind
-             sun und moon aus core (Hugeicons). Welches zu sehen ist, sagt die CSS am Attribut des
-             Dokuments -- das Markup bleibt in beiden Themen gleich (vorgerendert, data-ulh-ssr). */
-          '<button class="ulh-btn ulh-btn-sec ulh-thema" type="button" aria-pressed="false" aria-label="' + T("Dark mode") + '">' +
-            '<svg class="ulh-thema-mond" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-              '<path d="M21.5 14.0784C20.3003 14.7189 18.9301 15.0821 17.4751 15.0821C12.7491 15.0821 8.91792 11.2509 8.91792 6.52485C8.91792 5.06986 9.28105 3.69968 9.92163 2.5C5.66765 3.49698 2.5 7.31513 2.5 11.8731C2.5 17.1899 6.8101 21.5 12.1269 21.5C16.6849 21.5 20.503 18.3324 21.5 14.0784Z"></path></svg>' +
-            '<svg class="ulh-thema-sonne" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-              '<path d="M17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12Z"></path>' +
-              '<path d="M12 2V3.5M12 20.5V22M19.0708 19.0713L18.0101 18.0106M5.98926 5.98926L4.9286 4.9286M22 12H20.5M3.5 12H2M19.0713 4.92871L18.0106 5.98937M5.98975 18.0107L4.92909 19.0714"></path></svg>' +
-          '</button> ' +
           /* Anmelden und Registrieren gehen in einen NEUEN Tab: die Seite ist die Werbung, die
              App ist die Arbeit -- wer sich anmeldet, soll die Seite nicht verlieren. */
           '<a class="ulh-btn ulh-btn-sec" target="_blank" rel="noopener"' +
@@ -1090,10 +1060,6 @@
             '<a href="/de" hreflang="de" lang="de" data-sprache="de"' + (LANG === "de" ? ' class="is-an" aria-current="true"' : '') + '>' +
               '<img class="ulh-sprache-flagge" src="https://flagcdn.com/de.svg" alt="" width="16" height="12"/><span>Deutsch</span></a>' +
           '</div>' : '') +
-        /* Der Themenschalter als Zeile (23.10.): unter 560px steht er nicht in der Leiste. Dieselbe
-           Klasse .ulh-thema, also derselbe Klick (landing-teile.js). */
-        ' <button class="ulh-nm-thema ulh-thema" type="button" aria-pressed="false">' +
-          '<span>' + T("Dark mode") + '</span><span class="ulh-nm-schalter" aria-hidden="true"></span></button>' +
         ' <div class="ulh-nm-knoepfe">' +
           '<a class="ulh-btn ulh-btn-sec" target="_blank" rel="noopener" href="https://app.upstreem.ai/signup?mode=login">Log in</a> ' +
           '<a class="ulh-btn ulh-btn-pri" target="_blank" rel="noopener" href="https://app.upstreem.ai/signup">Start for free</a>' +
@@ -1944,20 +1910,6 @@
     var w = document.querySelector(WURZEL), v = "";
     try { if (w) v = window.getComputedStyle(w).getPropertyValue("--ulh-grund").trim(); } catch (e){}
     return v || "#ffffff";
-  }
-  /* Beim Themenwechsel: dasselbe Dokument, nur das Thema darin neu (Mira und core im Rahmen haben
-     ihre eigenen Setter). Kein neues srcdoc -- das hiesse, die Vorfuehrung von vorn zu beginnen. */
-  function mscThema(root){
-    var rahmen = root && root.querySelector(".ulh-msc-rahmen");
-    if (!rahmen || !rahmen.__ulhAuf) return;
-    try {
-      var w = rahmen.contentWindow, d = rahmen.contentDocument, t = themaWahl(), g = mscGrund();
-      if (!w || !d) return;
-      d.documentElement.style.background = g;
-      if (d.body) d.body.style.background = g;
-      if (w.setUpstreemTheme) w.setUpstreemTheme(t);
-      if (w.askMiraSetTheme) w.askMiraSetTheme(t);
-    } catch (e){}
   }
   function mscSeite(){
     var basis = mscBasis();
@@ -6514,7 +6466,6 @@
         filterWerte();
         shopLieferant();
         hellBewachen(w);
-        themaWechselBinden(w);
         reiterBewachen(w);
         stufenWachen(w);
       }
