@@ -11,7 +11,7 @@
 
    DATENWEGE (seit 13.10., Vertrag bubble/vor_nextjs_13_10/VOR_NEXTJS_V1_VERTRAG.md, Abschnitt 1):
    die Komponente laedt SELBST ueber UC.rpc (PostgREST, Login des Nutzers) -- kein Bubble-Workflow,
-   kein Run-JS-Schritt, kein Umschlag {json}. Vier RPCs, Parameter wie v1, Antwort reines JSON:
+   kein Run-JS-Schritt, kein Umschlag {json}. Vier RPCs, Antwort reines JSON:
      cached_shopping_overview_v2        Overview UND Brands (Brands blaettert ueber p_brand_*)
      cached_shopping_products_v2
      cached_shopping_product_detail_v2  (p_source_product_id als Text)
@@ -20,18 +20,20 @@
    shopping_invalid_date, shopping_product_not_found, shopping_rate_limited, forbidden,
    team_access_*); jeder beendet das Laden und steht als Fehlerzustand im Inhalt. Ein 402
    team_access_* zeigt core selbst als Gate.
-   RUECKWEG: Gibt es eine v2 noch nicht (404 PGRST202, SQL nicht eingespielt), laedt DIESER Kanal
-   bis zum Neuladen wie vorher ueber Bubble: Ereignis mit dem fertigen v1-Body als Text, Antwort
-   ueber den Setter (json des Umschlags, Fehler-Body):
-     shopOverview       cached_shopping_overview_v1        setShoppingOverview(id, json, fehler)
-     shopProducts       cached_shopping_products_v1        setShoppingProducts(id, json, fehler)
-     shopProductDetail  cached_shopping_product_detail_v1  setShoppingProductDetail(id, json, fehler)
-     shopMerchants      cached_shopping_merchants_v1       setShoppingMerchants(id, json, fehler)
-   Die Setter bleiben auch sonst (Vertrag: nie entfernen) -- die Landingpage fuellt ueber sie, und
-   dort (data-adresse="aus") geht nie eine direkte Anfrage hinaus: die fremde Seite hat kein Login.
-   Die Antworten nennen ihre Parameter nicht. Darum laeuft je RPC hoechstens EINE Anfrage; was
-   sich waehrenddessen aendert, geht hinaus, sobald sie da ist -- so gehoert jede Antwort sicher
-   zu der Anfrage, fuer die sie kam (dieselbe Bauart wie der Zaehler im Events-Popup).
+   KEIN RUECKWEG UEBER BUBBLE (seit 23.10.): bis dahin lud ein Kanal, dessen v2 mit 404 PGRST202
+   fehlte, bis zum Neuladen per Ereignis ueber einen Bubble-Workflow und dessen v1. Die v1 gibt es
+   ab dem 30.10. nicht mehr, Bubble ist aus. Fehlt eine v2 oder scheitert sie, steht der
+   Fehlerzustand des Kanals wie bei jedem anderen Fehler.
+   EREIGNIS UND SETTER bleiben (Vertrag: nie entfernen), fuer die Landingpage: dort
+   (data-adresse="aus") geht nie eine direkte Anfrage hinaus, die fremde Seite hat kein Login. Die
+   Komponente feuert das Ereignis, landing-hero.js antwortet ueber den Setter (json, Fehler-Body):
+     shopOverview       setShoppingOverview(id, json, fehler)
+     shopProducts       setShoppingProducts(id, json, fehler)
+     shopProductDetail  setShoppingProductDetail(id, json, fehler)
+     shopMerchants      setShoppingMerchants(id, json, fehler)
+   Die Antworten der Setter nennen ihre Parameter nicht. Darum laeuft je RPC hoechstens EINE
+   Anfrage; was sich waehrenddessen aendert, geht hinaus, sobald sie da ist -- so gehoert jede
+   Antwort sicher zu der Anfrage, fuer die sie kam (dieselbe Bauart wie der Zaehler im Events-Popup).
    Geladen wird nur, was die offene Seite braucht, und nur, solange die Komponente zu sehen ist.
 
    NICHTS WIRD HIER NACHGERECHNET (Uebergabe: "bitte nichts davon nachbauen"). Was fehlt, ist ein
@@ -68,10 +70,6 @@
   var UC = window.UpstreemCore;
   var esc = UC.esc, t = UC.t || function (x) { return x; };
   var STORE = (window.__ushStore = window.__ushStore || {});
-  /* Kanaele, deren v2 es nicht gibt (13.10., 404 PGRST202): fuer das ganze Seitenleben, ueber
-     Bubbles Neuaufbau hinweg -- sonst ginge jede Anfrage erst gegen die fehlende Funktion, und
-     jede Seite laedt einen Umweg langsamer. Neu versucht wird erst nach einem Neuladen. */
-  var OHNE_V2 = (window.__ushOhneV2 = window.__ushOhneV2 || {});
 
   /* ---- Kleine Helfer ------------------------------------------------------------------------ */
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
@@ -875,13 +873,13 @@
     /* ---- Anfragen ------------------------------------------------------------------------------
        Je RPC ein Kanal: hoechstens EINE Anfrage unterwegs, eine Uhr, die das Warten beendet. Die
        Antwort gehoert der Anfrage, die unterwegs war (sig).
-       Seit dem 13.10. geht sie direkt an v2 (direkt); attr, name, setter und rpc (v1) tragen nur
-       noch den Rueckweg ueber Bubble (ueberBubble), falls eine v2 noch fehlt. */
+       In der App geht sie direkt an v2 (direkt); attr, name und setter tragen den Weg ueber
+       Ereignis und Setter (ueberBubble), den seit dem 23.10. nur noch die Landingpage geht. */
     var KANAL = {
-      overview: { v2: "cached_shopping_overview_v2", attr: "data-overview-fn", name: "shopOverview", setter: "setShoppingOverview", rpc: "cached_shopping_overview_v1" },
-      products: { v2: "cached_shopping_products_v2", attr: "data-products-fn", name: "shopProducts", setter: "setShoppingProducts", rpc: "cached_shopping_products_v1" },
-      detail: { v2: "cached_shopping_product_detail_v2", attr: "data-detail-fn", name: "shopProductDetail", setter: "setShoppingProductDetail", rpc: "cached_shopping_product_detail_v1" },
-      merchants: { v2: "cached_shopping_merchants_v2", attr: "data-merchants-fn", name: "shopMerchants", setter: "setShoppingMerchants", rpc: "cached_shopping_merchants_v1" }
+      overview: { v2: "cached_shopping_overview_v2", attr: "data-overview-fn", name: "shopOverview", setter: "setShoppingOverview" },
+      products: { v2: "cached_shopping_products_v2", attr: "data-products-fn", name: "shopProducts", setter: "setShoppingProducts" },
+      detail: { v2: "cached_shopping_product_detail_v2", attr: "data-detail-fn", name: "shopProductDetail", setter: "setShoppingProductDetail" },
+      merchants: { v2: "cached_shopping_merchants_v2", attr: "data-merchants-fn", name: "shopMerchants", setter: "setShoppingMerchants" }
     };
     /* Direkt laedt nur die App. Auf der Landingpage (data-adresse="aus", einzig dort gesetzt, aus
        .landing_markup.py) steht die Komponente in einer fremden Seite ohne Login: eine direkte
@@ -1044,7 +1042,7 @@
       verdecktUhr = setTimeout(function () { verdecktUhr = null; if (sichtbar()) { filterAbgleichen(); zeichnen(); bedarf(); } else verdecktPruefen(); }, 1000);
     }
     function senden(a) {
-      var direktJetzt = direktWeg() && !OHNE_V2[a.kanal];
+      var direktJetzt = direktWeg();
       /* Ohne Team keine direkte Anfrage: p_team "" waere ein Fehler der RPC, der als Fehlerzustand
          stehen bliebe. Das erste setUpstreemTeam meldet sich ueber UC.onTeamChange (unten) und
          laedt dann -- wie in citations-page. */
@@ -1071,16 +1069,8 @@
       UC.rpc(k.v2, a.body, { timeoutMs: WARTE_MS, signal: u.ctrl ? u.ctrl.signal : undefined }).then(function (erg) {
         if (unterwegs[a.kanal] !== u) return;
         erg = erg || { ok: false, status: 0, fehler: { message: "network" } };
-        if (!erg.ok && v2Fehlt(erg)) {
-          /* Die Funktion gibt es noch nicht: ein Pin, der vor dem SQL ausgeliefert wird, darf
-             nichts kaputt machen. Dieselbe Anfrage geht ueber Bubble, und der Kanal bleibt dort. */
-          OHNE_V2[a.kanal] = true;
-          melden("ohneV2" + a.kanal, k.v2 + " fehlt in der Datenbank -- " + k.name + " laedt bis zum Neuladen ueber den Bubble-Workflow.");
-          clearTimeout(u.uhr);
-          u.direkt = false; u.ctrl = null;
-          ueberBubble(a, u);
-          return;
-        }
+        /* Eine fehlende Funktion (404 PGRST202) ist seit dem 23.10. ein Fehler wie jeder andere:
+           Fehlerzustand mit "Try again", kein Umweg ueber Bubble mehr. */
         clearTimeout(u.uhr);
         unterwegs[a.kanal] = null;
         /* Die Antwort ist reines JSON (kein Umschlag); objekt nimmt sie trotzdem durch denselben
@@ -1090,14 +1080,6 @@
         else if (filterRaeumen(erg)) return;
         else ablegen(a.kanal, a.sig, null, rpcFehlerCode(erg));
       });
-    }
-    /* 404 mit PGRST202 heisst "Funktion nicht im Schema" -- NICHT jedes 404: PT404 ist ein
-       fachliches "nicht gefunden" und bleibt ein Fehlerzustand. */
-    /* Ohne Bubble (die App, UC.ohneBubble): kein Rueckweg, sondern der Fehler, den der Aufrufer schon zeigt (14.10.). */
-    function v2Fehlt(erg) {
-      if (UC.ohneBubble && UC.ohneBubble()) return false;
-      var f = erg.fehler || {};
-      return erg.status === 404 && (f.code === "PGRST202" || /could not find the function/i.test(str(f.message)));
     }
     /* Der Code aus einem UC.rpc-Fehler fuer fehlerText: message IST der Code (Vertrag). Die
        Zustaende von UC.rpc selbst werden zu denen, die der Fehlerzustand schon kennt. */
@@ -1116,7 +1098,9 @@
       if (erg.status === 429 && !/rate_limited/.test(m)) return "shopping_rate_limited";
       return m || "http_" + (erg.status || 0);
     }
-    /* DER RUECKWEG UEBER BUBBLE -- bis zum 13.10. der einzige Weg, unveraendert. */
+    /* DER WEG UEBER EREIGNIS UND SETTER -- bis zum 13.10. der einzige Weg, unveraendert. Seit dem
+       23.10. geht ihn nur noch, wer nicht direkt laedt (direktWeg): die Landingpage, und ein core
+       ohne UC.rpc. */
     function ueberBubble(a, u) {
       var k = KANAL[a.kanal];
       u.uhr = setTimeout(function () {
@@ -1159,7 +1143,7 @@
     function antwort(kanal, raw, f) {
       var d = objekt(raw), echt = kanalVon(d);
       if (echt && echt !== kanal) {
-        melden("kanal" + kanal + echt, KANAL[kanal].setter + " bekam die Antwort von " + KANAL[echt].rpc + ". Im Workflow von " +
+        melden("kanal" + kanal + echt, KANAL[kanal].setter + " bekam eine Antwort, die zu " + KANAL[echt].name + " gehoert. Im Workflow von " +
           KANAL[echt].name + " muss der Run-JS-Schritt " + KANAL[echt].setter + " rufen. Die Antwort ist trotzdem richtig zugeordnet.");
         kanal = echt;
       }
