@@ -435,7 +435,8 @@
   align-items: center;
   height: 36px;
   padding: 0 12px;
-  border-radius: 10px;
+  /* 36 hoch: 6 (Rolle nach Hoehe aus core, 23.10.; vorher 10). */
+  border-radius: var(--up-r-m);
   font-family: inherit;
   font-size: 14px;
   font-weight: 500;
@@ -2030,7 +2031,9 @@
 .ulh-evkarten .uev-karte { width: 340px; flex: 0 0 auto; }
 .ulh-evkarte-links, .ulh-evkarte-rechts {
   position: absolute; top: 6px; left: 0; right: 0; margin-inline: auto;
-  transform-origin: 50% 260%; rotate: 0deg; scale: .94; opacity: .6;
+  /* Der Massstab als --ulh-vs, damit die Radien darin ihn herausrechnen (DIE RADIEN IN DEN VORSCHAUEN). */
+  --ulh-vs: .94;
+  transform-origin: 50% 260%; rotate: 0deg; scale: var(--ulh-vs); opacity: .6;
   transition: rotate 1000ms var(--ulh-expo) 350ms;
 }
 .ulh-card.is-da .ulh-evkarte-links  { rotate: -7deg; }
@@ -3636,7 +3639,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-preis-karte {
   position: relative;
   display: flex; flex-direction: column; text-align: left;
-  padding: 28px 26px 30px; border: 1px solid var(--ulh-border); border-radius: 18px;
+  padding: 28px 26px 30px; border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl);
   background: #ffffff;
   box-shadow: 0 1px 2px rgba(11, 13, 24, .035), 0 6px 16px rgba(11, 13, 24, .028);
 }
@@ -3671,7 +3674,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-preis-notiz.is-on { grid-template-rows: 1fr; opacity: 1; }
 /* Der Knopf traegt die Form der Seite (.ulh-btn-pri) und nur Breite und Hoehe hier: eine eigene
    Farbe waere ein zweiter Hauptknopf mit einem anderen Ton als der im Hero. */
-.ulh-preis-btn { margin-top: 20px; width: 100%; height: 40px; justify-content: center; }
+.ulh-preis-btn { margin-top: 20px; width: 100%; height: 40px; justify-content: center; border-radius: var(--up-r-l); }
 .ulh-preis-liste { margin: 22px 0 0; padding: 0; list-style: none;
   display: flex; flex-direction: column; gap: 9px; }
 .ulh-preis-zeile { display: flex; align-items: flex-start; gap: 9px;
@@ -4213,7 +4216,7 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 
 /* Branded: der Schalter der Filterleiste, die Zahl, drei Prompts. */
 .ulh-br { width: calc(100% - 40px); padding: 6px 6px 10px; }
-.ulh-br-schalter { padding: 10px 12px; border-radius: 9px; background: var(--vc-heading-bg, #f9f8f9); cursor: default; }
+.ulh-br-schalter { padding: 10px 12px; border-radius: calc(var(--up-r-2xl) - 7px); background: var(--vc-heading-bg, #f9f8f9); cursor: default; }
 /* Name und Unterzeile untereinander, wie im Menue der App -- ausserhalb des Menues kennt core diese
    Anordnung nicht, gemessen liefen beide in einer Zeile ineinander ("Branded promptsLeft out"). */
 .ulh-br-schalter .up-pop-label { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
@@ -4330,5 +4333,18 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
 .ulh-root .ulh-vis .uo-row { border-radius: calc(var(--up-r-l) / var(--ulh-vs, 1)); }
 /* Umschalter: Schiene, gleitender Streifen und Knopf lesen in core alle --up-sw-r (24 hoch: 4). */
 .ulh-root .ulh-vis .udt-sub-dispseg.udt-sub-dispseg { --up-sw-r: calc(var(--up-r-s) / var(--ulh-vs, 1)); }
+/* Handel (Shopping, Ads): Produktbild 26 bis 29 hoch 6, Box und Anzeigenkarte 12, ihr Bild konzentrisch
+   (8 Polster und 1 Rand), Marken, Formatmarke und Logos unter 24 hoch 4. */
+.ulh-root .ulh-vis .ush-bild { border-radius: calc(var(--up-r-m) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis :is(.ush-bewegung, .up-adcard) { border-radius: calc(var(--up-r-2xl) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis .up-adcard-media { border-radius: calc(var(--up-r-2xl) / var(--ulh-vs, 1) - 9px); }
+.ulh-root .ulh-vis :is(.up-marke, .up-adcard-fmt, .up-ment-logo, .uev-fav, .uev-karte-band, .uev-sm-auf) { border-radius: calc(var(--up-r-xs) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis .up-ment-logo img { border-radius: calc(var(--up-r-xs) / var(--ulh-vs, 1) - 1px); }
+/* Events: Karte 12, Titelbild 45 bis 48 hoch 8, Knopf und Feld 28 bis 34 hoch 6, die Wahl der Art 44
+   hoch 8, der Umschalter 22 hoch 4. */
+.ulh-root .ulh-vis .uev-karte { border-radius: calc(var(--up-r-2xl) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis :is(.uev-avatar, .uev-art) { border-radius: calc(var(--up-r-l) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis :is(.uev-abd-neu, .uev-urlein, .uev-zielhinzu) { border-radius: calc(var(--up-r-m) / var(--ulh-vs, 1)); }
+.ulh-root .ulh-vis .uev-abd-schalter.uev-abd-schalter { --up-sw-r: calc(var(--up-r-s) / var(--ulh-vs, 1)); }
 /* Fahnen: 3 wie in der App (Haarlinie unter 4, ohne Token). */
 .ulh-root .ulh-vis .up-flag { border-radius: calc(3px / var(--ulh-vs, 1)); }
