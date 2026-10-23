@@ -80,34 +80,34 @@
     "Menu": "Menü", "Close menu": "Menü schließen", "English": "English", "Deutsch": "Deutsch",
     "Start for free": "Kostenlos testen", "Overview": "Überblick", "What upstreem shows you": "Alle Funktionen im Überblick",
     "Which pages answers are built from": "Woher KI-Antworten ihr Wissen beziehen",
-    "Mira does the work for you": "Mira übernimmt die Analyse",
+    "The Agent does the work for you": "Der Agent erledigt die Arbeit für dich",
     "Notes on AI search": "Praxiswissen zur KI-Suche", "Documentation": "Dokumentation",
     "How everything works": "Anleitungen und Hilfe",
     /* Hero */
     "New": "Neu", "Customer journey tracking": "Customer-Journey-Tracking", "MCP Server": "MCP Server",
     /* MCP-Abschnitt (23.10.). Die Ueberschrift bleibt englisch wie alle h1/h2, der Code ebenfalls. */
     "Weekly report": "Wochenbericht", "Runs while you work": "Läuft, während du arbeitest",
-    "Set it up once in Claude. Every run reads the latest numbers from upstreem.": "Einmal in Claude einrichten. Jeder Lauf liest die neuesten Zahlen aus upstreem.",
+    "Set it up once and get your Monday report in Claude, no dashboard needed.": "Einmal einrichten, und dein Montagsbericht kommt in Claude, ganz ohne Dashboard.",
     "Weekly report every Monday": "Wochenbericht jeden Montag",
     "Visibility, rank and sentiment against last week.": "Visibility, Rank und Sentiment im Vergleich zur Vorwoche.",
     "Alert when a competitor overtakes you": "Hinweis, wenn dich ein Wettbewerber überholt",
-    "Checked on every new run, per market and model.": "Bei jedem neuen Lauf geprüft, je Markt und Modell.",
+    "In any market and any AI model.": "In jedem Markt und jedem KI-Modell.",
     "Content briefs from lost citations": "Content-Briefings aus verlorenen Zitierungen",
     "Which pages AI stopped citing, and what to change.": "Welche Seiten KI nicht mehr zitiert und was du ändern solltest.",
     "Answers for the whole team": "Antworten fürs ganze Team",
     "Anyone can ask, nobody needs a dashboard login.": "Jeder kann fragen, niemand braucht einen Dashboard-Login.",
     "Read-only": "Nur lesend", "OAuth sign-in": "OAuth-Anmeldung",
     /* Agent-Abschnitt (23.10.) -- die Ueberschrift bleibt englisch wie alle h2. */
-    "Ask what to fix this week.": "Frag, was du diese Woche angehen solltest.",
-    "The Agent reads every prompt, answer and source, ranks what matters and audits the pages behind it.": "Der Agent liest jeden Prompt, jede Antwort und jede Quelle, ordnet, was zählt, und prüft die Seiten dahinter.",
+    "Just ask.": "Frag einfach.",
+    "Get the pages to change, the reason and a report to share.": "Du bekommst die Seiten, den Grund und einen Bericht zum Teilen.",
     "Features": "Funktionen", "Answers backed by evidence": "Antworten mit Belegen",
     "Next steps ranked by impact": "Nächste Schritte nach Wirkung", "Page audits on request": "Page Audits auf Zuruf",
     "Reports ready to share": "Berichte zum Teilen",
     /* Source Insights (23.10.) -- die Ueberschrift bleibt englisch. */
-    "Which domains the models cite,": "Welche Domains die Modelle zitieren,",
-    "which of their pages carry the answer, and where your brand is named.": "welche ihrer Seiten die Antwort tragen und wo deine Marke genannt wird.",
-    "Citation share per domain": "Citation Share je Domain", "Cited pages and URL types": "Zitierte Seiten und URL-Typen",
-    "Brand mentions per page": "Markennennungen je Seite", "Model breakdown": "Verteilung nach Modell",
+    "Find the sites AI quotes in your market": "Finde die Seiten, die die KI in deinem Markt zitiert,",
+    "and the pages to get your brand onto.": "und die Seiten, auf die deine Brand gehört.",
+    "Sites that shape your market's answers": "Seiten, die die Antworten in deinem Markt prägen", "Pages that name rivals but not you": "Seiten, die Wettbewerber nennen, aber nicht dich",
+    "Where you're already quoted": "Wo du schon zitiert wirst", "What each AI trusts": "Wem jede KI vertraut",
     "Cited pages on forbes.com": "Zitierte Seiten auf forbes.com", "Mention a tracked brand": "Nennen eine getrackte Marke",
     "Mention Acme": "Nennen Acme", "68.5% of cited pages": "68,5% der zitierten Seiten", "19.0% of cited pages": "19,0% der zitierten Seiten",
     /* h1 und Unterzeile des Hero bleiben auf Deutsch ENGLISCH (14.10. so entschieden: "lass h1 und
@@ -126,33 +126,27 @@
     "Remove from pinned": "Von den Angehefteten entfernen", "Search pages…": "Seiten suchen…", "Close": "Schließen",
     /* Plattform */
     "From AI answers to your next move": "Von der KI-Antwort zur nächsten Maßnahme",
-    "Visibility, prompts, sources and tasks in one place, across ChatGPT, Perplexity, Gemini and Google AI Overviews, every day.":
-      "Visibility, Prompts, Quellen und Maßnahmen auf einen Blick. Für ChatGPT, Perplexity, Gemini und Google AI Overviews, täglich aktualisiert.",
+    "See where AI recommends you, where it sends buyers to competitors, and what to change next.": "Sieh, wo die KI dich empfiehlt, wo sie Käufer zur Konkurrenz schickt und was du als Nächstes ändern solltest.",
     "See how often AI recommends you": "So oft empfiehlt dich die KI",
-    "Visibility and position per model, day by day, side by side with your competitors.":
-      "Visibility und Rank pro KI-Modell, täglich und direkt im Vergleich mit deinen Wettbewerbern.",
+    "Spot the day a competitor overtakes you, and in which AI.": "Erkenne den Tag, an dem dich ein Wettbewerber überholt, und in welcher KI.",
     "Know which buyer questions you win": "Bei diesen Kauffragen liegst du vorn",
-    "Every tracked prompt, grouped by topic, with who gets named and where you land.":
-      "Alle Prompts nach Themen gebündelt: Wer genannt wird und auf welchem Platz du landest.",
+    "Find the buyer questions where AI names a competitor instead of you.": "Finde die Käuferfragen, in denen die KI einen Wettbewerber statt dich nennt.",
     "Export": "Exportieren", "Brand Mentions": "Brand-Erwähnungen", "Market": "Markt",
     "Electric": "Elektro", "Comparisons": "Vergleiche", "Charging": "Laden", "Safety": "Sicherheit",
     "See which pages AI trusts most": "Diesen Quellen vertraut die KI",
-    "The domains and exact URLs the models cite, so you know where to get mentioned next.":
-      "Die Domains und URLs, die KI-Modelle zitieren. So weißt du, wo sich eine Erwähnung als Nächstes lohnt.",
+    "Find the articles, reviews and threads AI quotes, and get your brand into them.": "Finde die Artikel, Tests und Threads, die die KI zitiert, und bring deine Brand dort hinein.",
     /* Events: die zwei Karten der unteren Reihe (19.10.). Texte der Vorschauen wie in events.js (de-Katalog dort). */
-    "Watch every page you publish, cited or not": "Beobachte jede Seite, die du veröffentlichst, zitiert oder nicht",
-    "Load your sitemap and follow whole folders and pages from the day they go live, before an AI has cited them.":
-      "Lade deine Sitemap und verfolge ganze Ordner und Seiten ab dem Tag der Veröffentlichung, noch bevor eine KI sie zitiert.",
+    "Know when AI starts quoting your new pages": "Erfahre, wann die KI deine neuen Seiten zitiert",
+    "See the day ChatGPT or Perplexity first cites a new page or a whole folder.": "Sieh den Tag, an dem ChatGPT oder Perplexity eine neue Seite oder einen ganzen Ordner zum ersten Mal zitiert.",
     "See your pages the way AI crawlers do": "Sieh deine Seiten so, wie KI-Crawler sie sehen",
-    "Each audit requests a page like ChatGPT, Perplexity and Google do and shows what stops them: robots.txt rules, blocked access or text that only appears after JavaScript.":
-      "Jeder Audit ruft eine Seite ab wie ChatGPT, Perplexity und Google und zeigt, was sie aufhält: Regeln in der robots.txt, gesperrter Zugang oder Text, der erst nach JavaScript erscheint.",
+    "Find out whether ChatGPT, Perplexity and Google can read your page, and what to fix if not.": "Finde heraus, ob ChatGPT, Perplexity und Google deine Seite lesen können, und was zu tun ist, wenn nicht.",
     /* Die Plattform-Tabelle der Audit-Karte: dieselben Worte wie der de-Katalog von page-audit.js. */
     "Access": "Zugang", "Text without JavaScript": "Text ohne JavaScript", "Reachable": "Erreichbar",
     "Not reachable": "Nicht erreichbar", "Allowed": "Erlaubt", "Blocked": "Gesperrt", "No issue": "Kein Problem",
     "Documented": "Dokumentiert",
     /* Ueberschriften der neuen Abschnitte (23.10. gemeldet: "im de setting auf englisch"). */
     "Every answer has a source.": "Jede Antwort hat eine Quelle.", "See which ones count.": "Sieh, welche zählen.",
-    "that does the work for you": "die für dich arbeitet",
+    "An agent that tells you": "Ein Agent, der dir sagt,", "what to fix this week": "was du diese Woche angehen solltest",
     "Build workflows and automations": "Workflows und Automationen", "with your data in Claude": "mit deinen Daten in Claude",
     "Refresh": "Aktualisieren", "All (43)": "Alle (43)", "Cited (12)": "Zitiert (12)", "Not cited yet (31)": "Noch nicht zitiert (31)",
     "12 of 43 pages cited. Last checked 5 minutes ago.": "12 von 43 Seiten zitiert. Zuletzt geprüft vor 5 Minuten.",
@@ -169,8 +163,7 @@
     "Share": "Anteil", "Type": "Typ", "42 pages": "42 Seiten", "18 pages": "18 Seiten", "63 pages": "63 Seiten",
     "All URL Types": "Alle URL-Typen", "Title": "Titel", "Page": "Seite", "Domain Share": "Domain-Anteil",
     "Your next moves, ranked by priority": "Deine nächsten Schritte, nach Wirkung priorisiert",
-    "Every visibility gap becomes a concrete task, with the prompts and numbers behind it.":
-      "Aus jeder Visibility-Lücke wird eine konkrete Maßnahme, belegt mit Prompts und Zahlen.",
+    "Get a list of what to fix or publish next, ranked by impact.": "Erhalte eine Liste, was du als Nächstes beheben oder veröffentlichen solltest, sortiert nach Wirkung.",
     "Get the estate into the forbes.com buyer guide": "Den Kombi in den Kaufratgeber von forbes.com bringen",
     "No page of yours answers the winter range question": "Keine eigene Seite beantwortet die Frage nach der Winterreichweite",
     "Your charging page is cited, never quoted": "Deine Ladeseite wird verlinkt, aber nie zitiert",
@@ -192,26 +185,21 @@
       "Deine Prompts laufen täglich in ChatGPT, Perplexity, Gemini und Google AI Overviews. So siehst du, welches Modell dich nennt und welches nicht.",
     /* Customer Journey */
     "Find the step where AI drops you": "Wo dich die KI in der Customer Journey verliert",
-    "Every prompt is sorted by what the buyer wants: learning, comparing or buying. You see your visibility at each step instead of one flattering average.":
-      "Jeder Prompt wird der Phase zugeordnet, in der Käufer gerade stehen: informieren, vergleichen oder kaufen. So siehst du deine Visibility in jeder Phase statt eines geschönten Durchschnitts.",
+    "See whether AI loses you while buyers learn, compare or get ready to buy.": "Sieh, ob dich die KI verliert, während Käufer sich informieren, vergleichen oder kurz vor dem Kauf stehen.",
     "Visibility at every step to purchase": "Visibility in jeder Phase bis zum Kauf",
-    "Prompts are classified automatically. See where buyers meet you, and where a competitor takes over.":
-      "Prompts werden automatisch zugeordnet. Du siehst, wo Käufer auf dich treffen und wo die Konkurrenz übernimmt.",
+    "See where buyers meet you on the way to purchase, and where a competitor takes over.": "Sieh, wo Käufer dir auf dem Weg zum Kauf begegnen und wo ein Wettbewerber übernimmt.",
     "Visibility by intent": "Visibility nach Intent",
     "Getting to know the topic": "Will das Thema verstehen", "Comparing options": "Vergleicht Anbieter",
     "Ready to buy or sign up": "Will kaufen oder abschließen",
-    "Know what AI says when buyers ask for you by name": "Erfahre, was die KI sagt, wenn Käufer gezielt nach dir fragen",
-    "See how AI rates you in comparisons, reviews and price questions like “Acme or Tesla?” or “Is the Acme EV worth it?”, right before buyers decide.":
-      "Sieh, wie die KI dich bei Vergleichen, Erfahrungen und Preisfragen bewertet, etwa bei „Acme oder Tesla?“ oder „Lohnt sich der Acme EV?“, kurz bevor Käufer sich entscheiden.",
+    "Know what AI says when buyers ask about you": "Erfahre, was die KI sagt, wenn Käufer nach dir fragen",
+    "See how AI rates you in comparisons, reviews and price questions, right before buyers decide.": "Sieh, wie die KI dich bei Vergleichen, Erfahrungen und Preisfragen bewertet, kurz bevor Käufer sich entscheiden.",
     "Branded prompts": "Branded Prompts", "Left out of your metrics": "Nicht in den Kennzahlen",
     "Counted in your metrics": "In den Kennzahlen enthalten",
     /* Shopping & Ads */
     "Beyond classic GEO": "Mehr als klassisches GEO",
-    "Shopping results and sponsored placements, tracked on the same prompts as your visibility.":
-      "Shopping-Ergebnisse und Anzeigen in KI-Antworten, gemessen auf denselben Prompts wie deine Visibility.",
+    "See which products AI recommends and which competitors pay to appear in the answer.": "Sieh, welche Produkte die KI empfiehlt und welche Wettbewerber für einen Platz in der Antwort bezahlen.",
     "See which products AI puts first": "Diese Produkte empfiehlt die KI zuerst",
-    "Position, rating and price for every product the models recommend, yours and your competitors'.":
-      "Position, Bewertung und Preis jedes Produkts, das die KI empfiehlt. Deine Produkte und die deiner Wettbewerber.",
+    "Find out whether AI puts your product or a competitor's in front of buyers.": "Finde heraus, ob die KI Käufern dein Produkt zeigt oder das eines Wettbewerbers.",
     "Products": "Produkte", "Product": "Produkt", "Avg. Position": "Ø Position", "Price": "Preis", "You": "Du",
     "Spot product momentum early": "Produkttrends früh erkennen",
     "See which products gain or lose AI recommendations, and steer content, pricing or ads while the shift is small.":
@@ -221,17 +209,15 @@
     "Rising": "Steigend", "Declining": "Fallend",
     "Acme or Tesla?": "Acme oder Tesla?", "BMW iX reviews": "BMW iX Erfahrungen", "Audi Q4 price": "Audi Q4 Preis",
     "Acme Charger reviews": "Acme Charger Erfahrungen", "Is the Acme EV worth it?": "Lohnt sich der Acme EV?",
-    "Find out who buys your prompts": "Wer Anzeigen auf deine Prompts schaltet",
-    "Every advertiser showing ads on your tracked prompts, ranked by share of placements.":
-      "Alle Werbetreibenden auf deinen Prompts, sortiert nach Anteil der Platzierungen.",
+    "Know who pays to show up in your buyers' answers": "Erfahre, wer dafür zahlt, in den Antworten deiner Käufer aufzutauchen",
+    "See which competitors advertise on your buyers' questions, and how often.": "Sieh, welche Wettbewerber auf die Fragen deiner Käufer werben und wie oft.",
     "Read the strategy behind every ad": "Die Strategie hinter jeder Anzeige",
     "What rivals promise, which buyer questions they target and where each click lands, so you can plan your answer.":
       "Was die Konkurrenz verspricht, welche Kauffragen sie besetzt und wohin jeder Klick führt. Die Grundlage für deine Antwort.",
     "Product Ad": "Produktanzeige", "Image Ad": "Bildanzeige", "Competitor": "Wettbewerber",
     /* Events */
     "Measure what really moved your visibility": "Was deine Visibility wirklich bewegt",
-    "Log content updates, campaigns and price changes, then measure the impact of each one against a comparison group.":
-      "Erfasse Content-Updates, Kampagnen und Preisänderungen und miss ihre Wirkung im Vergleich zu einer Kontrollgruppe.",
+    "Find out whether your last campaign, launch or price change got you more AI recommendations.": "Finde heraus, ob dir deine letzte Kampagne, dein Launch oder eine Preisänderung mehr KI-Empfehlungen gebracht hat.",
     "Put every initiative on the timeline": "Alle Maßnahmen auf einer Zeitachse",
     "Content updates, campaigns and price changes sit on your visibility chart, so every shift has a known cause.":
       "Content-Updates, Kampagnen und Preisänderungen erscheinen direkt im Visibility-Verlauf. So kennst du zu jeder Veränderung die Ursache.",
@@ -244,8 +230,7 @@
     "The new EV hub: range calculator, model comparison and an FAQ for every model.":
       "Der neue E-Auto-Hub mit Reichweitenrechner, Modellvergleich und FAQ zu jedem Modell.",
     "Prove the impact of each initiative": "Die Wirkung jeder Maßnahme belegen",
-    "Affected prompts from day one, measured against an untouched comparison group, so noise never passes as impact.":
-      "Betroffene Prompts ab Tag eins, gemessen gegen eine unveränderte Kontrollgruppe. So hältst du Zufall nie für Erfolg.",
+    "Show your team which campaign moved AI visibility and which did nothing.": "Zeig deinem Team, welche Kampagne die KI-Sichtbarkeit bewegt hat und welche nichts gebracht hat.",
     "Affected prompts": "Betroffene Prompts", "Comparison group": "Kontrollgruppe",
     /* Quellen */
     "Understand how sources shape answers.": "Diese Quellen prägen KI-Antworten.",
@@ -281,8 +266,7 @@
     "Oct 2025": "Okt. 2025", "AI Mode goes global": "AI Mode startet weltweit",
     /* Schluss */
     "See what AI answers": "Was sagt die KI", "say about you.": "über dich?",
-    "Connect your brand, pick the prompts that matter, and watch the answers as they change. The first report takes minutes.":
-      "Brand anlegen, relevante Prompts auswählen und verfolgen, wie sich die Antworten verändern. Dein erster Report steht nach wenigen Minuten.",
+    "Find out in minutes what ChatGPT tells buyers about you and your competitors.": "Finde in wenigen Minuten heraus, was ChatGPT Käufern über dich und deine Wettbewerber sagt.",
     "Talk to sales": "Sales kontaktieren",
     /* Preise */
     "Simple plans. Every answer engine.": "Klare Tarife. Alle KI-Suchmaschinen.",
@@ -970,7 +954,7 @@
     platform: { spalte: "Platform", eintraege: [
       { t: "Overview", s: "What upstreem shows you", ziel: ".ulh-feat", anker: "overview" },
       { t: "Source Insights", s: "Which pages answers are built from", ziel: ".ulh-quell", anker: "sources" },
-      { t: "Agentic AEO", s: "Mira does the work for you", ziel: ".ulh-msc", anker: "mira" }
+      { t: "Agentic AEO", s: "The Agent does the work for you", ziel: ".ulh-msc", anker: "mira" }
     ]},
     resources: { spalte: "Resources", eintraege: [
       { t: "Blog", s: "Notes on AI search", href: SITE + "/blog" },
@@ -1111,8 +1095,7 @@
   /* Der Umbruch steht IM Satz und nicht im Zufall der Breite: "See what AI answers" ist die
      Frage, "say about you." die Pointe. */
   var STIMME = "See what AI answers<br>say about you.";
-  var STIMME_SUB = "Connect your brand, pick the prompts that matter, and watch the answers as " +
-    "they change. The first report takes minutes.";
+  var STIMME_SUB = "Find out in minutes what ChatGPT tells buyers about you and your competitors.";
   var STIMME_CTA = "Start for free";
   var STIMME_CTA2 = "Talk to sales";
 
@@ -1841,7 +1824,7 @@
   var MCP_LOGO_UP = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-mark-square-1f1f1f.svg";
   var MCP_PUNKTE = [
     { ic: "calendar", t: "Weekly report every Monday", s: "Visibility, rank and sentiment against last week." },
-    { ic: "bell", t: "Alert when a competitor overtakes you", s: "Checked on every new run, per market and model." },
+    { ic: "bell", t: "Alert when a competitor overtakes you", s: "In any market and any AI model." },
     { ic: "fileText", t: "Content briefs from lost citations", s: "Which pages AI stopped citing, and what to change." },
     { ic: "messageCircle", t: "Answers for the whole team", s: "Anyone can ask, nobody needs a dashboard login." }
   ];
@@ -1863,7 +1846,7 @@
           '<div class="ulh-mcp-auto ulh-auf" style="--auf:1">' +
             '<img class="ulh-mcp-logo" src="' + MCP_LOGO_UP + '" alt="upstreem" width="48" height="48" referrerpolicy="no-referrer">' +
             '<h3 class="ulh-mcp-auto-h">Runs while you work</h3>' +
-            '<p class="ulh-mcp-auto-s">Set it up once in Claude. Every run reads the latest numbers from upstreem.</p>' +
+            '<p class="ulh-mcp-auto-s">Set it up once and get your Monday report in Claude, no dashboard needed.</p>' +
             '<ul class="ulh-mcp-liste">' +
               MCP_PUNKTE.map(function(k){
                 return '<li class="ulh-mcp-punkt"><span class="ulh-mcp-punkt-ic" data-ic="' + k.ic + '" data-ic-w="1.75" aria-hidden="true"></span>' +
@@ -1901,13 +1884,14 @@
   function msc(){
     return '<section class="ulh-msc" id="mira">' +
       '<div class="ulh-spur">' +
-        '<h2 class="ulh-sek-h ulh-msc-h ulh-auf"><span>Agentic AEO</span> <span>that does the work for you</span></h2>' +
+        '<h2 class="ulh-sek-h ulh-msc-h ulh-auf"><span>An agent that tells you</span> <span>what to fix this week</span></h2>' +
         '<div class="ulh-msc-reihe">' +
           '<div class="ulh-msc-fenster ulh-auf ulh-auf-gross">' +
             '<iframe class="ulh-msc-rahmen" title="Agent" scrolling="no" referrerpolicy="no-referrer"></iframe>' +
           '</div>' +
           '<div class="ulh-msc-text ulh-auf" style="--auf:1">' +
-            '<p class="ulh-sek-satz">Ask what to fix this week. <span>The Agent reads every prompt, answer and source, ranks what matters and audits the pages behind it.</span></p>' +
+            /* Nicht noch einmal "what to fix this week": das sagt seit dem 24.10. die Ueberschrift. */
+            '<p class="ulh-sek-satz">Just ask. <span>Get the pages to change, the reason and a report to share.</span></p>' +
             '<p class="ulh-sek-feat-t">Features</p>' +
             '<ul class="ulh-sek-feat">' + MSC_PUNKTE.map(function(t){ return '<li>' + t + '</li>'; }).join("") + '</ul>' +
           '</div>' +
@@ -2542,16 +2526,16 @@
   var MERKMALE = [
     { breit: 40, vis: "linie",
       h: "See how often AI recommends you",
-      p: "Visibility and position per model, day by day, side by side with your competitors." },
+      p: "Spot the day a competitor overtakes you, and in which AI." },
     { breit: 60, vis: "zeilen",
       h: "Know which buyer questions you win",
-      p: "Every tracked prompt, grouped by topic, with who gets named and where you land." },
+      p: "Find the buyer questions where AI names a competitor instead of you." },
     { breit: 60, vis: "domains", muster: true,
       h: "See which pages AI trusts most",
-      p: "The domains and exact URLs the models cite, so you know where to get mentioned next." },
+      p: "Find the articles, reviews and threads AI quotes, and get your brand into them." },
     { breit: 40, vis: "chancen",
       h: "Your next moves, ranked by priority",
-      p: "Every visibility gap becomes a concrete task, with the prompts and numbers behind it." },
+      p: "Get a list of what to fix or publish next, ranked by impact." },
     /* Reihe drei, 50/50. Die zwei Karten beantworten die Fragen, die nach den ersten vier kommen:
        "gilt das auch fuer meinen Markt?" und "gilt das fuer alle Modelle?". */
     /* Die Sprachen in der Unterzeile sind die der Vorschau (SPRACHEN: DE, FR, IT neben Englisch). */
@@ -2648,8 +2632,10 @@
 
   var MERKMAL_CHIP = "Platform";
   var MERKMAL_H = "From AI answers to your next move";
-  var MERKMAL_SUB = "Visibility, prompts, sources and tasks in one place, across ChatGPT, Perplexity, " +
-    "Gemini and Google AI Overviews, every day.";
+  /* TEXTE NACH DEM NUTZEN (24.10., Lukas: "Deine Vorschlaege finde ich allesamt gut ... etwas kuerzen"): jeder Satz
+     sagt, was der Kaeufer danach weiss oder tut, nicht was das Werkzeug rechnet (Memory "Nutzen statt Technik");
+     Vorbild das Wording der Wettbewerber (Verb vorn, Luecke plus naechster Schritt). */
+  var MERKMAL_SUB = "See where AI recommends you, where it sends buyers to competitors, and what to change next.";
 
   /* ---- Die Vorschauen in den Karten ----
      Jede Karte zeigt das Bauteil, von dem sie spricht -- und zwar das ECHTE: die Zeilen sind
@@ -3145,14 +3131,13 @@
   var HANDEL_H = "Beyond classic GEO";
   /* Die Ueberschrift hat der Nutzer selbst vorgegeben ("Beyond Classic GEO"); neu ist nur die
      Unterzeile -- "dieselben Prompts" sagt, dass es EIN Werkzeug ist und kein zweites. */
-  var HANDEL_SUB = "Shopping results and sponsored placements, tracked on the same prompts as your " +
-    "visibility.";
+  var HANDEL_SUB = "See which products AI recommends and which competitors pay to appear in the answer.";
   var HANDEL = [
     /* muster "versetzt" (07.10.): ein aehnliches, aber nicht dasselbe Muster wie hinter der
        Domain-Tabelle -- die Punkte im Rautenraster statt im Quadrat. */
     { breit: 60, vis: "produkte", stil: "zeilen", muster: "versetzt",
       h: "See which products AI puts first",
-      p: "Position, rating and price for every product the models recommend, yours and your competitors'." },
+      p: "Find out whether AI puts your product or a competitor's in front of buyers." },
     /* Oben rechts seit dem 06.10. die Produktbewegung von Shopping statt der Balken (angefordert).
        06.10. nachts: "eher, dass man Dynamiken frueh erkennen und steuern kann" -- also beides in
        der Zeile: frueh SEHEN (Schwung) und STEUERN (womit). */
@@ -3160,8 +3145,8 @@
       h: "Spot product momentum early",
       p: "See which products gain or lose AI recommendations, and steer content, pricing or ads while the shift is small." },
     { breit: 40, vis: "werber",
-      h: "Find out who buys your prompts",
-      p: "Every advertiser showing ads on your tracked prompts, ranked by share of placements." },
+      h: "Know who pays to show up in your buyers' answers",
+      p: "See which competitors advertise on your buyers' questions, and how often." },
     /* 06.10. nachts: "strategischer" -- die Karte zeigt nicht Anzeigen, sie zeigt, wie die
        Wettbewerber im Kaufmoment spielen: was sie versprechen, welche Fragen sie kaufen, wohin der
        Klick geht. Und wozu man das wissen will: um zu antworten. */
@@ -3925,8 +3910,7 @@
      (initiative) und von MESSEN; das Beispiel-Event selbst bleibt der Relaunch von
      acme.com/electric, so angefordert. */
   var EVENT_H = "Measure what really moved your visibility";
-  var EVENT_SUB = "Log content updates, campaigns and price changes, then measure the impact of each " +
-    "one against a comparison group.";
+  var EVENT_SUB = "Find out whether your last campaign, launch or price change got you more AI recommendations.";
   var EVENTKARTEN = [
     /* Nach der Recherche (06.10. spaet, Begruendung bei MERKMALE): die Vergleichsgruppe ist das,
        was die Wirkung BELEGT -- deshalb "Prove" und die Gruppe in der Unterzeile. */
@@ -3935,13 +3919,13 @@
       p: "Content updates, campaigns and price changes sit on your visibility chart, so every shift has a known cause." },
     { breit: 60, vis: "eventkurve",
       h: "Prove the impact of each initiative",
-      p: "Affected prompts from day one, measured against an untouched comparison group, so noise never passes as impact." },
+      p: "Show your team which campaign moved AI visibility and which did nothing." },
     /* DIE UNTERE REIHE (19.10. angefordert: "2 weitere Cards, dass es 2x2 wird; links breiter"): links
        ein Ausschnitt aus einem gefuellten Event-Detail mit der Sitemap, rechts ein Ausschnitt aus
        Schritt 3 des Anlegens. Beide mit den Klassen und Texten von events.js. */
     { breit: 50, vis: "eventabd",
-      h: "Watch every page you publish, cited or not",
-      p: "Load your sitemap and follow whole folders and pages from the day they go live, before an AI has cited them." },
+      h: "Know when AI starts quoting your new pages",
+      p: "See the day ChatGPT or Perplexity first cites a new page or a whole folder." },
     /* PAGE AUDIT STATT "GANZE DOMAIN" (23.10. angefordert: "Mach das Card weg und an der Stelle ein
        Card ueber die Page Audits ... auf technischer Ebene eigene Assets beurteilen ... schau, wie
        Wettbewerber das bewerben ... die beiden Cards 50-50"). Wettbewerber werben damit, dass man
@@ -3950,7 +3934,7 @@
        robots.txt und Text ohne JavaScript. Vorschau: die Plattform-Tabelle des Audits (visAudit). */
     { breit: 50, vis: "audit",
       h: "See your pages the way AI crawlers do",
-      p: "Each audit requests a page like ChatGPT, Perplexity and Google do and shows what stops them: robots.txt rules, blocked access or text that only appears after JavaScript." }
+      p: "Find out whether ChatGPT, Perplexity and Google can read your page, and what to fix if not." }
   ];
   var EVENT_TON = "#3b82f6";
   var EVENT_NAME = "acme.com/electric relaunch";
@@ -4173,20 +4157,19 @@
      Filterleiste). "Nur Branded" gibt es im Produkt nicht, also steht es hier auch nicht. */
   var REISE_CHIP = "Customer Journey";
   var REISE_H = "Find the step where AI drops you";
-  var REISE_SUB = "Every prompt is sorted by what the buyer wants: learning, comparing or buying. " +
-    "You see your visibility at each step instead of one flattering average.";
+  var REISE_SUB = "See whether AI loses you while buyers learn, compare or get ready to buy.";
   var REISEKARTEN = [
     { breit: 60, vis: "reise", muster: true,
       h: "Visibility at every step to purchase",
-      p: "Prompts are classified automatically. See where buyers meet you, and where a competitor takes over." },
+      p: "See where buyers meet you on the way to purchase, and where a competitor takes over." },
     /* Ohne Linienmuster seit der Orbit-Grafik (24.10.): die Bahnen sind selbst das Muster. */
     { breit: 40, vis: "branded",
       /* NUTZEN STATT MECHANIK (24.10., Lukas: "so klingt es, als waere das Feature, dass man gebrandete Prompts
          separat betrachten kann -- das ist, was auf technischer Ebene passiert. Das Feature fuer den Nutzer ist,
          dass man gezielte Anfragen zu Vergleichen, Erfahrungen und Co. auswerten kann"). Dass Branded Prompts
          nicht in den Score zaehlen, ist Mechanik und steht nicht mehr hier. */
-      h: "Know what AI says when buyers ask for you by name",
-      p: "See how AI rates you in comparisons, reviews and price questions like “Acme or Tesla?” or “Is the Acme EV worth it?”, right before buyers decide." }
+      h: "Know what AI says when buyers ask about you",
+      p: "See how AI rates you in comparisons, reviews and price questions, right before buyers decide." }
   ];
   /* Die Zahlen erzaehlen EINE Geschichte: Acme fuehrt, solange gelernt wird, und verliert, sobald
      verglichen wird -- dort zieht BMW vorbei. d ist die Veraenderung zum Vorzeitraum (Punkte). */
@@ -4763,7 +4746,7 @@
      display: contents (landing-hero.css, "Source Insights als Raster"), die Komponente rechnet also
      Verlauf und Balken in ihrer Zellbreite. Oben ueber zwei Spalten Kopf und Verlauf, rechts Satz und
      Features, unten URL-Typen, Modelle und die Zahlen des Funnels. Der Funnel selbst ist aus. */
-  var QUELL_PUNKTE = ["Citation share per domain", "Cited pages and URL types", "Brand mentions per page", "Model breakdown"];
+  var QUELL_PUNKTE = ["Sites that shape your market's answers", "Pages that name rivals but not you", "Where you're already quoted", "What each AI trusts"];
   function quellZahl(wert, label, neben){
     return '<div class="ulh-qr-zahl"><span class="ulh-qr-zahl-w">' + wert + '</span><span class="ulh-qr-zahl-l">' + label + '</span>' +
       (neben ? '<span class="ulh-qr-zahl-n">' + neben + '</span>' : '') + '</div>';
@@ -4797,7 +4780,7 @@
             demoTeil("udd") +
           '</div>' +
           '<div class="ulh-qr-text">' +
-            '<p class="ulh-sek-satz">Which domains the models cite, <span>which of their pages carry the answer, and where your brand is named.</span></p>' +
+            '<p class="ulh-sek-satz">Find the sites AI quotes in your market <span>and the pages to get your brand onto.</span></p>' +
             '<p class="ulh-sek-feat-t">Features</p>' +
             '<ul class="ulh-sek-feat">' + QUELL_PUNKTE.map(function(t){ return '<li>' + t + '</li>'; }).join("") + '</ul>' +
           '</div>' +

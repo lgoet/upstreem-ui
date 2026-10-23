@@ -4692,6 +4692,11 @@ html[data-up-pagetheme="dark"] :is(.ulh-nav-logo img, .ulh-mcp-logo) { filter: i
    Zeile kaeme die helle e-1 an (gemessen: .04 statt .16). Wert wie core.css, Block "Die Tiefen im
    dunklen Thema"; aendert sich e-1 dort, zieht er hier mit. */
 html[data-up-pagetheme="dark"] .ulh-root .ulh-cards-box { --up-e-1: 0 1px 2px rgba(0,0,0,.16); }
+/* 24.10.: "bei den Cards in den Cards den Schatten deutlicher". Die naechste Stufe des Systems, die im Dunkeln
+   ueberhaupt traegt: e-chip (Geists medium, im Dunkeln 32 und 16 %; e-2 bis e-4 bleiben dort bei 2 bis 6 %).
+   Wert wie core.css, Block "Die Tiefen im dunklen Thema" -- aus demselben Grund hier ausgeschrieben wie e-1. */
+html[data-up-pagetheme="dark"] .ulh-root .ulh-cards-box { --up-e-chip: 0 2px 2px rgba(0,0,0,.32), 0 8px 8px -8px rgba(0,0,0,.16); }
+.ulh-root .ulh-cards-box .ulh-card { box-shadow: var(--up-e-chip); }
 
 /* ---------- PLATTFORM: DIE VORSCHAUEN GROESSER (23.10.) -----------------------------------------
    "skalier die Sachen etwas groesser": gemessen stand die Schrift in der Prompt- und der
@@ -4851,3 +4856,16 @@ html[data-up-pagetheme="dark"] .ulh-root .ulh-btn-sec:hover { background: var(--
 .ulh-root .ulh-vis .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
 .ulh-root .ulh-vis .up-stack-item:hover ~ .up-stack-more,
 .ulh-root .ulh-vis .up-stack-item:hover ~ .up-stack-tail { transform: none; }
+
+/* ---------- SPRACHWAHL IN DER LEISTE LEISER (24.10.) ---------------------------------------------
+   "die Language-Einstellungen in der Topbar etwas subtiler, das ist noch sehr prominent, soll eher im
+   Hintergrund sein": kein Kasten und keine Pille mehr, nur Flagge und Kuerzel in der dritten Textfarbe; die
+   gewaehlte Sprache eine Stufe heller (--ulh-sub), der Hover hebt nur die Schrift wie die Punkte der Leiste.
+   Die Flaggen kleiner (14 x 10.5) und leiser. Nur in der Leiste; im Blatt am Telefon bleibt die Zeile. */
+.ulh-nav-rechts > .ulh-sprache { background: none; border: 0; padding: 0; gap: 0; }
+.ulh-nav-rechts > .ulh-sprache a { color: var(--ulh-third); font-weight: 500; padding: 0 6px; gap: 4px; }
+.ulh-nav-rechts > .ulh-sprache a.is-an { background: none; box-shadow: none; color: var(--ulh-sub); }
+.ulh-nav-rechts > .ulh-sprache a:hover { color: var(--ulh-text); }
+.ulh-nav-rechts > .ulh-sprache .ulh-sprache-flagge { width: 14px; height: 10.5px; border-radius: 2px; opacity: .45; }
+.ulh-nav-rechts > .ulh-sprache a.is-an .ulh-sprache-flagge { opacity: .8; }
+.ulh-nav-rechts > .ulh-sprache a:hover .ulh-sprache-flagge { opacity: 1; }
