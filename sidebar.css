@@ -820,7 +820,14 @@ html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
               height var(--usn-fahrt) var(--usn-fahrt-kurve),
               padding-bottom var(--usn-fahrt) var(--usn-fahrt-kurve);
 }
-.usn-head:hover { color: var(--vc-muted); }
+/* DRITTFARBE (23.10., Lukas: die Ueberschriften der Menuegruppen in --vc-third). .up-blockhead
+   traegt seit den vier Ueberschrift-Stufen (20.10.) --vc-muted, und das bleibt dort: die Klasse
+   steht auch an Filtertiteln und Dialog-Etiketten. Hier stehen sie als Rubrik ueber der Liste und
+   treten zurueck wie "Quick Actions" (.mqa-trigger-label, schon --vc-third); beim Ueberfahren
+   geht es eine Stufe dunkler, weil die Ueberschrift ein Knopf ist (Zuklappen). Zwei Klassen gegen
+   .up-blockhead aus core: Spezifitaet, nicht Ladereihenfolge. */
+.usn-bar .usn-head { color: var(--vc-third); }
+.usn-bar .usn-head:hover { color: var(--vc-muted); }
 .usn-head-lbl { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .usn-head-chev {
   flex: 0 0 14px; width: 14px; height: 14px; display: inline-flex; color: var(--vc-third);
