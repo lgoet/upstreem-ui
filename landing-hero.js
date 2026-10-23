@@ -219,6 +219,7 @@
     "Product Movement": "Produktbewegung",
     "Largest Visibility changes vs. previous 30 days": "Größte Veränderungen gegenüber den letzten 30 Tagen",
     "Rising": "Steigend", "Declining": "Fallend",
+    "Acme EV range": "Acme EV Reichweite", "BMW iX price": "BMW iX Preis", "Audi Q4 review": "Audi Q4 Test",
     "Find out who buys your prompts": "Wer Anzeigen auf deine Prompts schaltet",
     "Every advertiser showing ads on your tracked prompts, ranked by share of placements.":
       "Alle Werbetreibenden auf deinen Prompts, sortiert nach Anteil der Platzierungen.",
@@ -4165,7 +4166,8 @@
     { breit: 60, vis: "reise", muster: true,
       h: "Visibility at every step to purchase",
       p: "Prompts are classified automatically. See where buyers meet you, and where a competitor takes over." },
-    { breit: 40, vis: "branded", muster: "linien",
+    /* Ohne Linienmuster seit der Orbit-Grafik (24.10.): die Bahnen sind selbst das Muster. */
+    { breit: 40, vis: "branded",
       h: "Branded prompts, kept apart",
       p: "Questions that name you or a competitor stay out of your score. Switch them on to see what buyers hear at the last step." }
   ];
@@ -4278,7 +4280,49 @@
      Wort und die Favicons der genannten Marken). brandedLauf legt den Schalter im Takt um: die Zahl
      zaehlt mit, die drei Zeilen kommen dazu oder treten zurueck -- so sieht man, warum Branded den
      Score schoent. */
+  /* DIE BRANDED-KARTE ALS GRAFIK (24.10.): "da haette ich auch lieber eine kleine Grafik, so etwas wie hier, nur
+     auf den Case und die Groesse der Card abgestimmt" -- Vorlage ist Vercels Orbit ("Enterprise governance"):
+     gestrichelte Kreise um eine Mitte, Chips auf den Bahnen, an jedem Chip ein kurzes Stueck Bahn mit Verlauf.
+     Hier ist die Mitte die eigene Marke (Acme), die Chips sind Branded Prompts: Fragen, die eine Marke nennen,
+     jeweils mit deren Zeichen. Masse aus der Vorlage (Radien 82/140/238/377/558 von 1116), auf 720 gerechnet --
+     die Karte ist rund 465 x 372, mehr zeigt sie nicht. Die Lage der Chips in px um die Mitte, je auf ihrer
+     Bahn (Winkel in Grad). Die alte Fassung mit Schalter (visBrandedAlt) bleibt fuer den Vertrag stehen. */
+  var BR_ORBIT = { s: 720, r: [55, 90, 153, 243, 360], chips: [
+    /* klein: Lage unter 560 Breite (die Karte ist dort rund 290 breit, zwei Chips passen nicht nebeneinander):
+       nur diese zwei, auf der Bahn 90 fast senkrecht ueber und unter der Mitte. */
+    { t: "Acme EV range",     m: "ac", r: 153, w: 213, klein: { r: 90, w: 250 } },
+    { t: "vs Tesla Model Y",  m: "te", r: 153, w: -33, klein: { r: 90, w: 70 } },
+    { t: "BMW iX price",      m: "bm", r: 90,  w: 128 },
+    { t: "Audi Q4 review",    m: "au", r: 153, w: 38 },
+    { t: "Acme Home Charger", m: "ac", r: 153, w: 266 }
+  ] };
   function visBranded(){
+    var o = BR_ORBIT, c = o.s / 2, marke = {};
+    MARKEN.forEach(function(m){ marke[m.id] = m; });
+    function logo(id){ return id === "ac" ? nebenDatei("landing-bilder/acme.svg") : (marke[id] && marke[id].logo) || ""; }
+    function pkt(r, grad){ var w = grad * Math.PI / 180; return { x: c + r * Math.cos(w), y: c + r * Math.sin(w) }; }
+    var defs = "", boegen = "";
+    o.chips.forEach(function(k, i){
+      /* Das Stueck Bahn am Chip: 15 Grad zu jeder Seite, Verlauf leise - kraeftig - leise wie in der Vorlage. */
+      var a = pkt(k.r, k.w - 15), b = pkt(k.r, k.w + 15), id = "ulh-bro-" + i;
+      defs += '<linearGradient id="' + id + '" gradientUnits="userSpaceOnUse" x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) + '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) + '">' +
+        '<stop offset="0%" class="ulh-bro-s1"/><stop offset="50%" class="ulh-bro-s2"/><stop offset="100%" class="ulh-bro-s1"/></linearGradient>';
+      boegen += '<path d="M ' + a.x.toFixed(1) + ' ' + a.y.toFixed(1) + ' A ' + k.r + ' ' + k.r + ' 0 0 1 ' + b.x.toFixed(1) + ' ' + b.y.toFixed(1) + '" stroke="url(#' + id + ')" class="ulh-bro-bogen"/>';
+    });
+    var kreise = o.r.map(function(r){ return '<circle cx="' + c + '" cy="' + c + '" r="' + r + '" class="ulh-bro-bahn"/>'; }).join("");
+    var chips = o.chips.map(function(k){
+      var p = pkt(k.r, k.w), q = k.klein ? pkt(k.klein.r, k.klein.w) : p;
+      return '<span class="ulh-bro-chip' + (k.klein ? '' : ' is-gross') + '" style="--x:' + (p.x - c).toFixed(1) + 'px;--y:' + (p.y - c).toFixed(1) +
+        'px;--xs:' + (q.x - c).toFixed(1) + 'px;--ys:' + (q.y - c).toFixed(1) + 'px">' +
+        '<img src="' + logo(k.m) + '"' + (k.m === "ac" ? ' class="is-eigen"' : '') + ' alt="" loading="lazy" referrerpolicy="no-referrer"/><span>' + k.t + '</span></span>';
+    }).join("");
+    return '<div class="ulh-bro" aria-hidden="true"><div class="ulh-bro-feld">' +
+      '<svg class="ulh-bro-svg" viewBox="0 0 ' + o.s + ' ' + o.s + '" fill="none"><defs>' + defs + '</defs>' + kreise + boegen +
+        '<circle cx="' + c + '" cy="' + c + '" r="38" class="ulh-bro-mitte"/></svg>' +
+      '<img class="ulh-bro-marke" src="' + logo("ac") + '" alt=""/>' + chips +
+    '</div></div>';
+  }
+  function visBrandedAlt(){
     var kern = window.UpstreemCore || {};
     var marke = {};
     MARKEN.forEach(function(m){ marke[m.id] = m; });

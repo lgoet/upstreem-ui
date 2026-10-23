@@ -4782,3 +4782,52 @@ html[data-up-pagetheme="dark"] .ulh-root :is(.ulh-nav-eintrag, .ulh-nm-eintrag):
 html[data-up-pagetheme="dark"] .ulh-root .ulh-nm-eintrag:active { background: #242424; }
 html[data-up-pagetheme="dark"] .ulh-root :is(.ulh-nav-menue, .ulh-fuss-ic):hover { background: var(--ulh-knopf-hover); }
 html[data-up-pagetheme="dark"] .ulh-root .ulh-btn-sec:hover { background: var(--vc-heading-bg); border-color: var(--ulh-border); }
+
+/* ---------- ADS: DIE AD-KARTEN GROESSER (24.10.) ------------------------------------------------
+   "bei der Ads-Karte unten rechts sind die Preise abgeschnitten, skalier das etwas groesser, ok wenn die Row
+   hoeher wird": 0.84 statt 0.74, die Reihe 376 statt 288 hoch (gemessen bei 1440: Unterkante der Ad-Karten
+   bei 359, dazu Luft). Die Grafik daneben zieht mit, beide Karten einer Reihe sind gleich hoch. Unter 901 wie
+   vorher: dort laufen die Ad-Karten ohnehin rechts hinaus. */
+@media (min-width: 901px) {
+  .ulh-root .ulh-vis-anzeigen { --ulh-vs: 0.84; --ulh-vh: 376px; }
+  .ulh-root .ulh-vis-werber { --ulh-vh: 376px; }
+}
+
+/* ---------- BRANDED: DIE GRAFIK (24.10.) --------------------------------------------------------
+   visBranded, nach Vercels Orbit: Bahnen gestrichelt 2 2 in Grau 400, die Stuecke an den Chips 1.5 stark mit
+   Verlauf 400 - 600 - 400, die Mitte gefuellt mit Rand in Grau 500, Chips 36 hoch, Radius 8, Rand als Verlauf
+   (300 - 600 - 300) eine Ebene darunter. Die Grautoene als Mischungen aus der Schriftfarbe der App, damit sie
+   dem Thema folgen; Chips kleiner als im Vorbild (32 hoch, 13), die Karte ist ein Drittel so breit. */
+.ulh-vis-branded .ulh-vis-in { height: 100%; }
+/* Raender weich wie bei der Ads-Grafik, nur schmaler (8 statt 22 Prozent): die Chips sitzen naeher am Rand
+   (gemessen bei 1440: der oberste 37 unter der Kante, bei 12 Prozent lag er noch in der Blende). */
+.ulh-bro { position: relative; height: 100%; overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent), linear-gradient(to bottom, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent), linear-gradient(to bottom, transparent, #000 8%, #000 92%, transparent);
+  mask-composite: intersect; }
+.ulh-bro-feld { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.ulh-bro-svg { position: absolute; left: -360px; top: -360px; width: 720px; height: 720px; overflow: visible; }
+.ulh-bro-bahn { stroke: color-mix(in srgb, var(--vc-text) 16%, transparent); stroke-width: 1; stroke-dasharray: 2 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.ulh-bro-bogen { stroke-width: 1.5; stroke-dasharray: 2 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.ulh-bro-s1 { stop-color: color-mix(in srgb, var(--vc-text) 16%, transparent); }
+.ulh-bro-s2 { stop-color: color-mix(in srgb, var(--vc-text) 48%, transparent); }
+.ulh-bro-mitte { fill: var(--vc-bg); stroke: color-mix(in srgb, var(--vc-text) 28%, transparent); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.ulh-bro-marke { position: absolute; left: -12px; top: -12px; width: 24px; height: 24px; border-radius: var(--up-r-m); z-index: 1; }
+.ulh-bro-chip { position: absolute; z-index: 1; left: var(--x); top: var(--y); transform: translate(-50%, -50%); display: inline-flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 12px; white-space: nowrap; border-radius: var(--up-r-m); background: var(--vc-bg);
+  font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); isolation: isolate; }
+/* Der Rand als Verlauf: eine Flaeche 1px groesser hinter dem Chip (wie inset -1px in der Vorlage). */
+.ulh-bro-chip::before { content: ""; position: absolute; inset: -1px; z-index: -1; border-radius: calc(var(--up-r-m) + 1px);
+  background: linear-gradient(to right, color-mix(in srgb, var(--vc-text) 12%, transparent), color-mix(in srgb, var(--vc-text) 40%, transparent), color-mix(in srgb, var(--vc-text) 12%, transparent)); }
+.ulh-bro-chip::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: var(--up-r-m); background: var(--vc-bg); }
+/* Favicons auf der hellen Logoplatte wie ueberall in der App (--vt-logo-bg, STYLEGUIDE 17a: nur Modell-Logos
+   stehen im Dunkeln ohne Platte) -- ohne sie verschwand das schwarze Zeichen von Audi. Acme ist selbst eine Kachel. */
+.ulh-bro-chip img { width: 16px; height: 16px; box-sizing: border-box; padding: 2px; border-radius: var(--up-r-xs); flex: 0 0 auto; background: var(--vt-logo-bg); object-fit: contain; }
+.ulh-bro-chip img.is-eigen { padding: 0; background: none; }
+/* Unter 560 (Karte rund 290 breit): nur die zwei Chips mit eigener Lage (BR_ORBIT klein), die Stuecke Bahn an den
+   uebrigen fallen mit weg, damit kein Bogen ohne Chip dasteht. */
+@media (max-width: 560px) {
+  .ulh-bro-chip { left: var(--xs); top: var(--ys); }
+  .ulh-bro-chip.is-gross, .ulh-bro-bogen { display: none; }
+}
