@@ -4511,7 +4511,14 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
    Ueberschrift links auf zwei Zeilen, ein Satz in zwei Toenen (dunkel, dann grau), eine schlichte
    Feature-Liste ohne Karte. Geteilt von Agent und Source Insights -- dieselben Klassen, damit beide
    gleich sprechen. */
-.ulh-sek-h { margin: 0; font-size: clamp(34px, 4vw, 48px); line-height: 1.08; font-weight: 500; letter-spacing: -0.045em; color: var(--ulh-text); }
+/* EINE GROESSE FUER ALLE UEBERSCHRIFTEN DER ABSCHNITTE (23.10. angefordert: "alle in gleicher Size"):
+   die Werte von Source Insights und Agent (an vercel.com gemessen), jetzt auch fuer die vier
+   Kartenabschnitte (.ulh-feat-h, vorher 40, schmal 32), Why now und Pricing (dieselbe Klasse) und den
+   MCP-Abschnitt (.ulh-mcp-h, vorher 56 in 600). .ulh-root davor schlaegt die schmale Regel von
+   .ulh-feat-h (max-width 900, 32px). */
+.ulh-sek-h, .ulh-root .ulh-feat-h, .ulh-root .ulh-mcp-h { font-size: clamp(34px, 4vw, 48px); line-height: 1.08; font-weight: 500; letter-spacing: -0.045em; color: var(--ulh-text); }
+/* Die Raender bleiben je Klasse: Pricing steht ueber auto-Raender mittig, MCP hat 20 zum Chip. */
+.ulh-sek-h { margin: 0; }
 .ulh-sek-h span { display: block; }
 .ulh-sek-satz { margin: 0; font-size: 24px; line-height: 32px; font-weight: 500; letter-spacing: -0.7px; color: var(--ulh-text); }
 .ulh-sek-satz span { color: var(--ulh-g7); }
@@ -4649,3 +4656,28 @@ html[data-up-pagetheme="dark"] :is(.ulh-nav-logo img, .ulh-mcp-logo) { filter: i
 /* Der Zurueck-Knopf oben links klebte an der Kante des Fensters: in der App kommen die 16 links von
    der Ansicht (.wirt-ansicht, ask-mira.css "LINKS KEIN EIGENES POLSTER"), und die gibt es hier nicht. */
 .ulh-root #ask-mira.has-messages .am-hero { padding-left: 16px; }
+
+/* ---------- DIE KOEPFE DER KARTENABSCHNITTE WIE DIE DER NEUEN (23.10.) -----------------------------
+   Angefordert: "mach bitte die headings der card komponenten so, wie die headings der neuen
+   komponenten wie domain detail oder mcp. also links und rechts aligned im Wechsel, linksaligned
+   startend." Die vier Abschnitte mit Karten (Overview, Customer Journey, Shopping & Ads, Impact)
+   stehen nicht mehr mittig: der erste links, der zweite rechts, im Wechsel. Kante wie der Inhalt
+   darunter und wie Source Insights und MCP: 8px in der Spur (72 / 1368 bei 1440). Der Chip in der
+   Form des MCP-Chips (24 hoch, 12/500). Why now und Pricing bleiben mittig -- sie sind keine
+   Kartenabschnitte. Schmal (bis 900, dort stapeln die Karten) alle links: ein rechtsbuendiger Absatz
+   liest sich auf dem Telefon schlecht. */
+.ulh-root .ulh-feat > .ulh-spur > .ulh-feat-kopf { padding: 0 8px; text-align: left; }
+.ulh-root .ulh-feat > .ulh-spur > .ulh-feat-kopf :is(.ulh-feat-h, .ulh-feat-sub) { margin-left: 0; margin-right: 0; text-align: inherit; }
+.ulh-root .ulh-feat > .ulh-spur > .ulh-feat-kopf .ulh-feat-h { margin-top: 0; }
+.ulh-root .ulh-feat > .ulh-spur > .ulh-feat-kopf .ulh-feat-sub { margin-top: 20px; }
+.ulh-root .ulh-feat > .ulh-spur > .ulh-feat-kopf .ulh-feat-chip {
+  height: 24px; padding: 0 10px; font-size: 12px; font-weight: 500; letter-spacing: normal; margin-bottom: 20px;
+}
+/* Schmal wie vorher und wie der Kopf von MCP 24 vom Rand: 8 stuenden dort am Bildschirmrand. */
+@media (max-width: 900px) {
+  .ulh-root .ulh-feat > .ulh-spur > .ulh-feat-kopf { padding: 0 24px; }
+}
+@media (min-width: 901px) {
+  .ulh-root :is(.ulh-reise, .ulh-events) > .ulh-spur > .ulh-feat-kopf { text-align: right; }
+  .ulh-root :is(.ulh-reise, .ulh-events) > .ulh-spur > .ulh-feat-kopf :is(.ulh-feat-h, .ulh-feat-sub) { margin-left: auto; }
+}
