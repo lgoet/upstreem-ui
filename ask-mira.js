@@ -437,6 +437,9 @@
   function scrollbarBreiteSetzen(){
     if (!elChat) return;
     var b = elChat.offsetWidth - elChat.clientWidth;
+    /* Auf der Startseite haelt .am-chat die Luecke fuer den Balken auf BEIDEN Seiten frei (scrollbar-gutter:
+       stable both-edges, ask-mira.css) -- die Differenz ist dann zwei Luecken, der Balken selbst nur eine. */
+    if (/both-edges/.test(getComputedStyle(elChat).scrollbarGutter || '')) b = b / 2;
     if (!(b >= 0 && b < 40)) return;                       /* unplausibel -> lieber nichts setzen */
     /* HIER STAND EIN FRUEHER AUSSTIEG (24.09. gemeldet: "die Scrollbar wird unten immer noch vom
        Gradient ueberdeckt, und sie liegt leicht ueber den Sprungnavigations-Items -- nur auf

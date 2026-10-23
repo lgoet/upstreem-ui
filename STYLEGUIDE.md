@@ -2341,6 +2341,9 @@ Aus- und Einklappen der Container dahinter mit 200 ms ease Animation, wie alles 
   am Ende raus; Wechsel = Höhe alt → neu, nur das Innere (`.am-cat-boxin`) blendet ein, Rahmen und Fläche
   bleiben stehen (`renderGallery`, `galKnoepfe`, `galInhalt` in ask-mira.js).
 - Am Telefon dieselben Knöpfe (umbrechend) statt der vier Schnellfragen (`#am-quick` ist aus).
+- Auf der Startseite hält `.am-chat` den Platz für den Scrollbalken links und rechts frei
+  (`scrollbar-gutter: stable both-edges`): sonst rückt alles Mittige um die halbe Balkenbreite, sobald der
+  aufklappende Kasten den Bereich zum Scrollen bringt (gemessen 4 px Seitenschlag, jetzt 0).
 - Kein Zurück-Pfeil, keine Unterseite, keine Kopfzeile „Explore categories“ mehr; die alten Klassen
   (`.am-cat-card`, `.am-gallery-back` …) stehen nur noch für den Vertrag (`display: none`).
 

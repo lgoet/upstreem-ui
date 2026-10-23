@@ -1081,6 +1081,13 @@
   #ask-mira:not(.has-messages):not(.is-compact) .am-chat { flex: 0 1 auto; margin-top: auto; padding-top: 0; padding-bottom: 0; }
   #ask-mira:not(.has-messages):not(.is-compact) .am-suggested { margin-top: 0; margin-bottom: 92px; }
   #ask-mira:not(.has-messages):not(.is-compact) .am-composer-area { margin-bottom: auto; }
+  /* DER PLATZ FUER DEN SCROLLBALKEN STEHT AUF DER STARTSEITE IMMER BEREIT (23.10., Lukas: "es schlaegt ein
+     bisschen seitlich aus waehrend der Animation"). Klappt der Kasten unter den Kategorien auf, wird der Inhalt
+     hoeher als der Platz, und .am-chat bekommt mitten in der Bewegung einen Scrollbalken -- ueberall dort, wo er
+     Platz nimmt (Mac mit Maus, Windows). Der Bereich wurde schmaler, alles Mittige rueckte um die halbe Breite
+     nach links und beim Zuklappen zurueck (gemessen 4 px). both-edges haelt die Luecke links wie rechts frei:
+     die Mitte bleibt, wo sie ist, und die Knoepfe stehen weiter buendig mit dem Eingabefeld darunter. */
+  #ask-mira:not(.has-messages) .am-chat { scrollbar-gutter: stable both-edges; }
   .am-welcome { margin: 0 0 40px; }
   /* Die eigene Marke in der Begruessung: Logo und Name als EIN Stueck, damit sie beim Umbruch
      zusammenbleiben. Das Bild misst 0.8em -- es waechst also mit der Ueberschrift mit, die
