@@ -1560,7 +1560,7 @@
    Faden, nur heller -- naeher am Blau des Bildes im Hero. */
 .ulh-feat-chip {
   display: inline-flex; align-items: center; height: 22px; padding: 0 9px;
-  border-radius: 7px; background: rgba(59, 130, 246, 0.10);
+  border-radius: var(--up-r-voll); background: rgba(59, 130, 246, 0.10);
   font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: #3b82f6;
   margin-bottom: 18px;
 }
@@ -1605,7 +1605,8 @@
   padding: 4px;
   background: var(--ulh-kasten);
   border: 1px solid var(--ulh-border);
-  border-radius: 20px;
+  /* 16 (23.10., Radien nach core): die Karten darin tragen 12, dazwischen 4 Polster und 1 Rand. */
+  border-radius: var(--up-r-3xl);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .035), 0 6px 16px rgba(11, 13, 24, .028);
 }
 .ulh-cards { display: flex; flex-direction: column; gap: 4px; }
@@ -1620,7 +1621,8 @@
      leiseste Stufe des Fensterschattens oben. */
   background: #ffffff;
   border: 1px solid var(--ulh-border);
-  border-radius: 16px;
+  /* Karte nach Rolle: 12 wie jede Karte der App (23.10., vorher 16). */
+  border-radius: var(--up-r-2xl);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .035), 0 6px 16px rgba(11, 13, 24, .028);
   padding: 26px 26px 24px;
 }
@@ -1872,7 +1874,8 @@
   padding: 4px;
   background: var(--ulh-kasten);
   border: 1px solid var(--ulh-border);
-  border-radius: 20px;
+  /* 16 (23.10., Radien nach core): die Karten darin tragen 12, dazwischen 4 Polster und 1 Rand. */
+  border-radius: var(--up-r-3xl);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .035), 0 6px 16px rgba(11, 13, 24, .028);
 }
 /* WEISS, und zwar als Zahl. --vc-bg ist die Grundfarbe der App, aber sie ist an .up-root
@@ -1886,7 +1889,7 @@
    Ueberschrift und Karten gleichmaessig stehen. Links und rechts bleiben es 8px. */
 .ulh-quell-panel {
   border: 1px solid var(--ulh-border);
-  border-radius: 16px; background: #ffffff;
+  border-radius: var(--up-r-2xl); background: #ffffff;
   /* Ringsum dasselbe Polster (14.10. abends, "Paddings checken"): gemessen standen oben 21px,
      seitlich 8 -- die Kurve begann 9px neben dem Rand, das Logo darueber 17. Jetzt beginnen Logo,
      Kurve, Trichter und die zwei Karten auf einer Kante, so weit vom Rand wie von oben. */
@@ -2062,7 +2065,7 @@
 .ulh-pk {
   display: flex; align-items: center; gap: 12px;
   padding: 0 14px; height: 54px; box-sizing: border-box; flex: 0 0 auto;
-  background: var(--vc-bg); border: 1px solid var(--ulh-border); border-radius: 12px;
+  background: var(--vc-bg); border: 1px solid var(--ulh-border); border-radius: var(--up-r-l);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .04);
 }
 .ulh-pk .up-market { flex: 0 0 auto; }
@@ -2117,7 +2120,7 @@
   will-change: transform;
 }
 .ulh-orb-chip {
-  position: absolute; width: 30px; height: 30px; border-radius: 9px;
+  position: absolute; width: 30px; height: 30px; border-radius: var(--up-r-m);
   /* Die Zeichen drehen in JEDEM Bild ihren Ring wieder heraus. Ohne diese Ankuendigung entscheidet
      der Browser bei jedem Bild neu, ob er dafuer eine eigene Ebene anlegt -- und auf langsameren
      Rechnern zeigt sich das als Zittern. Gemeldet fuer Windows. */
@@ -2128,7 +2131,7 @@
   transform: translate(-50%, -50%);
   box-sizing: border-box; padding: 4px;
 }
-.ulh-orb-chip img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 5px; }
+.ulh-orb-chip img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: calc(var(--up-r-m) - 3px); }
 /* Die Mitte: eine weisse Scheibe mit einem weichen Hof, damit die Marke vor den Bahnen liegt und
    nicht zwischen ihnen. Groesser als die Chips -- sie ist der Bezugspunkt, um den alles laeuft. */
 .ulh-orb-mitte {
@@ -2162,7 +2165,7 @@
 .ulh-krv-chip {
   position: absolute; opacity: 0; transform: translate(-50%, -100%);
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 8px 11px; border-radius: 14px; white-space: nowrap;
+  padding: 8px 11px; border-radius: var(--up-r-m); white-space: nowrap;
   background: #ffffff; border: 1px solid var(--ulh-border);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .05), 0 8px 20px rgba(11, 13, 24, .07);
   font-size: 12.5px; line-height: 1.2;
@@ -2183,7 +2186,7 @@
 /* Das Schild der Linie, die gerade NICHT gehoben ist, tritt mit zurueck -- sonst stuende ein
    volles Schild an einer grauen Linie. */
 .ulh-krv-chip.is-aus { opacity: .45; filter: saturate(.2); }
-.ulh-krv-logo { width: 16px; height: 16px; border-radius: 4px; display: block; object-fit: cover; }
+.ulh-krv-logo { width: 16px; height: 16px; border-radius: var(--up-r-xs); display: block; object-fit: cover; }
 .ulh-krv-name { color: var(--ulh-text); font-weight: 400; }
 .ulh-krv-val { color: var(--ulh-text); font-weight: 500; font-variant-numeric: tabular-nums; }
 
@@ -2235,7 +2238,7 @@
    macht aus einer Tabelle ein Bild von einer Tabelle -- man liest sie nicht mehr, man sieht sie
    nur. Ohne Neigung bleibt sie lesbar, und das ist hier der Zweck. */
 .ulh-vis-tab, .ulh-vis-dom {
-  border: 1px solid var(--ulh-border); border-radius: 12px;
+  border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl);
   background: var(--vc-bg);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 8px 20px rgba(11, 13, 24, .05);
 }
@@ -2432,7 +2435,8 @@
    gut 10px, so breit wie in der Vorlage (bei 12px waren es 8 und der Rand kaum zu sehen).
    Konzentrisch: aussen 30 = innen 14 + 16. */
 .ulh-rahmen {
-  padding: 16px; border-radius: 30px;
+  /* 23.10.: innen 12 (Fenster = Karte), aussen konzentrisch 12 + 16 Polster + 1 Rand. */
+  padding: 16px; border-radius: calc(var(--up-r-2xl) + 17px);
   background: rgba(236, 237, 241, .78); border: 1px solid rgba(11, 13, 24, .06);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 22px 50px rgba(11, 13, 24, .08);
 }
@@ -2440,7 +2444,7 @@
    Tabelle verliert ihren eigenen Kasten (Rahmen, Radius, Schatten), sonst stuenden zwei Kanten
    ineinander. */
 .ulh-rahmen-in {
-  background: var(--vc-bg); border: 1px solid var(--ulh-border); border-radius: 14px; overflow: hidden;
+  background: var(--vc-bg); border: 1px solid var(--ulh-border); border-radius: var(--up-r-2xl); overflow: hidden;
 }
 .ulh-rahmen-in > .up-head {
   height: auto; margin: 0; padding: 12px 12px 12px 16px; border-bottom: 1px solid var(--ulh-border);
@@ -2470,7 +2474,7 @@
 /* Die gehobene Zeile bekommt KEINEN eigenen Radius. Sie nimmt den, den ihr Bauteil ohnehin hat:
    die Chancenzeile hat 12px von sich aus, die Zeile der Tabelle hat keinen -- ihr Rahmen ist der
    der Tabelle, und deren 12px stehen hier. */
-.ulh-card:hover .ulh-vis-tab .up-row.is-mitte { border-radius: 12px; }
+.ulh-card:hover .ulh-vis-tab .up-row.is-mitte { border-radius: var(--up-r-2xl); }
 /* Der Grund der gehobenen Zeile: WEISS als Zahl. Vorher stand hier var(--vc-bg) -- die Farbe der
    App, aber sie haengt an .up-root, und diese Vorschau steht darueber: die Angabe war ungueltig,
    die Zeile blieb durchsichtig, und man sah ihre Nachbarn hindurch. Dieselbe Falle wie beim Kasten
@@ -2496,7 +2500,7 @@
    die runden Ecken der Tabelle deckt ihre Kopfzeile mit demselben Radius ab.
    .ulh-vis-dom behaelt die Sperre -- dort liegt ein aufgeklappter Drilldown mit Fuellung darin. */
 .ulh-vis-dom { overflow: hidden; }
-.ulh-vis-tab .up-thead { border-radius: 12px 12px 0 0; }
+.ulh-vis-tab .up-thead { border-radius: calc(var(--up-r-2xl) - 1px) calc(var(--up-r-2xl) - 1px) 0 0; }
 /* DIE EIGENE EBENE STEHT SCHON IN RUHE (24.09. gemeldet: "auf Windows kommen im gehoverten
    Zustand an den Ecken so komische Zacken und Striche, an allen vier Rahmen dieser Opportunity
    Card").
@@ -3877,13 +3881,13 @@ html[data-up-hell="grau"] .ulh-view { background: var(--up-seite-grau); }
   /* Titel oben ueber beide Spalten, darunter Domain links und Wert rechts, beide auf einer Linie.
      display: contents an den zwei Zwischenkaesten, damit ihre Kinder Zellen DIESES Rasters werden
      -- ohne das Markup anzufassen, das dieselbe Zeile in der App baut. */
-  .ulh-vis-chancen .uo-row { row-gap: 6px; column-gap: 12px; padding: 10px 12px; border-radius: 10px; }
+  .ulh-vis-chancen .uo-row { row-gap: 6px; column-gap: 12px; padding: 10px 12px; border-radius: var(--up-r-2xl); }
   .ulh-vis-chancen .uo-row-main, .ulh-vis-chancen .uo-row-right { display: contents; }
   .ulh-vis-chancen .uo-row-title { grid-column: 1 / -1; font-size: 12.5px; }
   .ulh-vis-chancen .uo-row-sub { grid-column: 1; }
   .ulh-vis-chancen .uo-row-domain { font-size: 11px; }
-  .ulh-vis-chancen .uo-row-sub .up-logo-box { width: 16px; height: 16px; border-radius: 4.5px; }
-  .ulh-vis-chancen .uo-row-sub .up-logo-box img { width: 14px; height: 14px; border-radius: 3.5px; }
+  .ulh-vis-chancen .uo-row-sub .up-logo-box { width: 16px; height: 16px; border-radius: var(--up-r-xs); }
+  .ulh-vis-chancen .uo-row-sub .up-logo-box img { width: 14px; height: 14px; border-radius: calc(var(--up-r-xs) - 1px); }
   .ulh-vis-chancen .uo-pot { grid-column: 2; justify-self: end; align-self: center; }
   /* Die Themenchips fallen weg. Sie sind der vierte Teil der Zeile, und zu dritt auf einer
      332px-Karte bliebe fuer Domain und Wert nichts uebrig -- gefragt war die Zeile mit genau
