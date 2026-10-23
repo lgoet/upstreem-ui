@@ -6381,17 +6381,19 @@
          nuetzlichere Auskunft. In der Auswahlliste darueber (.am-pick-cav/.am-pick-av) bleibt die
          Flagge, wo sie ist. */
       var istPrompt = String(it.type) === 'prompt';
-      var bild = istPrompt ? '' : ((UCg && UCg.entityBild) ? UCg.entityBild(it) : '');
+      /* Ein Page Audit traegt das Zeichen seiner Ansicht (dna01), wie ein Prompt das seine (23.10., "Ask Agent"). */
+      var istAudit = String(it.type) === 'page_audit';
+      var bild = (istPrompt || istAudit) ? '' : ((UCg && UCg.entityBild) ? UCg.entityBild(it) : '');
       var lbl  = (UCg && UCg.entityLabel) ? UCg.entityLabel(it) : '';
-      var kl = 'am-pick-tag-av up-feldchip-av' + (istPrompt ? ' is-prompt' : '') + (bild ? '' : ' is-fb');
+      var kl = 'am-pick-tag-av up-feldchip-av' + ((istPrompt || istAudit) ? ' is-prompt' : '') + (bild ? '' : ' is-fb');
       /* DER RUECKFALL LIEGT IN DER HUELLE -av-fb, und zwar IMMER. Hier stand der Buchstabe
          (bei einer Brand) und das Marktkuerzel (bei einem Prompt) NACKT daneben -- also ohne
          die Huelle, die ihn verbirgt, solange ein Bild da ist. Sichtbare Folge: neben dem
          Logo stand noch ein "N", neben der deutschen Flagge ein "D", und weil der Buchstabe
          im Flex Platz beansprucht, war das Bild daneben zusammengequetscht.
          Genau EIN Ort entscheidet jetzt, was man sieht: die Klasse is-fb an der Kachel. */
-      var inner = istPrompt
-        ? ((UCg && UCg.icon) ? UCg.icon('zap', 2) : '')
+      var inner = (istPrompt || istAudit)
+        ? ((UCg && UCg.icon) ? UCg.icon(istAudit ? 'dna01' : 'zap', 2) : '')
         : (String(it.type) === 'brand'
             ? '<span class="am-pick-tag-av-t">' + esc(String(lbl).charAt(0).toUpperCase()) + '</span>'
             : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">' + amFormen("globe") + '</svg>');
@@ -6516,7 +6518,10 @@
   function picksRefs(){
     var UCg = window.UpstreemCore;
     return _picks.slice(0, 3).map(function(it){
-      return { type: String(it.type), id: String(pickKennung(it) || ''), label: (UCg && UCg.entityLabel) ? String(UCg.entityLabel(it) || '') : '' };
+      var label = (UCg && UCg.entityLabel) ? String(UCg.entityLabel(it) || '') : '';
+      /* Beim Page Audit der gezeigte Lauf dazu: page_audit_detail braucht page_id UND run_id, sonst nimmt es den neuesten. */
+      if (String(it.type) === 'page_audit' && it.run_id) label += ' (run_id ' + String(it.run_id) + ')';
+      return { type: String(it.type), id: String(pickKennung(it) || ''), label: label };
     }).filter(function(r){ return r.type && r.id; });
   }
   function picksText(){
@@ -6529,6 +6534,8 @@
       if (t === 'prompt') return '- Prompt: "' + name + '" (uid: ' + id + ')';
       if (t === 'domain') return '- Domain: ' + id;
       if (t === 'url')    return '- URL: ' + id + (name && name !== id ? ' (' + name + ')' : '');
+      /* Nur die Adresse: Seite und Lauf gehen strukturiert mit (references), die Kennungen standen sonst lesbar in der Frage. */
+      if (t === 'page_audit') return '- Page Audit: ' + name;
       return '- ' + t + ': ' + id;
     });
     return 'Context:\n' + zeilen.join('\n');
@@ -10510,6 +10517,17 @@
     if (o.prompt){
       zuMira({ neu: true });
       var q = String(o.prompt).replace('{TIMEFRAME}', repTimeframe(_reportRange));
+      /* MIT BEZUEGEN (23.10., "Ask Agent" im Page Audit): die Bezuege als Chips ins Feld, die Frage dazu, und dann wie ein
+         Absenden aus dem Feld -- nur so gehen Kontextzeilen und references mit (ein ausdruecklicher Text laesst beides weg). */
+      var refs = (Array.isArray(o.references) ? o.references : []).filter(function(r){ return r && typeof r === 'object' && r.type && r.id != null; }).slice(0, 3);
+      if (refs.length){
+        clearQuote(); clearPicks();
+        refs.forEach(function(r){ _picks.push(Object.assign({}, r)); });
+        picksZeichnen();
+        elTextarea.value = q;
+        sendMessage();
+        return true;
+      }
       if (window.bubble_fn_ask_mira_suggested_question) window.bubble_fn_ask_mira_suggested_question(q);
       sendMessage(q);
       return true;

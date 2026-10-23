@@ -9607,6 +9607,8 @@
     if (t === "brand" || t === "prompt") return String(item.id == null ? "" : item.id);
     if (t === "domain") return String(item.domain == null ? "" : item.domain);
     if (t === "url")    return String(item.url == null ? "" : item.url);
+    /* Ein Page Audit als Bezug fuer den Agenten (23.10., "Ask Agent" im Detail): die Kennung der Seite (page_id). */
+    if (t === "page_audit") return String(item.id == null ? "" : item.id);
     return "";
   }
   /* Der Text, den ein Mensch liest. Bei der URL zuerst der Titel: eine Adresse ist kein Name. */
@@ -9617,6 +9619,7 @@
     if (t === "domain") return String(item.domain || "");
     if (t === "url")    return String(item.title || item.url || "");
     if (t === "prompt") return String(item.prompt_text || "");
+    if (t === "page_audit") return String(item.name || item.url || "");
     return "";
   }
   function entityBild(item){
@@ -24654,6 +24657,23 @@
     })();
     return true;
   }
+  /* DEN AGENTEN FRAGEN, MIT BEZUG (23.10., "Ask Agent" im Page Audit). Wie anMira: in die Ansicht des Agenten, warten, bis
+     sein Fenster bereit ist (es laedt erst mit seiner Ansicht), dann Frage und Bezuege uebergeben -- askMiraOpen setzt sie
+     als Chips und schickt sofort ab. o = { frage, bezuege: [{ type, id, ... }] }. */
+  function agentFragen(o){
+    o = o || {};
+    if (!o.frage) return false;
+    try { ansichtWechseln("mira"); } catch(e){}
+    var bis = Date.now() + 8000, gesehen = 0;
+    (function warten(){
+      var w = miraWurzelBereit();
+      if (w && typeof window.askMiraOpen === "function"){
+        if (++gesehen >= 2){ try { window.askMiraOpen({ prompt: o.frage, references: o.bezuege || [] }); } catch(e){} return; }
+      } else gesehen = 0;
+      if (Date.now() < bis) setTimeout(warten, 60);
+    })();
+    return true;
+  }
   /* ZU EINER ANSICHT GEHEN, AUS JEDER LAGE (UC.ansichtWechseln, 06.10.). Angefordert an den
      Go-To-Knoepfen von Visibility Chart und Top Citations: "ohne Bubble-Konfiguration offene
      Drawer schliessen und zur richtigen Ansicht navigieren". Derselbe Weg wie anMira und die
@@ -31408,7 +31428,7 @@
     drawerKontextLesen: drawerKontextLesen, drawerKontextSetzen: drawerKontextSetzen, drawerFilterBereit: drawerFilterBereit,
     appStart: appStart, appStartAktiv: appStartAktiv, appTeamWechseln: appTeamWechseln, appTeilNachladen: appTeilNachladen,
     seitenTitel: seitenTitel,
-    anMira: anMira, miraBezug: miraBezug,
+    anMira: anMira, miraBezug: miraBezug, agentFragen: agentFragen,
     onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
     getUpstreemThemeOption: getUpstreemThemeOption, setUpstreemThemeOption: setUpstreemThemeOption,
     themeSchalterHtml: themeSchalterHtml,
