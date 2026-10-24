@@ -267,7 +267,7 @@
     /* Schluss */
     "See what AI answers": "Was sagt die KI", "say about you.": "über dich?",
     "Find out in minutes what ChatGPT tells buyers about you and your competitors.": "Finde in wenigen Minuten heraus, was ChatGPT Käufern über dich und deine Wettbewerber sagt.",
-    "Talk to sales": "Sales kontaktieren",
+    "Talk to sales": "Sales kontaktieren", "Get started for free": "Jetzt kostenlos starten",
     /* Preise */
     "Simple plans. Every answer engine.": "Klare Tarife. Alle KI-Suchmaschinen.",
     "Every plan tracks ChatGPT, Perplexity and Google AI Overviews, with unlimited seats, unlimited countries and prompts that run every day.":
@@ -644,9 +644,15 @@
      SEIT DEM 23.10. ABENDS IMMER DUNKEL ("kein lightmode mehr. immer darkmode bitte"): kein Schalter,
      keine Wahl. Die hellen Werte in landing-hero.css bleiben als Grundlage der Rollen stehen. */
   function themaWahl(){ return "dark"; }
+  /* Nur EINMAL je Thema an core melden (24.10.): quellFuellen ruft themaAnwenden ein zweites Mal, und jede Meldung
+     baut ueber onTheme jedes Chart der Seite neu -- gemessen das Dashboard-Chart im Hero 5,2 s nach dem Laden, mit
+     derselben Farbe. Die Seite ist immer dunkel, also gibt es danach nichts mehr zu melden. */
+  var themaGemeldet = null;
   function themaAnwenden(){
     var dunkel = themaWahl() === "dark";
-    try { if (window.setUpstreemTheme) window.setUpstreemTheme(dunkel ? "dark" : "light"); } catch (e){}
+    try {
+      if (window.setUpstreemTheme && themaGemeldet !== dunkel){ window.setUpstreemTheme(dunkel ? "dark" : "light"); themaGemeldet = dunkel; }
+    } catch (e){}
     /* Im Dunkeln das Gegenstueck des grauen Hells (core.js hellAnwenden): data-up-dunkel="geist"
        trennt in den Fenstern Inhalt (#0f0f0f) von Seite (#0a0a0a) wie in der App. core setzt es auf
        der Landingpage nicht, also hier -- wie das graue Hell darunter. */
@@ -703,7 +709,15 @@
      und ein Jahreswechsel soll nicht die ganze Seite neu bauen. */
   var STAND = null;
   function standDerSeite(){
-    if (!STAND) STAND = fnv(seiteHtml(true).replace(/<span data-ulh-jahr>\d+<\/span>/g, "<span data-ulh-jahr></span>"));
+    /* Die eigene Domain zaehlt nicht mit (24.10.): absolut() macht im Browser aus "/fremd/..." die volle Adresse,
+       auf dem Server (ohne location) bleibt sie relativ. Seit quellzeichen() am 19.10. absolut wurde, stehen solche
+       Adressen auch im Markup (Modellzeile im Hero, Teams der Seitenleiste) -- die Pruefsumme passte nie, die Seite
+       wurde bei jedem Laden neu gebaut, und der Auftritt im Kopf lief zweimal (gemessen: data-ulh-ssr-weg "neu gebaut",
+       h1 nach 450 bis 810 ms ersetzt). */
+    var eigen = "";
+    try { if (window.location && /^https?:$/.test(window.location.protocol)) eigen = window.location.origin + "/"; } catch (e){}
+    if (!STAND) STAND = fnv(seiteHtml(true).replace(/<span data-ulh-jahr>\d+<\/span>/g, "<span data-ulh-jahr></span>")
+      .split(eigen || "\u0000").join("/"));
     return STAND;
   }
 
@@ -1111,7 +1125,8 @@
         '<div class="ulh-stimme-knoepfe ulh-auf" style="--auf:2">' +
           '<a class="ulh-btn ulh-btn-pri" target="_blank" rel="noopener"' +
             ' href="https://app.upstreem.ai/signup">' + STIMME_CTA + '</a> ' +
-          '<a class="ulh-btn ulh-btn-sec" href="' + KONTAKT_URL + '">' + STIMME_CTA2 + '</a>' +
+          /* Mit dem Licht des Hero-Knopfs (24.10.: "genau so ein Button, mit dem coolen Hovereffekt"). */
+          '<a class="ulh-btn ulh-btn-sec is-funke" href="' + KONTAKT_URL + '">' + STIMME_CTA2 + '</a>' +
         '</div>' +
       '</div>' +
     '</section>';
@@ -1900,6 +1915,8 @@
             '<p class="ulh-sek-satz">Just ask. <span>Get the pages to change, the reason and a report to share.</span></p>' +
             '<p class="ulh-sek-feat-t">Features</p>' +
             '<ul class="ulh-sek-feat">' + MSC_PUNKTE.map(function(t){ return '<li>' + t + '</li>'; }).join("") + '</ul>' +
+            /* "Jetzt kostenlos starten" (24.10.), der Knopf "Book a demo" aus dem Hero (is-funke). */
+            '<div class="ulh-msc-los"><a class="ulh-btn ulh-btn-sec is-funke" href="https://app.upstreem.ai/signup" target="_blank" rel="noopener">Get started for free</a></div>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -5775,42 +5792,61 @@
      102 + 16 + 220 = 338 unter der rechten Kante: der Kasten steht rechts, 16 von der Linie. */
   var TIPP_PUNKT = 1;
 
+  /* DER KASTEN STEHT, NICHTS BEWEGT SICH (24.10., Lukas: "das Tooltip flackert oft weg und kommt Sekunden spaeter
+     wieder, die Hoverpoints sind oft nicht da -- DA HAT SICH NIX ZU BEWEGEN, das Chart ist statisch").
+     Bis dahin steckte tippZeigen den Kasten zu festen Zeiten (0,3 bis 8 s) mit einem animierten chart.update() neu an:
+     jedes Mal blendete der Tooltip aus und die Hoverpunkte fielen ab. Baute core das Chart dazwischen neu
+     (Themenwechsel, Groesse), war der Kasten bis zum naechsten Takt weg; und die Maus ueber dem Chart setzte ihn um.
+     Jetzt ein Hook von Chart.js NUR fuer dieses Chart (die erste .up-line-canvas der Seite, das Dashboard im Hero):
+       beforeEvent  -> false: keine Maus, kein Hover, kein mouseleave
+       afterUpdate  -> Punkte und Kasten sofort wieder an, im selben Durchgang, also ohne ein Bild dazwischen
+     und Tooltip-Animation aus, damit beim Anstecken nichts einblendet. tippZeigen selbst zeichnet nur noch, wenn der
+     Kasten wirklich fehlt -- ohne Animation. */
+  function tippChart(chart){
+    var root = document.querySelector(WURZEL);
+    var lein = root && root.querySelector(".up-line-canvas");
+    return !!(lein && chart && chart.canvas === lein);
+  }
+  function tippPunkte(chart){
+    return ((chart.data && chart.data.datasets) || []).map(function(_, di){ return { datasetIndex: di, index: TIPP_PUNKT }; });
+  }
+  function tippAnstecken(chart){
+    var p = tippPunkte(chart);
+    if (!p.length) return;
+    try {
+      var tt = chart.options && chart.options.plugins && chart.options.plugins.tooltip;
+      if (tt && tt.animation !== false) tt.animation = false;
+      chart.setActiveElements(p);
+      if (chart.tooltip && chart.tooltip.setActiveElements){
+        /* Erst leeren, dann setzen: nach einem Datentausch sind die Punktobjekte dieselben, und ohne den Leerlauf
+           rechnete Chart.js den Kasten nicht neu (alte Zahlen, gemessen 19.10.). Beides im selben Durchgang. */
+        chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+        chart.tooltip.setActiveElements(p, { x: 0, y: 0 });
+      }
+    } catch (e){}
+  }
+  function tippHook(){
+    var C = window.Chart;
+    if (!C || !C.register || C.__ulhStehTipp) return;
+    C.__ulhStehTipp = true;
+    C.register({
+      id: "ulhStehTipp",
+      beforeEvent: function(chart){ if (tippChart(chart)) return false; },
+      afterUpdate: function(chart){ if (tippChart(chart)) tippAnstecken(chart); }
+    });
+  }
   function tippZeigen(root){
     var leinwand = root.querySelector(".up-line-canvas");
     if (!leinwand || !window.Chart || !window.Chart.getChart) return false;
+    tippHook();
     var chart = window.Chart.getChart(leinwand);
     if (!chart || !chart.data || !chart.data.datasets || !chart.data.datasets.length) return false;
-    var punkte = chart.data.datasets.map(function(_, di){
-      return { datasetIndex: di, index: TIPP_PUNKT };
-    });
-    function setzen(){
-      try {
-        if (chart.tooltip && chart.tooltip.setActiveElements){
-          /* Erst LEEREN, dann setzen. Chart.js vergleicht in setActiveElements die neuen aktiven
-             Elemente mit den bisherigen und tut nichts, wenn sie gleich sind -- und nach einem
-             Datentausch sind sie gleich, weil Chart.js dieselben Punktobjekte weiterverwendet. Der
-             Tooltip behielt dadurch seine ALTEN Zahlen: gemessen zeigte er die ganze Bewegung ueber
-             36.2, 32.0, 25.5 ..., obwohl die Datensaetze schon die neuen Werte trugen, und rechnete
-             sich erst 830ms spaeter neu. Mit dem Leerlauf davor schlaegt der Vergleich fehl und der
-             Kasten wird sofort neu gerechnet.
-             Beides im selben Durchgang, also wird zwischen den zwei Zustaenden kein Bild gezeichnet
-             -- es flackert nicht. */
-          chart.tooltip.setActiveElements([], { x: 0, y: 0 });
-          chart.tooltip.setActiveElements(punkte, { x: 0, y: 0 });
-        }
-        chart.update();
-        /* Die aktiven Punkte des CHARTS erst NACH dem update, nicht davor: chart.update() raeumt
-           chart._active ab, und ohne die aktiven Punkte zeichnet Chart.js keine Hoverpunkte -- die
-           Fuehrungslinie stand allein da, ohne die weissen Kreise darauf. Mit einer Pixelprobe auf
-           der Leinwand gemessen. */
-        chart.setActiveElements(punkte);
-      } catch (e){}
-    }
-    setzen();
-    if (!leinwand.__ulhTipp){
-      leinwand.__ulhTipp = true;
-      leinwand.addEventListener("mouseleave", function(){ setTimeout(setzen, 60); });
-    }
+    var aktiv = chart.getActiveElements ? chart.getActiveElements() : [];
+    var steht = aktiv.length === chart.data.datasets.length && aktiv.every(function(a){ return a.index === TIPP_PUNKT; }) &&
+      chart.tooltip && chart.tooltip.opacity === 1;
+    if (steht) return true;
+    /* Fehlt er (das Chart entstand vor dem Hook), einmal ohne Animation zeichnen -- afterUpdate steckt dabei an. */
+    try { chart.update("none"); } catch (e){}
     return true;
   }
 

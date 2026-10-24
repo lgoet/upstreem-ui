@@ -328,7 +328,7 @@
    hat dieselbe Spezifitaet und steht spaeter -- ohne den Vorsatz drehte der Funke trotz der
    Einstellung (14.10., Audit). */
 @media (prefers-reduced-motion: reduce) {
-  .ulh-root .ulh-text .ulh-cta .ulh-btn::before { animation: none; }
+  .ulh-root :is(.ulh-text .ulh-cta .ulh-btn, .ulh-root .ulh-btn.is-funke)::before { animation: none; }
 }
 .ulh-eyebrow { margin: 0 0 clamp(24px, calc(3.2 * var(--ulh-fh)), 34px); }
 
@@ -495,10 +495,10 @@
    und unsichtbar; beim naechsten Hover laeuft er dort weiter, wo er stand.
    Der Rahmen war 1px border -- jetzt ist er der Ring, also border 0 und 1px mehr Polster, damit
    Breite und Schrift genau dort bleiben, wo sie waren. */
-.ulh-text .ulh-cta .ulh-btn { position: relative; overflow: hidden; isolation: isolate; border: 0; padding: 0 13px; }
-.ulh-text .ulh-cta .ulh-btn-sec, .ulh-text .ulh-cta .ulh-btn-sec:hover { background: var(--ulh-border); }
-.ulh-text .ulh-cta .ulh-btn-pri, .ulh-text .ulh-cta .ulh-btn-pri:hover { background: var(--ulh-text); }
-.ulh-text .ulh-cta .ulh-btn::after {
+:is(.ulh-text .ulh-cta .ulh-btn, .ulh-root .ulh-btn.is-funke) { position: relative; overflow: hidden; isolation: isolate; border: 0; padding: 0 13px; }
+:is(.ulh-text .ulh-cta .ulh-btn-sec, .ulh-root .ulh-btn-sec.is-funke), :is(.ulh-text .ulh-cta .ulh-btn-sec, .ulh-root .ulh-btn-sec.is-funke):hover { background: var(--ulh-border); }
+:is(.ulh-text .ulh-cta .ulh-btn-pri, .ulh-root .ulh-btn-pri.is-funke), :is(.ulh-text .ulh-cta .ulh-btn-pri, .ulh-root .ulh-btn-pri.is-funke):hover { background: var(--ulh-text); }
+:is(.ulh-text .ulh-cta .ulh-btn, .ulh-root .ulh-btn.is-funke)::after {
   content: "";
   position: absolute;
   inset: 1px;
@@ -508,10 +508,10 @@
   background: var(--ulh-grund);
   transition: background 160ms var(--ulh-ease);
 }
-.ulh-text .ulh-cta .ulh-btn-pri::after { background: var(--ulh-text); }
-.ulh-text .ulh-cta .ulh-btn-sec:hover::after { background: var(--vc-heading-bg, #f5f5f5); }
-.ulh-text .ulh-cta .ulh-btn-pri:hover::after { background: var(--ulh-pri-hover); }
-.ulh-text .ulh-cta .ulh-btn::before {
+:is(.ulh-text .ulh-cta .ulh-btn-pri, .ulh-root .ulh-btn-pri.is-funke)::after { background: var(--ulh-text); }
+:is(.ulh-text .ulh-cta .ulh-btn-sec, .ulh-root .ulh-btn-sec.is-funke):hover::after { background: var(--vc-heading-bg, #f5f5f5); }
+:is(.ulh-text .ulh-cta .ulh-btn-pri, .ulh-root .ulh-btn-pri.is-funke):hover::after { background: var(--ulh-pri-hover); }
+:is(.ulh-text .ulh-cta .ulh-btn, .ulh-root .ulh-btn.is-funke)::before {
   content: "";
   position: absolute;
   z-index: -2;
@@ -529,10 +529,10 @@
   animation: ulhSchimmer 2.4s linear infinite;
   animation-play-state: paused;
 }
-.ulh-text .ulh-cta .ulh-btn:hover::before { opacity: 1; animation-play-state: running; }
+:is(.ulh-text .ulh-cta .ulh-btn, .ulh-root .ulh-btn.is-funke):hover::before { opacity: 1; animation-play-state: running; }
 /* Auf dem dunklen Knopf ist der Funke WEISS (06.10. abends angefordert): das Blau des Chips las sich
    auf Fast-Schwarz als Fremdfarbe. Derselbe Verlauf, nur die Farbe getauscht. */
-.ulh-text .ulh-cta .ulh-btn-pri::before {
+:is(.ulh-text .ulh-cta .ulh-btn-pri, .ulh-root .ulh-btn-pri.is-funke)::before {
   background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%,
               rgba(255, 255, 255, .7) 32%, #ffffff 50%, rgba(255, 255, 255, .7) 68%,
               rgba(255, 255, 255, 0) 100%);
@@ -547,6 +547,9 @@
 }
 .ulh-btn-pfeil svg { width: 14px; height: 14px; display: block; }
 .ulh-btn:hover .ulh-btn-pfeil { translate: 2px 0; }
+/* DERSELBE KNOPF AUSSERHALB DES HERO (24.10., Lukas: "genau so ein Button wie Demo vereinbaren im Hero", fuer
+   "Jetzt kostenlos starten" unter den Features des Agenten und "Sales kontaktieren" am Ende): die Klasse is-funke
+   haengt jeden .ulh-btn an die Regeln oben (Ring, Flaeche, Lichtstreifen beim Ueberfahren). */
 @media (prefers-reduced-motion: reduce) { .ulh-btn-pfeil { transition: none; } }
 
 /* ---------- Der Hintergrund ----------
@@ -726,6 +729,9 @@
        schnell an, lang aus). In einer Kurve fuer beides stuende der Text nach einem Drittel der
        Zeit schon fast voll da -- genau das "fast instant".
    Das Ende liegt seit 14.10. bei 960 + 1100 = 2060ms (die Zeile der Modelle); ERSCHEINEN_MS in landing-hero.js ist darauf bezogen. */
+/* Das Zeichen fuer upstreem-web, dass dieses Stylesheet da ist (24.10.): bis dahin haelt globals.css den Kopf
+   unsichtbar (opacity: var(--ulh-css-da, 0)), sonst stand er vor dem Auftritt einmal kurz voll da. */
+.ulh-root { --ulh-css-da: 1; }
 @keyframes ulhAufblenden { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ulhHochrollen { from { transform: translateY(16px); } to { transform: none; } }
 .ulh-root.is-entering .ulh-eyebrow { animation: ulhAufblenden 900ms var(--ulh-ease) 150ms backwards, ulhHochrollen 1100ms var(--ulh-gleit) 150ms backwards; }
@@ -4913,3 +4919,18 @@ html[data-up-pagetheme="dark"] .ulh-root .ulh-preis-notiz > span { color: var(--
 @media (max-width: 900px){
   .ulh-root .ulh-preis-reihe { gap: 8px; }
 }
+
+/* ---------- DER KNOPF UNTER DEN FEATURES DES AGENTEN (24.10.) ----------
+   Abstand zur Liste wie zwischen Satz und "Features" (.ulh-sek-feat-t), Hoehe und Schrift der Knoepfe im Hero. */
+.ulh-msc-text .ulh-msc-los { margin-top: 28px; }
+/* Der Ring dieser Knoepfe bleibt beim Ueberfahren der Ring (24.10.): die Hover-Regel der Sekundaerknoepfe (HOVER WIE IN
+   DER APP) wiegt mehr und malte ihn sonst in der Flaeche des Hovers -- das Licht laeuft auf dem Ring. */
+html[data-up-pagetheme="dark"] .ulh-root :is(.ulh-cta .ulh-btn-sec, .ulh-btn-sec.is-funke):hover { background: var(--ulh-border); }
+
+/* ---------- ANTWORTFENSTER: DER MODELLNAME GANZ (24.10.) ----------
+   "der Modellname wird immer truncated, das soll nie truncaten, genug Platz ist sowieso": der Kopf der Karte ist ein
+   Flex mit schrumpfender linker Haelfte, darin kuerzte core den Namen mit "..." ("Google AI Overviews"). Hier
+   schrumpft weder die Haelfte noch der Chip, und der Name bricht nicht und kuerzt nicht. */
+.ulh-root .ulh-fen-antwort .urt-card-headleft { flex: 0 0 auto; min-width: auto; }
+.ulh-root .ulh-fen-antwort .urt-model-chip { flex: 0 0 auto; max-width: none; }
+.ulh-root .ulh-fen-antwort .urt-model-chip .up-ment-name { overflow: visible; text-overflow: clip; white-space: nowrap; }
