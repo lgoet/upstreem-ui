@@ -4857,15 +4857,56 @@ html[data-up-pagetheme="dark"] .ulh-root .ulh-btn-sec:hover { background: var(--
 .ulh-root .ulh-vis .up-stack-item:hover ~ .up-stack-more,
 .ulh-root .ulh-vis .up-stack-item:hover ~ .up-stack-tail { transform: none; }
 
-/* ---------- SPRACHWAHL IN DER LEISTE LEISER (24.10.) ---------------------------------------------
-   "die Language-Einstellungen in der Topbar etwas subtiler, das ist noch sehr prominent, soll eher im
-   Hintergrund sein": kein Kasten und keine Pille mehr, nur Flagge und Kuerzel in der dritten Textfarbe; die
-   gewaehlte Sprache eine Stufe heller (--ulh-sub), der Hover hebt nur die Schrift wie die Punkte der Leiste.
-   Die Flaggen kleiner (14 x 10.5) und leiser. Nur in der Leiste; im Blatt am Telefon bleibt die Zeile. */
-.ulh-nav-rechts > .ulh-sprache { background: none; border: 0; padding: 0; gap: 0; }
-.ulh-nav-rechts > .ulh-sprache a { color: var(--ulh-third); font-weight: 500; padding: 0 6px; gap: 4px; }
-.ulh-nav-rechts > .ulh-sprache a.is-an { background: none; box-shadow: none; color: var(--ulh-sub); }
+/* ---------- SPRACHWAHL IN DER LEISTE: ZUGEKLAPPT (24.10.) -----------------------------------------
+   "sichtbar einfach nur das Alpha-2 ohne Flagge, in einem kleinen Container mit leichter Field-Farbe; on Klick oeffnet
+   sich der Switcher komplett, beim Klick auf eine Sprache waehlt er sie aus und klappt wieder zu". Das Feld wie ein
+   Eingabefeld der App im Dunkeln (Flaeche #0f0f0f = --ulh-grund, Rand --ulh-border), 28 hoch (--up-h-seg) und damit
+   leiser als die 36er-Knoepfe daneben, Radius nach Rolle 6. Zu steht nur die aktuelle Sprache; die anderen haben Breite
+   0 und gleiten offen in 200 ms auf (--up-t-2, ease wie die Klappen der App). Schrift 12/500, die aktuelle in der
+   Textfarbe, die anderen in der zweiten; Hover hebt nur die Schrift. Im Blatt am Telefon bleibt die Zeile. */
+.ulh-nav-rechts > .ulh-sprache {
+  height: 28px; padding: 0 2px; gap: 0; margin-right: 4px; border-radius: var(--up-r-m);
+  background: var(--ulh-grund); border: 1px solid var(--ulh-border);
+}
+.ulh-nav-rechts > .ulh-sprache a {
+  height: 22px; padding: 0 6px; border-radius: var(--up-r-xs); gap: 0;
+  font-size: 12px; font-weight: 500; letter-spacing: .02em; color: var(--ulh-sub);
+  transition: color var(--up-t-1) ease, max-width var(--up-t-2) ease, padding var(--up-t-2) ease, opacity var(--up-t-2) ease;
+}
+.ulh-nav-rechts > .ulh-sprache a.is-an { background: none; box-shadow: none; color: var(--ulh-text); cursor: pointer; }
 .ulh-nav-rechts > .ulh-sprache a:hover { color: var(--ulh-text); }
-.ulh-nav-rechts > .ulh-sprache .ulh-sprache-flagge { width: 14px; height: 10.5px; border-radius: 2px; opacity: .45; }
-.ulh-nav-rechts > .ulh-sprache a.is-an .ulh-sprache-flagge { opacity: .8; }
-.ulh-nav-rechts > .ulh-sprache a:hover .ulh-sprache-flagge { opacity: 1; }
+.ulh-nav-rechts > .ulh-sprache a:not(.is-an) { max-width: 40px; overflow: hidden; visibility: visible; }
+/* Zu auch aus dem Tab-Kreis: visibility erst nach dem Zuklappen weg (wie .upa-lb), offen sofort wieder da. */
+.ulh-nav-rechts > .ulh-sprache:not(.is-offen) a:not(.is-an) { max-width: 0; padding: 0; opacity: 0; visibility: hidden;
+  transition: color var(--up-t-1) ease, max-width var(--up-t-2) ease, padding var(--up-t-2) ease, opacity var(--up-t-2) ease, visibility 0s linear var(--up-t-2); }
+/* Die aktuelle Sprache steht offen vorn, damit der Ausloeser beim Aufklappen nicht unter dem Zeiger wegspringt. */
+.ulh-nav-rechts > .ulh-sprache a.is-an { order: -1; }
+.ulh-nav-rechts > .ulh-sprache .ulh-sprache-t { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; clip-path: none; }
+.ulh-nav-rechts > .ulh-sprache a:focus-visible { outline: 2px solid var(--up-focus, #3b82f6); outline-offset: -2px; }
+@media (prefers-reduced-motion: reduce) { .ulh-nav-rechts > .ulh-sprache a { transition: none; } }
+
+/* ---------- PREISE WIE DIE KARTENABSCHNITTE (24.10.) ---------------------------------------------
+   "passe das auch an, wie du den Rest der Seite angepasst hast; 'Am beliebtesten' erkennt man nicht, das hat die
+   gleiche Farbe wie der Grund; die Highlightfarbe des Pro-Plans ist zu doll, subtiler".
+   Form: dieselbe wie .ulh-cards-box -- ein Kasten mit Rand und halb deckender Kartenflaeche, 8 Polster, 8 zwischen
+   den Karten, 8 vom Gitter, Radius 12 + 9; die Karten darin mit Tiefe e-chip wie die anderen inneren Karten.
+   Pro: statt Rahmen und Ring in voller Textfarbe nur ein Rand eine Stufe heller (Schrift zu 28 %, die Stufe der
+   hervorgehobenen Kachel in den Grafiken liegt bei 45 %). Das Schild stand weiss auf --ulh-text (#ededed): jetzt
+   die Flaeche der Kopfzeilen (--vc-heading-bg) mit Schrift in der Textfarbe, oben rechts IN der Karte -- am
+   oberen Rand haette es den Kasten durchstossen. Die Ersparnis in Geists Gruen fuer das Dunkle. */
+.ulh-root .ulh-preis-reihe {
+  margin: 26px 8px 0; padding: 8px; gap: 8px; align-items: stretch;
+  border: 1px solid var(--ulh-border); border-radius: calc(var(--up-r-2xl) + 9px);
+  background: color-mix(in srgb, var(--ulh-grund) 50%, transparent);
+}
+.ulh-root .ulh-preis-karte { box-shadow: var(--up-e-chip); }
+html[data-up-pagetheme="dark"] .ulh-root .ulh-preis-reihe { --up-e-chip: 0 2px 2px rgba(0,0,0,.32), 0 8px 8px -8px rgba(0,0,0,.16); }
+.ulh-root .ulh-preis-karte.is-top { border-color: color-mix(in srgb, var(--ulh-text) 28%, transparent); box-shadow: var(--up-e-chip); }
+.ulh-root .ulh-preis-tag {
+  top: 26px; left: auto; right: 22px; height: 22px; padding: 0 8px; border-radius: var(--up-r-xs);
+  background: var(--vc-heading-bg); color: var(--ulh-text); font-size: 12px; font-weight: 500; letter-spacing: 0;
+}
+html[data-up-pagetheme="dark"] .ulh-root .ulh-preis-notiz > span { color: var(--ulh-code-ok); }
+@media (max-width: 900px){
+  .ulh-root .ulh-preis-reihe { gap: 8px; }
+}

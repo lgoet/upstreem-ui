@@ -1008,10 +1008,14 @@
             /* Mit Flaggen (14.10. angefordert). Die Quelle ist dieselbe wie in core (flagcdn); auf
                der Website schreibt lib/fremd.ts sie auf /fremd/flag um, der Besucher spricht also
                mit keinem fremden Server. Englisch als britische Flagge: die Firma sitzt in Europa. */
+            /* SEIT DEM 24.10. OHNE FLAGGEN UND ZUGEKLAPPT (Lukas: "sichtbar einfach nur das Alpha-2 ohne Flagge, in einem
+               kleinen Container mit leichter Field-Farbe; on Klick oeffnet sich der Switcher komplett, beim Klick auf eine
+               Sprache waehlt er diese aus und klappt wieder zu"). Zu steht nur das Kuerzel der aktuellen Sprache; sie ist
+               der Ausloeser (landing-teile.js, spracheBinden). Ohne Skript bleiben es zwei Links. */
             '<a href="/" hreflang="en" lang="en" data-sprache="en"' + (LANG === "en" ? ' class="is-an" aria-current="true"' : '') + '>' +
-              '<img class="ulh-sprache-flagge" src="https://flagcdn.com/gb.svg" alt="" width="16" height="12"/><span class="ulh-sprache-t">EN</span></a>' +
+              '<span class="ulh-sprache-t">EN</span></a>' +
             '<a href="/de" hreflang="de" lang="de" data-sprache="de"' + (LANG === "de" ? ' class="is-an" aria-current="true"' : '') + '>' +
-              '<img class="ulh-sprache-flagge" src="https://flagcdn.com/de.svg" alt="" width="16" height="12"/><span class="ulh-sprache-t">DE</span></a>' +
+              '<span class="ulh-sprache-t">DE</span></a>' +
           '</div> ' : '') +
           /* Anmelden und Registrieren gehen in einen NEUEN Tab: die Seite ist die Werbung, die
              App ist die Arbeit -- wer sich anmeldet, soll die Seite nicht verlieren. */

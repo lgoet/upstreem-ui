@@ -322,18 +322,47 @@
      Das Cookie ist eine vom Besucher selbst getroffene Einstellung und braucht keine Einwilligung. */
   function spracheBinden(root){
     var links = root.querySelectorAll("[data-sprache]");
-    if (!links.length) return;
     var pfad = location.pathname.replace(/^\/de(?=\/|$)/, "") || "/";
     var such = location.search || "";
     [].forEach.call(links, function(a){
       var de = a.getAttribute("data-sprache") === "de";
       a.setAttribute("href", (de ? "/de" + (pfad === "/" ? "" : pfad) : pfad) + such);
-      if (a.__ulhSprache) return;
-      a.__ulhSprache = true;
-      a.addEventListener("click", function(){
-        try { document.cookie = "upstreem_lang=" + (de ? "de" : "en") + "; path=/; max-age=31536000; SameSite=Lax"; } catch (e){}
-      });
     });
+    /* EIN Zuhoerer am Dokument (24.10.): die Leiste der Startseite baut landing-hero.js nach diesem Aufruf neu, und
+       Zuhoerer an den Links gingen dabei verloren -- gemessen war keiner der vier Links gebunden, das Cookie wurde nie
+       gesetzt. Am Dokument erreicht der Klick auch die neu gebauten. */
+    if (spracheBinden.fertig) return;
+    spracheBinden.fertig = true;
+    document.addEventListener("click", function(ev){
+      var a = ev.target && ev.target.closest ? ev.target.closest("[data-sprache]") : null;
+      var offen = document.querySelector(".ulh-nav-rechts > .ulh-sprache.is-offen");
+      /* Zu, sobald man daneben klickt -- wie jedes Menue der App. */
+      if (offen && (!a || !offen.contains(a))) spracheKlappen(offen, false);
+      if (!a) return;
+      /* In der Leiste (24.10.): zu ist nur die aktuelle Sprache zu sehen, ein Klick auf sie klappt den Umschalter auf,
+         ein zweiter wieder zu. Eine andere Sprache fuehrt wie bisher in deren Fassung -- die neue Seite steht dann
+         zugeklappt da. */
+      var leiste = a.closest(".ulh-nav-rechts > .ulh-sprache");
+      if (leiste && a.classList.contains("is-an")){
+        ev.preventDefault();
+        spracheKlappen(leiste, !leiste.classList.contains("is-offen"));
+        return;
+      }
+      if (leiste) spracheKlappen(leiste, false);
+      var de = a.getAttribute("data-sprache") === "de";
+      try { document.cookie = "upstreem_lang=" + (de ? "de" : "en") + "; path=/; max-age=31536000; SameSite=Lax"; } catch (e){}
+    });
+    document.addEventListener("keydown", function(ev){
+      var offen = document.querySelector(".ulh-nav-rechts > .ulh-sprache.is-offen");
+      if (ev.key !== "Escape" || !offen) return;
+      spracheKlappen(offen, false);
+      var an = offen.querySelector("a.is-an"); if (an) an.focus();
+    });
+  }
+  function spracheKlappen(leiste, auf){
+    leiste.classList.toggle("is-offen", !!auf);
+    var an = leiste.querySelector("a.is-an");
+    if (an) an.setAttribute("aria-expanded", auf ? "true" : "false");
   }
 
   /* Das Thema der Website (23.10. abends: "kein lightmode mehr. immer darkmode bitte"). Bis dahin
