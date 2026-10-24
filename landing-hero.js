@@ -1391,10 +1391,9 @@
       { t: "Cookie settings", knopf: true }
     ] : []) }
   ];
-  var FUSS_NETZ = [
-    { t: "LinkedIn", h: "https://www.linkedin.com/company/upstreem", ic: "linkedin" },
-    { t: "YouTube", h: "https://www.youtube.com/@upstreem", ic: "youtube" }
-  ];
+  /* LinkedIn und YouTube am 24.10. aus dem Fuss genommen (Lukas: "entfern im Footer bitte LinkedIn und YouTube").
+     Ein neues Netzwerk: Eintrag hier, Zeichen in FUSS_IC. */
+  var FUSS_NETZ = [];
   /* Die zwei Zeichen stehen HIER als Pfad und kommen nicht aus core: core fuehrt Feather, und
      Feather hat keine Markenzeichen. Selbst gezeichnet waeren sie falsch -- das sind die
      offiziellen Umrisse. */
@@ -1416,12 +1415,13 @@
           '<a class="ulh-fuss-logo" href="' + startUrl() + '" aria-label="upstreem">' +
             '<img src="' + WORTMARKE + '" alt="upstreem" width="218" height="31"/>' +
           '</a>' +
-          '<div class="ulh-fuss-netz">' +
+          /* Die Zeile der Netzwerke nur, wenn es welche gibt (24.10.: LinkedIn und YouTube entfernt). */
+          (FUSS_NETZ.length ? '<div class="ulh-fuss-netz">' +
             FUSS_NETZ.map(function(n){
               return '<a class="ulh-fuss-ic" href="' + n.h + '" target="_blank" rel="noopener"' +
                 ' aria-label="' + n.t + '">' + FUSS_IC[n.ic] + '</a>';
             }).join("") +
-          '</div>' +
+          '</div>' : '') +
         '</div>' +
         '<div class="ulh-fuss-spalten">' +
           FUSS_SPALTEN.map(function(sp){
