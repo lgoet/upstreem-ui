@@ -146,7 +146,7 @@
     "Documented": "Dokumentiert",
     /* Ueberschriften der neuen Abschnitte (23.10. gemeldet: "im de setting auf englisch"). */
     "Every answer has a source.": "Jede Antwort hat eine Quelle.", "See which ones count.": "Sieh, welche zählen.",
-    "An agent that tells you": "Ein Agent, der dir sagt,", "what to fix this week": "was du diese Woche angehen solltest",
+    "Answers and next steps,": "Antworten und nächste Schritte,", "without digging through dashboards": "ohne dich durch Dashboards zu klicken",
     "Build workflows and automations": "Workflows und Automationen", "with your data in Claude": "mit deinen Daten in Claude",
     "Refresh": "Aktualisieren", "All (43)": "Alle (43)", "Cited (12)": "Zitiert (12)", "Not cited yet (31)": "Noch nicht zitiert (31)",
     "12 of 43 pages cited. Last checked 5 minutes ago.": "12 von 43 Seiten zitiert. Zuletzt geprüft vor 5 Minuten.",
@@ -1884,13 +1884,15 @@
   function msc(){
     return '<section class="ulh-msc" id="mira">' +
       '<div class="ulh-spur">' +
-        '<h2 class="ulh-sek-h ulh-msc-h ulh-auf"><span>An agent that tells you</span> <span>what to fix this week</span></h2>' +
+        /* Nicht die Frage aus dem Fenster daneben (24.10. gemeldet: "An agent that tells you what to fix this week" ueber
+           "What should I fix first this week?"): die Ueberschrift sagt, was man davon hat, das Fenster zeigt die Frage. */
+        '<h2 class="ulh-sek-h ulh-msc-h ulh-auf"><span>Answers and next steps,</span> <span>without digging through dashboards</span></h2>' +
         '<div class="ulh-msc-reihe">' +
           '<div class="ulh-msc-fenster ulh-auf ulh-auf-gross">' +
             '<iframe class="ulh-msc-rahmen" title="Agent" scrolling="no" referrerpolicy="no-referrer"></iframe>' +
           '</div>' +
           '<div class="ulh-msc-text ulh-auf" style="--auf:1">' +
-            /* Nicht noch einmal "what to fix this week": das sagt seit dem 24.10. die Ueberschrift. */
+            /* Ohne "what to fix this week": das fragt das Fenster daneben. */
             '<p class="ulh-sek-satz">Just ask. <span>Get the pages to change, the reason and a report to share.</span></p>' +
             '<p class="ulh-sek-feat-t">Features</p>' +
             '<ul class="ulh-sek-feat">' + MSC_PUNKTE.map(function(t){ return '<li>' + t + '</li>'; }).join("") + '</ul>' +
