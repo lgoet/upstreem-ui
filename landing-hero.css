@@ -4864,9 +4864,12 @@ html[data-up-pagetheme="dark"] .ulh-root .ulh-btn-sec:hover { background: var(--
    leiser als die 36er-Knoepfe daneben, Radius nach Rolle 6. Zu steht nur die aktuelle Sprache; die anderen haben Breite
    0 und gleiten offen in 200 ms auf (--up-t-2, ease wie die Klappen der App). Schrift 12/500, die aktuelle in der
    Textfarbe, die anderen in der zweiten; Hover hebt nur die Schrift. Im Blatt am Telefon bleibt die Zeile. */
+/* 24.10. nachgeschoben: "in einen Container mit der schwaechsten Field-Farbe, ohne Border" -- die leiseste Flaeche,
+   die die App im Dunkeln auf dem Grund fuehrt: --usn-sel der Seitenleiste (Schrift zu 7 %). #0f0f0f ohne Rand waere
+   auf der Leiste nicht mehr zu sehen. */
 .ulh-nav-rechts > .ulh-sprache {
   height: 28px; padding: 0 2px; gap: 0; margin-right: 4px; border-radius: var(--up-r-m);
-  background: var(--ulh-grund); border: 1px solid var(--ulh-border);
+  background: color-mix(in srgb, var(--ulh-text) 7%, transparent); border: 0;
 }
 .ulh-nav-rechts > .ulh-sprache a {
   height: 22px; padding: 0 6px; border-radius: var(--up-r-xs); gap: 0;
